@@ -1,22 +1,18 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { GetAllCMS, AddCMS, EditCMS, DeleteCMS } from "./cmsApi";
+import { GetAllCMSForAdmin, AddCMS, EditCMS, DeleteCMS } from "./cmsApi";
 
-//  Get All CMS
-export const allCMS = createAsyncThunk("cms/allCMS", async (_, thunkAPI) => {
-  try {
-    const types = ["customer", "vendor", "delivery", "user"];
-    let allItems = [];
-
-    for (const type of types) {
-      const result = await GetAllCMS("active", type, "Landing Page");
-      allItems = [...allItems, ...result];
+//  Get All CMS For Admin
+export const allCMSForAdmin = createAsyncThunk(
+  "cms/allCMSForAdmin",
+  async (_, thunkAPI) => {
+    try {
+      const result = await GetAllCMSForAdmin();
+      return result;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.message);
     }
-
-    return allItems;
-  } catch (error) {
-    return thunkAPI.rejectWithValue(error.message);
   }
-});
+);
 
 //  Add CMS
 export const addCMS = createAsyncThunk(
@@ -67,9 +63,16 @@ const cmsSlice = createSlice({
   },
   reducers: {},
   extraReducers: (builder) => {
-    builder.addCase(allCMS.fulfilled, (state, action) => {
+    builder.addCase(allCMSForAdmin.pending, (state) => {
+      state.loading = true;
+    });
+    builder.addCase(allCMSForAdmin.fulfilled, (state, action) => {
       state.loading = false;
       state.cmsList = action.payload;
+    });
+    builder.addCase(allCMSForAdmin.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
     });
 
     // Add

@@ -1,45 +1,48 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { allCMS, editCMS, deleteCMS } from "./cmsSlice";
+import { allCMSForAdmin, editCMS, deleteCMS } from "./cmsSlice";
 
 export default function BannersForm() {
   const dispatch = useDispatch();
   const { cmsList, loading, error } = useSelector((state) => state.cms);
 
-  const [editingIndex, setEditingIndex] = useState(null);
+  const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
+    title: "",
     content: "",
+    type: "",
     image_url: "",
+    status: "active",
   });
 
   useEffect(() => {
-    dispatch(allCMS());
+    dispatch(allCMSForAdmin());
   }, [dispatch]);
 
-  const startEdit = (cms, index) => {
-    setEditingIndex(index);
+  const startEdit = (cms) => {
+    setEditingId(cms.id);
     setForm({
+      title: cms.title,
       content: cms.content,
+      type: cms.type,
       image_url: cms.image_url || "",
+      status: cms.status || "active",
     });
   };
 
   const handleSave = (e) => {
     e.preventDefault();
-    dispatch(editCMS({ id: editingIndex, cmsData: form })).then(() => {
-      dispatch(
-        allCMS({ status: "active", type: "type", title: "Landing Page" })
-      );
+    if (!editingId) return;
+    dispatch(editCMS({ id: editingId, cmsData: form })).then(() => {
+      dispatch(allCMSForAdmin());
     });
-    setEditingIndex(null);
+    setEditingId(null);
   };
 
-  const handleDelete = (index) => {
+  const handleDelete = (id) => {
     if (window.confirm("Are you sure you want to delete this CMS item?")) {
-      dispatch(deleteCMS(index)).then(() => {
-        dispatch(
-          allCMS({ status: "active", type: "type", title: "Landing Page" })
-        );
+      dispatch(deleteCMS(id)).then(() => {
+        dispatch(allCMSForAdmin());
       });
     }
   };
@@ -54,10 +57,20 @@ export default function BannersForm() {
         <p>No CMS items found.</p>
       ) : (
         <ul className="space-y-4">
-          {cmsList.map((cms, index) => (
-            <li key={index} className="border p-3 rounded">
-              {editingIndex === index ? (
+          {cmsList.map((cms) => (
+            <li key={cms.id} className="border p-3 rounded">
+              {editingId === cms.id ? (
                 <form onSubmit={handleSave} className="space-y-2">
+                  <input
+                    type="text"
+                    value={form.title}
+                    onChange={(e) =>
+                      setForm({ ...form, title: e.target.value })
+                    }
+                    className="w-full border p-2"
+                    placeholder="Title"
+                    required
+                  />
                   <textarea
                     value={form.content}
                     onChange={(e) =>
@@ -66,6 +79,19 @@ export default function BannersForm() {
                     className="w-full border p-2"
                     required
                   />
+                  <select
+                    value={form.type}
+                    onChange={(e) => setForm({ ...form, type: e.target.value })}
+                    className="w-full border p-2"
+                  >
+                    <option value="" disabled>
+                      Select type
+                    </option>
+                    <option value="customer">Customer</option>
+                    <option value="vendor">Vendor</option>
+                    <option value="delivery">Delivery</option>
+                    <option value="user">User</option>
+                  </select>
                   <input
                     type="text"
                     value={form.image_url}
@@ -75,6 +101,16 @@ export default function BannersForm() {
                     className="w-full border p-2"
                     placeholder="Image URL"
                   />
+                  <select
+                    value={form.status}
+                    onChange={(e) =>
+                      setForm({ ...form, status: e.target.value })
+                    }
+                    className="w-full border p-2"
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
                   <div className="flex space-x-2">
                     <button
                       type="submit"
@@ -84,7 +120,7 @@ export default function BannersForm() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setEditingIndex(null)}
+                      onClick={() => setEditingId(null)}
                       className="px-3 py-1 bg-gray-400 text-white rounded"
                     >
                       Cancel
@@ -94,7 +130,12 @@ export default function BannersForm() {
               ) : (
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-sm">{cms.content}</p>
+                    <h3 className="font-bold">Title: {cms.title}</h3>
+                    <p className="text-sm">Content: {cms.content}</p>
+                    <div className="flex space-x-4 text-xs">
+                      <p>Type: {cms.type}</p>
+                      <p>Status: {cms.status}</p>
+                    </div>
                     {cms.image_url && (
                       <img
                         src={cms.image_url}
@@ -105,13 +146,13 @@ export default function BannersForm() {
                   </div>
                   <div className="space-x-2">
                     <button
-                      onClick={() => startEdit(cms, index)}
+                      onClick={() => startEdit(cms)}
                       className="px-3 py-1 bg-blue-500 text-white rounded"
                     >
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(index)}
+                      onClick={() => handleDelete(cms.id)}
                       className="px-3 py-1 bg-red-500 text-white rounded"
                     >
                       Delete

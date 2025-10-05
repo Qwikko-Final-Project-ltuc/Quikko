@@ -17,7 +17,7 @@ const LoginForm = () => {
 
   React.useEffect(() => {
     if (token) {
-      navigate("/"); // توجيه المستخدم للصفحة الرئيسية بعد تسجيل الدخول
+      navigate("/home"); // توجيه المستخدم للصفحة الرئيسية بعد تسجيل الدخول
     }
   }, [token, navigate]);
 

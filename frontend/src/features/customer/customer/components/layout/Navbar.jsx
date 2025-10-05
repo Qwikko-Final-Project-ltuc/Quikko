@@ -5,6 +5,7 @@ import {
   FaBars, FaUser, FaShoppingCart, FaStore, FaBoxOpen, FaPhone, 
   FaInfoCircle, FaClipboardList, FaCog, FaSignOutAlt, FaSearch 
 } from "react-icons/fa";
+import { MdFavorite } from "react-icons/md";
 import { fetchProfile, updateProfile } from "../../profileSlice";
 import { setSearchQuery } from "../../productsSlice";
 import { fetchAllCarts } from "../../cartSlice";
@@ -110,6 +111,9 @@ const Navbar = () => {
             </Link>
             <Link to="/products" className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
               <FaBoxOpen className="mr-3"/> All Products
+            </Link>
+            <Link to="/wishlist" className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
+              <MdFavorite  className="mr-3"/> Wishlist
             </Link>
             <Link to="/contact" className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
               <FaPhone className="mr-3"/> Contact

@@ -9,7 +9,7 @@ export default function PagesForm() {
   const [form, setForm] = useState({
     title: "",
     content: "",
-    type: "type",
+    type: "",
     image_url: "",
     status: "active",
   });
@@ -20,7 +20,7 @@ export default function PagesForm() {
       setForm({
         title: "",
         content: "",
-        type: "type",
+        type: "",
         image_url: "",
         status: "active",
       });
@@ -55,8 +55,9 @@ export default function PagesForm() {
             value={form.type}
             onChange={(e) => setForm({ ...form, type: e.target.value })}
             className="w-full border p-2"
+            required
           >
-            <option value="type">Type</option>
+            <option value="" disabled>Select type</option>
             <option value="customer">Customer</option>
             <option value="vendor">Vendor</option>
             <option value="delivery">Delivery</option>

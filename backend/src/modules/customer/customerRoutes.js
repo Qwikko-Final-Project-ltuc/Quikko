@@ -184,6 +184,13 @@ router.delete("/payment/:id", protect, customerController.paymentController.dele
 router.post("/:orderId/reorder", protect, customerController.reorder);
 router.delete("/profile",  protect, customerModel.deleteProfile);
 
+// wishList
+router.get('/wishlist', protect, customerController.getWishlist);
+
+router.post('/wishlist', protect, customerController.addWishlist);
+
+router.delete('/wishlist/:id', protect, customerController.removeWishlist);
+
 module.exports = router;
 
 

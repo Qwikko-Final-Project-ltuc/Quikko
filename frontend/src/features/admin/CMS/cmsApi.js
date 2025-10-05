@@ -1,12 +1,7 @@
-export async function GetAllCMS( status, type, title ) {
+export async function GetAllCMSForAdmin() {
   const token = localStorage.getItem("token");
 
-  const queryParams = new URLSearchParams();
-  if (status) queryParams.append("status", status);
-  if (type) queryParams.append("type", type);
-  if (title) queryParams.append("title", title);
-
-  const response = await fetch(`http://localhost:3000/api/cms?${queryParams.toString()}`, {
+  const response = await fetch(`http://localhost:3000/api/cms/admin`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -17,11 +12,12 @@ export async function GetAllCMS( status, type, title ) {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || "cms data failed. Please try again.");
+    throw new Error(data.message || "Failed to fetch CMS for admin");
   }
 
   return data;
 }
+
 
 export async function AddCMS(cmsData) {
   const token = localStorage.getItem("token");

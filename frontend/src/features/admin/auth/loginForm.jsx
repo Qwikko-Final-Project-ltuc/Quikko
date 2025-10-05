@@ -47,7 +47,11 @@ export default function LoginForm() {
       const profileData = await profile();
       localStorage.setItem("user", JSON.stringify(profileData.user));
 
-      navigate("/home");
+      if (profileData.user.role) {
+        localStorage.setItem("role", profileData.user.role);
+      }
+
+      navigate("/adminHome");
     } catch (err) {
       alert(err.message);
     }

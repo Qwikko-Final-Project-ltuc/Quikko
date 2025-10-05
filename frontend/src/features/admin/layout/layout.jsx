@@ -33,17 +33,17 @@ export default function Layout() {
 
   const getTitle = () => {
     switch (location.pathname) {
-      case "/home":
+      case "/adminHome":
         return "Dashboard";
-      case "/vendors":
+      case "/adminVendors":
         return "Vendors";
-      case "/delivery":
+      case "/adminDelivery":
         return "Delivery Companies";
-      case "/orders":
+      case "/adminOrders":
         return "Order Monitoring";
-      case "/cms":
+      case "/adminCms":
         return "Content Management Page (CMS)";
-      case "/profile":
+      case "/adminProfile":
         return "Profile";
       default:
         return "Home";
@@ -96,7 +96,7 @@ export default function Layout() {
                   className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600"
                   onClick={() => {
                     setDropdownOpen(false);
-                    navigate("/profile");
+                    navigate("/adminProfile");
                   }}
                 >
                   Profile

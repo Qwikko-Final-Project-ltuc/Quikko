@@ -9,6 +9,7 @@ import { FaFilter } from "react-icons/fa";
 export default function VendorPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+  const [visibleCount, setVisibleCount] = useState(6);
   const dispatch = useDispatch();
   const vendors = useSelector((state) => state.vendors.vendors);
 
@@ -32,6 +33,9 @@ export default function VendorPage() {
       activeFilter === "all" || vendor.status === activeFilter;
     return matchesSearch && matchesFilter;
   });
+
+  const increment = 6;
+  const visibleVendors = filteredVendors.slice(0, visibleCount);
 
   return (
     <>
@@ -66,10 +70,21 @@ export default function VendorPage() {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {Array.isArray(filteredVendors) &&
-          filteredVendors.map((vendor) => (
+          visibleVendors.map((vendor) => (
             <VendorCard key={vendor.vendor_id} vendor={vendor} />
           ))}
       </div>
+
+      {visibleCount < filteredVendors.length && (
+        <div className="flex justify-center mt-6">
+          <button
+            onClick={() => setVisibleCount(visibleCount + increment)}
+            className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Load More
+          </button>
+        </div>
+      )}
     </>
   );
 }

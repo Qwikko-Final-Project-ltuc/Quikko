@@ -22,6 +22,13 @@ exports.getAllCMS = async (type, title) => {
 };
 
 
+// For admin: fetch all CMS records
+exports.getAllCMSForAdmin = async () => {
+  const { rows } = await pool.query(`SELECT * FROM cms ORDER BY created_at DESC`);
+  return rows;
+};
+
+
 /**
  * @function insertCMS
  * @desc Inserts a new CMS record into the database.

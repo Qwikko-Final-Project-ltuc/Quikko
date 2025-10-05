@@ -27,6 +27,18 @@ const identifyCustomer = require("./src/middleware/identifyCustomer");
 const guestToken = require('./src/middleware/guestToken');
 
 
+// ===============================
+// CORS Configuration (Optional)
+// ===============================
+// Uncomment and configure if frontend runs on a different origin
+const cors = require('cors');
+app.use(cors({
+  origin: 'http://localhost:5173', 
+  methods: ['GET','POST','PUT','DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true 
+}));
+
 
 // Middleware to parse incoming JSON requests
 app.use(express.json());
@@ -56,17 +68,6 @@ app.get('/get-cookie', (req, res) => {
 // ===============================
 const { swaggerUi, specs } = require('./swagger');
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
-
-// ===============================
-// CORS Configuration (Optional)
-// ===============================
-// Uncomment and configure if frontend runs on a different origin
-const cors = require('cors');
-app.use(cors({
-  origin: 'http://localhost:5173', 
-  methods: ['GET','POST','PUT','DELETE'],
-  credentials: true 
-}));
 
 // ===============================
 // DATABASE CONNECTION TEST

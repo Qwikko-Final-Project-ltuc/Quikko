@@ -11,6 +11,7 @@ export default function DeliveryPage() {
   const [activeFilter, setActiveFilter] = useState("all");
   const [coverageFilter, setCoverageFilter] = useState("all");
   const [showCoverageDropdown, setShowCoverageDropdown] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(6);
 
   const dispatch = useDispatch();
   const delivery = useSelector((state) => state.deliveries.deliveries);
@@ -46,6 +47,9 @@ export default function DeliveryPage() {
 
     return matchesSearch && matchesFilter && matchesCoverage;
   });
+
+  const increment = 6;
+  const visibleDelivery = filteredDelivery.slice(0, visibleCount);
 
   return (
     <>
@@ -123,10 +127,21 @@ export default function DeliveryPage() {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {Array.isArray(filteredDelivery) &&
-          filteredDelivery.map((delivery) => (
+          visibleDelivery.map((delivery) => (
             <DeliveryCard key={delivery.company_id} delivery={delivery} />
           ))}
       </div>
+
+      {visibleCount < filteredDelivery.length && (
+        <div className="flex justify-center mt-6">
+          <button
+            onClick={() => setVisibleCount(visibleCount + increment)}
+            className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Load More
+          </button>
+        </div>
+      )}
     </>
   );
 }

@@ -9,6 +9,7 @@ import { FaFilter } from "react-icons/fa";
 export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+  const [visibleCount, setVisibleCount] = useState(6);
   const dispatch = useDispatch();
   const order = useSelector((state) => state.orders.orders);
 
@@ -38,6 +39,9 @@ export default function OrdersPage() {
     return matchesSearch && matchesFilter;
   });
 
+  const increment = 6;
+  const visibleOrders = filteredOrders.slice(0, visibleCount);
+
   return (
     <>
       <div className="p-4 bg-white rounded-lg shadow-md mb-6">
@@ -52,9 +56,6 @@ export default function OrdersPage() {
               className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <button className="flex items-center space-x-2 p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
-            <FaFilter className="w-5 h-5" />
-          </button>
         </div>
         <div className="flex space-x-4 text-sm font-medium">
           {["all", "pending", "preparing", "shipped", "delivered"].map(
@@ -76,10 +77,21 @@ export default function OrdersPage() {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {Array.isArray(filteredOrders) &&
-          filteredOrders.map((order, index) => (
+          visibleOrders.map((order, index) => (
             <OrdersCard key={order.order_id || index} order={order} />
           ))}
       </div>
+
+      {visibleCount < filteredOrders.length && (
+        <div className="flex justify-center mt-6">
+          <button
+            onClick={() => setVisibleCount(visibleCount + increment)}
+            className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Load More
+          </button>
+        </div>
+      )}
     </>
   );
 }

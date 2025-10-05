@@ -15,7 +15,7 @@ export default function SideBar({ isOpen }) {
         <div className="p-6 text-2xl font-bold">{isOpen ? "Qwikko" : "Q"}</div>
         <nav className="flex flex-col space-y-2 px-4">
           <NavLink
-            to="/home"
+            to="/adminHome"
             className={({ isActive }) =>
               `flex items-center space-x-2 p-2 rounded hover:bg-gray-200 ${
                 isActive ? "bg-gray-200 font-semibold" : ""
@@ -27,7 +27,7 @@ export default function SideBar({ isOpen }) {
           </NavLink>
 
           <NavLink
-            to="/vendors"
+            to="/adminVendors"
             className={({ isActive }) =>
               `flex items-center space-x-2 p-2 rounded hover:bg-gray-200 ${
                 isActive ? "bg-gray-200 font-semibold" : ""
@@ -39,7 +39,7 @@ export default function SideBar({ isOpen }) {
           </NavLink>
 
           <NavLink
-            to="/delivery"
+            to="/adminDelivery"
             className={({ isActive }) =>
               `flex items-center space-x-2 p-2 rounded hover:bg-gray-200 ${
                 isActive ? "bg-gray-200 font-semibold" : ""
@@ -51,7 +51,7 @@ export default function SideBar({ isOpen }) {
           </NavLink>
 
           <NavLink
-            to="/orders"
+            to="/adminOrders"
             className={({ isActive }) =>
               `flex items-center space-x-2 p-2 rounded hover:bg-gray-200 ${
                 isActive ? "bg-gray-200 font-semibold" : ""
@@ -63,7 +63,7 @@ export default function SideBar({ isOpen }) {
           </NavLink>
 
           <NavLink
-            to="/cms"
+            to="/adminCms"
             className={({ isActive }) =>
               `flex items-center space-x-2 p-2 rounded hover:bg-gray-200 ${
                 isActive ? "bg-gray-200 font-semibold" : ""
@@ -78,7 +78,7 @@ export default function SideBar({ isOpen }) {
 
       <div className="px-4 pb-4">
         <NavLink
-          to="/"
+          to="adminLogin"
           className="flex items-center space-x-2 p-2 rounded hover:bg-gray-200 mt-2"
         >
           <FiLogOut />

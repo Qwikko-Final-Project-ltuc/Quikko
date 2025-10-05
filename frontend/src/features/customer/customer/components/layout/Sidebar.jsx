@@ -30,6 +30,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         <nav className="flex-1 flex flex-col mt-4">
             <Link to="/stores" className="px-4 py-2 hover:bg-gray-100">Stores</Link>
             <Link to="/products" className="px-4 py-2 hover:bg-gray-100">All Products</Link>
+            <Link to="/wishlist" className="px-4 py-2 hover:bg-gray-100">Wishlist</Link>
             <Link to="/contact" className="px-4 py-2 hover:bg-gray-100">Contact</Link>
             <Link to="/about" className="px-4 py-2 hover:bg-gray-100">About</Link>
         </nav>
