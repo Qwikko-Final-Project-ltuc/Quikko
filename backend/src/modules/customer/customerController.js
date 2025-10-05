@@ -40,7 +40,12 @@ exports.updateProfile = async (req, res) => {
   try {
     const user_id = req.user.id;
     const { name, phone, address } = req.body;
-    const updatedProfile = await customerModel.updateById(user_id, name, phone, address);
+    const updatedProfile = await customerModel.updateById(
+      user_id,
+      name,
+      phone,
+      address
+    );
     res.json(updatedProfile);
   } catch (err) {
     console.error(err);
@@ -104,7 +109,8 @@ exports.postOrderFromCart = async function (req, res) {
       });
     }
     const normalizedPaymentData = {
-      transactionId: paymentData.transactionId || paymentData.transaction_id || null,
+      transactionId:
+        paymentData.transactionId || paymentData.transaction_id || null,
       card_last4: paymentData.card_last4 || null,
       card_brand: paymentData.card_brand || null,
       expiry_month: paymentData.expiry_month || null,
@@ -115,10 +121,10 @@ exports.postOrderFromCart = async function (req, res) {
       userId,
       cartId: cart_id,
       address,
-      paymentMethod,  // "cod" أو "paypal"/"credit_card"
-      paymentData: normalizedPaymentData, 
+      paymentMethod, // "cod" أو "paypal"/"credit_card"
+      paymentData: normalizedPaymentData,
     });
-        console.log("checkout req.body:", req.body);
+    console.log("checkout req.body:", req.body);
 
     res.status(201).json({
       message: `Order placed successfully (${paymentMethod.toUpperCase()})`,
@@ -150,7 +156,9 @@ exports.getOrderDetails = async function (req, res) {
     const order = await customerModel.getOrderById(customerId, orderId);
 
     if (!order) {
-      return res.status(403).json({ error: "You do not have access to this order" });
+      return res
+        .status(403)
+        .json({ error: "You do not have access to this order" });
     }
 
     res.json({
@@ -179,7 +187,9 @@ exports.trackOrder = async function (req, res) {
     const order = await customerModel.trackOrder(orderId, customerId);
 
     if (!order) {
-      return res.status(404).json({ error: "Order not found or not authorized" });
+      return res
+        .status(404)
+        .json({ error: "Order not found or not authorized" });
     }
 
     res.json({
@@ -191,7 +201,6 @@ exports.trackOrder = async function (req, res) {
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
 
 /**
  * @function getAllCarts
@@ -208,7 +217,9 @@ exports.getAllCarts = async (req, res) => {
     } else if (req.guestToken) {
       carts = await customerService.getAllCartsByGuest(req.guestToken);
     } else {
-      return res.status(400).json({ message: "No valid customerId or guestToken" });
+      return res
+        .status(400)
+        .json({ message: "No valid customerId or guestToken" });
     }
     res.json(carts);
   } catch (err) {
@@ -216,8 +227,6 @@ exports.getAllCarts = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-
 
 /**
  * @function getCartById
@@ -233,8 +242,10 @@ exports.getCartById = async (req, res) => {
     if (!cart) return res.status(404).json({ message: "Cart not found" });
 
     // تحقق الملكية
-    if ((req.customerId && cart.user_id !== req.customerId) ||
-        (!req.customerId && cart.guest_token !== req.guestToken)) {
+    if (
+      (req.customerId && cart.user_id !== req.customerId) ||
+      (!req.customerId && cart.guest_token !== req.guestToken)
+    ) {
       return res.status(403).json({ message: "Forbidden" });
     }
 
@@ -260,7 +271,9 @@ exports.createCart = async (req, res) => {
     } else if (req.guestToken) {
       cart = await customerService.createCartForGuest(req.guestToken);
     } else {
-      return res.status(400).json({ message: "No valid customerId or guestToken" });
+      return res
+        .status(400)
+        .json({ message: "No valid customerId or guestToken" });
     }
 
     res.status(201).json(cart);
@@ -284,19 +297,23 @@ exports.updateCart = async (req, res) => {
     if (!cart) return res.status(404).json({ message: "Cart not found" });
 
     // تحقق الملكية
-    if ((req.customerId && cart.user_id !== req.customerId) ||
-        (!req.customerId && cart.guest_token !== req.guestToken)) {
+    if (
+      (req.customerId && cart.user_id !== req.customerId) ||
+      (!req.customerId && cart.guest_token !== req.guestToken)
+    ) {
       return res.status(403).json({ message: "Forbidden" });
     }
 
-    const updatedCart = await customerService.updateCart(req.params.id, req.customerId);
+    const updatedCart = await customerService.updateCart(
+      req.params.id,
+      req.customerId
+    );
     res.json(updatedCart);
   } catch (err) {
     console.error("Error updating cart:", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
 
 /**
  * @function deleteCart
@@ -310,8 +327,10 @@ exports.deleteCart = async (req, res) => {
     const cart = await customerService.getCartById(req.params.id);
     if (!cart) return res.status(404).json({ message: "Cart not found" });
 
-    if ((req.customerId && cart.user_id !== req.customerId) ||
-        (!req.customerId && cart.guest_token !== req.guestToken)) {
+    if (
+      (req.customerId && cart.user_id !== req.customerId) ||
+      (!req.customerId && cart.guest_token !== req.guestToken)
+    ) {
       return res.status(403).json({ message: "Forbidden" });
     }
 
@@ -322,7 +341,6 @@ exports.deleteCart = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
 
 /**
  * @function addItem
@@ -343,15 +361,22 @@ exports.addItem = async (req, res) => {
     if (!cart) return res.status(404).json({ message: "Cart not found" });
 
     // تحقق الملكية
-    if ((req.customerId && cart.user_id !== req.customerId) ||
-        (!req.customerId && cart.guest_token !== req.guestToken)) {
+    if (
+      (req.customerId && cart.user_id !== req.customerId) ||
+      (!req.customerId && cart.guest_token !== req.guestToken)
+    ) {
       return res.status(403).json({ message: "Forbidden" });
     }
 
-    const item = await customerService.addItem(cart_id, product_id, quantity, variant);
+    const item = await customerService.addItem(
+      cart_id,
+      product_id,
+      quantity,
+      variant
+    );
     res.status(201).json(item);
   } catch (err) {
-    if (err.message.includes('Cannot add')) {
+    if (err.message.includes("Cannot add")) {
       return res.status(400).json({ message: err.message });
     }
     console.error("Error adding item:", err);
@@ -375,12 +400,18 @@ exports.updateItem = async (req, res) => {
     if (!item) return res.status(404).json({ message: "Item not found" });
 
     const cart = await customerService.getCartById(item.cart_id);
-    if ((req.customerId && cart.user_id !== req.customerId) ||
-        (!req.customerId && cart.guest_token !== req.guestToken)) {
+    if (
+      (req.customerId && cart.user_id !== req.customerId) ||
+      (!req.customerId && cart.guest_token !== req.guestToken)
+    ) {
       return res.status(403).json({ message: "Forbidden" });
     }
 
-    const updatedItem = await customerService.updateItem(req.params.id, quantity, variant);
+    const updatedItem = await customerService.updateItem(
+      req.params.id,
+      quantity,
+      variant
+    );
     res.json(updatedItem);
   } catch (err) {
     console.error("Error updating item:", err);
@@ -401,8 +432,10 @@ exports.deleteItem = async (req, res) => {
     if (!item) return res.status(404).json({ message: "Item not found" });
 
     const cart = await customerService.getCartById(item.cart_id);
-    if ((req.customerId && cart.user_id !== req.customerId) ||
-        (!req.customerId && cart.guest_token !== req.guestToken)) {
+    if (
+      (req.customerId && cart.user_id !== req.customerId) ||
+      (!req.customerId && cart.guest_token !== req.guestToken)
+    ) {
       return res.status(403).json({ message: "Forbidden" });
     }
 
@@ -444,7 +477,6 @@ exports.getAllProducts = async (req, res) => {
   }
 };
 
-
 /**
  * @function getOrders
  * @async
@@ -455,7 +487,7 @@ exports.getAllProducts = async (req, res) => {
  * @param {number} req.user.id - ID of the authenticated customer
  * @param {Object} res - Express response object
  * @returns {JSON} - Array of orders or an error message
- * 
+ *
  * @example
  * // Response when orders exist
  * [
@@ -478,19 +510,19 @@ exports.getAllProducts = async (req, res) => {
  * // Response when no orders found
  * { message: "No orders found" }
  */
-exports.getOrders  = async (req, res) => {
+exports.getOrders = async (req, res) => {
   try {
-    const customer_id = req.user.id; 
+    const customer_id = req.user.id;
     const orders = await customerModel.getCustomerOrders(customer_id);
 
     if (!orders.length) {
-      return res.status(404).json({ message: 'No orders found' });
+      return res.status(404).json({ message: "No orders found" });
     }
 
     res.json(orders);
   } catch (err) {
-    console.error('Error fetching orders:', err);
-    res.status(500).json({ error: 'Error fetching orders' });
+    console.error("Error fetching orders:", err);
+    res.status(500).json({ error: "Error fetching orders" });
   }
 };
 
@@ -502,10 +534,11 @@ exports.getStoreProducts = async (req, res) => {
     res.json({ success: true, data: products });
   } catch (err) {
     console.error("Error fetching store products:", err);
-    res.status(500).json({ success: false, message: "Error fetching products" });
+    res
+      .status(500)
+      .json({ success: false, message: "Error fetching products" });
   }
 };
-
 
 exports.updatePaymentStatus = async (req, res) => {
   try {
@@ -516,14 +549,16 @@ exports.updatePaymentStatus = async (req, res) => {
       return res.status(400).json({ message: "payment_status is required" });
     }
 
-    const order = await customerModel.order.updatePaymentStatus(id, payment_status);
+    const order = await customerModel.order.updatePaymentStatus(
+      id,
+      payment_status
+    );
     res.json(order);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 exports.getProductsWithSorting = async (req, res) => {
   try {
@@ -533,17 +568,17 @@ exports.getProductsWithSorting = async (req, res) => {
     res.json(products);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: "Internal server error" });
   }
 };
-
-
 
 exports.paymentController = {
   getUserPayments: async (req, res) => {
     try {
       const userId = req.user.id;
-      const payments = await customerService.paymentService.getUserPayments(userId);
+      const payments = await customerService.paymentService.getUserPayments(
+        userId
+      );
       res.json(payments);
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -551,50 +586,51 @@ exports.paymentController = {
   },
 
   createPayment: async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const {
-      order_id,
-      payment_method,
-      amount,
-      status,
-      transaction_id,
-      card_last4,
-      card_brand,
-      expiry_month,
-      expiry_year,
-      paypal_email,
-      paypal_name
-    } = req.body;
+    try {
+      const userId = req.user.id;
+      const {
+        order_id,
+        payment_method,
+        amount,
+        status,
+        transaction_id,
+        card_last4,
+        card_brand,
+        expiry_month,
+        expiry_year,
+        paypal_email,
+        paypal_name,
+      } = req.body;
 
-    const payment = await customerService.paymentService.createPayment({
-      order_id,
-      user_id: userId,
-      payment_method,
-      amount,
-      status: status || (payment_method === "paypal" ? "paid" : "pending"),
-      transaction_id: transaction_id || null,
-      paypal_email: paypal_email || null,
-      paypal_name: paypal_name || null,
-      card_last4: card_last4 || null,
-      card_brand: card_brand || null,
-      expiry_month: expiry_month || null,
-      expiry_year: expiry_year || null,
-    });
+      const payment = await customerService.paymentService.createPayment({
+        order_id,
+        user_id: userId,
+        payment_method,
+        amount,
+        status: status || (payment_method === "paypal" ? "paid" : "pending"),
+        transaction_id: transaction_id || null,
+        paypal_email: paypal_email || null,
+        paypal_name: paypal_name || null,
+        card_last4: card_last4 || null,
+        card_brand: card_brand || null,
+        expiry_month: expiry_month || null,
+        expiry_year: expiry_year || null,
+      });
 
-    res.status(201).json(payment);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-},
-
-
+      res.status(201).json(payment);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  },
 
   deletePayment: async (req, res) => {
     try {
       const userId = req.user.id;
       const paymentId = parseInt(req.params.id);
-      const deleted = await customerService.paymentService.deletePayment(userId, paymentId);
+      const deleted = await customerService.paymentService.deletePayment(
+        userId,
+        paymentId
+      );
       res.json(deleted);
     } catch (err) {
       res.status(400).json({ error: err.message });
@@ -612,5 +648,52 @@ exports.reorder = async (req, res) => {
   } catch (err) {
     console.error("Reorder failed:", err);
     res.status(500).json({ error: err.message });
+  }
+};
+
+// wishList
+exports.getWishlist = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const wishlist = await customerModel.getWishlistByUser(userId);
+    res.json(wishlist);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch wishlist" });
+  }
+};
+
+exports.addWishlist = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { productId } = req.body;
+
+    if (!productId)
+      return res.status(400).json({ message: "productId is required" });
+
+    const newItem = await customerModel.addProductToWishlist(userId, productId);
+    res.status(201).json(newItem);
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ message: err.message || "Failed to add product to wishlist" });
+  }
+};
+
+exports.removeWishlist = async (req, res) => {
+  try {
+    const { id } = req.params;
+  console.log("Deleting wishlist id:", id);
+  
+    const result = await customerModel.removeProductFromWishlist(id);
+    res.json({ message: "Product removed from wishlist", ...result });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({
+        message: err.message || "Failed to remove product from wishlist",
+      });
   }
 };

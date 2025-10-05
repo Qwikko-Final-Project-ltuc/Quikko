@@ -33,6 +33,17 @@ exports.getAllCMS = async (req, res) => {
   }
 };
 
+
+exports.getAllCMSForAdmin = async (req, res) => {
+  try {
+    const cms = await cmsService.listCMSForAdmin();
+    res.status(200).json(cms);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
 /**
  * @function createCMS
  * @desc Creates a new CMS page or banner.

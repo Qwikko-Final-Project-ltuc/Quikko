@@ -15,6 +15,7 @@ import {
   FaSearch,
   FaBell,
 } from "react-icons/fa";
+import { MdFavorite } from "react-icons/md";
 import { fetchProfile, updateProfile } from "../../profileSlice";
 import { setSearchQuery } from "../../productsSlice";
 import { fetchAllCarts } from "../../cartSlice";
@@ -176,54 +177,33 @@ const Navbar = () => {
           <img src="/logo.png" alt="Qwikko Logo" className="h-9" />
         </div>
 
-        <nav className="flex-1 flex flex-col mt-4 space-y-1">
-          <Link
-            to="/"
-            className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"
-          >
-            <FaBars className="mr-3" /> Home
-          </Link>
-          {isLoggedIn && (
-            <>
-              <Link
-                to="/profile"
-                className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"
-              >
-                <FaUser className="mr-3" /> Profile
-              </Link>
-              <Link
-                to="/orders"
-                className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"
-              >
-                <FaClipboardList className="mr-3" /> My Orders
-              </Link>
-            </>
-          )}
-          <Link
-            to="/stores"
-            className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"
-          >
-            <FaStore className="mr-3" /> Stores
-          </Link>
-          <Link
-            to="/products"
-            className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"
-          >
-            <FaBoxOpen className="mr-3" /> All Products
-          </Link>
-          <Link
-            to="/ContactUs"
-            className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"
-          >
-            <FaPhone className="mr-3" /> Contact Us
-          </Link>
-          <Link
-            to="/about"
-            className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"
-          >
-            <FaInfoCircle className="mr-3" /> About
-          </Link>
-        </nav>
+          {/* Sidebar Navigation */}
+          <nav className="flex-1 flex flex-col mt-4 space-y-1">
+            <Link to="/" className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
+              <FaBars className="mr-3"/> Home
+            </Link>
+            <Link to="/profile" className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
+              <FaUser className="mr-3"/> Profile
+            </Link>
+            <Link to="/stores" className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
+              <FaStore className="mr-3"/> Stores
+            </Link>
+            <Link to="/products" className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
+              <FaBoxOpen className="mr-3"/> All Products
+            </Link>
+            <Link to="/wishlist" className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
+              <MdFavorite  className="mr-3"/> Wishlist
+            </Link>
+            <Link to="/contact" className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
+              <FaPhone className="mr-3"/> Contact
+            </Link>
+            <Link to="/about" className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
+              <FaInfoCircle className="mr-3"/> About
+            </Link>
+            <Link to="/orders" className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
+              <FaClipboardList className="mr-3"/> Orders
+            </Link>
+          </nav>
 
         <div className="mt-6 flex flex-col px-6 space-y-2">
           {!isLoggedIn ? (

@@ -1,17 +1,16 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchProducts,
   fetchProductsWithSorting,
   setSortBy,
-  setCurrentPage,
 } from "../productsSlice";
-import { fetchCart, setCurrentCart } from "../cartSlice";
+import { fetchCart } from "../cartSlice";
 import { fetchCategories, toggleCategory } from "../categoriesSlice";
 import CategoryList from "../components/CategoryList";
 import ProductCard from "../components/ProductCard";
 import customerAPI from "../services/customerAPI";
-import { useLocation } from "react-router-dom";
+import { GetWishlist } from "../../wishlist/wishlistApi";
 
 const ProductsPage = () => {
   const dispatch = useDispatch();
@@ -19,6 +18,7 @@ const ProductsPage = () => {
 
   const currentCart = useSelector((state) => state.cart.currentCart);
   const tempCartId = useSelector((state) => state.cart.tempCartId);
+  const cartIdToUse = tempCartId || currentCart?.id;
   const userId = useSelector((state) => state.cart.user?.id);
 
   const initialCartId = location.state?.cartId;
@@ -29,6 +29,7 @@ const ProductsPage = () => {
     error,
     searchQuery,
     sortBy,
+  } = useSelector((state) => state.products);
     currentPage,
     itemsPerPage,
   } = useSelector((state) => state.products);
@@ -37,6 +38,30 @@ const ProductsPage = () => {
     (state) => state.categories
   );
 
+  const [wishlist, setWishlist] = useState([]);
+
+  const handleToggleWishlist = (productId, added, wishlist_id = null) => {
+    setWishlist((prev) => {
+      if (added) {
+        return [...prev, { product_id: productId, wishlist_id }];
+      } else {
+        return prev.filter((w) => w.product_id !== productId);
+      }
+    });
+  };
+
+  useEffect(() => {
+    const fetchWishlistData = async () => {
+      try {
+        const data = await GetWishlist();
+        setWishlist(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchWishlistData();
+  }, []);
+
   // Fetch products and categories
   useEffect(() => {
     if (sortBy && sortBy !== "default") {
@@ -44,6 +69,7 @@ const ProductsPage = () => {
     } else {
       dispatch(fetchProducts());
     }
+    // dispatch(fetchCart());
     dispatch(fetchCategories());
   }, [dispatch, sortBy, searchQuery]);
 
@@ -55,6 +81,16 @@ const ProductsPage = () => {
 
   const handleAddToCart = async (product, quantity = 1) => {
     try {
+      const cart = await customerAPI.getOrCreateCart(cartIdToUse);
+      const cartId = cart?.id || cart?.data?.id;
+      if (!cartId) {
+        console.error("No cart ID found or created!");
+        return;
+      }
+
+      // ✅ Add item always, backend يتأكد إذا كان موجود أو لا
+      await customerAPI.addItem({
+        cartId,
       let cart = currentCart;
       const guestToken = tempCartId || localStorage.getItem("guest_token");
 
@@ -78,6 +114,8 @@ const ProductsPage = () => {
         variant: product.variant || {},
       });
 
+      dispatch(fetchCart(cartId));
+      alert("added to cart");
       dispatch(fetchCart(cart.id));
       alert("✅ Added to cart");
     } catch (err) {
@@ -150,6 +188,27 @@ const ProductsPage = () => {
         onToggle={handleToggleCategory}
       />
 
+      {filteredProducts.length === 0 ? (
+        <p className="text-center text-gray-600 mt-10">No products found.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {filteredProducts.map((product) => {
+            const wishlistItem = wishlist.find(
+              (w) => w.product_id === product.id
+            );
+            return (
+              <ProductCard
+                key={product.id}
+                product={{
+                  ...product,
+                  isInWishlist: !!wishlistItem,
+                  wishlist_id: wishlistItem?.wishlist_id || null,
+                }}
+                onAddToCart={handleAddToCart}
+                onToggleWishlistFromPage={handleToggleWishlist}
+              />
+            );
+          })}
       {/* Products grid */}
       {paginatedProducts.length === 0 ? (
         <p className="text-center text-gray-600 mt-10">No products found.</p>

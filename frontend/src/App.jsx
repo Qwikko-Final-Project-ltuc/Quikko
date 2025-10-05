@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
@@ -12,8 +11,6 @@ import OrderDetailsPage from "./features/customer/customer/pages/OrderDetailsPag
 import StorePage from "./features/customer/customer/pages/StorePage";
 import CartListPage from "./features/customer/customer/pages/CartListPage";
 import CartDetailPage from "./features/customer/customer/pages/CartDetailPage";
-
-// ✅ استدعاء الـ thunk لجلب المستخدم
 import { fetchCurrentUser } from "./features/customer/customer/cartSlice";
 import StoresPage from "./features/customer/customer/pages/StoresPage";
 import TrackOrderPage from "./features/customer/customer/pages/TrackOrderPage";
@@ -22,12 +19,19 @@ import LandingPage from "./features/customer/customer/pages/LandingPage";
 import HomePage from "./features/customer/customer/pages/HomePage";
 import SettingsPage from "./features/customer/customer/pages/SettingsPage";
 
-
-import { requestAndSaveToken, listenToMessages ,registerServiceWorker } from "./utlis/fcm"; 
-import ContactUs from "./features/customer/customer/pages/ContactUs";
-import ChatPage from "./features/customer/customer/pages/ChatPage";
-import VerifyEmailPage from "./features/customer/auth/VerifyEmailPage";
-import ForgotPassword from "./features/customer/auth/ForgotPassword";
+// صفحات الادمن
+import LoginForm from "./features/admin/auth/loginForm";
+import ProtectedRoute from "./features/admin/auth/ProtectedRoute";
+import AdminHome from "./features/admin/dashboard/dashboard";
+import Layout from "./features/admin/layout/layout";
+import VendorPage from "./features/admin/vendor/vendor";
+import DeliveryPage from "./features/admin/delivery/delivery";
+import OrderPage from "./features/admin/orders/order";
+import CMSPage from "./features/admin/CMS/cms";
+import Profile from "./features/admin/layout/profile";
+import WishlistPage from "./features/customer/wishlist/wishlistPage";
+import NotFound from "./features/notFound";
+import AboutPage from "./features/customer/aboutPage/about";
 
 const AppRoutes = () => {
   const token = useSelector((state) => state.customerAuth.token);
@@ -38,43 +42,112 @@ const AppRoutes = () => {
   // }
 
   return (
-    <Routes>
-      <Route path="/auth/*" element={<CustomerAuthRoutes />} />
-      <Route
-        path="/"
-        element={token ? <Navigate to="/home" replace /> : <LandingPage />}
-      />
+    <>
+      {location.pathname.startsWith("/admin") ? (
+        <Routes>
+          <Route path="/adminLogin" element={<LoginForm />} />
+          <Route
+            element={
+              <div className="flex">
+                <Layout />
+              </div>
+            }
+          >
+            <Route
+              path="/adminHome"
+              element={
+                <ProtectedRoute role="admin">
+                  <AdminHome />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/adminVendors"
+              element={
+                <ProtectedRoute role="admin">
+                  <VendorPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/adminDelivery"
+              element={
+                <ProtectedRoute role="admin">
+                  <DeliveryPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/adminOrders"
+              element={
+                <ProtectedRoute role="admin">
+                  <OrderPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/adminCms"
+              element={
+                <ProtectedRoute role="admin">
+                  <CMSPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/adminProfile"
+              element={
+                <ProtectedRoute role="admin">
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+          </Route>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      ) : (
+        <Routes>
+          <Route path="/auth/*" element={<CustomerAuthRoutes />} />
+          {/* <Route
+          path="/"
+          element={token ? <Navigate to="/home" replace /> : <LandingPage />}
+        /> */}
 
-      {/* Routes بعد تسجيل الدخول */}
-      <Route element={<MainLayout />}>
-        <Route path="/home" element={<HomePage/>} />
-        <Route path="/landing" element={<LandingPage />} />
-        <Route path="/products" element={<ProductsPage />} />
-        <Route path="/cart" element={<CartListPage key={Date.now()}/>} />
-        <Route path="/cart/:id" element={<CartDetailPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/orders" element={<OrdersPage />} />
-        <Route path="/order-details/:orderId" element={<OrderDetailsPage />} />
-        <Route path="/stores" element={<StoresPage />} />
-        <Route path="/stores/:id" element={<StorePage />} />
-        <Route path="/track-order/:orderId" element={<TrackOrderPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/payment-details" element={<PaymentDetailsPage />} />
-        <Route path="/ContactUs" element={<ContactUs />} />
-        <Route path="/chat/" element={<ChatPage />} />
-
-      </Route>
-        <Route
+          {/* Routes بعد تسجيل الدخول */}
+          <Route element={<MainLayout />}>
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/landing" element={<LandingPage />} />
+            <Route path="/products" element={<ProductsPage />} />
+            <Route path="/cart" element={<CartListPage key={Date.now()} />} />
+            <Route path="/cart/:id" element={<CartDetailPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/orders" element={<OrdersPage />} />
+            <Route
+              path="/order-details/:orderId"
+              element={<OrderDetailsPage />}
+            />
+            <Route path="/stores" element={<StoresPage />} />
+            <Route path="/stores/:id" element={<StorePage />} />
+            <Route path="/track-order/:orderId" element={<TrackOrderPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/payment-details" element={<PaymentDetailsPage />} />
+            <Route path="/wishlist" element={<WishlistPage />} />
+            <Route path="/about" element={<AboutPage />} />
+          </Route>
+          <Route path="*" element={<NotFound />} />
+          {/* <Route
           path="*"
           element={<Navigate to={token ? "/" : "/auth/login"} replace />}
-        />
-    </Routes>
+        /> */}
+        </Routes>
+      )}
+    </>
   );
 };
 
 const App = () => {
   const dispatch = useDispatch();
   const token = useSelector((state) => state.customerAuth.token);
+
 
   useEffect(() => {
   // نحاول نسحب guest_token من الكوكيز

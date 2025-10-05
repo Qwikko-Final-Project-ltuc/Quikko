@@ -121,3 +121,10 @@ exports.rejectDelivery = async (companyId) => {
 exports.listOrders = async () => {
   return await AdminModel.getAllOrders();
 };
+
+
+exports.getProfile = async (userId) => {
+  const user = await AdminModel.getAdminById(userId);
+  if (!user) throw new Error("User not found");
+  return user;
+};

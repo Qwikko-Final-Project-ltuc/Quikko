@@ -10,8 +10,17 @@ import reviewsReducer from "../features/customer/review/reviewSlice";
 import paymentReducer from "../features/customer/customer/paymentSlice";
 import chatReducer from "../features/customer/customer/chatSlice";
 
+//admin slice
+import vendorsReducer from "../features/admin/vendor/vendorSlice";
+import deliveriesReducer from "../features/admin/delivery/deliverySlice";
+import orderReducer from "../features/admin/orders/orderSlice";
+import cmsReducer from "../features/admin/CMS/cmsSlice";
+import notificationsReducer from "../features/admin/CMS/notification/notificationSlice";
+import categoryReducer from "../features/admin/CMS/categories/categorySlice";
+
 const store = configureStore({
   reducer: {
+    //Customer
     customerAuth: customerAuthReducer,
     products: productsReducer,
     cart: cartReducer,
@@ -22,6 +31,13 @@ const store = configureStore({
     reviews: reviewsReducer,
     payment: paymentReducer,
     chat: chatReducer,
+    //Admin
+    vendors: vendorsReducer,
+    deliveries: deliveriesReducer,
+    orders: orderReducer,
+    cms: cmsReducer,
+    notifications: notificationsReducer,
+    categories: categoryReducer,
   },
 });
 

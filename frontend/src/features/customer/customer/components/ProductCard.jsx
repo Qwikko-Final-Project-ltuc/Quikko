@@ -1,11 +1,16 @@
 import React, { useState } from "react";
 import "yet-another-react-lightbox/styles.css";
 import Lightbox from "yet-another-react-lightbox";
+import { ImHeart } from "react-icons/im";
+import { AddWishlist, RemoveWishlist } from "../../wishlist/wishlistApi";
 
-const ProductCard = ({ product, onAddToCart }) => {
+const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage }) => {
   const [currentImage, setCurrentImage] = useState(0);
   const [isOpen, setIsOpen] = useState(false); // Lightbox
   const images = Array.isArray(product.images) ? product.images : [];
+  const [wishlist, setWishlist] = useState(product.isInWishlist || false);
+  const [wishlistId, setWishlistId] = useState(product.wishlist_id || null);
+  const [loading, setLoading] = useState(false);
 
   const nextImage = () => {
     setCurrentImage((prev) => (prev + 1) % images.length);
@@ -17,6 +22,31 @@ const ProductCard = ({ product, onAddToCart }) => {
 
   const openLightbox = () => {
     setIsOpen(true);
+  };
+
+  const onToggleWishlist = async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      if (wishlist) {
+        await RemoveWishlist(wishlistId);
+        setWishlist(false);
+        setWishlistId(null);
+        onToggleWishlistFromPage &&
+          onToggleWishlistFromPage(wishlistId, product.product_id, false);
+      } else {
+        const added = await AddWishlist(product.id);
+        setWishlist(true);
+        setWishlistId(added.id);
+        onToggleWishlistFromPage &&
+          onToggleWishlistFromPage(added.id, product.id, true);
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -61,6 +91,14 @@ const ProductCard = ({ product, onAddToCart }) => {
         <p className="text-gray-600">{product.description}</p>
         <p className="text-blue-600 font-semibold">${product.price}</p>
       </div>
+
+      <button
+        onClick={onToggleWishlist}
+        className="mt-2 text-2xl flex justify-end"
+        style={{ color: wishlist ? "red" : "gray" }}
+      >
+        <ImHeart />
+      </button>
 
       <button
         className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"

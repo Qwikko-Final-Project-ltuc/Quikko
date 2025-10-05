@@ -31,6 +31,7 @@ exports.sendNotification = async (req, res) => {
 
     res.json({ message: "Notification sent successfully" });
   } catch (err) {
+    console.error("Error sending notification:", err);
     res.status(500).json({ error: err.message });
   }
 };

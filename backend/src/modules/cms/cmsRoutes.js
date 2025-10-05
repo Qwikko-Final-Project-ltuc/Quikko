@@ -22,6 +22,9 @@ const { protect, authorizeRole } = require('../../middleware/authMiddleware');
  */
 router.get('/', cmsController.getAllCMS);
 
+
+router.get('/admin', protect, authorizeRole('admin'), cmsController.getAllCMSForAdmin);
+
 /**
  * @route POST /api/cms
  * @desc Create a new CMS page or banner

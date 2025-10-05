@@ -28,8 +28,9 @@ const LoginForm = () => {
         await dispatch(assignGuestCartAfterLogin(userId));
       }
 
-      // 4️⃣ بعد كل شيء، نوجّه المستخدم للصفحة الرئيسية
-      navigate("/");
+  React.useEffect(() => {
+    if (token) {
+      navigate("/home"); // توجيه المستخدم للصفحة الرئيسية بعد تسجيل الدخول
     }
   };
 

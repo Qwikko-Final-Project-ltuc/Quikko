@@ -1,4 +1,4 @@
-const { body, validationResult } = require('express-validator');
+const { body, validationResult } = require("express-validator");
 
 /**
  * @module cmsValidators
@@ -18,18 +18,16 @@ const { body, validationResult } = require('express-validator');
  * router.post('/cms', validateCMS, cmsController.createCMS);
  */
 exports.validateCMS = [
-  body('title')
-    .notEmpty()
-    .withMessage('Title is required'),
+  body("title").notEmpty().withMessage("Title is required"),
 
   body("type")
-      .isIn(["user", "customer", "vendor", "delivery"])
-      .withMessage("Type must be one of: user, customer, vendor, delivery"),
-      
-  body('status')
+    .isIn(["user", "customer", "vendor", "delivery"])
+    .withMessage("Type must be one of: user, customer, vendor, delivery"),
+
+  body("status")
     .optional()
-    .isIn(['active', 'inactive'])
-    .withMessage('Status must be active or inactive'),
+    .isIn(["active", "inactive"])
+    .withMessage("Status must be active or inactive"),
 
   (req, res, next) => {
     const errors = validationResult(req);
@@ -37,5 +35,5 @@ exports.validateCMS = [
       return res.status(400).json({ errors: errors.array() });
     }
     next();
-  }
+  },
 ];

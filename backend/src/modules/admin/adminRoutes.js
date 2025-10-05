@@ -1,13 +1,13 @@
 // src/modules/admin/adminRoutes.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const adminController = require('./adminController');
-const { protect, authorizeRole } = require('../../middleware/authMiddleware');
+const adminController = require("./adminController");
+const { protect, authorizeRole } = require("../../middleware/authMiddleware");
 const {
   validate,
   validateVendorId,
-  validateDeliveryId
-} = require('./adminValidators');
+  validateDeliveryId,
+} = require("./adminValidators");
 
 /**
  * ===============================
@@ -21,25 +21,25 @@ const {
 /** Vendors Routes */
 // Get all vendors (admin only)
 router.get(
-  '/vendors',
+  "/vendors",
   protect,
-  authorizeRole('admin'),
+  authorizeRole("admin"),
   adminController.getVendors
 );
 
 // Get pending vendors (admin only)
 router.get(
-  '/vendors/pending',
+  "/vendors/pending",
   protect,
-  authorizeRole('admin'),
+  authorizeRole("admin"),
   adminController.getPendingVendors
 );
 
 // Approve vendor (admin + vendorId validation)
 router.put(
-  '/vendors/:vendorId/approve',
+  "/vendors/:vendorId/approve",
   protect,
-  authorizeRole('admin'),
+  authorizeRole("admin"),
   validateVendorId(),
   validate,
   adminController.approveVendor
@@ -47,9 +47,9 @@ router.put(
 
 // Reject vendor (admin + vendorId validation)
 router.put(
-  '/vendors/:vendorId/reject',
+  "/vendors/:vendorId/reject",
   protect,
-  authorizeRole('admin'),
+  authorizeRole("admin"),
   validateVendorId(),
   validate,
   adminController.rejectVendor
@@ -58,17 +58,17 @@ router.put(
 /** Delivery Companies Routes */
 // Get pending delivery companies
 router.get(
-  '/deliveries/pending',
+  "/deliveries/pending",
   protect,
-  authorizeRole('admin'),
+  authorizeRole("admin"),
   adminController.getPendingDeliveries
 );
 
 // Approve delivery company (admin + deliveryId validation)
 router.put(
-  '/deliveries/:deliveryId/approve',
+  "/deliveries/:deliveryId/approve",
   protect,
-  authorizeRole('admin'),
+  authorizeRole("admin"),
   validateDeliveryId(),
   validate,
   adminController.approveDelivery
@@ -76,9 +76,9 @@ router.put(
 
 // Reject delivery company (admin + deliveryId validation)
 router.put(
-  '/deliveries/:deliveryId/reject',
+  "/deliveries/:deliveryId/reject",
   protect,
-  authorizeRole('admin'),
+  authorizeRole("admin"),
   validateDeliveryId(),
   validate,
   adminController.rejectDelivery
@@ -87,22 +87,28 @@ router.put(
 /** Orders Routes */
 // Get all orders (admin only)
 router.get(
-  '/orders',
+  "/orders",
   protect,
-  authorizeRole('admin'),
+  authorizeRole("admin"),
   adminController.getAllOrders
 );
 
 /** List all delivery companies (admin only) */
 router.get(
-  '/delivery-companies',
+  "/delivery-companies",
   protect,
-  authorizeRole('admin'),
+  authorizeRole("admin"),
   adminController.listAllCompanies
 );
 
-module.exports = router;
+router.get(
+  "/profile",
+  protect,
+  authorizeRole("admin"),
+  adminController.getProfile
+);
 
+module.exports = router;
 
 /**
  * ===============================
