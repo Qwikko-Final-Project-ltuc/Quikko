@@ -220,3 +220,13 @@ exports.getAllOrders = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+exports.getProfile = async (req, res) => {
+  try {
+    const userId = req.user.id; 
+    const user = await adminService.getProfile(userId);
+    res.status(200).json({ user });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

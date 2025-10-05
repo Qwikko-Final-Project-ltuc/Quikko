@@ -16,18 +16,18 @@ const { verifyToken } = require('../utils/token');
  */
 exports.protect = (req, res, next) => {
     const authHeader = req.headers.authorization;
-    console.log("==== PROTECT DEBUG ====");
-    console.log("Auth Header:", authHeader);
+    // console.log("==== PROTECT DEBUG ====");
+    // console.log("Auth Header:", authHeader);
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         console.log("No Bearer token found");
 
         return res.status(401).json({ message: 'Not authorized' });
     }
     const token = authHeader.split(' ')[1];
-     console.log("Extracted token:", token);
+    //  console.log("Extracted token:", token);
     try {
         const decoded = verifyToken(token);
-        console.log("Decoded payload:", decoded);
+        // console.log("Decoded payload:", decoded);
         req.user = decoded;
         next();
     } catch (err) {

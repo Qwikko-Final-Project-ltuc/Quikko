@@ -17,6 +17,7 @@ exports.getAllProductsValidator = [
    * Validate 'search' query parameter
    * @query {string} search - Optional search string
    */
+  
   query("search")
     .optional()
     .isString()

@@ -87,3 +87,41 @@ exports.getPaymentsByOrder = async function(orderId) {
 }
 
 
+exports.createPayment = async function(paymentData) {
+  const {
+    order_id,
+    user_id,
+    payment_method,
+    amount,
+    status,
+    transaction_id,
+    card_last4,
+    card_brand,
+    expiry_month,
+    expiry_year,
+  } = paymentData;
+
+  const result = await db.query(
+    `INSERT INTO payments
+      (order_id, user_id, payment_method, amount, status, transaction_id, card_last4, card_brand, expiry_month, expiry_year)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      RETURNING *`,
+    [
+      order_id,
+      user_id,
+      payment_method,
+      amount,
+      status,
+      transaction_id,
+      card_last4,
+      card_brand,
+      expiry_month,
+      expiry_year,
+    ]
+  );
+
+  return result.rows[0];
+};
+
+
+

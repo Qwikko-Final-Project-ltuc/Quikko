@@ -92,7 +92,6 @@ exports.createProduct = async (req, res) => {
  */
 exports.updateProduct = async (req, res) => {
   try {
-    // 1️⃣ تحقق من أن الـuser هو Vendor
     const vendorResult = await db.query(
       'SELECT id FROM vendors WHERE user_id = $1',
       [req.user.id]

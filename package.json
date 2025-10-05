@@ -1,6 +1,12 @@
 {
   "dependencies": {
+    "firebase": "^12.3.0",
+    "firebase-admin": "^13.5.0",
+    "framer-motion": "^12.23.22",
+    "lucide-react": "^0.544.0",
+    "react-dom": "^19.2.0",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "yet-another-react-lightbox": "^3.25.0"
   }
 }

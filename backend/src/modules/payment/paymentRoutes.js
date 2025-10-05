@@ -40,7 +40,7 @@ router.post("/pay",protect, paymentController.createPayment);
  *   "payment": { ...paymentDetails }
  * }
  */
-router.get("/success",protect, paymentController.executePayment);
+router.get("/success", paymentController.executePayment);
 
 /**
  * @route GET /api/payment/cancel
@@ -52,7 +52,7 @@ router.get("/success",protect, paymentController.executePayment);
  * GET /api/payment/cancel
  * Response: "Payment canceled"
  */
-router.get("/cancel",protect, paymentController.cancelPayment);
+router.get("/cancel", paymentController.cancelPayment);
 
 module.exports = router;
 

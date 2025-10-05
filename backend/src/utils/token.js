@@ -26,7 +26,7 @@ exports.generateToken = (user) => {
     return jwt.sign(
         { id: user.id, role: user.role },
         process.env.JWT_SECRET,
-        { expiresIn: '60d' } // حوالي شهرين
+        { expiresIn: '60d' }
     );
 };
 

@@ -17,7 +17,7 @@ const pool = require("../../config/db");
  * @body {string} [type="general"] - Notification type/category
  * @returns {object} success status and additional info (e.g., count of users notified)
  */
-router.post("/", protect, controller.sendNotification);
+router.post("/", protect,authorizeRole("admin"), controller.sendNotification);
 
 /**
  * @route GET /api/notifications
@@ -72,6 +72,7 @@ router.post("/send-test", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
 
 router.post("/mark-read", async (req, res) => {
   console.log("POST /mark-read called"); // بداية الطلب

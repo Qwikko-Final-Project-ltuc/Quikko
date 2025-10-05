@@ -21,8 +21,18 @@ exports.getAllCMS = async (type, title) => {
     `SELECT content, image_url FROM cms WHERE type=$1 AND status='active' AND title=$2`,
     [type, title]
   );
+
+  const { rows } = await pool.query(`SELECT content, image_url FROM cms WHERE type=$1 AND status='active' AND title=$2`, [type,title]);
+  return rows; 
+};
+
+
+// For admin: fetch all CMS records
+exports.getAllCMSForAdmin = async () => {
+  const { rows } = await pool.query(`SELECT * FROM cms ORDER BY created_at DESC`);
   return rows;
 };
+
 
 /**
  * @function insertCMS
@@ -45,12 +55,20 @@ exports.getAllCMS = async (type, title) => {
  * console.log(newCMS);
  */
 exports.insertCMS = async (data) => {
-  const { title, content, type, image_url, status } = data;
+  const { title, content, type, image_url } = data;
+
+  await pool.query(
+    `UPDATE cms 
+       SET status = 'inactive', updated_at = NOW() 
+       WHERE type = $1 AND status = 'active'`,
+    [type]
+  );
+
   const { rows } = await pool.query(
-    `INSERT INTO cms (title, content, type, image_url, status)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO cms (title, content, type, image_url, status, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, 'active', NOW(), NOW())
      RETURNING *`,
-    [title, content, type, image_url, status || 'active']
+    [title, content, type, image_url]
   );
   return rows[0];
 };

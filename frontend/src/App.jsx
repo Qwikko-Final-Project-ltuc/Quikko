@@ -1,74 +1,61 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import GenralRoutes from "./features/genral/Routes"
+import React, { useEffect } from "react";
+import { Routes , Route, useLocation } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import CustomerRoutes from "./features/customer/routes/CustomerRoutes";
+import AdminRoutes from "./features/admin/routes/AdminRoutes";
 import DeliveryRoutes from "./features/delivery/routes/deliveryRoutes";
 
 
-function App() {
-  //   const [fcmToken, setFcmToken] = useState("");
+const RouteSelector = () => {
+  const location = useLocation();
 
-  //   useEffect(() => {
-  //     if ("serviceWorker" in navigator) {
-  //       navigator.serviceWorker
-  //         .register("/firebase-messaging-sw.js")
-  //         .then(registration => {
-  //           // طلب إذن الإشعارات
-  //           Notification.requestPermission().then(permission => {
-  //             if (permission !== "granted") return;
+  if (location.pathname.startsWith("/admin")) return <AdminRoutes />;
+  if (location.pathname.startsWith("/delivery")) return <DeliveryRoutes />;
+  if (location.pathname.startsWith("/customer")) return <CustomerRoutes />;
+  if (location.pathname.startsWith("/vendor")) return <VendorRoutes />;
+  return <GenralRoutes />;
+};
 
-  //             // جلب FCM token
-  //             getToken(messaging, {
-  //               vapidKey: "BLY_cpu5gN9scFU7TMhCd-RMC_meMwCVVry4a97ZPRoDDMYiNztIMRz9i8CEX95_0XNeBk7FMtY0VPyQ-dm2zCU",
-  //               serviceWorkerRegistration: registration
-  //             })
-  //               .then(token => {
-  //                 console.log("FCM Token:", token);
-  //                 setFcmToken(token);
-  //               })
-  //               .catch(console.error);
 
-  //             // استقبال الرسائل عند الصفحة المفتوحة
-  //             onMessage(messaging, payload => {
-  //               console.log("Message received:", payload);
-  //               if (payload.notification) {
-  //                 new Notification(payload.notification.title, {
-  //                   body: payload.notification.body,
-  //                   icon: "/favicon.ico"
-  //                 });
-  //               }
-  //             });
-  //           });
-  //         })
-  //         .catch(console.error);
-  //     }
-  //   }, []);
+const App = () => {
+  const dispatch = useDispatch();
+  const token = useSelector((state) => state.customerAuth.token);
+  
+  useEffect(() => {
+  const guestCookie = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("guest_token="));
 
-  //   const sendTestNotification = async () => {
-  //   try {
-  //     const res = await fetch("http://localhost:3000/api/notifications", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({
-  //         userId: 1, // user id
-  //         title: "Test Notification",
-  //         message: "Hello from backend",
-  //         type: "test"
-  //       })
-  //     });
-  //     const data = await res.json();
-  //     console.log(data);
-  //   } catch (err) {
-  //     console.error(err);
-  //   }
-  // };
+  if (guestCookie && !localStorage.getItem("guest_token")) {
+    const token = guestCookie.split("=")[1];
+    localStorage.setItem("guest_token", token);
+    console.log("✅ Guest token saved in localStorage:", token);
+  }
+}, []);
+
+  useEffect(() => {
+    if (token) {
+      dispatch(fetchCurrentUser());
+      registerServiceWorker().then(() => {
+      requestAndSaveToken(token);
+    });
+      listenToMessages((payload) => {
+      console.log("Foreground notification:", payload);
+      if (payload.notification) {
+        new Notification(payload.notification.title, {
+          body: payload.notification.body,
+          icon: "/favicon.ico"
+        });
+      }
+    });
+    }
+  }, [token, dispatch]);
 
   return (
     <Router>
-      <Routes>
-        <Route path="/*" element={<GenralRoutes />} />
-        <Route path="/delivery/*" element={<DeliveryRoutes />} />
-      </Routes>
+      <RouteSelector />
     </Router>
   );
-}
 
+};
 export default App;

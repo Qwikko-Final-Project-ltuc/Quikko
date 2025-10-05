@@ -5,6 +5,7 @@ const { getAllProductsValidator } = require("./customerValidators");
 const router = express.Router();
 const identifyCustomer = require("../../middleware/identifyCustomer");
 const guestToken = require("../../middleware/guestToken");
+const customerModel = require("./customerModel");
 
 /**
  * @route GET /api/customer/
@@ -50,23 +51,6 @@ router.get("/orders/:orderId", protect,authorizeRole('customer'), customerContro
  * @param {number} orderId - Order ID
  */
 router.get("/orders/:orderId/track", protect,authorizeRole('customer'),  customerController.trackOrder);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /**
  * @route GET /api/customer/cart
@@ -135,33 +119,6 @@ router.put("/cart/items/:id",optionalProtect,guestToken,identifyCustomer,  custo
  */
 router.delete("/cart/items/:id",optionalProtect,guestToken,identifyCustomer,  customerController.deleteItem); 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * @route GET /api/customer/products
  * @desc Get all products with optional filters, pagination, and search
@@ -170,8 +127,8 @@ router.delete("/cart/items/:id",optionalProtect,guestToken,identifyCustomer,  cu
  * @query {number} [categoryId] - Category ID
  * @query {number} [page=1] - Page number
  * @query {number} [limit=10] - Items per page
- */
-router.get("/products", getAllProductsValidator, customerController.getAllProducts);
+ *///getAllProductsValidator,
+router.get("/products", customerController.getAllProducts);
 /**
  * @module OrdersRoutes
  * @desc Routes for customer order management. 
@@ -217,6 +174,22 @@ router.get("/products", getAllProductsValidator, customerController.getAllProduc
  * ]
  */
 router.get('/orders', protect, customerController.getOrders);
+router.get("/stores/:id/products", customerController.getStoreProducts);
+router.put("/:orderId/payment", customerController.updatePaymentStatus);
+router.get('/sorted', customerController.getProductsWithSorting);
+// Routes
+router.get("/payment", protect, customerController.paymentController.getUserPayments);
+router.post("/payment", protect, customerController.paymentController.createPayment);
+router.delete("/payment/:id", protect, customerController.paymentController.deletePayment);
+router.post("/:orderId/reorder", protect, customerController.reorder);
+router.delete("/profile",  protect, customerModel.deleteProfile);
+
+// wishList
+router.get('/wishlist', protect, customerController.getWishlist);
+
+router.post('/wishlist', protect, customerController.addWishlist);
+
+router.delete('/wishlist/:id', protect, customerController.removeWishlist);
 
 module.exports = router;
 

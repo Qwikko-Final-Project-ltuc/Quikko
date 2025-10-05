@@ -1,0 +1,51 @@
+// src/features/customer/routes/CustomerRoutes.jsx
+import React from "react";
+import { Routes, Route } from "react-router-dom";
+import MainLayout from "../customer/components/layout/MainLayout";
+import CustomerAuthRoutes from "../auth/routes";
+import HomePage from "../customer/pages/HomePage";
+import LandingPage from "./features/customer/customer/pages/LandingPage";
+import ProductsPage from "../customer/pages/ProductsPage";
+import ProfilePage from "../customer/pages/ProfilePage";
+import OrdersPage from "../customer/pages/OrdersPage";
+import OrderDetailsPage from "../customer/pages/OrderDetailsPage";
+import StoresPage from "../customer/pages/StoresPage";
+import StorePage from "../customer/pages/StorePage";
+import TrackOrderPage from "../customer/pages/TrackOrderPage";
+import SettingsPage from "../customer/pages/SettingsPage";
+import PaymentDetailsPage from "../customer/pages/PaymentDetailsPage";
+import WishlistPage from "../wishlist/wishlistPage";
+import AboutPage from "../aboutPage/about";
+import CartListPage from "../customer/pages/CartListPage";
+import CartDetailPage from "../customer/pages/CartDetailPage";
+import NotFound from "../../notFound";
+
+const CustomerRoutes = () => {
+  return (
+    <Routes>
+      <Route path="/auth/*" element={<CustomerAuthRoutes />} />
+
+      <Route element={<MainLayout />}>
+        <Route path="/home" element={<HomePage />} />
+        <Route path="/landing" element={<LandingPage />} />
+        <Route path="/products" element={<ProductsPage />} />
+        <Route path="/cart" element={<CartListPage />} />
+        <Route path="/cart/:id" element={<CartDetailPage />} />
+        <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/order-details/:orderId" element={<OrderDetailsPage />} />
+        <Route path="/stores" element={<StoresPage />} />
+        <Route path="/stores/:id" element={<StorePage />} />
+        <Route path="/track-order/:orderId" element={<TrackOrderPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/payment-details" element={<PaymentDetailsPage />} />
+        <Route path="/wishlist" element={<WishlistPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+      </Route>
+
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
+export default CustomerRoutes;

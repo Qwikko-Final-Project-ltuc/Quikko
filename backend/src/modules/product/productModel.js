@@ -164,19 +164,16 @@ exports.updateProduct = async (id, vendor_id, productData) => {
  * await deleteProduct(1, 1);
  */
 exports.deleteProduct = async (id, vendor_id) => {
-  console.log('Deleting productId:', id, 'for vendorId:', vendor_id);
 
   const result = await db.query(
     `SELECT * FROM products WHERE id = $1 AND vendor_id = $2`,
     [id, vendor_id]
   );
-  console.log('SELECT check result:', result.rows);
 
   const deleteResult = await db.query(
     `DELETE FROM products WHERE id = $1 AND vendor_id = $2 RETURNING *;`,
     [id, vendor_id]
   );
-  console.log('DELETE result:', deleteResult.rows);
 
   if (deleteResult.rowCount === 0) {
     throw new Error("Product not found or unauthorized");

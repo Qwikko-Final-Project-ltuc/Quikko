@@ -133,5 +133,11 @@ exports.login = async ({ email, password }) => {
     }
   }
 
+  // if (user.role !== 'admin') {
+  //   const err = new Error('Not authorized. Admin only.');
+  //   err.code = 'NOT_ADMIN';
+  //   throw err;
+  // }
+
   return jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
 };

@@ -1,4 +1,4 @@
-const {admin} = require("../firebase");
+const { admin } = require("../firebase");
 const NotificationModel = require("./notificationModel");
 const pool = require("../../config/db");
 
@@ -22,7 +22,10 @@ const pool = require("../../config/db");
  */
 exports.sendNotificationToUser = async (userId, { title, message, type }) => {
   // Fetch user's FCM token
-  const userRes = await pool.query("SELECT fcm_token FROM users WHERE id = $1", [userId]);
+  const userRes = await pool.query(
+    "SELECT fcm_token FROM users WHERE id = $1",
+    [userId]
+  );
   if (userRes.rows.length === 0) throw new Error("User not found");
 
   const token = userRes.rows[0].fcm_token;
@@ -51,22 +54,42 @@ exports.sendNotificationToUser = async (userId, { title, message, type }) => {
  * @returns {Promise<Object>} Success status + count of users notified
  */
 exports.sendNotificationToRole = async (role, { title, message, type }) => {
-  const usersRes = await pool.query("SELECT id, fcm_token FROM users WHERE role = $1", [role]);
-  if (usersRes.rows.length === 0) throw new Error("No users found with that role");
+  const usersRes = await pool.query(
+    "SELECT id, fcm_token FROM users WHERE role = $1",
+    [role]
+  );
+  if (usersRes.rows.length === 0)
+    throw new Error("No users found with that role");
 
-  const tokens = usersRes.rows.filter(u => u.fcm_token).map(u => u.fcm_token);
+  const tokens = usersRes.rows
+    .filter((u) => u.fcm_token)
+    .map((u) => u.fcm_token);
   if (tokens.length === 0) throw new Error("No users have FCM tokens");
 
-  // Send FCM
-  await admin.messaging().sendMulticast({
+  const payload = {
     tokens,
     notification: { title, body: message },
     data: { type: type || "general" },
+  };
+
+  const response = await admin.messaging().sendEachForMulticast(payload);
+
+  response.responses.forEach((r, idx) => {
+    if (!r.success) {
+      console.warn(`Failed token: ${tokens[idx]} => ${r.error.code}`);
+      if (r.error.code === "messaging/registration-token-not-registered") {
+        const userId = usersRes.rows[idx].id;
+        pool.query("UPDATE users SET fcm_token = NULL WHERE id = $1", [userId]);
+      }
+    }
   });
 
-  // Save in DB
   for (const user of usersRes.rows) {
-    await NotificationModel.insertNotification(user.id, { title, message, type });
+    await NotificationModel.insertNotification(user.id, {
+      title,
+      message,
+      type,
+    });
   }
 
   return { success: true, count: usersRes.rows.length };

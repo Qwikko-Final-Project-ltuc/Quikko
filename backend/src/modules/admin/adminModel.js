@@ -231,3 +231,10 @@ exports.getAllOrders = async () => {
   return rows;
 };
 
+exports.getAdminById = async (userId) => {
+  const { rows } = await pool.query(
+    `SELECT id, name, email, role, phone, address, created_at FROM users WHERE id=$1`,
+    [userId]
+  );
+  return rows[0];
+};
