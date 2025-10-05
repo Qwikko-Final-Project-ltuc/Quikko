@@ -272,3 +272,16 @@ export const fetchNotifications = async () => {
     return [];
   }
 };
+// 🔹 جلب عدد الإشعارات غير المقروءة
+export const fetchUnreadCount = async () => {
+  try {
+    const res = await fetch("/api/notifications/unread-count", {
+      headers: getAuthHeaders(),
+    });
+    const json = await res.json();
+    return json.count || 0;
+  } catch (error) {
+    console.error("Error fetching unread count:", error);
+    return 0;
+  }
+};

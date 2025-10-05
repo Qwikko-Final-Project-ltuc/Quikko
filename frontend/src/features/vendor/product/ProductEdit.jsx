@@ -1,4 +1,3 @@
-// src/pages/vendor/product/ProductEdit.jsx
 import React, { useState, useEffect } from "react";
 import ProductForm from "./ProductForm";
 
@@ -8,24 +7,17 @@ export default function ProductEdit({ product, categories, onUpdate, onCancel })
     description: "",
     price: "",
     stock_quantity: "",
-    images: "",
+    images: [], // الآن مصفوفة مباشرة
     category_id: "",
-    variants: "",
+    variants: {},
   });
 
   useEffect(() => {
     if (product) {
-      // تأكد أن الصور مصفوفة مهما كان نوعها
-      const imagesArray = Array.isArray(product.images)
-        ? product.images
-        : product.images
-        ? product.images.split(",").map((i) => i.trim())
-        : [];
-
       setInitialData({
         ...product,
-        images: imagesArray.join(", "), // تحويلها إلى نص للـ form
-        variants: product.variants ? JSON.stringify(product.variants) : "",
+        images: Array.isArray(product.images) ? product.images : [],
+        variants: product.variants ? product.variants : {},
       });
     }
   }, [product]);
@@ -33,10 +25,8 @@ export default function ProductEdit({ product, categories, onUpdate, onCancel })
   const handleSubmit = (updatedData) => {
     const dataToSend = {
       ...updatedData,
-      images: updatedData.images
-        ? updatedData.images.split(",").map((i) => i.trim())
-        : [],
-      variants: updatedData.variants ? JSON.parse(updatedData.variants) : {},
+      images: updatedData.images || [], // تأكد أنها مصفوفة
+      variants: updatedData.variants || {},
       price: Number(updatedData.price),
       stock_quantity: Number(updatedData.stock_quantity),
       category_id: updatedData.category_id || null,
@@ -47,14 +37,12 @@ export default function ProductEdit({ product, categories, onUpdate, onCancel })
 
   return (
     <div className="mb-6">
-      
       <ProductForm
         initialData={initialData}
         categories={categories}
         onSubmit={handleSubmit}
       />
 
-      {/* زر Update + Cancel جنب بعض */}
       <div className="flex gap-4 mt-2">
         <button
           type="button"

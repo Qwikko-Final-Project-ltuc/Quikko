@@ -73,6 +73,20 @@ router.post("/send-test", async (req, res) => {
   }
 });
 
+router.get("/unread-count", protect, async (req, res) => {
+  const userId = req.user.id; // افترض أن middleware للتحقق موجود
+  try {
+    const result = await pool.query(
+      `SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND read_status = false`,
+      [userId]
+    );
+    res.json({ count: parseInt(result.rows[0].count, 10) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 module.exports = router;
 
 

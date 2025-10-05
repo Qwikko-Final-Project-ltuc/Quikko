@@ -37,58 +37,78 @@ exports.getProductById = async (id) => {
  * @async
  * @function insertProduct
  * @param {Object} productData - Product details.
- * @param {number} productData.vendor_id - Vendor ID who owns the product.
- * @param {string} productData.name - Name of the product.
- * @param {string} [productData.description] - Description of the product.
- * @param {number} productData.price - Price of the product.
- * @param {number} productData.stock_quantity - Stock quantity available.
- * @param {Array} [productData.images] - Array of image URLs.
- * @param {number} productData.category_id - Category ID of the product.
- * @param {Array} [productData.variants] - Array of product variants (e.g., sizes/colors).
- * @param {string} productData.created_at - Timestamp for creation.
- * @param {string} productData.updated_at - Timestamp for last update.
  * @returns {Promise<Object>} Returns the inserted product.
- *
- * @example
- * const newProduct = await insertProduct({ vendor_id: 1, name: "T-Shirt", price: 25.5, stock_quantity: 100, category_id: 2 });
  */
 exports.insertProduct = async (productData) => {
-  const {
-    vendor_id,
-    name,
-    description,
-    price,
-    stock_quantity,
-    images,
-    category_id,
-    variants,
-    created_at,
-    updated_at,
-  } = productData;
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
 
-  const query = `
-    INSERT INTO products 
-    (vendor_id, name, description, price, stock_quantity, images, category_id, variants, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-    RETURNING *;
-  `;
+    const {
+      vendor_id,
+      name,
+      description,
+      price,
+      stock_quantity,
+      images,
+      category_id,
+      variants,
+      created_at,
+      updated_at,
+    } = productData;
 
-  const values = [
-    vendor_id,
-    name,
-    description,
-    price,
-    stock_quantity,
-    images ? JSON.stringify(images) : null,
-    category_id,
-    variants ? JSON.stringify(variants) : null,
-    created_at,
-    updated_at,
-  ];
+    // 1️⃣ إدخال المنتج
+    const productResult = await client.query(
+      `
+      INSERT INTO products 
+      (vendor_id, name, description, price, stock_quantity, category_id, variants, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *;
+      `,
+      [
+        vendor_id,
+        name,
+        description,
+        price,
+        stock_quantity,
+        category_id,
+        variants ? JSON.stringify(variants) : null,
+        created_at,
+        updated_at,
+      ]
+    );
 
-  const result = await db.query(query, values);
-  return result.rows[0];
+    const product = productResult.rows[0];
+
+    // 2️⃣ إدخال الصور في نفس الـ transaction
+    if (images && images.length > 0) {
+      const imageQuery = `
+        INSERT INTO product_images (product_id, image_url)
+        VALUES ${images.map((_, i) => `($1, $${i + 2})`).join(', ')};
+      `;
+      const imageValues = [product.id, ...images];
+      await client.query(imageQuery, imageValues);
+    }
+
+    await client.query('COMMIT');
+    
+     // 3️⃣ جلب الصور الخاصة بالمنتج
+    const imageResult = await client.query(
+      `SELECT image_url FROM product_images WHERE product_id = $1`,
+      [product.id]
+    );
+
+    product.images = imageResult.rows.map((row) => row.image_url);
+    return product;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 };
+
+
 
 /**
  * Update an existing product.
@@ -111,45 +131,71 @@ exports.insertProduct = async (productData) => {
  * const updatedProduct = await updateProduct(1, 1, { price: 30, stock_quantity: 50 });
  */
 exports.updateProduct = async (id, vendor_id, productData) => {
-  const {
-    name,
-    description,
-    price,
-    stock_quantity,
-    images,
-    category_id,
-    variants,
-  } = productData;
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
 
-  const query = `
-    UPDATE products
-    SET name = $1,
-        description = $2,
-        price = $3,
-        stock_quantity = $4,
-        images = $5,
-        category_id = $6,
-        variants = $7,
-        updated_at = NOW()
-    WHERE id = $8 AND vendor_id = $9
-    RETURNING *;
-  `;
+    const {
+      name,
+      description,
+      price,
+      stock_quantity,
+      images,
+      category_id,
+      variants,
+    } = productData;
 
-  const values = [
-    name,
-    description,
-    price,
-    stock_quantity,
-    images ? JSON.stringify(images) : null,
-    category_id,
-    variants ? JSON.stringify(variants) : null,
-    id,
-    vendor_id,
-  ];
+    // تحديث بيانات المنتج بدون حقل الصور
+    const query = `
+      UPDATE products
+      SET name = $1,
+          description = $2,
+          price = $3,
+          stock_quantity = $4,
+          category_id = $5,
+          variants = $6,
+          updated_at = NOW()
+      WHERE id = $7 AND vendor_id = $8
+      RETURNING *;
+    `;
+    const values = [
+      name,
+      description,
+      price,
+      stock_quantity,
+      category_id,
+      variants ? JSON.stringify(variants) : null,
+      id,
+      vendor_id,
+    ];
 
-  const result = await db.query(query, values);
-  return result.rows[0] || null;
+    const result = await client.query(query, values);
+    const updatedProduct = result.rows[0];
+
+    // تحديث الصور في جدول product_images
+    if (images && Array.isArray(images)) {
+      // حذف الصور القديمة
+      await client.query(`DELETE FROM product_images WHERE product_id = $1`, [id]);
+
+      // إضافة الصور الجديدة
+      const imageQuery = `
+        INSERT INTO product_images (product_id, image_url)
+        VALUES ${images.map((_, i) => `($1, $${i + 2})`).join(', ')}
+      `;
+      const imageValues = [id, ...images];
+      await client.query(imageQuery, imageValues);
+    }
+
+    await client.query('COMMIT');
+    return updatedProduct;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 };
+
 
 /**
  * Delete a product from the database.

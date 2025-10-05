@@ -12,7 +12,7 @@ export default function ProductForm({ initialData, categories, onSubmit }) {
     variants: "",
   });
 
-  // ✅ تعديل useEffect للتأكد من أن كل القيم ليست null أو undefined
+  // ✅ التأكد من أن كل القيم ليست null أو undefined عند التحميل
   useEffect(() => {
     if (initialData) {
       setFormData({
@@ -33,23 +33,35 @@ export default function ProductForm({ initialData, categories, onSubmit }) {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // 🔹 تحويل images و variants إلى JSON string قبل الإرسال
+    // 🔹 تحويل images إلى مصفوفة دايمًا
+    let imagesArray = [];
+    if (formData.images) {
+      try {
+        const parsed = JSON.parse(formData.images);
+        imagesArray = Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        imagesArray = [formData.images];
+      }
+    }
+
+    // 🔹 تحويل variants إلى JSON أو null
+    let variantsData = null;
+    if (formData.variants) {
+      try {
+        variantsData =
+          typeof formData.variants === "string"
+            ? JSON.parse(formData.variants)
+            : formData.variants;
+      } catch {
+        variantsData = formData.variants;
+      }
+    }
+
+    // 🔹 إعداد البيانات للإرسال
     const preparedData = {
       ...formData,
-      images: formData.images
-        ? JSON.stringify(
-            Array.isArray(formData.images)
-              ? formData.images
-              : [formData.images]
-          )
-        : null,
-      variants: formData.variants
-        ? JSON.stringify(
-            typeof formData.variants === "string"
-              ? JSON.parse(formData.variants)
-              : formData.variants
-          )
-        : null,
+      images: imagesArray,
+      variants: variantsData,
     };
 
     onSubmit(preparedData);

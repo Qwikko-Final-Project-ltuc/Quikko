@@ -60,16 +60,22 @@ exports.createProduct = async (req, res) => {
     const vendorId = vendorResult.rows[0].id;
 
     const now = new Date();
-    const productData = { ...req.body, vendor_id: vendorId, created_at: now, updated_at: now };
+    const productData = {
+      ...req.body,
+      vendor_id: vendorId,
+      created_at: now,
+      updated_at: now,
+    };
 
     const product = await productModel.insertProduct(productData);
 
-    res.status(201).json({ message: 'Product added!', product });
+    res.status(201).json({ message: 'Product added successfully!', product });
   } catch (err) {
     console.error('Product creation error:', err);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
 
 
 /**
