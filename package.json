@@ -1,12 +1,14 @@
 {
   "dependencies": {
+    "dayjs": "^1.11.18",
     "firebase": "^12.3.0",
     "firebase-admin": "^13.5.0",
     "framer-motion": "^12.23.22",
+    "jwt-decode": "^4.0.0",
     "lucide-react": "^0.544.0",
+    "nodemailer": "^7.0.6",
     "react-dom": "^19.2.0",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1",
-    "yet-another-react-lightbox": "^3.25.0"
+    "swagger-ui-express": "^5.0.1"
   }
 }
