@@ -1,46 +1,40 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchCart } from "../cartSlice";
+import ProductCard from "../components/ProductCard"; 
+import customerAPI from "../services/customerAPI";
+import LandingPage from "./LandingPage"; // استيراد الكمبوننت
 
 const HomePage = () => {
-  const [landingContent, setLandingContent] = useState(null);
   const [popularProducts, setPopularProducts] = useState([]);
   const [newestProducts, setNewestProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
 
+  const dispatch = useDispatch();
+
+  // Cart info
+  const currentCart = useSelector((state) => state.cart.currentCart);
+  const tempCartId = useSelector((state) => state.cart.tempCartId);
+  const cartIdToUse = tempCartId || currentCart?.id;
+
+  // ===== Fetch Products =====
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchProducts = async () => {
       try {
-        // ===== Landing Section =====
-        const resLanding = await fetch(
-          "http://localhost:3000/api/cms?type=customer&title=Landing%20Page"
-        );
-        const textLanding = await resLanding.text();
-        let dataLanding;
-        try {
-          dataLanding = JSON.parse(textLanding);
-        } catch {
-          throw new Error("Server did not return valid JSON for Landing");
-        }
-        if (!dataLanding || dataLanding.length === 0) {
-          throw new Error("No content found for Landing Page");
-        }
-        setLandingContent(dataLanding[0]);
-
-        // ===== Most Popular Products (top 4) =====
+        // Most Popular
         const resPopular = await fetch(
-          "http://localhost:3000/api/customers/products?sort=popular&limit=4"
+          "http://localhost:3000/api/customers/products?sort=popular"
         );
         const dataPopular = await resPopular.json();
-        setPopularProducts(dataPopular);
+        setPopularProducts(dataPopular.slice(0, 4));
 
-        // ===== Newest Products (top 4) =====
+        // Newest Products
         const resNewest = await fetch(
-          "http://localhost:3000/api/customers/products?sort=newest&limit=4"
+          "http://localhost:3000/api/customers/products?sort=newest"
         );
         const dataNewest = await resNewest.json();
-        setNewestProducts(dataNewest);
+        setNewestProducts(dataNewest.slice(0, 4));
       } catch (err) {
         console.error(err);
         setError(err.message);
@@ -49,80 +43,93 @@ const HomePage = () => {
       }
     };
 
-    fetchData();
+    fetchProducts();
   }, []);
+
+  // ===== Add to Cart Handler =====
+  const handleAddToCart = async (product, quantity = 1) => {
+    try {
+      const cart = await customerAPI.getOrCreateCart(cartIdToUse);
+      const cartId = cart?.id || cart?.data?.id;
+      if (!cartId) {
+        console.error("No cart ID found or created!");
+        return;
+      }
+
+      await customerAPI.addItem({
+        cartId,
+        product,
+        quantity,
+        variant: product.variant || {},
+      });
+
+      dispatch(fetchCart(cartId));
+      alert("Added to cart");
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message;
+      alert(msg);
+    }
+  };
 
   if (loading)
     return <p className="text-center mt-20 text-gray-500">Loading...</p>;
 
   if (error)
-    return (
-      <p className="text-center mt-20 text-red-500">Error: {error}</p>
-    );
+    return <p className="text-center mt-20 text-red-500">Error: {error}</p>;
 
   return (
     <div className="bg-gray-50 min-h-screen p-6">
+      
+      {/* Landing Section as component */}
+      <LandingPage />
 
-      {/* ===== Landing Section ===== */}
-      {landingContent && (
-        <div className="flex flex-col md:flex-row items-center md:items-start max-w-6xl w-full bg-white rounded-xl shadow-lg overflow-hidden my-6 mx-auto">
-          <div className="md:w-1/2 w-full">
-            <img
-              src={landingContent.image_url}
-              alt={landingContent.title}
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <div className="md:w-1/2 w-full p-8 flex flex-col justify-center items-start">
-            <p className="text-lg md:text-xl text-gray-700 mb-6">
-              {landingContent.content}
-            </p>
-            <button
-              onClick={() => navigate("/products")}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition duration-300"
-            >
-              Start Shopping
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ===== Most Popular Products ===== */}
+      {/* Most Popular Products */}
       <div className="max-w-6xl mx-auto my-12">
         <h2 className="text-2xl font-bold mb-6">Most Popular</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {popularProducts.map((p) => (
-            <div key={p.id} className="bg-white rounded-lg shadow p-4">
-              <img
-                src={p.image_url}
-                alt={p.name}
-                className="w-full h-40 object-cover rounded"
+          {popularProducts.map((p) => {
+            const productWithImages = {
+              ...p,
+              images: Array.isArray(p.images) && p.images.length > 0
+                ? p.images
+                : p.image_url
+                  ? [p.image_url]
+                  : [],
+            };
+            return (
+              <ProductCard
+                key={p.id}
+                product={productWithImages}
+                onAddToCart={handleAddToCart}
               />
-              <h3 className="mt-2 font-semibold">{p.name}</h3>
-              <p className="text-gray-600">${p.price}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      {/* ===== Newest Products ===== */}
+      {/* Newest Products */}
       <div className="max-w-6xl mx-auto my-12">
         <h2 className="text-2xl font-bold mb-6">Newest Products</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {newestProducts.map((p) => (
-            <div key={p.id} className="bg-white rounded-lg shadow p-4">
-              <img
-                src={p.image_url}
-                alt={p.name}
-                className="w-full h-40 object-cover rounded"
+          {newestProducts.map((p) => {
+            const productWithImages = {
+              ...p,
+              images: Array.isArray(p.images) && p.images.length > 0
+                ? p.images
+                : p.image_url
+                  ? [p.image_url]
+                  : [],
+            };
+            return (
+              <ProductCard
+                key={p.id}
+                product={productWithImages}
+                onAddToCart={handleAddToCart}
               />
-              <h3 className="mt-2 font-semibold">{p.name}</h3>
-              <p className="text-gray-600">${p.price}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
-
     </div>
   );
 };

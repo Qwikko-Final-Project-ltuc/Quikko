@@ -2,23 +2,30 @@ import React, { useState, useEffect } from "react";
 import { FaStar } from "react-icons/fa";
 
 const ReviewSection = ({
-  rating = 0,
-  totalReviews = 0,
+  userRating = 0,       // تقييم المستخدم الخاص بالنجوم
+  averageRating = 0,    // الرقم الذي يظهر بجانب النجوم (المتوسط)
+  totalReviews = 0,     // عدد التقييمات
   readOnly = true,
   onRate,
 }) => {
   const [hover, setHover] = useState(null);
-  const [currentRating, setCurrentRating] = useState(rating);
+  const [currentRating, setCurrentRating] = useState(userRating);
 
-  // اعمل sync مع اللي جاي من الباك
+  // تحديث النجوم عند تغيير تقييم المستخدم من DB
   useEffect(() => {
-    setCurrentRating(rating);
-  }, [rating]);
+    setCurrentRating(userRating);
+  }, [userRating]);
+
+  useEffect(() => {
+  console.log("reviews:", totalReviews);
+  console.log("averageRating:", averageRating);
+  console.log("currentRating:", currentRating);
+}, [totalReviews, averageRating,currentRating]);
 
   const handleClick = (value) => {
     if (!readOnly && onRate) {
-      setCurrentRating(value); // تحديث محلي
-      onRate(value); // إرسال للباك
+      setCurrentRating(value); // تحديث النجوم فورًا
+      onRate(value);           // إرسال التقييم للباك اند
     }
   };
 
@@ -30,7 +37,7 @@ const ReviewSection = ({
           return (
             <FaStar
               key={i}
-              className={`cursor-pointer ${
+              className={`cursor-pointer transition-colors duration-200 ${
                 value <= (hover || currentRating)
                   ? "text-yellow-400"
                   : "text-gray-300"
@@ -43,7 +50,7 @@ const ReviewSection = ({
         })}
       </div>
       <span className="text-gray-600 text-sm">
-        {currentRating.toFixed(1)} ({totalReviews})
+        {averageRating.toFixed(1)} ⭐ ({totalReviews})
       </span>
     </div>
   );

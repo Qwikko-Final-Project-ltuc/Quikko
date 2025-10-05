@@ -9,7 +9,9 @@ const CustomerAuthAPI = {
   },
 
   async login(credentials) {
-    const res = await axios.post(`${API_URL}/login`, credentials);
+    const res = await axios.post(`${API_URL}/login`, credentials, {
+    withCredentials: true // 👈 مهم جداً لإرسال كوكيز الغيست
+  });
     return res.data;
   },
 };

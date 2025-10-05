@@ -10,18 +10,20 @@ const CartListPage = () => {
   const { allCarts, status, error, user } = useSelector((state) => state.cart);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const currentUser = await dispatch(fetchCurrentUser()).unwrap();
-        if (currentUser) {
-          await dispatch(fetchAllCarts()).unwrap();
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    loadData();
-  }, [dispatch]);
+  const loadData = async () => {
+    try {
+      // نحاول فقط معرفة إذا في مستخدم (ما نوقف التنفيذ لو فشل)
+      await dispatch(fetchCurrentUser());
+      await dispatch(fetchAllCarts()).unwrap();
+    } catch (err) {
+      console.error("⚠️ Failed to load data:", err);
+      // حتى لو فشل، نحاول نجلب الكارت للضيف
+      await dispatch(fetchAllCarts());
+    }
+  };
+  loadData();
+}, [dispatch]);
+
 
   const handleAddCart = async () => {
     if (!user) return console.warn("⚠️ No user found");
@@ -46,12 +48,14 @@ const CartListPage = () => {
     <div className="container mx-auto px-4 py-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">All Carts</h1>
+        {user || localStorage.getItem("token") ? (
         <button
           onClick={handleAddCart}
           className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 shadow"
         >
           + Add New Cart
         </button>
+  ) : null}
       </div>
 
       {allCarts.length === 0 ? (

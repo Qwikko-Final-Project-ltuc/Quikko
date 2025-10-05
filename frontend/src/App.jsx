@@ -1,6 +1,6 @@
 
 import React, { useEffect } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import MainLayout from "./features/customer/customer/components/layout/MainLayout";
 
@@ -24,14 +24,18 @@ import SettingsPage from "./features/customer/customer/pages/SettingsPage";
 
 
 import { requestAndSaveToken, listenToMessages ,registerServiceWorker } from "./utlis/fcm"; 
+import ContactUs from "./features/customer/customer/pages/ContactUs";
+import ChatPage from "./features/customer/customer/pages/ChatPage";
+import VerifyEmailPage from "./features/customer/auth/VerifyEmailPage";
+import ForgotPassword from "./features/customer/auth/ForgotPassword";
 
 const AppRoutes = () => {
   const token = useSelector((state) => state.customerAuth.token);
-  const location = useLocation();
+  // const location = useLocation();
 
-  if (!token && !location.pathname.startsWith("/auth")) {
-    return <Navigate to="/auth/login" replace />;
-  }
+  // if (!token && !location.pathname.startsWith("/auth")) {
+  //   return <Navigate to="/auth/login" replace />;
+  // }
 
   return (
     <Routes>
@@ -40,7 +44,6 @@ const AppRoutes = () => {
         path="/"
         element={token ? <Navigate to="/home" replace /> : <LandingPage />}
       />
-
 
       {/* Routes بعد تسجيل الدخول */}
       <Route element={<MainLayout />}>
@@ -57,6 +60,9 @@ const AppRoutes = () => {
         <Route path="/track-order/:orderId" element={<TrackOrderPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/payment-details" element={<PaymentDetailsPage />} />
+        <Route path="/ContactUs" element={<ContactUs />} />
+        <Route path="/chat/" element={<ChatPage />} />
+
       </Route>
         <Route
           path="*"
@@ -69,6 +75,19 @@ const AppRoutes = () => {
 const App = () => {
   const dispatch = useDispatch();
   const token = useSelector((state) => state.customerAuth.token);
+
+  useEffect(() => {
+  // نحاول نسحب guest_token من الكوكيز
+  const guestCookie = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("guest_token="));
+
+  if (guestCookie && !localStorage.getItem("guest_token")) {
+    const token = guestCookie.split("=")[1];
+    localStorage.setItem("guest_token", token);
+    console.log("✅ Guest token saved in localStorage:", token);
+  }
+}, []);
 
   useEffect(() => {
     if (token) {
@@ -87,7 +106,7 @@ const App = () => {
     });
     }
   }, [token, dispatch]);
-
+  
   
   return <AppRoutes />;
 };

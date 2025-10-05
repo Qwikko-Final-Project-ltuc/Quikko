@@ -28,13 +28,24 @@ const productsSlice = createSlice({
     error: null,
     searchQuery: "",
     sortBy: "default",
+    currentPage: 1,   // الصفحة الحالية
+    itemsPerPage: 12,
   },
   reducers: {
     setSearchQuery: (state, action) => {
       state.searchQuery = action.payload.toLowerCase();
+      state.currentPage = 1;
     },
     setSortBy: (state, action) => {
       state.sortBy = action.payload;
+      state.currentPage = 1;
+    },
+    setCurrentPage: (state, action) => {
+      state.currentPage = action.payload;
+    },
+    setItemsPerPage: (state, action) => {
+      state.itemsPerPage = action.payload;
+      state.currentPage = 1; // reset الصفحة لما يغير عدد العناصر بالصفحة
     },
   },
   extraReducers: (builder) => {
@@ -63,6 +74,6 @@ const productsSlice = createSlice({
       });
   },
 });
-export const { setSearchQuery, setSortBy } = productsSlice.actions;
+export const { setSearchQuery, setSortBy , setCurrentPage, setItemsPerPage } = productsSlice.actions;
 
 export default productsSlice.reducer;

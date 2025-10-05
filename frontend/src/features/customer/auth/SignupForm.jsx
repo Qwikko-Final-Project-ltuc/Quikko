@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { registerCustomer } from "./CustomerAuthSlice";
 import { useNavigate } from "react-router-dom";
-import { loginWithGoogle } from "./CustomerAuthSlice";
 
 const SignupForm = () => {
   const dispatch = useDispatch();
@@ -22,8 +21,11 @@ const SignupForm = () => {
 
   // لو تم التسجيل نوجه المستخدم للصفحة الرئيسية أو صفحة اللوغ ان
   React.useEffect(() => {
-    if (user) navigate("/"); 
-  }, [user, navigate]);
+  if (user) {
+    alert("Please check your email to verify your account before logging in.");
+    navigate("/auth/login");
+  }
+}, [user, navigate]);
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white shadow-lg rounded-lg border">
@@ -91,13 +93,6 @@ const SignupForm = () => {
         </button>
       </form>
 
-      {/* Google Signup */}
-      <button
-        onClick={() => dispatch(loginWithGoogle())}
-        className="w-full mt-4 py-3 bg-red-500 text-white rounded font-semibold hover:bg-red-600 transition"
-        >
-        Continue with Google
-        </button>
 
       <p className="text-center text-gray-500 mt-4">
         Already have an account?{" "}

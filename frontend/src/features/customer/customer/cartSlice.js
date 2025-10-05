@@ -53,15 +53,18 @@ export const createNewCart = createAsyncThunk(
 export const fetchCurrentUser = createAsyncThunk(
   "auth/fetchCurrentUser",
   async (_, { rejectWithValue }) => {
+    const token = localStorage.getItem("token");
+    if (!token) return null; // لو ما في login، نتجاهل
     try {
       const response = await customerAPI.getProfile();
-      return response; // { id, name, email, ... }
+      return response;
     } catch (err) {
       console.log(err);
       return rejectWithValue("Failed to fetch current user");
     }
   }
 );
+
 
 // Increase or decrease item quantity
 export const updateItemQuantity = createAsyncThunk(
@@ -89,7 +92,17 @@ const cartSlice = createSlice({
   reducers: {
     setTempCartId: (state, action) => {
       state.tempCartId = action.payload;
-    },},
+    },
+    setCurrentCart: (state, action) => {
+      state.currentCart = action.payload;
+    },
+    clearTempCartId: (state) => {
+      state.tempCartId = null;
+    },
+    setUser: (state, action) => {
+      state.user = action.payload;
+    },
+  },
   extraReducers: (builder) => {
     builder
       // fetchAllCarts
@@ -135,6 +148,6 @@ const cartSlice = createSlice({
     });
   },
 });
-export const { setTempCartId } = cartSlice.actions;
+export const { setTempCartId , setCurrentCart, clearTempCartId, setUser} = cartSlice.actions;
 
 export default cartSlice.reducer;

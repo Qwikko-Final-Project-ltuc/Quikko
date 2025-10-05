@@ -8,6 +8,7 @@ import categoriesReducer from "../features/customer/customer/categoriesSlice";
 import storesReducer from "../features/customer/customer/storesSlice";
 import reviewsReducer from "../features/customer/review/reviewSlice";
 import paymentReducer from "../features/customer/customer/paymentSlice";
+import chatReducer from "../features/customer/customer/chatSlice";
 
 const store = configureStore({
   reducer: {
@@ -20,6 +21,7 @@ const store = configureStore({
     stores: storesReducer, 
     reviews: reviewsReducer,
     payment: paymentReducer,
+    chat: chatReducer,
   },
 });
 

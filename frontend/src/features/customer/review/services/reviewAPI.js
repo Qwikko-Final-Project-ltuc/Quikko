@@ -1,11 +1,10 @@
-// src/features/review/services/reviewAPI.js
 import axios from "axios";
 
-const API_URL = "http://localhost:3000/api/reviews"; // عدل حسب الباك
+const API_URL = "http://localhost:3000/api/reviews"; // عدّل حسب الباك
 
 const api = axios.create({ baseURL: API_URL });
 
-// إضافة review جديد
+// إضافة review جديد أو تحديثه (UPSERT)
 export const addReview = async ({ vendor_id, rating }) => {
   const token = localStorage.getItem("token");
   const res = await api.post(
@@ -25,6 +24,14 @@ export const getReviewsByVendor = async (vendor_id) => {
 // جلب متوسط تقييم البائع
 export const getVendorAverageRating = async (vendor_id) => {
   const res = await api.get(`/vendor/${vendor_id}/average`);
-  console.log("AVG API Response:", res.data);
-  return res.data.average_rating;
+  return res.data.average_rating; // رقم مباشرة
+};
+
+// جلب تقييم المستخدم الحالي للبائع
+export const getUserReview = async (vendor_id) => {
+  const token = localStorage.getItem("token");
+  const res = await api.get(`/vendor/${vendor_id}/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data.rating || 0;
 };

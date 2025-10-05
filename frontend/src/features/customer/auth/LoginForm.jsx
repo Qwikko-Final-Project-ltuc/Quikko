@@ -1,7 +1,10 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
-import { loginCustomer, loginWithGoogle } from "./CustomerAuthSlice";
+import { loginCustomer, assignGuestCartAfterLogin } from "./CustomerAuthSlice";
+
+import { fetchCurrentUser } from "../customer/cartSlice";
+
 import { useNavigate } from "react-router-dom";
 
 const LoginForm = () => {
@@ -11,15 +14,24 @@ const LoginForm = () => {
 
   const { register, handleSubmit, formState: { errors } } = useForm();
 
-  const onSubmit = (data) => {
-    dispatch(loginCustomer(data));
-  };
+  const onSubmit = async (data) => {
+    // 1️⃣ تسجيل الدخول
+    const result = await dispatch(loginCustomer(data));
 
-  React.useEffect(() => {
-    if (token) {
-      navigate("/"); // توجيه المستخدم للصفحة الرئيسية بعد تسجيل الدخول
+    if (result.meta.requestStatus === "fulfilled") {
+      // 2️⃣ جلب بيانات المستخدم بعد login
+      const userResult = await dispatch(fetchCurrentUser());
+      const userId = userResult.payload?.id;
+
+      if (userId) {
+        // 3️⃣ نقل cart الغوست أو إنشاء cart جديد
+        await dispatch(assignGuestCartAfterLogin(userId));
+      }
+
+      // 4️⃣ بعد كل شيء، نوجّه المستخدم للصفحة الرئيسية
+      navigate("/");
     }
-  }, [token, navigate]);
+  };
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white shadow-lg rounded-lg border">
@@ -57,15 +69,16 @@ const LoginForm = () => {
         >
           {loading ? "Logging in..." : "Login"}
         </button>
-      </form>
 
-      {/* Google Login */}
-      <button
-        onClick={() => dispatch(loginWithGoogle())}
-        className="w-full mt-4 py-3 bg-red-500 text-white rounded font-semibold hover:bg-red-600 transition"
-      >
-        Continue with Google
-      </button>
+        <p className="text-center text-gray-500 mt-2">
+          <span
+            className="text-blue-600 cursor-pointer hover:underline"
+            onClick={() => navigate("/auth/forgot-password")}
+          >
+            Forgot Password?
+          </span>
+        </p>
+      </form>
 
       <p className="text-center text-gray-500 mt-4">
         Don't have an account?{" "}

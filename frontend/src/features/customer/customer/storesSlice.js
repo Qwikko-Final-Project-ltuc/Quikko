@@ -34,8 +34,19 @@ const storesSlice = createSlice({
     storeProducts: [],
     loading: false,
     error: null,
+    currentPage: 1,   // الصفحة الحالية
+    itemsPerPage: 8,
+    currentProductPage: 1, // الصفحة الحالية للمنتجات
+    productsPerPage: 8,
   },
-  reducers: {},
+  reducers: {
+    setCurrentPage: (state, action) => {
+      state.currentPage = action.payload;
+    },
+    setProductPage: (state, action) => {
+      state.currentProductPage = action.payload;
+    }
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchStores.pending, (state) => {
@@ -45,6 +56,7 @@ const storesSlice = createSlice({
         state.loading = false;
         // هنا نفلتر فقط المتاجر approved
         state.allStores = action.payload;
+        state.currentProductPage = 1;
       })
       .addCase(fetchStores.rejected, (state, action) => {
         state.loading = false;
@@ -75,5 +87,6 @@ const storesSlice = createSlice({
       });
   },
 });
+export const { setCurrentPage ,setProductPage} = storesSlice.actions;
 
 export default storesSlice.reducer;

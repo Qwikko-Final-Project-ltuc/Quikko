@@ -19,8 +19,24 @@ export const reorderOrder = createAsyncThunk(
 );
 const ordersSlice = createSlice({
   name: "orders",
-  initialState: { list: [], currentOrder: null, loading: false, error: null,lastReorderedCart: null },
-  reducers: {},
+  initialState: { list: [],
+     currentOrder: null,
+      loading: false,
+      error: null,
+      lastReorderedCart: null,
+      currentPage: 1,      // الصفحة الحالية
+      itemsPerPage: 5,     // عدد الأوردرات لكل صفحة
+      paymentFilter: "all"
+       },
+  reducers: {
+    setCurrentPage: (state, action) => {
+      state.currentPage = action.payload;
+    },
+    setPaymentFilter: (state, action) => {
+      state.paymentFilter = action.payload;
+      state.currentPage = 1; // إعادة تعيين الصفحة عند تغيير الفلتر
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchOrders.pending, (state) => {
@@ -57,5 +73,6 @@ const ordersSlice = createSlice({
       });
   },
 });
+export const { setCurrentPage, setPaymentFilter } = ordersSlice.actions;
 
 export default ordersSlice.reducer;

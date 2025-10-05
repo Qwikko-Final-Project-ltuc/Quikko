@@ -5,6 +5,8 @@ const LandingPage = () => {
   const [content, setContent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [titleText, setTitleText] = useState("");
+  const [subtitleText, setSubtitleText] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,7 +28,14 @@ const LandingPage = () => {
           throw new Error("No content found for this page");
         }
 
-        setContent(data[0]);
+        const cmsContent = data[0];
+        setContent(cmsContent);
+
+        if (cmsContent.content) {
+          const parts = cmsContent.content.split("@");
+          setTitleText(parts[0].trim());
+          setSubtitleText(parts[1]?.trim() || "");
+        }
       } catch (err) {
         console.error("Error fetching CMS:", err);
         setError(err.message);
@@ -50,7 +59,7 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
-      <div className="flex flex-col md:flex-row items-center md:items-start max-w-6xl w-full bg-white rounded-xl shadow-lg overflow-hidden">
+      <div className="flex flex-col md:flex-row items-center max-w-6xl w-full bg-white rounded-xl shadow-lg overflow-hidden">
         
         {/* الصورة على اليسار */}
         <div className="md:w-1/2 w-full">
@@ -62,19 +71,23 @@ const LandingPage = () => {
         </div>
 
         {/* النص والزر على اليمين */}
-        <div className="md:w-1/2 w-full p-8 flex flex-col justify-center items-start">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            {content.title || "Welcome"}
-          </h1>
-          <p className="text-lg md:text-xl text-gray-700 mb-6">
-            {content.content}
-          </p>
-          <button
-            onClick={() => navigate("/auth/login")}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition duration-300"
-          >
-            Sign In
-          </button>
+        <div className="md:w-1/2 w-full p-8 flex flex-col justify-center items-start h-full">
+          <div className="max-w-md">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              {titleText || "Welcome"}
+            </h1>
+            {subtitleText && (
+              <p className="text-lg md:text-xl text-gray-700 mb-6 whitespace-pre-line">
+                {subtitleText}
+              </p>
+            )}
+            <button
+              onClick={() => navigate("/products")}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition duration-300"
+            >
+              Start Shopping
+            </button>
+          </div>
         </div>
 
       </div>

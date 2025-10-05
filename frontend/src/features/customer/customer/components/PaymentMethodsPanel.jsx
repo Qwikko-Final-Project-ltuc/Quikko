@@ -8,6 +8,11 @@ const PaymentMethodsPanel = () => {
   const { payments, status, error: sliceError } = useSelector((state) => state.payment);
   const [loadingAction, setLoadingAction] = React.useState(false);
 
+  // Pagination & Filtering
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = 5;
+  const [paymentFilter, setPaymentFilter] = React.useState("all"); // all, paypal, visa
+
   // Fetch payments
   useEffect(() => {
     dispatch(fetchPayments());
@@ -51,6 +56,21 @@ const PaymentMethodsPanel = () => {
     </div>
   );
 
+  // ===== Filter payments =====
+  const filteredPayments = payments.filter((p) => {
+    if (paymentFilter === "all") return true;
+    if (paymentFilter === "paypal") return p.payment_method === "paypal";
+    if (paymentFilter === "visa") 
+      return p.payment_method?.toLowerCase().includes("card") && p.card_brand?.toLowerCase() === "visa";
+        return true;
+      });
+
+  // ===== Pagination =====
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentPayments = filteredPayments.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredPayments.length / itemsPerPage);
+
   return (
     <div className="max-w-2xl mx-auto p-4">
       <h2 className="text-2xl font-bold mb-4">Transactions</h2>
@@ -58,13 +78,44 @@ const PaymentMethodsPanel = () => {
       {status === "loading" && <p className="text-gray-500">Loading transactions...</p>}
       {sliceError && <p className="text-red-500">{sliceError}</p>}
 
+      {/* ===== Filter Buttons ===== */}
+      <div className="mb-4 flex space-x-2">
+        {["all", "paypal", "visa"].map((filter) => (
+          <button
+            key={filter}
+            onClick={() => {
+              setPaymentFilter(filter);
+              setCurrentPage(1); // reset page on filter change
+            }}
+            className={`px-4 py-2 rounded ${paymentFilter === filter ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+          >
+            {filter === "all" ? "All" : filter === "paypal" ? "PayPal" : "Visa"}
+          </button>
+        ))}
+      </div>
+
       <div className="mb-4">
-        {payments.length === 0 ? (
+        {currentPayments.length === 0 ? (
           <div className="text-gray-500">No transactions found</div>
         ) : (
-          payments.map((p) => <PaymentItem key={p.id} p={p} />)
+          currentPayments.map((p) => <PaymentItem key={p.id} p={p} />)
         )}
       </div>
+
+      {/* ===== Pagination Buttons ===== */}
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-4 space-x-2">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 rounded ${currentPage === page ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+            >
+              {page}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
