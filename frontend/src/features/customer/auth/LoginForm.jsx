@@ -1,19 +1,29 @@
-import React from "react";
-import { useDispatch, useSelector } from "react-redux";
+
+import { useDispatch, useSelector} from "react-redux";
 import { useForm } from "react-hook-form";
 import { loginCustomer, assignGuestCartAfterLogin } from "./CustomerAuthSlice";
+import React, { useEffect  ,useState} from "react"; // useEffect من react
 
 import { fetchCurrentUser } from "../customer/cartSlice";
 
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation  } from "react-router-dom";
 
 const LoginForm = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+    const location = useLocation();
+
   const { loading, error, token } = useSelector((state) => state.customerAuth);
+
+    const [infoMessage, setInfoMessage] = useState("");
 
   const { register, handleSubmit, formState: { errors } } = useForm();
 
+  useEffect(() => {
+    if (location.state?.message) {
+      setInfoMessage(location.state.message);
+    }
+  }, [location.state]);
   const onSubmit = async (data) => {
     const result = await dispatch(loginCustomer(data));
 
@@ -36,6 +46,12 @@ const LoginForm = () => {
       <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
         Customer Login
       </h2>
+
+      {infoMessage && (
+        <p className="text-green-600 bg-green-100 p-2 rounded mb-4 text-center">
+          {infoMessage}
+        </p>
+      )}
 
       {error && (
         <p className="text-red-600 bg-red-100 p-2 rounded mb-4 text-center">

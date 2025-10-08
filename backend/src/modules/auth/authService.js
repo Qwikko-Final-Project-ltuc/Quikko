@@ -141,3 +141,35 @@ exports.login = async ({ email, password }) => {
 
   return jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
 };
+
+
+
+
+
+
+const { sendResetEmail } = require('../../utils/sendEmail');
+
+exports.forgotPassword = async (email) => {
+  const link = await admin.auth().generatePasswordResetLink(email, {
+    url: `http://localhost:5173/customer/password-updated?email=${encodeURIComponent(email)}`,
+  });
+
+  await sendResetEmail(email, link);
+  return link;
+};
+
+
+
+exports.resetPassword = async (email, newPassword) => {
+  const user = await admin.auth().getUserByEmail(email);
+  await admin.auth().updateUser(user.uid, { password: newPassword });
+
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  await pool.query(`UPDATE users SET password_hash=$1, updated_at=NOW() WHERE email=$2`, [passwordHash, email]);
+  return true;
+};
+
+exports.verifyEmail = async (oobCode) => {
+  await admin.auth().applyActionCode(oobCode);
+  return true;
+};

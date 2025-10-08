@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     open: true,
+    historyApiFallback: true,
     port: 5173,
     fs: {
       strict: false

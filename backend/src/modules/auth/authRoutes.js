@@ -61,6 +61,10 @@ router.post('/register/delivery', validateRegister, authController.registerDeliv
  * @returns {Object} Login success message and JWT token
  */
 router.post('/login', validateLogin, authController.login);
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
+router.post('/verify-email', authController.verifyEmail);
+router.post('/update-password', authController.updatePassword);
 
 module.exports = router;
 

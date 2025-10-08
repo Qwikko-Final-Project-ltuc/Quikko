@@ -25,6 +25,8 @@ import VerifyEmailPage from "./auth/VerifyEmailPage";
 import ResetPasswordPage from "./auth/ResetPasswordPage";
 import ContactUs from "./customer/pages/ContactUs";
 import ChatPage from "./customer/pages/ChatPage";
+import PasswordUpdated from "./auth/PasswordUpdated";
+
 
 const CustomerRoutes = () => {
   return (
@@ -34,6 +36,10 @@ const CustomerRoutes = () => {
       <Route path="/customer/forgot-password" element={<ForgotPassword />} /> 
       <Route path="/customer/verify-email" element={<VerifyEmailPage />} />
       <Route path="/customer/reset-password" element={<ResetPasswordPage />} />
+
+
+      <Route path="/customer/password-updated" element={<PasswordUpdated />} />
+
       <Route element={<MainLayout />}>
         <Route path="/customer/home" element={<HomePage />} />
         <Route path="/customer/landing" element={<LandingPage />} />

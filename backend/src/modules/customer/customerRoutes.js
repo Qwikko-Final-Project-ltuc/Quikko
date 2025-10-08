@@ -202,6 +202,9 @@ router.get("/get-guest-token", guestToken, (req, res) => {
 });
 
 
+router.post("/contactUs",customerController.sendContactMessage);
+
+
 module.exports = router;
 
 
