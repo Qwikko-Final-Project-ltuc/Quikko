@@ -1,24 +1,24 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchCart } from "../cartSlice";
 import ProductCard from "../components/ProductCard"; 
 import customerAPI from "../services/customerAPI";
-import LandingPage from "./LandingPage"; // استيراد الكمبوننت
+import LandingPage from "./LandingPage"; 
+import { fetchCart, setCurrentCart } from "../cartSlice";
 
 const HomePage = () => {
   const [popularProducts, setPopularProducts] = useState([]);
   const [newestProducts, setNewestProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const dispatch = useDispatch();
-
+  const userId = useSelector((state) => state.cart.user?.id);
+    const initialCartId = location.state?.cartId;
   // Cart info
   const currentCart = useSelector((state) => state.cart.currentCart);
   const tempCartId = useSelector((state) => state.cart.tempCartId);
-  const cartIdToUse = tempCartId || currentCart?.id;
+  // const cartIdToUse = tempCartId || currentCart?.id;
 
-  // ===== Fetch Products =====
+  //Fetch Products 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -27,14 +27,14 @@ const HomePage = () => {
           "http://localhost:3000/api/customers/products?sort=popular"
         );
         const dataPopular = await resPopular.json();
-        setPopularProducts(dataPopular.slice(0, 4));
+        setPopularProducts(dataPopular.items.slice(0, 4));
 
         // Newest Products
         const resNewest = await fetch(
           "http://localhost:3000/api/customers/products?sort=newest"
         );
         const dataNewest = await resNewest.json();
-        setNewestProducts(dataNewest.slice(0, 4));
+        setNewestProducts(dataNewest.items.slice(0, 4));
       } catch (err) {
         console.error(err);
         setError(err.message);
@@ -46,30 +46,30 @@ const HomePage = () => {
     fetchProducts();
   }, []);
 
-  // ===== Add to Cart Handler =====
-  const handleAddToCart = async (product, quantity = 1) => {
-    try {
-      const cart = await customerAPI.getOrCreateCart(cartIdToUse);
-      const cartId = cart?.id || cart?.data?.id;
-      if (!cartId) {
-        console.error("No cart ID found or created!");
-        return;
+  // Add to cart
+    const handleAddToCart = async (product, quantity = 1) => {
+      try {
+        let cart = currentCart;
+        const guestToken = tempCartId || localStorage.getItem("guest_token");
+  
+        if (!cart?.id) {
+          cart = await customerAPI.getOrCreateCart(initialCartId, userId, guestToken);
+          dispatch(setCurrentCart(cart));
+        }
+  
+        await customerAPI.addItem({
+          cartId: cart.id,
+          product,
+          quantity,
+          variant: product.variant || {},
+        });
+  
+        dispatch(fetchCart(cart.id));
+        // alert("Added to cart");
+      } catch (err) {
+        alert(err.response?.data?.message || err.message);
       }
-
-      await customerAPI.addItem({
-        cartId,
-        product,
-        quantity,
-        variant: product.variant || {},
-      });
-
-      dispatch(fetchCart(cartId));
-      alert("Added to cart");
-    } catch (err) {
-      const msg = err.response?.data?.message || err.message;
-      alert(msg);
-    }
-  };
+    };
 
   if (loading)
     return <p className="text-center mt-20 text-gray-500">Loading...</p>;

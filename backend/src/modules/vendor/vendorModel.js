@@ -22,9 +22,10 @@ const pool = require("../../config/db");
  * console.log(vendors[0].store_name);
  */
 exports.getAllVendors = async () => {
-  const result = await pool.query("SELECT * FROM vendors");
+  const result = await pool.query("SELECT * FROM vendors WHERE status = 'approved'");
   return result.rows;
 };
+
 
 /**
  * Get vendor sales report including total orders & sales.
@@ -75,7 +76,7 @@ exports.getVendorIdByUserId = async (userId) => {
 exports.getVendorByUserId = async (userId) => {
   const query = `SELECT * FROM vendors WHERE user_id = $1`;
   const { rows } = await pool.query(query, [userId]);
-  return rows[0]; // ترجع صف البائع المرتبط بالـ user
+  return rows[0]; 
 };
 
 exports.getVendorProducts = async (vendorId) => {
@@ -186,7 +187,6 @@ exports.getProfile = async (userId) => {
  * @returns {Promise<Object>} Updated vendor profile record
  */
 exports.updateProfile = async (userId, profileData) => {
-  // فقط الحقول المسموحة
   const allowedFields = ["store_name", "store_logo", "description", "address"];
   
   let setClause = [];
@@ -200,10 +200,8 @@ exports.updateProfile = async (userId, profileData) => {
     }
   });
 
-  // إضافة updated_at دائما
   setClause.push(`updated_at = NOW()`);
 
-  // user_id
   values.push(userId);
 
   const query = `

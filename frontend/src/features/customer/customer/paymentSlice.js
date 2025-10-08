@@ -1,12 +1,10 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import customerAPI from "../customer/services/customerAPI";
 
-// thunk لدفع الكارت
 export const payCart = createAsyncThunk(
   "payment/payCart",
   async ({ cartId, paymentMethod, card, address, total }, thunkAPI) => {
     try {
-      // هنا نرسل الطلب للباك إند (Sandbox أو وهمي)
       const res = await customerAPI.pay({ cartId, paymentMethod, card, address, total });
       return res;
     } catch (err) {
@@ -21,7 +19,7 @@ export const fetchPayments = createAsyncThunk(
   "payment/fetchPayments",
   async (_, thunkAPI) => {
     try {
-      const res = await customerAPI.getPayments({}); // أو GET /payment حسب الباك اند
+      const res = await customerAPI.getPayments({}); 
       return res;
     } catch (err) {
       return thunkAPI.rejectWithValue(err.message || "Failed to fetch payments");

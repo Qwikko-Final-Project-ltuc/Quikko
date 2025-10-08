@@ -15,21 +15,19 @@ const LoginForm = () => {
   const { register, handleSubmit, formState: { errors } } = useForm();
 
   const onSubmit = async (data) => {
-    // 1️⃣ تسجيل الدخول
     const result = await dispatch(loginCustomer(data));
 
+
     if (result.meta.requestStatus === "fulfilled") {
-      // 2️⃣ جلب بيانات المستخدم بعد login
       const userResult = await dispatch(fetchCurrentUser());
+      // console.log(userResult,"userResult");
       const userId = userResult.payload?.id;
 
       if (userId) {
-        // 3️⃣ نقل cart الغوست أو إنشاء cart جديد
         await dispatch(assignGuestCartAfterLogin(userId));
       }
 
-      // 4️⃣ بعد كل شيء، نوجّه المستخدم للصفحة الرئيسية
-      navigate("/");
+      navigate("/customer/home");
     }
   };
 
@@ -73,7 +71,7 @@ const LoginForm = () => {
         <p className="text-center text-gray-500 mt-2">
           <span
             className="text-blue-600 cursor-pointer hover:underline"
-            onClick={() => navigate("/auth/forgot-password")}
+            onClick={() => navigate("/customer/forgot-password")}
           >
             Forgot Password?
           </span>
@@ -84,7 +82,7 @@ const LoginForm = () => {
         Don't have an account?{" "}
         <span
           className="text-blue-600 cursor-pointer hover:underline"
-          onClick={() => navigate("/auth/signup")}
+          onClick={() => navigate("/customer/signup")}
         >
           Sign up
         </span>

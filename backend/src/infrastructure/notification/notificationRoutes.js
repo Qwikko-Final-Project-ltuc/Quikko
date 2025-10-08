@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const controller = require("./notificationController");
 const { protect, authorizeRole } = require("../../middleware/authMiddleware");
-const {admin} = require("../firebase"); // لازم يكون موجود لاستعمال send-test
+const {admin} = require("../firebase"); 
 const pool = require("../../config/db");
 
 
@@ -28,7 +28,6 @@ router.post("/", protect,authorizeRole("admin"), controller.sendNotification);
 router.get("/", protect, controller.getNotifications);
 
 
-// routes/userRoutes.js
 router.post("/save-fcm-token", protect, async (req, res) => {
   const { fcmToken } = req.body;
   if (!fcmToken) return res.status(400).json({ error: "FCM token required" });
@@ -59,7 +58,7 @@ router.post("/send-test", async (req, res) => {
     notification: {
       title: "Test Notification",
       body: "Hello! This is a test message from backend.",
-      icon: "/favicon.ico"
+      // icon: "/favicon.ico"
     },
     webpush: { headers: { Urgency: "high" } },
   };
@@ -75,13 +74,13 @@ router.post("/send-test", async (req, res) => {
 
 
 router.post("/mark-read", async (req, res) => {
-  console.log("POST /mark-read called"); // بداية الطلب
+  // console.log("POST /mark-read called"); 
 
   const { ids } = req.body; // array of notification ids
-  console.log("Received IDs:", ids);
+  // console.log("Received IDs:", ids);
 
   if (!ids || !Array.isArray(ids) || ids.length === 0) {
-    console.warn("No IDs provided or not an array");
+    // console.warn("No IDs provided or not an array");
     return res.status(400).json({ error: "No IDs provided" });
   }
 
@@ -92,10 +91,10 @@ router.post("/mark-read", async (req, res) => {
       WHERE id = ANY($1::int[])
       RETURNING *;
     `;
-    console.log("Running query:", query, "with ids:", ids);
+    // console.log("Running query:", query, "with ids:", ids);
 
     const result = await pool.query(query, [ids]);
-    console.log("Query result:", result.rowCount, result.rows);
+    // console.log("Query result:", result.rowCount, result.rows);
 
     res.json({ updated: result.rowCount, notifications: result.rows });
   } catch (err) {
@@ -105,7 +104,7 @@ router.post("/mark-read", async (req, res) => {
 });
 
 router.get("/unread-count", protect, async (req, res) => {
-  const userId = req.user.id; // افترض أن middleware للتحقق موجود
+  const userId = req.user.id;
   try {
     const result = await pool.query(
       `SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND read_status = false`,

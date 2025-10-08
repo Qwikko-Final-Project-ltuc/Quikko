@@ -5,7 +5,6 @@ export default function AboutPage() {
   return (
     <main className="font-sans text-gray-800">
       {/* Hero Section */}
-      {/* Hero Section */}
       <section className="bg-gradient-to-r from-gray-200 to-gray-300 text-gray-900 py-16 px-6 text-center">
         <div className="max-w-4xl mx-auto space-y-4">
           <h1 className="text-4xl font-extrabold tracking-tight">

@@ -19,11 +19,10 @@ const SignupForm = () => {
     dispatch(registerCustomer(data));
   };
 
-  // لو تم التسجيل نوجه المستخدم للصفحة الرئيسية أو صفحة اللوغ ان
   React.useEffect(() => {
   if (user) {
     alert("Please check your email to verify your account before logging in.");
-    navigate("/auth/login");
+    navigate("/customer/login");
   }
 }, [user, navigate]);
 
@@ -98,7 +97,7 @@ const SignupForm = () => {
         Already have an account?{" "}
         <span
           className="text-blue-600 cursor-pointer hover:underline"
-          onClick={() => navigate("/auth/login")}
+          onClick={() => navigate("/customer/login")}
         >
           Login
         </span>

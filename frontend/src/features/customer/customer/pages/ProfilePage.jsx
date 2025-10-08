@@ -1,4 +1,3 @@
-// src/features/customer/customer/pages/ProfilePage.jsx
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchProfile, updateProfile } from "../profileSlice";
@@ -18,12 +17,10 @@ const ProfilePage = () => {
   const [successMsg, setSuccessMsg] = useState("");
   const [isEditing, setIsEditing] = useState(false);
 
-  // تحميل البيانات من Redux عند التحميل
   useEffect(() => {
     dispatch(fetchProfile());
   }, [dispatch]);
 
-  // تهيئة الفورم عند توفر البيانات
   useEffect(() => {
     if (profile) {
       setFormData({
@@ -45,7 +42,7 @@ const ProfilePage = () => {
     try {
       await dispatch(updateProfile(formData)).unwrap();
       setSuccessMsg("Profile updated successfully!");
-      setIsEditing(false); // العودة للعرض فقط بعد الحفظ
+      setIsEditing(false); 
     } catch (err) {
       console.error(err);
     }
@@ -89,14 +86,10 @@ const ProfilePage = () => {
           {/* Email (read-only) */}
           <div>
             <label className="block text-gray-700 font-medium mb-1">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              readOnly
-              className="w-full border rounded px-3 py-2 bg-gray-100 cursor-not-allowed"
-            />
+            <p className="w-full border rounded px-3 py-2 bg-gray-100">{profile.email}</p>
+            <p className="text-red-500 text-sm mt-1">Email cannot be edited</p>
           </div>
+
           {/* Phone */}
           <div>
             <label className="block text-gray-700 font-medium mb-1">Phone</label>

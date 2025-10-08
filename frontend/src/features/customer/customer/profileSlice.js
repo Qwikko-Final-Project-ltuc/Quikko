@@ -1,4 +1,3 @@
-// src/features/customer/customer/slices/profileSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import customerAPI from "../customer/services/customerAPI";
 
@@ -14,7 +13,7 @@ export const updateProfile = createAsyncThunk(
 );
 
 export const deleteProfile = createAsyncThunk("profile/delete", async () => {
-  return await customerAPI.deleteProfile(); // راح يعمل DELETE على /profile
+  return await customerAPI.deleteProfile(); 
 });
 
 const profileSlice = createSlice({
@@ -42,7 +41,7 @@ const profileSlice = createSlice({
       })
       .addCase(deleteProfile.fulfilled, (state) => {
         state.loading = false;
-        state.data = null; // بعد الحذف
+        state.data = null;
       })
       .addCase(deleteProfile.rejected, (state, action) => {
         state.loading = false;

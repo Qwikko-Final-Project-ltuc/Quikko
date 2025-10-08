@@ -6,8 +6,6 @@ import { setCurrentCart, clearTempCartId } from "../customer/cartSlice";
 import customerAPI from "../customer/services/customerAPI";
 
 // ====================== Thunks ====================== //
-
-// 1️⃣ تسجيل مستخدم جديد
 export const registerCustomer = createAsyncThunk(
   "auth/registerCustomer",
   async (formData, { rejectWithValue }) => {
@@ -20,21 +18,21 @@ export const registerCustomer = createAsyncThunk(
   }
 );
 
-// 2️⃣ تسجيل دخول المستخدم
 export const loginCustomer = createAsyncThunk(
   "auth/loginCustomer",
-  async (credentials, { rejectWithValue }) => {
+  async (credentials, { rejectWithValue, dispatch }) => {
     try {
       const response = await CustomerAuthAPI.login(credentials);
-      localStorage.setItem("token", response.token); // حفظ التوكن
-      return response.token;
+      localStorage.setItem("token", response.token); 
+      const profile = await customerAPI.getProfile();
+      await dispatch(assignGuestCartAfterLogin(profile.id));
+      return { token: response.token, user: profile };
     } catch (err) {
       return rejectWithValue(err.response?.data?.error || "Login failed");
     }
   }
 );
 
-// 3️⃣ تسجيل دخول باستخدام Google
 export const loginWithGoogle = createAsyncThunk(
   "auth/loginWithGoogle",
   async (_, { rejectWithValue }) => {
@@ -58,39 +56,24 @@ export const loginWithGoogle = createAsyncThunk(
   }
 );
 
-// 4️⃣ بعد login، نقل منتجات الغوست للكارت الخاص بالمستخدم
 export const assignGuestCartAfterLogin = createAsyncThunk(
   "auth/assignGuestCartAfterLogin",
-  async (userId, { getState, dispatch }) => {
-    const state = getState();
-    const tempCartId = state.cart.tempCartId;
+  async (userId, { dispatch }) => {
     const guestToken = localStorage.getItem("guest_token");
 
-    let cart;
+    if (guestToken) {
+      const cart = await customerAPI.assignGuestCartsToUser(userId, guestToken);
 
-    if (tempCartId || guestToken) {
-      // نقل منتجات الغوست للكارت الجديد
-      cart = await customerAPI.assignGuestCartsToUser(
-        userId,
-        tempCartId || guestToken
-      );
-
-      // تحديث currentCart في Redux
       dispatch(setCurrentCart(cart));
 
-      // مسح tempCartId و guest_token
-      dispatch(clearTempCartId());
       localStorage.removeItem("guest_token");
+      dispatch(clearTempCartId());
 
       return cart;
     }
-
-    // إذا ما في غوست، نجيب أو ننشئ كارت جديد
-    cart = await customerAPI.getOrCreateCart(null, userId);
-    dispatch(setCurrentCart(cart));
-    return cart;
   }
 );
+
 
 // ====================== Slice ====================== //
 const initialState = {
@@ -108,6 +91,7 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       localStorage.removeItem("token");
+      localStorage.removeItem("guest_token");
     },
   },
   extraReducers: (builder) => {
@@ -133,8 +117,9 @@ const authSlice = createSlice({
       })
       .addCase(loginCustomer.fulfilled, (state, action) => {
         state.loading = false;
-        state.token = action.payload;
-        localStorage.setItem("token", action.payload);
+        state.token = action.payload.token;
+        state.user = action.payload.user;
+        localStorage.setItem("token", action.payload.token);
       })
       .addCase(loginCustomer.rejected, (state, action) => {
         state.loading = false;

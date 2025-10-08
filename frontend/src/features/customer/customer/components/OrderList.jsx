@@ -1,4 +1,3 @@
-// src/features/customer/customer/components/OrderList.jsx
 import React from "react";
 import OrderItem from "./OrderItem";
 

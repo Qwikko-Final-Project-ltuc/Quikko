@@ -57,7 +57,6 @@ exports.insertProduct = async (productData) => {
       updated_at,
     } = productData;
 
-    // 1️⃣ إدخال المنتج
     const productResult = await client.query(
       `
       INSERT INTO products 
@@ -80,7 +79,6 @@ exports.insertProduct = async (productData) => {
 
     const product = productResult.rows[0];
 
-    // 2️⃣ إدخال الصور في نفس الـ transaction
     if (images && images.length > 0) {
       const imageQuery = `
         INSERT INTO product_images (product_id, image_url)
@@ -92,7 +90,6 @@ exports.insertProduct = async (productData) => {
 
     await client.query('COMMIT');
     
-     // 3️⃣ جلب الصور الخاصة بالمنتج
     const imageResult = await client.query(
       `SELECT image_url FROM product_images WHERE product_id = $1`,
       [product.id]
@@ -145,7 +142,6 @@ exports.updateProduct = async (id, vendor_id, productData) => {
       variants,
     } = productData;
 
-    // تحديث بيانات المنتج بدون حقل الصور
     const query = `
       UPDATE products
       SET name = $1,
@@ -172,12 +168,9 @@ exports.updateProduct = async (id, vendor_id, productData) => {
     const result = await client.query(query, values);
     const updatedProduct = result.rows[0];
 
-    // تحديث الصور في جدول product_images
     if (images && Array.isArray(images)) {
-      // حذف الصور القديمة
       await client.query(`DELETE FROM product_images WHERE product_id = $1`, [id]);
 
-      // إضافة الصور الجديدة
       const imageQuery = `
         INSERT INTO product_images (product_id, image_url)
         VALUES ${images.map((_, i) => `($1, $${i + 2})`).join(', ')}
@@ -212,9 +205,8 @@ exports.updateProduct = async (id, vendor_id, productData) => {
  * await deleteProduct(1, 1);
  */
 exports.deleteProduct = async (id, vendor_id) => {
-  console.log('Soft deleting productId:', id, 'for vendorId:', vendor_id);
+  // console.log('Soft deleting productId:', id, 'for vendorId:', vendor_id);
 
-  // تحقق أولاً من وجود المنتج وحق البائع
   const result = await db.query(
     `SELECT * FROM products WHERE id = $1 AND vendor_id = $2`,
     [id, vendor_id]
@@ -224,7 +216,6 @@ exports.deleteProduct = async (id, vendor_id) => {
     throw new Error("Product not found or unauthorized");
   }
 
-  // تحديث is_deleted بدل الحذف
   const deleteResult = await db.query(
     `UPDATE products 
      SET is_deleted = TRUE
@@ -232,13 +223,13 @@ exports.deleteProduct = async (id, vendor_id) => {
      RETURNING *;`,
     [id, vendor_id]
   );
-  console.log('Soft delete result:', deleteResult.rows);
+  // console.log('Soft delete result:', deleteResult.rows);
 
   if (deleteResult.rowCount === 0) {
     throw new Error("Product not found or unauthorized");
   }
 
-  return deleteResult.rows[0]; // ترجع المنتج بعد التحديث
+  return deleteResult.rows[0];
 };
 
 

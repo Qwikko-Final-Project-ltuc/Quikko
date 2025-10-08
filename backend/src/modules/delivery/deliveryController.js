@@ -104,11 +104,9 @@ exports.updateOrderStatus = async function (req, res) {
     const { status } = req.body;
     const userId = req.user.id;
 
-    // ✅ تحقق من صحة الـ orderId
     if (Number.isNaN(orderId) || orderId <= 0)
       return res.status(400).json({ error: "Invalid order id" });
 
-    // ✅ تحقق من صحة الـ status
     if (!status || typeof status !== "string")
       return res
         .status(400)
@@ -119,24 +117,20 @@ exports.updateOrderStatus = async function (req, res) {
         .status(400)
         .json({ error: "Invalid status", allowed_statuses: ALLOWED_STATUSES });
 
-    // ✅ جلب شركة الدليفري
     const company = await Delivery.getCompanyProfile(userId);
     if (!company)
       return res
         .status(403)
         .json({ error: "User is not associated with any delivery company" });
 
-    // ✅ جلب تفاصيل الطلب
     let order = await Delivery.getOrderDetails(orderId);
     if (!order) return res.status(404).json({ error: "Order not found" });
 
-    // ✅ تحقق من صلاحية الشركة
     if (order.company_id !== company.company_id)
       return res.status(403).json({
         error: "This company is not authorized to update this order",
       });
 
-    // ✅ جلب كل الـ order items
     const orderItems = await Delivery.getOrderItems(orderId);
 
     // ✅ إذا كل الـ items مقبولة والأوردر مش accepted → حدثه تلقائياً
@@ -147,7 +141,6 @@ exports.updateOrderStatus = async function (req, res) {
     //   order = await Delivery.updateOrderStatus(orderId, "accepted");
     // }
 
-    // ✅ منطق تسلسل الحالات: تحقق أن الانتقال مسموح
     const allowedNextStatuses = STATUS_FLOW[order.status] || [];
     if (!allowedNextStatuses.includes(status)) {
       return res.status(400).json({
@@ -155,7 +148,6 @@ exports.updateOrderStatus = async function (req, res) {
         allowed_next: allowedNextStatuses,
       });
     }
-    // ✅ تحقق من الدفع قبل السماح بـ delivered
     if (
       status === "delivered" &&
       order.payment_status.toLowerCase() !== "paid"
@@ -165,7 +157,6 @@ exports.updateOrderStatus = async function (req, res) {
       });
     }
 
-    // ✅ تحديث الحالة الجديدة
     const updated = await Delivery.updateOrderStatus(orderId, status);
 
     return res.status(200).json({
@@ -246,10 +237,8 @@ exports.listCompanyOrders = async function (req, res) {
     if (!companyId || Number.isNaN(companyId))
       return res.status(400).json({ error: "Invalid company id" });
 
-    // ✅ تشييك وتحديث تلقائي قبل ما نرجع الطلبات
     await Delivery.checkAndUpdateAcceptedOrdersForCompany(companyId);
 
-    // ✅ الآن نجيب الطلبات بعد ما يتم تحديثها إذا لزم
     const orders = await Delivery.getCompanyOrders(companyId);
 
     return res.status(200).json({ orders });
@@ -409,13 +398,12 @@ exports.getDeliveryReport = async function (req, res) {
         });
     }
 
-    // جلب بيانات الشركة بناءً على userId
     const company = await Delivery.getCompanyProfile(userId);
     if (!company) {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
-    const deliveryCompanyId = company.company_id; // ID الفعلي من قاعدة البيانات
+    const deliveryCompanyId = company.company_id; 
     const days = parseInt(req.query.days, 10) || 7;
 
     const report = await Delivery.getWeeklyReport(deliveryCompanyId, days);
@@ -454,7 +442,6 @@ exports.updatePaymentStatus = async (req, res) => {
       return res.status(400).json({ message: "Payment status is required" });
     }
 
-    // تحويل كل شيء للـ lowercase
     const newStatus = payment_status.toLowerCase();
 
     if (!["paid", "unpaid"].includes(newStatus)) {
@@ -481,17 +468,14 @@ exports.updatePaymentStatus = async (req, res) => {
         .json({ message: "Forbidden: You are not assigned to this order" });
     }
 
-    // تحويل الحالة الحالية للـ lowercase
     const currentStatus = (order.payment_status || "").toLowerCase();
 
-    // منع الرجوع من paid -> unpaid
     if (currentStatus === "paid" && newStatus === "unpaid") {
       return res
         .status(400)
         .json({ message: "Cannot revert payment status from paid to unpaid" });
     }
 
-    // تحديث فقط من unpaid -> paid
     if (currentStatus === "unpaid" && newStatus === "paid") {
       const updatedOrder = await Delivery.updatePaymentStatus(id, "paid");
       return res.status(200).json({
@@ -500,7 +484,6 @@ exports.updatePaymentStatus = async (req, res) => {
       });
     }
 
-    // لو الحالة نفسها
     return res.status(200).json({
       message: `Payment status is already ${currentStatus}`,
       order,

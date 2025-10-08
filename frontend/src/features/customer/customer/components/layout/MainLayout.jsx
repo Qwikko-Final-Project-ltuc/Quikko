@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import Navbar from "./Navbar";
-import Sidebar from "./Sidebar";
 import { Outlet } from "react-router-dom";
-
+import Footer from "./Footer";
 const MainLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -11,10 +10,10 @@ const MainLayout = () => {
   return (
     <div className="relative">
       <Navbar toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
-      <Sidebar isOpen={isSidebarOpen} onClose={toggleSidebar} />
       <main className="transition-all duration-300 ml-0">
         <Outlet />
       </main>
+        <Footer />
     </div>
   );
 };

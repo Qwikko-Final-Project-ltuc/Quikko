@@ -62,15 +62,15 @@ exports.register = async (data, role) => {
   if (role === 'customer') {
     await insertCustomer({ user_id: postgresUser.id });
   } else if (role === 'vendor') {
-    console.log('store_name:', data.store_name);
-    console.log('store_slug:', data.store_slug || generateSlug(data.store_name));
+    // console.log('store_name:', data.store_name);
+    // console.log('store_slug:', data.store_slug || generateSlug(data.store_name));
 
     await insertVendor({
   user_id: postgresUser.id,
   store_name: data.store_name,
   store_slug: data.store_slug || generateSlug(data.store_name),
   description: data.description || '',
-  status: 'pending', // القيمة الافتراضية قبل الموافقة
+  status: 'pending', //defualt value before approveing
   contact_email: data.email,
   phone: data.phone || null,
   address: data.address || null,

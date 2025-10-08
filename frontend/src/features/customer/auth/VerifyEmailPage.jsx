@@ -12,7 +12,7 @@ const VerifyEmailPage = () => {
       axios.post("http://localhost:3000/api/auth/verify-email", { oobCode })
         .then(() => {
           alert("Email verified successfully!");
-          navigate("/auth/login");
+          navigate("/customer/login");
         })
         .catch(() => alert("Verification failed"));
     }

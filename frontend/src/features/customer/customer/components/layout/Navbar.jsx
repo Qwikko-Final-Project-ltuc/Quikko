@@ -19,6 +19,14 @@ import { MdFavorite } from "react-icons/md";
 import { fetchProfile, updateProfile } from "../../profileSlice";
 import { setSearchQuery } from "../../productsSlice";
 import { fetchAllCarts } from "../../cartSlice";
+import { formatInTimeZone } from "date-fns-tz";
+import { subHours } from "date-fns";
+
+import { deleteToken, getToken } from "firebase/messaging";
+import { messaging } from "../../../../../app/firebase";
+import axios from "axios";
+
+
 
 const Navbar = () => {
   const dispatch = useDispatch();
@@ -60,23 +68,21 @@ const Navbar = () => {
     "Ajloun",
   ];
 
-  // Reset search bar when navigating away from /products
   useEffect(() => {
-    if (location.pathname === "/products") return;
+    if (location.pathname === "/customer/products") return;
     setSearchTerm("");
     setResults([]);
     dispatch(setSearchQuery(""));
   }, [location.pathname, dispatch]);
 
-  // Fetch profile & cart
   useEffect(() => {
     if (isLoggedIn) {
       dispatch(fetchProfile());
       dispatch(fetchAllCarts());
+      setupFCM();
     }
   }, [dispatch, isLoggedIn]);
 
-  // Fetch unread notifications count
   useEffect(() => {
     const fetchUnreadCount = async () => {
       try {
@@ -96,12 +102,10 @@ const Navbar = () => {
     if (isLoggedIn) fetchUnreadCount();
   }, [token, isLoggedIn]);
 
-  // Sync unread count with notifications state
   useEffect(() => {
     setUnreadCount(notifications.filter((n) => !n.read_status).length);
   }, [notifications]);
 
-  // Filter search results
   useEffect(() => {
     if (!searchTerm.trim()) return setResults([]);
     const filtered = products.filter(
@@ -115,7 +119,7 @@ const Navbar = () => {
     setResults([]);
     setSearchOpen(false);
     dispatch(setSearchQuery(productName));
-    navigate("/products");
+    navigate("/customer/products");
   };
 
   const handleCityChange = (e) => {
@@ -123,12 +127,11 @@ const Navbar = () => {
   };
 
   const handleCartClick = () => {
-    navigate("/cart");
+    navigate("/customer/cart");
   };
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
-  // 🔒 Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
@@ -160,9 +163,43 @@ const Navbar = () => {
     return () => window.removeEventListener("click", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    window.location.href = "/auth/login";
+
+
+
+  
+const api = axios.create({
+  baseURL: "http://localhost:3000/api",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  withCredentials: true, 
+});
+
+const setupFCM = async () => {
+  try {
+    const currentToken = await getToken(messaging, { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY });
+    console.log("Generated FCM token:", currentToken);
+    if (currentToken) {
+      localStorage.setItem("fcm_token", currentToken);
+    }
+  } catch (err) {
+    console.error("Error getting FCM token:", err);
+  }
+};
+  const handleLogout = async() => {
+    const fcmToken = localStorage.getItem("fcm_token");
+      if (fcmToken) {
+        await api.post(
+        "/users/unregister-fcm",
+        { fcmToken }, // أرسل التوكن للباك إذا الباك يحتاجه
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+        await deleteToken(messaging); 
+        localStorage.removeItem("fcm_token"); 
+        localStorage.removeItem("token"); 
+      }
+    window.location.href = "/customer/login";
   };
 
   return (
@@ -177,38 +214,75 @@ const Navbar = () => {
           <img src="/logo.png" alt="Qwikko Logo" className="h-9" />
         </div>
 
-          {/* Sidebar Navigation */}
-          <nav className="flex-1 flex flex-col mt-4 space-y-1">
-            <Link to="/" className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
-              <FaBars className="mr-3"/> Home
-            </Link>
-            <Link to="/profile" className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
-              <FaUser className="mr-3"/> Profile
-            </Link>
-            <Link to="/stores" className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
-              <FaStore className="mr-3"/> Stores
-            </Link>
-            <Link to="/products" className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
-              <FaBoxOpen className="mr-3"/> All Products
-            </Link>
-            <Link to="/wishlist" className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
-              <MdFavorite  className="mr-3"/> Wishlist
-            </Link>
-            <Link to="/contact" className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
-              <FaPhone className="mr-3"/> Contact
-            </Link>
-            <Link to="/about" className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
-              <FaInfoCircle className="mr-3"/> About
-            </Link>
-            <Link to="/orders" className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
-              <FaClipboardList className="mr-3"/> Orders
-            </Link>
-          </nav>
+        {/* Sidebar Navigation */}
+        <nav className="flex-1 flex flex-col mt-4 space-y-1">
+          {/* Always visible */}
+          <Link
+            to="/customer/home"
+            className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"
+          >
+            <FaBars className="mr-3" /> Home
+          </Link>
+
+          {isLoggedIn && (
+            <>
+              <Link
+                to="/customer/profile"
+                className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"
+              >
+                <FaUser className="mr-3" /> Profile
+              </Link>
+
+              <Link
+                to="/customer/orders"
+                className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"
+              >
+                <FaClipboardList className="mr-3" /> Orders
+              </Link>
+
+              <Link
+                to="/customer/wishlist"
+                className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"
+              >
+                <MdFavorite className="mr-3" /> Wishlist
+              </Link>
+            </>
+          )}
+
+          {/* Always visible */}
+          <Link
+            to="/customer/products"
+            className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"
+          >
+            <FaBoxOpen className="mr-3" /> All Products
+          </Link>
+
+          <Link
+            to="/customer/stores"
+            className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"
+          >
+            <FaStore className="mr-3" /> Stores
+          </Link>
+
+          <Link
+            to="/customer/contact"
+            className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"
+          >
+            <FaPhone className="mr-3" /> Contact
+          </Link>
+
+          <Link
+            to="/customer/about"
+            className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"
+          >
+            <FaInfoCircle className="mr-3" /> About
+          </Link>
+        </nav>
 
         <div className="mt-6 flex flex-col px-6 space-y-2">
           {!isLoggedIn ? (
             <Link
-              to="/auth/login"
+              to="/customer/login"
               className="flex items-center px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"
             >
               <FaSignOutAlt className="mr-3" /> Login
@@ -216,7 +290,7 @@ const Navbar = () => {
           ) : (
             <>
               <Link
-                to="/settings"
+                to="/customer/settings"
                 className="flex items-center px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"
               >
                 <FaCog className="mr-3" /> Settings
@@ -234,6 +308,7 @@ const Navbar = () => {
 
       {/* Navbar */}
       <nav className="w-full bg-white shadow-md flex items-center px-6 py-3 z-40 relative">
+        {/* Sidebar Toggle */}
         <button
           onClick={toggleSidebar}
           className="mr-6 text-gray-700 hover:text-gray-900 transition-colors duration-200 sidebar-toggle-button"
@@ -241,10 +316,12 @@ const Navbar = () => {
           <FaBars size={22} />
         </button>
 
-        <Link to="/" className="mr-8 flex items-center">
+        {/* Logo */}
+        <Link to="/customer/home" className="mr-8 flex items-center">
           <img src="/logo.png" alt="Qwikko Logo" className="h-9" />
         </Link>
 
+        {/* Deliver to */}
         {isLoggedIn && (
           <div className="flex items-center mr-8">
             <span className="mr-2 text-gray-600 font-medium">Deliver to</span>
@@ -263,7 +340,7 @@ const Navbar = () => {
           </div>
         )}
 
-        {/* Search bar */}
+        {/* Search Bar */}
         <div
           ref={searchDropdownRef}
           className="flex-1 flex items-center mr-8 relative"
@@ -300,6 +377,7 @@ const Navbar = () => {
           )}
         </div>
 
+        {/* Right Icons */}
         <div className="flex items-center space-x-6">
           {isLoggedIn && (
             <div ref={profileDropdownRef} className="relative">
@@ -313,7 +391,7 @@ const Navbar = () => {
               {profileOpen && (
                 <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg w-44">
                   <Link
-                    to="/profile"
+                    to="/customer/profile"
                     className="block px-4 py-2 hover:bg-gray-100 transition-colors duration-150"
                     onClick={() => setProfileOpen(false)}
                   >
@@ -452,9 +530,12 @@ const Navbar = () => {
                         >
                           <h4 className="font-medium">{n.title}</h4>
                           <p className="text-sm text-gray-600">{n.message}</p>
+                          
                           <span className="text-xs text-gray-400">
-                            {new Date(n.created_at).toLocaleString()}
+                            {formatInTimeZone(subHours(new Date(n.created_at), -3), "Asia/Amman", "dd/MM/yyyy hh:mm a")}
                           </span>
+
+
                         </li>
                       ))}
                     </ul>

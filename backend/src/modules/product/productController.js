@@ -107,7 +107,6 @@ exports.updateProduct = async (req, res) => {
 
     const vendorId = vendorResult.rows[0].id;
 
-    // 2️⃣ تحقق من وجود المنتج لهذا البائع
     const productCheck = await db.query(
       'SELECT * FROM products WHERE id = $1 AND vendor_id = $2',
       [req.params.id, vendorId]
@@ -115,12 +114,11 @@ exports.updateProduct = async (req, res) => {
     if (productCheck.rowCount === 0) 
         return res.status(404).json({ message: 'Product not found or unauthorized' });
 
-    // 3️⃣ بعد التحقق، استدعي Service لتحديث المنتج
     const updatedProduct = await productService.updateProduct(
       req.params.id,
       vendorId,
       req.body,
-      productCheck.rows[0] // البيانات الحالية
+      productCheck.rows[0] 
     );
 
     res.json({ message: 'Product updated successfully', data: updatedProduct });
@@ -149,12 +147,10 @@ exports.updateProduct = async (req, res) => {
  */
 exports.deleteProduct = async (req, res) => {
   try {
-    // تحويل ID من string إلى number للتأكد من المطابقة
     const productId = parseInt(req.params.id, 10);
     if (isNaN(productId)) 
       return res.status(400).json({ message: 'Invalid product ID' });
 
-    // 1️⃣ تحقق من أن المستخدم هو Vendor
     const vendorResult = await db.query(
       'SELECT id FROM vendors WHERE user_id = $1',
       [req.user.id]
@@ -165,7 +161,6 @@ exports.deleteProduct = async (req, res) => {
 
     const vendorId = vendorResult.rows[0].id;
 
-    // تحقق من أن المنتج موجود ومرتبط بهذا البائع
     const productCheck = await db.query(
       'SELECT id FROM products WHERE id = $1 AND vendor_id = $2',
       [productId, vendorId]
@@ -174,12 +169,11 @@ exports.deleteProduct = async (req, res) => {
     if (productCheck.rowCount === 0)
       return res.status(404).json({ message: 'Product not found or unauthorized' });
 
-    // 🔹 استخدام الـ model لعمل soft delete
     const deletedProduct = await productService.deleteProduct(productId, vendorId);
 
     res.json({
       message: 'Product soft-deleted successfully',
-      product: deletedProduct // ترجع المنتج بعد التحديث
+      product: deletedProduct
     });
   } catch (err) {
     console.error('Delete product error:', err);

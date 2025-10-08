@@ -2,15 +2,20 @@ import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectedConversation, setMessages, sendMessageToFirebase } from "../chatSlice";
 import { getUserIdFromToken } from "../../../../utlis/auth";
-import dayjs from "dayjs";
 import { Timestamp } from "firebase/firestore";
 import listenToMessages from "./listenToMessages";
 import chatAPI from "../services/customerAPI";
+
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 
 const Conversation = () => {
   const dispatch = useDispatch();
   const { selectedConversation, messages, conversations } = useSelector((state) => state.chat);
   const [text, setText] = useState("");
+  dayjs.extend(utc);
+  dayjs.extend(timezone);
 
   const messagesEndRef = useRef();
   const messagesContainerRef = useRef();
@@ -65,7 +70,7 @@ const Conversation = () => {
     return () => unsubscribe();
   }, [selectedConversation, dispatch, currentUserId]);
 
-  // Scroll تلقائي
+  // Scroll 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [convMessages]);
@@ -82,8 +87,8 @@ const Conversation = () => {
     : "";
 
   const handleSend = async () => {
-      console.log("selectedConversation:", selectedConversation);
-      console.log("text:", text);
+      // console.log("selectedConversation:", selectedConversation);
+      // console.log("text:", text);
     if (!text.trim() || !selectedConversation) return;
 
     try {
@@ -135,10 +140,10 @@ const Conversation = () => {
       >
         {convMessages.map((msg, index) => {
           const isMine = msg.sender_id === currentUserId;
-          const time =
-            msg.created_at instanceof Timestamp
-              ? dayjs(msg.created_at.toDate()).add(3, "hour").add(8, "minute").format("hh:mm A")
-              : dayjs(msg.created_at).add(3, "hour").add(8, "minute").format("hh:mm A");
+          const time = dayjs(msg.created_at)
+          .tz("Asia/Amman") // توقيت الأردن
+          .format("hh:mm A");
+
 
           return (
             <div

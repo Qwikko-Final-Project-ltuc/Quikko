@@ -1,4 +1,3 @@
-// src/modules/chat/chatService.js
 const ChatModel = require('./chatModel');
 const pool = require("../../config/db");
 const { saveToFirebase } = require('../../infrastructure/firebase');
