@@ -6,6 +6,7 @@ import {
   updateOrderPaymentStatus,
 } from "./DeliveryAPI";
 import { FaBox, FaTimes } from "react-icons/fa";
+import { useSelector } from "react-redux";
 
 const STATUS_FLOW = {
   accepted: ["processing"],
@@ -33,7 +34,8 @@ export default function OrdersList() {
   const [updating, setUpdating] = useState(false);
   const [filter, setFilter] = useState("all");
   const navigate = useNavigate();
-  const [visibleCount, setVisibleCount] = useState(4);
+  const [visibleCount, setVisibleCount] = useState(6);
+  const isDarkMode = useSelector((state) => state.deliveryTheme.darkMode);
 
   useEffect(() => {
     const loadOrders = async () => {
@@ -112,34 +114,71 @@ export default function OrdersList() {
       </div>
     );
   if (!orders.length)
-    return <p className="text-center mt-10">📭 No orders found.</p>;
+    return <p className="text-center mt-10"> No orders found.</p>;
 
   return (
-    <div className="max-w-6xl mx-auto mt-10 p-6 bg-gray-50 rounded-2xl">
-      <h2 className="text-3xl font-extrabold text-gray-800 mb-6 text-center flex items-center justify-center gap-2">
-        <FaBox className="text-green-600 text-3xl" /> Company Orders
+    <div
+      className="w-full mx-auto mt-10 p-6  rounded-2xl"
+      style={{
+        backgroundColor: isDarkMode ? "#242625" : "#f0f2f1",
+        color: isDarkMode ? "#ffffff" : "#242625",
+      }}
+    >
+      <h2 className="text-3xl font-extrabold  mb-6 text-center flex items-center justify-center gap-2">
+        <FaBox
+          className="text-3xl"
+          style={{
+            backgroundColor: isDarkMode ? "#242625" : "#f0f2f1",
+            color: isDarkMode ? "#ffffff" : "#242625",
+          }}
+        />{" "}
+        Company Orders
       </h2>
 
       {message && (
-        <p className="text-center mb-4 font-medium text-green-700 transition-all duration-300">
+        <p
+          className="text-center mb-4 font-medium  transition-all duration-300"
+          style={{
+            color: isDarkMode ? "#ffffff" : "#242625",
+          }}
+        >
           {message}
         </p>
       )}
 
-      {/* Filter Buttons */}
       <div className="mb-6 flex flex-wrap gap-3 justify-center">
         {Object.keys(STATUS_LABELS).map((key) => (
           <button
             key={key}
             onClick={() => {
               setFilter(key);
-              setVisibleCount(4); // إعادة تعيين عدد الطلبات المرئية عند تغيير الفلتر
+              setVisibleCount(3);
             }}
-            className={`px-4 py-1 rounded-2xl border transition-all duration-300 ${
-              filter === key
-                ? "bg-blue-600 text-white border-blue-600 shadow-md"
-                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-            }`}
+            className="px-4 py-1 rounded-2xl transition-all duration-300 border shadow-md"
+            style={{
+              backgroundColor:
+                filter === key
+                  ? isDarkMode
+                    ? "#307A59" // dark mode active button
+                    : "#307A59" // light mode active button
+                  : isDarkMode
+                  ? "#666666" // dark mode inactive button
+                  : "#ffffff", // light mode inactive button
+              color:
+                filter === key
+                  ? "#ffffff" // active text is white
+                  : isDarkMode
+                  ? "#ffffff" // dark mode inactive text
+                  : "#242625", // light mode inactive text
+              borderColor:
+                filter === key
+                  ? isDarkMode
+                    ? "#307A59"
+                    : "#307A59"
+                  : isDarkMode
+                  ? "#999999"
+                  : "#d1d5db", // gray-300
+            }}
           >
             {STATUS_LABELS[key]}
           </button>
@@ -151,55 +190,141 @@ export default function OrdersList() {
         {filteredOrders.slice(0, visibleCount).map((o) => (
           <div
             key={o.id}
-            className="bg-white p-5 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-200 flex flex-col justify-between"
+            className=" p-5 rounded-2xl shadow-md  flex flex-col justify-between"
+            style={{
+              backgroundColor: isDarkMode ? "#242625" : "#f0f2f1",
+            }}
           >
             <div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">
+              <h3
+                className="text-xl font-bold  mb-2"
+                style={{
+                  color: isDarkMode ? "#ffffff" : "#242625",
+                }}
+              >
                 Order #{o.id}
               </h3>
-              <p className="text-sm text-gray-600 mb-1">
-                Customer: <strong>{o.customer_id}</strong>
+              <p
+                className="text-sm mb-1"
+                style={{
+                  color: isDarkMode ? "#ffffff" : "#242625",
+                }}
+              >
+                Customer:{" "}
+                <strong
+                  style={{
+                    color: isDarkMode ? "#ffffff" : "#242625",
+                  }}
+                >
+                  {o.customer_id}
+                </strong>
               </p>
-              <p className="text-sm text-gray-600 mb-1">
-                Amount: <strong>{o.total_amount} JOD</strong>
+              <p
+                className="text-sm mb-1"
+                style={{
+                  color: isDarkMode ? "#ffffff" : "#242625",
+                }}
+              >
+                Amount:{" "}
+                <strong
+                  style={{
+                    color: isDarkMode ? "#ffffff" : "#242625",
+                  }}
+                >
+                  {o.total_amount} $
+                </strong>
               </p>
-              <p className="text-sm text-gray-600 mb-1">
+              <p
+                className="text-sm mb-1"
+                style={{
+                  color: isDarkMode ? "#ffffff" : "#242625",
+                }}
+              >
                 Status:{" "}
-                <strong className="capitalize text-green-700">
+                <strong
+                  className="capitalize "
+                  style={{
+                    color: isDarkMode ? "#ffffff" : "#242625",
+                  }}
+                >
                   {o.status.replace(/_/g, " ")}
                 </strong>
               </p>
-              <p className="text-sm text-gray-600 mb-1">
-                Payment: <strong>{o.payment_status}</strong>
+              <p
+                className="text-sm mb-1"
+                style={{
+                  color: isDarkMode ? "#ffffff" : "#242625",
+                }}
+              >
+                Payment:{" "}
+                <strong
+                  style={{
+                    color: isDarkMode ? "#ffffff" : "#242625",
+                  }}
+                >
+                  {o.payment_status}
+                </strong>
               </p>
-              <p className="text-sm text-gray-600 mb-1">
-                Address: <strong>{o.shipping_address}</strong>
-              </p>
-              <p className="text-xs text-gray-500 mt-2">
-                {new Date(o.created_at).toLocaleString()}
+              {/* <p
+                className="text-sm  mb-1"
+                style={{
+                  color: isDarkMode ? "#ffffff" : "#242625",
+                }}
+              >
+                Address:{" "}
+                <strong
+                  style={{
+                    color: isDarkMode ? "#ffffff" : "#242625",
+                  }}
+                >
+                  {o.shipping_address}
+                </strong>
+              </p> */}
+              <p
+                className="text-xs  mt-2"
+                style={{
+                  color: isDarkMode ? "#ffffff" : "#242625",
+                }}
+              >
+                Ordered At :{new Date(o.created_at).toLocaleString()}
               </p>
             </div>
 
-            {/* Action Buttons */}
             <div className="mt-4 flex gap-2">
               {STATUS_FLOW[o.status].length > 0 && (
                 <button
                   onClick={() => openStatusModal(o.id, o.status)}
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-all duration-300"
+                  className="flex-1 py-2 rounded-lg transition-all duration-300"
+                  style={{
+                    backgroundColor: isDarkMode ? "#307A59" : "#307A59", // نفس اللون الأخضر
+                    color: "#ffffff", // نص أبيض
+                  }}
                 >
-                  {STATUS_FLOW[o.status][0].replace(/_/g, " ").toUpperCase()}
+                  {updating ? "Updating..." : "Update Status"}
                 </button>
               )}
+
               <button
                 onClick={() => navigate(`/delivery/dashboard/tracking/${o.id}`)}
-                className="flex-1 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-all duration-300"
+                className="flex-1 py-2 rounded-lg transition-all duration-300"
+                style={{
+                  backgroundColor: isDarkMode ? "#307A59" : "#307A59", // نفس لون الأزرار
+                  color: "#ffffff",
+                }}
               >
                 Track
               </button>
               <button
                 onClick={() => handlePaymentUpdate(o.id)}
                 disabled={o.payment_status === "paid"}
-                className="bg-green-600 text-white py-1 px-3 rounded hover:bg-green-700"
+                className="py-1 px-3 rounded"
+                style={{
+                  backgroundColor: isDarkMode ? "#307A59" : "#307A59",
+                  color: "#ffffff",
+                  opacity: o.payment_status === "paid" ? 0.5 : 1,
+                  cursor:
+                    o.payment_status === "paid" ? "not-allowed" : "pointer",
+                }}
               >
                 Mark as Paid
               </button>
@@ -212,49 +337,123 @@ export default function OrdersList() {
       {visibleCount < filteredOrders.length && (
         <div className="text-center mt-6">
           <button
-            onClick={() => setVisibleCount((prev) => prev + 4)}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-300"
+            onClick={() => setVisibleCount((prev) => prev + 3)}
+            className="px-6 py-2 rounded-lg transition-all duration-300"
+            style={{
+              backgroundColor: isDarkMode ? "#307A59" : "#307A59", // زر أخضر من الثيم
+              color: "#ffffff", // نص أبيض
+            }}
           >
             Load More
           </button>
         </div>
       )}
 
-      {/* Status Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-2xl shadow-xl w-96 relative transition-all duration-300 transform scale-100">
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 50,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: isDarkMode ? "#242625" : "#f0f2f1",
+              color: isDarkMode ? "#ffffff" : "#242625",
+              padding: "1.5rem",
+              borderRadius: "1rem",
+              boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+              width: "24rem",
+              position: "relative",
+              transition: "all 0.3s ease",
+              transform: "scale(1)",
+            }}
+          >
             <button
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
               onClick={() => setShowModal(false)}
+              style={{
+                position: "absolute",
+                top: "0.75rem",
+                right: "0.75rem",
+                color: isDarkMode ? "#f0f2f1" : "#555",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+              }}
             >
-              <FaTimes size={20} />
+              <FaTimes
+                size={20}
+                style={{
+                  color: isDarkMode ? "#f0f2f1" : "#555",
+                }}
+              />
             </button>
-            <h3 className="text-xl font-bold mb-4 text-gray-800">
+
+            <h3
+              style={{
+                fontSize: "1.25rem",
+                fontWeight: "bold",
+                marginBottom: "1rem",
+                color: isDarkMode ? "#ffffff" : "#242625",
+              }}
+            >
               Edit Order Status
             </h3>
-            <p className="mb-4 text-gray-700">
+
+            <p
+              style={{
+                marginBottom: "1rem",
+                color: isDarkMode ? "#f0f2f1" : "#444",
+              }}
+            >
               Current status:{" "}
               <strong>{currentStatus.replace(/_/g, " ")}</strong>
             </p>
+
             {STATUS_FLOW[currentStatus].length > 0 ? (
               <button
                 onClick={handleUpdateStatus}
                 disabled={updating}
-                className={`w-full py-2 rounded-lg text-white font-semibold transition-all duration-300 ${
-                  updating
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-green-600 hover:bg-green-700 hover:scale-105"
-                }`}
+                style={{
+                  width: "100%",
+                  padding: "0.5rem 0",
+                  borderRadius: "0.5rem",
+                  fontWeight: "600",
+                  color: "#fff",
+                  backgroundColor: updating ? "#999" : "#307A59",
+                  cursor: updating ? "not-allowed" : "pointer",
+                  transform: updating ? "none" : "scale(1)",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  if (!updating)
+                    e.currentTarget.style.backgroundColor = "#256d4d";
+                }}
+                onMouseLeave={(e) => {
+                  if (!updating)
+                    e.currentTarget.style.backgroundColor = "#307A59";
+                }}
               >
                 {updating
                   ? "Updating..."
-                  : STATUS_FLOW[currentStatus][0]
+                  : `Change Status to ${STATUS_FLOW[currentStatus][0]
                       .replace(/_/g, " ")
-                      .toUpperCase()}
+                      .toUpperCase()}`}
               </button>
             ) : (
-              <p className="text-gray-500">No further status change allowed.</p>
+              <p
+                style={{
+                  color: isDarkMode ? "#ccc" : "#777",
+                  textAlign: "center",
+                }}
+              >
+                No further status change allowed.
+              </p>
             )}
           </div>
         </div>
@@ -262,222 +461,3 @@ export default function OrdersList() {
     </div>
   );
 }
-
-
-
-// import { useEffect, useState } from "react";
-// import { useNavigate } from "react-router-dom";
-// import {
-//   fetchCompanyOrders,
-//   updateOrderStatus,
-//   updateOrderPaymentStatus,
-// } from "./DeliveryAPI";
-
-// const STATUS_FLOW = {
-//   accepted: ["processing"],
-//   processing: ["out_for_delivery"],
-//   out_for_delivery: ["delivered"],
-//   delivered: [],
-// };
-
-// const STATUS_LABELS = [
-//   "accepted",
-//   "processing",
-//   "out_for_delivery",
-//   "delivered",
-// ];
-
-// export default function OrdersList() {
-//   const [orders, setOrders] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [message, setMessage] = useState("");
-//   const [updating, setUpdating] = useState(false);
-//   const navigate = useNavigate();
-//   const [visibleCount, setVisibleCount] = useState(4);
-
-//   useEffect(() => {
-//     const loadOrders = async () => {
-//       try {
-//         const data = await fetchCompanyOrders();
-//         setOrders(data);
-//       } catch (err) {
-//         setMessage("❌ " + err.message);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-//     loadOrders();
-//   }, []);
-
-//   const handleNextStage = async (order) => {
-//     const nextStatuses = STATUS_FLOW[order.status];
-//     if (!nextStatuses || nextStatuses.length === 0) return;
-
-//     const newStatus = nextStatuses[0];
-//     try {
-//       setUpdating(true);
-//       await updateOrderStatus(order.id, newStatus);
-//       setOrders((prev) =>
-//         prev.map((o) => (o.id === order.id ? { ...o, status: newStatus } : o))
-//       );
-//       setMessage(`✅ Order #${order.id} status updated to ${newStatus}`);
-//       setTimeout(() => setMessage(""), 2000);
-//     } catch (err) {
-//       alert(err.message);
-//     } finally {
-//       setUpdating(false);
-//     }
-//   };
-
-//   const handlePaymentUpdate = async (orderId) => {
-//     try {
-//       const result = await updateOrderPaymentStatus(orderId, "PAID");
-//       setOrders((prev) =>
-//         prev.map((o) =>
-//           o.id === orderId
-//             ? { ...o, payment_status: result.order.payment_status }
-//             : o
-//         )
-//       );
-//       alert(result.message);
-//     } catch (err) {
-//       alert("Error: " + err.message);
-//     }
-//   };
-
-//   const renderProgressBar = (order) => {
-//     return (
-//       <div className="flex items-center gap-2 mt-4">
-//         {STATUS_LABELS.map((status, index) => {
-//           const currentIndex = STATUS_LABELS.indexOf(order.status);
-//           const isCompleted = index < currentIndex;
-//           const isActive = index === currentIndex;
-
-//           return (
-//             <div key={status} className="flex-1 flex items-center">
-//               <div
-//                 className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-//                   isCompleted
-//                     ? "bg-green-600 border-green-600"
-//                     : isActive
-//                     ? "bg-blue-600 border-blue-600"
-//                     : "bg-white border-gray-300"
-//                 }`}
-//               ></div>
-//               {index < STATUS_LABELS.length - 1 && (
-//                 <div
-//                   className={`flex-1 h-1 ${
-//                     isCompleted
-//                       ? "bg-green-600"
-//                       : isActive
-//                       ? "bg-blue-600"
-//                       : "bg-gray-300"
-//                   }`}
-//                 ></div>
-//               )}
-//             </div>
-//           );
-//         })}
-//       </div>
-//     );
-//   };
-
-//   if (loading)
-//     return (
-//       <div className="flex items-center justify-center min-h-screen bg-white">
-//         <div className="w-16 h-16 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
-//       </div>
-//     );
-
-//   if (!orders.length)
-//     return <p className="text-center mt-10">📭 No orders found.</p>;
-
-//   return (
-//     <div className="max-w-6xl mx-auto mt-10 p-6 bg-gray-50 rounded-2xl">
-//       <h2 className="text-3xl font-extrabold text-gray-800 mb-6 text-center">
-//         Company Orders
-//       </h2>
-
-//       {message && (
-//         <p className="text-center mb-4 font-medium text-green-700 transition-all duration-300">
-//           {message}
-//         </p>
-//       )}
-
-//       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-//         {orders.slice(0, visibleCount).map((o) => (
-//           <div
-//             key={o.id}
-//             className="bg-white p-5 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-200 flex flex-col justify-between"
-//           >
-//             <div>
-//               <h3 className="text-xl font-bold text-gray-800 mb-2 truncate">
-//                 Order #{o.id}
-//               </h3>
-//               <p className="text-sm text-gray-600 mb-1 truncate">
-//                 Customer: <strong>{o.customer_id}</strong>
-//               </p>
-//               <p className="text-sm text-gray-600 mb-1 truncate">
-//                 Amount: <strong>{o.total_amount} JOD</strong>
-//               </p>
-//               <p className="text-sm text-gray-600 mb-1">
-//                 Status:{" "}
-//                 <strong className="capitalize">
-//                   {o.status.replace(/_/g, " ")}
-//                 </strong>
-//               </p>
-//               <p className="text-sm text-gray-600 mb-1">
-//                 Payment: <strong>{o.payment_status}</strong>
-//               </p>
-//               <p className="text-sm text-gray-600 mb-1 truncate">
-//                 Address: <strong>{o.shipping_address}</strong>
-//               </p>
-//               <p className="text-xs text-gray-500 mt-2">
-//                 {new Date(o.created_at).toLocaleString()}
-//               </p>
-
-//               {renderProgressBar(o)}
-//             </div>
-
-//             <div className="mt-4 flex gap-2">
-//               {STATUS_FLOW[o.status].length > 0 && (
-//                 <button
-//                   onClick={() => handleNextStage(o)}
-//                   disabled={updating}
-//                   className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-all duration-300"
-//                 >
-//                   Next Stage
-//                 </button>
-//               )}
-//               <button
-//                 onClick={() => navigate(`/delivery/dashboard/tracking/${o.id}`)}
-//                 className="flex-1 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-all duration-300"
-//               >
-//                 Track
-//               </button>
-//               <button
-//                 onClick={() => handlePaymentUpdate(o.id)}
-//                 disabled={o.payment_status === "paid"}
-//                 className="bg-green-600 text-white py-1 px-3 rounded hover:bg-green-700"
-//               >
-//                 Mark as Paid
-//               </button>
-//             </div>
-//           </div>
-//         ))}
-//       </div>
-
-//       {visibleCount < orders.length && (
-//         <div className="text-center mt-6">
-//           <button
-//             onClick={() => setVisibleCount((prev) => prev + 4)}
-//             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-300"
-//           >
-//             Load More
-//           </button>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-

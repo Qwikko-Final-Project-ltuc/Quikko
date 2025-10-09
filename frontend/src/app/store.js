@@ -3,6 +3,7 @@ import { configureStore } from "@reduxjs/toolkit";
 //Delivery
 import authReducer from "../features/delivery/auth/authSlice";
 import notificationsDeliveryReducer from "../features/delivery/notification/notificationSlice";
+import deliveryThemeReducer from "../features/delivery/delivery/deliveryThemeSlice";
 
 //Customer
 import customerAuthReducer from "../features/customer/auth/CustomerAuthSlice";
@@ -33,7 +34,7 @@ const store = configureStore({
     orders: ordersReducer,
     profile: profileReducer,
     categories: categoriesReducer,
-    stores: storesReducer, 
+    stores: storesReducer,
     reviews: reviewsReducer,
     payment: paymentReducer,
     chat: chatReducer,
@@ -44,10 +45,11 @@ const store = configureStore({
     cms: cmsReducer,
     notifications: notificationsReducer,
     categoriesAdmin: categoryReducer,
-    
-    //Delivery 
+
+    //Delivery
     auth: authReducer,
     notificationsDelivery: notificationsDeliveryReducer,
+    deliveryTheme: deliveryThemeReducer,
   },
 });
 

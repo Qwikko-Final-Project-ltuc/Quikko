@@ -1,67 +1,133 @@
 import React from "react";
-import { FaShoppingBag, FaStore, FaTruck, FaShoppingCart } from "react-icons/fa";
+import { FaShoppingBag, FaStore, FaTruck } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 export default function LandingPage() {
+  const isDarkMode = useSelector((state) => state.deliveryTheme.darkMode);
+
   return (
-    <div className="min-h-screen font-sans text-gray-900 bg-gradient-to-b from-gray-50 to-white">
-      {/* Section 1 */}
-      <section className="py-24 px-6 md:px-20 flex flex-col md:flex-row items-center justify-between gap-2 md:gap-12 bg-white rounded-2xl shadow-sm border border-gray-200 m-6 hover:shadow-md transition">
-        <div className="max-w-md text-left flex flex-col items-start gap-6">
-          <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900">
-            Discover Your Favorite Products
-          </h2>
-          <p className="text-gray-600 leading-relaxed text-lg">
-            Browse thousands of products from local stores, get the best deals,
-            and enjoy fast delivery right to your doorstep.
-          </p>
-          <button className="px-8 py-3 bg-gray-900 text-white font-semibold rounded-full shadow hover:bg-gray-800 transition">
-            See Products
-          </button>
-        </div>
-        <div className="flex flex-col items-center gap-0">
-          <FaShoppingBag className="text-9xl text-gray-700 hover:scale-110 transition-transform duration-300" />
-        </div>
-      </section>
-
-      {/* Section 2 */}
-      <section className="py-24 px-6 md:px-20 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-12 bg-white rounded-2xl shadow-sm border border-gray-200 m-6 hover:shadow-md transition">
-        <div className="flex flex-col items-center gap-4 order-2 md:order-1">
-          <FaShoppingCart className="text-9xl text-gray-700 hover:scale-110 transition-transform duration-300" />
-        </div>
-        <div className="max-w-md text-left flex flex-col items-start gap-6 order-1 md:order-2">
-          <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900">
-            Grow Your Store Online
-          </h2>
-          <p className="text-gray-600 leading-relaxed text-lg">
-            Join our platform to reach more customers, manage your products
-            easily, and boost your sales with smart tools.
-          </p>
-          <button className="px-8 py-3 bg-gray-900 text-white font-semibold rounded-full shadow hover:bg-gray-800 transition">
-            Become a Vendor
-          </button>
-        </div>
-      </section>
-
-      {/* Section 3 */}
-      <section className="py-24 px-6 md:px-20 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-12 bg-white rounded-2xl shadow-sm border border-gray-200 m-6 hover:shadow-md transition">
-        <div className="max-w-md text-left flex flex-col items-start gap-6">
-          <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900">
-            Deliver Smarter, Faster
-          </h2>
-          <p className="text-gray-600 leading-relaxed text-lg">
-            Set up a delivery service and get packages to orders in your area,
-            manage deliveries efficiently, and earn more.
-          </p>
+    <div
+      className="min-h-screen font-sans transition-colors duration-300 "
+      style={{
+        backgroundColor: isDarkMode ? "#f0f2f1" : "#242625",
+        color: isDarkMode ? "#242625" : "#ffffff",
+      }}
+    >
+      {/* 🌟 Hero Section */}
+      <section
+        className="text-center py-32 px-6 rounded-b-[3rem] shadow-md transition"
+        style={{
+          backgroundColor: isDarkMode ? "#242625" : "#f0f2f1",
+          color: isDarkMode ? "#ffffff" : "#242625",
+        }}
+      >
+        <h1 className="text-5xl md:text-6xl font-extrabold mb-6">
+          Everything You Need in One Place
+        </h1>
+        <p className="text-xl mb-10 max-w-2xl mx-auto opacity-90">
+          Shop products, sell your own, or deliver orders — all from one smart
+          platform.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
-            to="/delivery/"
-            className="px-8 py-3 bg-gray-900 text-white font-semibold rounded-full shadow hover:bg-gray-800 transition text-center"
+            to="/customer/landing"
+            className="px-8 py-3 bg-white text-[#307A59] font-semibold rounded-full shadow hover:scale-105 transition"
           >
-            Join as Delivery
+            Start Shopping
+          </Link>
+          <Link
+            to="/vendor"
+            className="px-8 py-3 border-2 border-white text-white font-semibold rounded-full hover:bg-white hover:text-[#307A59] transition"
+          >
+            Become a Vendor
           </Link>
         </div>
-        <div className="flex flex-col items-center gap-4">
-          <FaTruck className="text-9xl text-gray-700 hover:scale-110 transition-transform duration-300" />
+      </section>
+
+      {/* 🧱 Features Section */}
+      <section className="py-24 px-6 grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto">
+        {[
+          {
+            icon: (
+              <FaShoppingBag className="text-7xl text-light-button dark:text-dark-button mb-4" />
+            ),
+            title: "Discover Products",
+            desc: "Browse thousands of products from top stores with exclusive deals.",
+            link: "/customer/landing",
+            btn: "Shop Now",
+          },
+          {
+            icon: (
+              <FaStore className="text-7xl text-light-button dark:text-dark-button mb-4" />
+            ),
+            title: "Grow Your Store",
+            desc: "Reach more customers and manage your business with powerful tools.",
+            link: "/vendor",
+            btn: "Join as Vendor",
+          },
+          {
+            icon: (
+              <FaTruck className="text-7xl text-light-button dark:text-dark-button mb-4" />
+            ),
+            title: "Deliver Faster",
+            desc: "Join our delivery network and earn money delivering in your area.",
+            link: "/delivery",
+            btn: "Start Delivering",
+          },
+        ].map((card, i) => (
+          <div
+            key={i}
+            className={`rounded-3xl shadow-md hover:shadow-xl hover:-translate-y-2 transition-all duration-300 text-center flex flex-col items-center p-10 ${
+              isDarkMode ? "bg-dark-div" : "bg-light-div"
+            }`}
+          >
+            {card.icon}
+            <h3 className="text-2xl font-bold mb-4">{card.title}</h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-8">{card.desc}</p>
+            <Link
+              to={card.link}
+              className="px-6 py-2 rounded-full font-semibold transition"
+              style={{
+                backgroundColor: "#307A59",
+                color: "#ffffff",
+              }}
+            >
+              {card.btn}
+            </Link>
+          </div>
+        ))}
+      </section>
+
+      <section
+        className={`py-24 text-center ${
+          isDarkMode ? "bg-dark-div" : "bg-light-div"
+        } rounded-3xl shadow-inner max-w-5xl mx-auto mb-20`}
+      >
+        <h2 className="text-4xl font-extrabold mb-16">Trusted by Thousands</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+          <div>
+            <p className="text-5xl font-extrabold text-light-button dark:text-dark-button">
+              50K+
+            </p>
+            <p className="mt-2 text-gray-600 dark:text-gray-300">
+              Active Users
+            </p>
+          </div>
+          <div>
+            <p className="text-5xl font-extrabold text-light-button dark:text-dark-button">
+              10K+
+            </p>
+            <p className="mt-2 text-gray-600 dark:text-gray-300">Stores</p>
+          </div>
+          <div>
+            <p className="text-5xl font-extrabold text-light-button dark:text-dark-button">
+              500K+
+            </p>
+            <p className="mt-2 text-gray-600 dark:text-gray-300">
+              Orders Delivered
+            </p>
+          </div>
         </div>
       </section>
     </div>

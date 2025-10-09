@@ -10,13 +10,13 @@ import Orders from "../delivery/Orders";
 import TrackingOrders from "../delivery/Tracking";
 import Reports from "../delivery/ReportsPage";
 import Home from "../delivery/Home";
-
+import NotFound from "../../notFound";
 export default function DeliveryRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
+      <Route path="delivery/" element={<LandingPage />} />
       <Route path="delivery/login" element={<LoginDelivery />} />
-      <Route path="register" element={<RegisterDelivery />} />
+      <Route path="delivery/register" element={<RegisterDelivery />} />
 
       <Route path="delivery/dashboard" element={<Dashboard />}>
         <Route index element={<Home />} />
@@ -27,7 +27,11 @@ export default function DeliveryRoutes() {
         <Route path="tracking/:orderId" element={<TrackingOrders />} />
         <Route path="reports" element={<Reports />} />
         <Route path="edit" element={<EditProfile />} />
+        <Route path="*" element={<NotFound />} />
       </Route>
+
+      <Route path="*" element={<NotFound />} />
+      
     </Routes>
   );
 }

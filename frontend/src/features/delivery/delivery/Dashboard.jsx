@@ -11,6 +11,7 @@ export default function DashboardLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+  const isDarkMode = useSelector((state) => state.deliveryTheme.darkMode);
 
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
@@ -34,30 +35,33 @@ export default function DashboardLayout() {
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   return (
-    <div className="flex h-screen w-full bg-gray-100">
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+    // هذا الأب يحتوي الـ dark class حسب قيمة الـ Redux
+    <div className={isDarkMode ? "dark" : ""}>
+      <div className="flex h-screen w-full">
+        <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
-      {/* الأب الرئيسي يغطي كامل الشاشة */}
-      <div
-        className={`flex-1 flex flex-col transition-all duration-300 ${
-          isSidebarOpen ? "ml-64" : "ml-0"
-        }`}
-      >
-        <Navbar
-          toggleSidebar={toggleSidebar}
-          isSidebarOpen={isSidebarOpen}
-          user={user || { name: "Guest" }}
-        />
+        <div
+          className={`flex-1 flex flex-col transition-all duration-300 ${
+            isSidebarOpen ? "ml-64" : "ml-0"
+          }`}
+        >
+          <Navbar
+            toggleSidebar={toggleSidebar}
+            isSidebarOpen={isSidebarOpen}
+            user={user || { name: "Guest" }}
+          />
 
-        {/* main يأخذ كل المساحة المتاحة */}
-        <main className="flex-1 p-6 overflow-auto bg-gray-50">
-          <Outlet />
-        </main>
+          {/* main يستخدم الألوان من Tailwind config */}
+          <main
+            className="flex-1 p-6 overflow-auto"
+            style={{ backgroundColor: isDarkMode ? "#242625" : "#f0f2f1" }}
+          >
+            <Outlet />
+          </main>
 
-        {/* الفوتر دائمًا أسفل الصفحة */}
-        <Footer />
+          <Footer />
+        </div>
       </div>
     </div>
   );
 }
-
