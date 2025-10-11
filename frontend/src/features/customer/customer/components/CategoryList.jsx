@@ -1,4 +1,3 @@
-// src/features/customer/customer/components/CategoryList.jsx
 import React from "react";
 
 const CategoryList = ({ categories, selectedCategories, onToggle }) => {
@@ -7,7 +6,7 @@ const CategoryList = ({ categories, selectedCategories, onToggle }) => {
 
   return (
     <div className="flex flex-wrap gap-3 mb-6 justify-center">
-      {/* زر All */}
+      {/* All */}
       <button
         key="all"
         onClick={() => onToggle({ id: "all" })}
@@ -21,18 +20,19 @@ const CategoryList = ({ categories, selectedCategories, onToggle }) => {
       </button>
 
       {categories.map((cat) => (
-        <button
-          key={cat.id}
-          onClick={() => onToggle(cat)}
-          className={`px-4 py-2 rounded-full border transition ${
-            selectedCategories.find(c => c.id === cat.id)
-              ? "bg-blue-500 text-white border-blue-500"
-              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-          }`}
-        >
-          {cat.name}
-        </button>
-      ))}
+      <button
+        key={cat.id}
+        onClick={() => onToggle(cat)}
+        className={`px-4 py-2 rounded-full border transition ${
+          selectedCategories.includes(cat.id)
+            ? "bg-blue-500 text-white border-blue-500"
+            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+        }`}
+      >
+        {cat.name}
+      </button>
+    ))}
+
     </div>
   );
 };

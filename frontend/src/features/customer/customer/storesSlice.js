@@ -1,12 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import customerAPI from "./services/customerAPI";
 
-// ===== Thunks =====
+// Thunks 
 export const fetchStores = createAsyncThunk(
   "stores/fetchStores",
   async () => {
     const stores = await customerAPI.getStores();
-    return stores; // تأكد أن API ترجع array من المتاجر
+    return stores; 
   }
 );
 
@@ -14,18 +14,18 @@ export const fetchStoreById = createAsyncThunk(
   "stores/fetchStoreById",
   async (id) => {
     const response = await customerAPI.getStoreById(id);
-    return response; // متجر واحد
+    return response; 
   }
 );
 export const fetchStoreProducts = createAsyncThunk(
   "stores/fetchStoreProducts",
   async (storeId) => {
     const products = await customerAPI.getStoreProducts(storeId);
-    return products; // array المنتجات
+    return products; 
   }
 );
 
-// ===== Slice =====
+// Slice 
 const storesSlice = createSlice({
   name: "stores",
   initialState: {
@@ -34,9 +34,9 @@ const storesSlice = createSlice({
     storeProducts: [],
     loading: false,
     error: null,
-    currentPage: 1,   // الصفحة الحالية
+    currentPage: 1,  
     itemsPerPage: 8,
-    currentProductPage: 1, // الصفحة الحالية للمنتجات
+    currentProductPage: 1,
     productsPerPage: 8,
   },
   reducers: {
@@ -54,7 +54,6 @@ const storesSlice = createSlice({
       })
       .addCase(fetchStores.fulfilled, (state, action) => {
         state.loading = false;
-        // هنا نفلتر فقط المتاجر approved
         state.allStores = action.payload;
         state.currentProductPage = 1;
       })
@@ -73,7 +72,6 @@ const storesSlice = createSlice({
         state.loading = false;
         state.error = action.error.message;
       })
-       // منتجات المتجر
       .addCase(fetchStoreProducts.pending, (state) => {
         state.loading = true;
       })

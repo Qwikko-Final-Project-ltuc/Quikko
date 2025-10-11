@@ -34,9 +34,10 @@ const guestToken = require("./src/middleware/guestToken");
 const cors = require('cors');
 app.use(cors({
   origin: 'http://localhost:5173', 
-  methods: ['GET','POST','PUT','DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true 
+  methods: ['GET','POST','PUT','DELETE','PATCH'],
+  credentials: true ,
+  allowedHeaders: ['Content-Type', 'Authorization','Guest-Token'],
+  exposedHeaders: ['Guest-Token']
 }));
 
 
@@ -44,20 +45,17 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Route لإرسال كوكي
 app.get("/set-cookie", (req, res) => {
-  // نرسل كوكي باسم Cookie_1 وقيمة value
   res.cookie("Cookie_1", "value", {
-    httpOnly: true, // لا يمكن الوصول لها من الجافاسكريبت في المتصفح
-    maxAge: 1000 * 60 * 60 * 24, // يوم واحد بالميلي ثانية
+    httpOnly: true, 
+    maxAge: 1000 * 60 * 60 * 24, 
     path: "/",
   });
   res.send("Cookie is set!");
 });
 
-// Route لقراءة كوكي من العميل
 app.get("/get-cookie", (req, res) => {
-  console.log("Cookies:", req.cookies); // هنا رح تطلع جميع الكوكيز اللي استلمها السيرفر
+  console.log("Cookies:", req.cookies); 
   res.json(req.cookies);
 });
 // ===============================

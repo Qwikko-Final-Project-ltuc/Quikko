@@ -8,17 +8,23 @@ const VerifyEmailPage = () => {
 
   useEffect(() => {
     const oobCode = searchParams.get("oobCode");
-    if (oobCode) {
-      axios.post("http://localhost:3000/api/auth/verify-email", { oobCode })
-        .then(() => {
-          alert("Email verified successfully!");
-          navigate("/auth/login");
-        })
-        .catch(() => alert("Verification failed"));
-    }
+    if (!oobCode) return navigate("/customer/login");
+
+    axios
+      .post("http://localhost:3000/api/auth/verify-email", { oobCode })
+      .then(() => {
+        navigate("/customer/login", {
+          state: { message: "Email verified successfully! Please log in." },
+        });
+      })
+      .catch(() => {
+        navigate("/customer/login", {
+          state: { message: "Email verification failed.", error: true },
+        });
+      });
   }, [searchParams, navigate]);
 
-  return <div>Verifying...</div>;
+  return <div className="min-h-screen flex items-center justify-center">Verifying...</div>;
 };
 
 export default VerifyEmailPage;

@@ -8,7 +8,6 @@ const ResetPasswordPage = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // 🟢 جيب الإيميل من localStorage
   const email = localStorage.getItem("resetEmail");
 
   const onSubmit = async (data) => {
@@ -20,10 +19,9 @@ const ResetPasswordPage = () => {
 
       alert("Password updated successfully. You can now login.");
 
-      // 🧹 نظّف الإيميل من اللوكال بعد الاستخدام
       localStorage.removeItem("resetEmail");
 
-      navigate("/auth/login");
+      navigate("/customer/login");
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.error || "Failed to reset password");

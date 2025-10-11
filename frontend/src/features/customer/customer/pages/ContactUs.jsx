@@ -17,7 +17,7 @@ const ContactUs = () => {
     }
 
     try {
-      await axios.post("http://localhost:3000/api/contactUs", form);
+      await axios.post("http://localhost:3000/api/customers/contactUs", form);
       setStatus({ success: true, message: "Message sent successfully!" });
       setForm({ name: "", email: "", subject: "", message: "" });
     } catch (error) {

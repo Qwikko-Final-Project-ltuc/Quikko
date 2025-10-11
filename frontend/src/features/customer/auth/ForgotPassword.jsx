@@ -11,7 +11,6 @@ const ForgotPassword = () => {
     try {
       const res = await axios.post("http://localhost:3000/api/auth/forgot-password", { email: data.email });
       
-      // 🟢 خزّن الإيميل باللوكال ستورج عشان نرجعه بصفحة ResetPassword
       localStorage.setItem("resetEmail", data.email);
 
       setMessage(res.data.message || "Check your email for the reset link!");

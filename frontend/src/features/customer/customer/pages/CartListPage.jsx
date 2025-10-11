@@ -12,12 +12,10 @@ const CartListPage = () => {
   useEffect(() => {
   const loadData = async () => {
     try {
-      // نحاول فقط معرفة إذا في مستخدم (ما نوقف التنفيذ لو فشل)
       await dispatch(fetchCurrentUser());
       await dispatch(fetchAllCarts()).unwrap();
     } catch (err) {
-      console.error("⚠️ Failed to load data:", err);
-      // حتى لو فشل، نحاول نجلب الكارت للضيف
+      console.error(" Failed to load data:", err);
       await dispatch(fetchAllCarts());
     }
   };
@@ -26,13 +24,13 @@ const CartListPage = () => {
 
 
   const handleAddCart = async () => {
-    if (!user) return console.warn("⚠️ No user found");
+    if (!user) return console.warn(" No user found");
 
     try {
-      const newCart = await dispatch(createNewCart()).unwrap();
-      console.log("✅ Cart created:", newCart);
+      await dispatch(createNewCart()).unwrap();
+      // console.log(" Cart created:", newCart);
     } catch (err) {
-      console.error("❌ Failed to create cart:", err);
+      console.error("Failed to create cart:", err);
     }
   };
 
@@ -72,7 +70,7 @@ const CartListPage = () => {
                 key={cart.id}
                 className="p-4 border rounded shadow hover:shadow-lg flex justify-between items-center cursor-pointer transition-all duration-200"
               >
-                <div onClick={() => navigate(`/cart/${cart.id}`)}>
+                <div onClick={() => navigate(`/customer/cart/${cart.id}`)}>
                   {lastItem && <p className="font-semibold">Last product: {lastItem.name} x {lastItem.quantity}</p>}
                   <p>Number of products: {totalItems}</p>
                   <p className="font-bold">Total: ${totalPrice.toFixed(2)}</p>

@@ -1,4 +1,3 @@
-// src/features/customer/customer/pages/OrdersPage.jsx
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchOrders, reorderOrder, setCurrentPage, setPaymentFilter } from "../ordersSlice";
@@ -7,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 const OrdersPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { list: items, loading, error, currentPage, itemsPerPage, paymentFilter } = useSelector(
+  const { list: items=[], loading, error, currentPage, itemsPerPage, paymentFilter } = useSelector(
     (state) => state.orders
   );
 
@@ -20,11 +19,10 @@ const OrdersPage = () => {
   if (loading) return <p className="text-center mt-10 text-gray-500">Loading orders...</p>;
   if (error) return <p className="text-center mt-10 text-red-500">Error: {error}</p>;
 
-  // فلترة الأوردرات
-  const filteredItems = items.filter((order) => {
+  const filteredItems = (items || []).filter((order) => 
+ {
     const payments = order.payments || [];
 
-    // ===== فلترة حسب حالة الدفع =====
     if (paymentFilter !== "all") {
       let isMatch = false;
       if (payments.length > 0) {
@@ -37,7 +35,6 @@ const OrdersPage = () => {
       if (!isMatch) return false;
     }
 
-    // ===== فلترة حسب Transaction ID =====
     if (searchTx) {
       const matchTx = payments.some((p) =>
         p.transaction_id?.toLowerCase().includes(searchTx.toLowerCase())
@@ -48,7 +45,7 @@ const OrdersPage = () => {
     return true;
   });
 
-  // ===== Pagination =====
+  //  Pagination 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentOrders = filteredItems.slice(indexOfFirstItem, indexOfLastItem);
@@ -67,7 +64,6 @@ const OrdersPage = () => {
     <div className="container mx-auto px-4 py-6">
       <h1 className="text-3xl font-bold mb-4">Your Orders</h1>
 
-      {/* بحث حسب Transaction ID */}
       <div className="mb-6">
         <input
           type="text"
@@ -78,7 +74,6 @@ const OrdersPage = () => {
         />
       </div>
 
-      {/* فلترة حسب حالة الدفع */}
       <div className="mb-4 flex space-x-2">
         {["all", "paid", "pending"].map((filter) => (
           <button
@@ -93,7 +88,6 @@ const OrdersPage = () => {
         ))}
       </div>
 
-      {/* عرض الأوردرات */}
       {filteredItems.length === 0 ? (
         <p className="text-gray-500">No orders found</p>
       ) : (
@@ -122,7 +116,6 @@ const OrdersPage = () => {
                 ))}
               </div>
 
-              {/* تفاصيل الدفع لكل Order */}
               {order.payments && order.payments.length > 0 && (
                 <div className="mt-2 border-t pt-2">
                   <h3 className="font-semibold mb-1">Payment Details:</h3>
@@ -136,10 +129,9 @@ const OrdersPage = () => {
                 </div>
               )}
 
-              {/* أزرار الأوردر */}
               <button
                 className="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                onClick={() => navigate(`/track-order/${order.id}`)}
+                onClick={() => navigate(`/customer/track-order/${order.id}`)}
               >
                 Track Order
               </button>
@@ -148,7 +140,7 @@ const OrdersPage = () => {
                 onClick={async () => {
                   try {
                     const action = await dispatch(reorderOrder(order.id)).unwrap();
-                    navigate(`/order-details/${action.id}`, { state: { reorder: true } });
+                    navigate(`/customer/order-details/${action.id}`, { state: { reorder: true } });
                   } catch (err) {
                     alert("Failed to reorder: " + err.message);
                   }
@@ -159,9 +151,8 @@ const OrdersPage = () => {
             </div>
           ))}
 
-          {/* زر العودة للتسوق */}
           <button
-            onClick={() => navigate("/products")}
+            onClick={() => navigate("/customer/products")}
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition duration-300"
           >
             Continue Shopping

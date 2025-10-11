@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:3000/api/auth"; // غيّر الرابط إذا السيرفر عندك مختلف
+const API_URL = "http://localhost:3000/api/auth"; 
 
 const CustomerAuthAPI = {
   async register(data) {
@@ -10,7 +10,7 @@ const CustomerAuthAPI = {
 
   async login(credentials) {
     const res = await axios.post(`${API_URL}/login`, credentials, {
-    withCredentials: true // 👈 مهم جداً لإرسال كوكيز الغيست
+    withCredentials: true 
   });
     return res.data;
   },

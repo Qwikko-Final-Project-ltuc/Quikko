@@ -1,63 +1,90 @@
 import { useEffect, useState } from "react";
-import { GetWishlist, RemoveWishlist } from "../wishlist/wishlistApi";
+import { useDispatch, useSelector } from "react-redux";
 import ProductCard from "../customer/components/ProductCard";
+import { fetchCart, setCurrentCart } from "../customer/cartSlice";
+import customerAPI from "../customer/services/customerAPI";
+import { GetWishlist, RemoveWishlist } from "../wishlist/wishlistApi";
 
 export default function WishlistPage() {
+  const dispatch = useDispatch();
+  const token = localStorage.getItem("token");
+
+  const { currentCart, tempCartId } = useSelector((state) => state.cart);
   const [wishlist, setWishlist] = useState([]);
 
+  // Fetch wishlist
   useEffect(() => {
-    const fetchWishlist = async () => {
+    const fetchWishlistData = async () => {
       try {
         const data = await GetWishlist();
-        const wishlistWithFlag = data.map((item) => ({
-          ...item,
-          isInWishlist: true,
-        }));
-        setWishlist(wishlistWithFlag);
+        setWishlist(
+          data.map((item) => ({
+            ...item,
+            isInWishlist: true,
+          }))
+        );
       } catch (err) {
         console.error(err);
       }
     };
-    fetchWishlist();
+    fetchWishlistData();
   }, []);
 
-  const handleToggleWishlist = async (wishlistId, productId, isAdding) => {
+  // Add to cart
+  const handleAddToCart = async (product, quantity = 1) => {
     try {
-      if (!isAdding) {
-        await RemoveWishlist(wishlistId);
-        
-        setWishlist((prev) => prev.filter((p) => p.wishlist_id !== wishlistId));
-      } else {
-        setWishlist((prev) => [
-          ...prev,
-          {
-            product_id: productId,
-            wishlist_id: wishlistId,
-            isInWishlist: true,
-          },
-        ]);
+      let cart = currentCart;
+      const guestToken = tempCartId || localStorage.getItem("guest_token");
+
+      if (!cart?.id) {
+        cart = await customerAPI.getOrCreateCart(null, null, guestToken);
+        dispatch(setCurrentCart(cart));
       }
+
+      await customerAPI.addItem({
+        cartId: cart.id,
+        product: { ...product, id: product.product_id }, 
+        quantity,
+        variant: product.variant || {},
+      });
+
+      dispatch(fetchCart(cart.id));
+      alert("Product added to cart");
     } catch (err) {
-      console.error(err);
+      alert(err.response?.data?.message || err.message);
     }
   };
 
+  // Toggle wishlist
+  const handleToggleWishlist = (productId, added, wishlist_id = null) => {
+    setWishlist((prev) => {
+      if (added) {
+        return [...prev, { product_id: productId, wishlist_id, isInWishlist: true }];
+      } else {
+        return prev.filter((w) => w.product_id !== productId);
+      }
+    });
+  };
+
   return (
-    <div className="p-6">
-      <h2 className="text-xl font-bold mb-4">My Wishlist</h2>
+    <div className="container mx-auto px-4 py-6">
+      <h2 className="text-xl font-bold mb-6 text-center">My Wishlist</h2>
 
       {wishlist.length === 0 ? (
-        <p>No products in wishlist</p>
+        <p className="text-center text-gray-600">No products in wishlist</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {wishlist.map((product) => (
             <ProductCard
               key={product.wishlist_id || product.product_id}
-              product={product}
-              onAddToCart={() => {}}
-              onToggleWishlistFromPage={(wishlistId, productId, isAdding) =>
-                handleToggleWishlist(wishlistId, productId, isAdding)
-              }
+              product={{
+                ...product,
+                isInWishlist: !!product.isInWishlist,
+                wishlist_id: product.wishlist_id || null,
+              }}
+              onAddToCart={handleAddToCart}
+              onToggleWishlistFromPage={handleToggleWishlist}
+              isLoggedIn={!!token}
             />
           ))}
         </div>

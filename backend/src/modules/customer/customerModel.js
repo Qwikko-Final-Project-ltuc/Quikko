@@ -40,37 +40,47 @@ exports.updateById = async (id, name, phone, address) => {
 exports.getStoreById = async function (storeId) {
   const result = await pool.query(
     `SELECT 
-       v.id AS store_id,
-       v.store_name,
-       v.store_slug,
-       v.store_logo,
-       v.store_banner,
-       v.description,
-       v.contact_email,
-       v.phone,
-       v.social_links,
-       v.rating,
-       v.created_at,
-       v.updated_at,
-       json_agg(
-         json_build_object(
-           'product_id', p.id,
-           'name', p.name,
-           'description', p.description,
-           'price', p.price,
-           'stock_quantity', p.stock_quantity,
-           'images', p.images,
-           'variants', p.variants
-         )
-       ) AS products
-     FROM vendors v
-     LEFT JOIN products p ON p.vendor_id = v.id
-     WHERE v.id = $1
-     GROUP BY v.id`,
+      v.id AS store_id,
+      v.store_name,
+      v.user_id,
+      v.store_slug,
+      v.store_logo,
+      v.store_banner,
+      v.description,
+      v.contact_email,
+      v.phone,
+      v.social_links,
+      v.rating,
+      v.created_at,
+      v.updated_at,
+      COALESCE(
+        json_agg(
+          jsonb_build_object(
+            'product_id', p.id,
+            'name', p.name,
+            'description', p.description,
+            'price', p.price,
+            'stock_quantity', p.stock_quantity,
+            'variants', p.variants,
+            'images', (
+              SELECT COALESCE(json_agg(pi.image_url ORDER BY pi.id), '[]'::json)
+              FROM product_images pi
+              WHERE pi.product_id = p.id
+            )
+          )
+        ) FILTER (WHERE p.id IS NOT NULL),
+        '[]'::json
+      ) AS products
+    FROM vendors v
+    LEFT JOIN products p ON p.vendor_id = v.id
+    WHERE v.id = $1
+    GROUP BY v.id;`,
     [storeId]
   );
+
   return result.rows[0];
 };
+
 
 /**
  * Place order from cart (Cash on Delivery)
@@ -399,7 +409,10 @@ exports.createCart = async (userId) => {
  */
 exports.updateCart = async (id, userId) => {
   const result = await pool.query(
-    "UPDATE carts SET user_id = $1, updated_at = NOW() WHERE id = $2 RETURNING *",
+    `UPDATE carts 
+     SET user_id = $1, guest_token = NULL, updated_at = NOW() 
+     WHERE id = $2 
+     RETURNING *`,
     [userId, id]
   );
   return result.rows[0];
@@ -446,17 +459,24 @@ exports.getItemById = async (id) => {
  */
 exports.addItem = async (cartId, productId, quantity, variant) => {
   try {
-    // 1️⃣ تحقق إذا المنتج موجود بالفعل بالكارت بنفس الـ variant
+    //  if the varient = null or = {} its the same product
+    // until we add the varient feature
+    const normalizedVariant = variant || {};
+
+    //  make sure if the product exist in the cart in the same varient
     const existingItemResult = await pool.query(
-      `SELECT id, quantity FROM cart_items 
-       WHERE cart_id=$1 AND product_id=$2 AND variant=$3`,
-      [cartId, productId, variant]
+      `SELECT id, quantity 
+       FROM cart_items 
+       WHERE cart_id=$1 
+         AND product_id=$2 
+         AND variant::jsonb = $3::jsonb`,
+      [cartId, productId, normalizedVariant]
     );
 
     const existingItem = existingItemResult.rows[0];
     const existingQty = existingItem?.quantity || 0;
 
-    // 2️⃣ جلب كمية المنتج في الستوك من المنتجات
+    // get product stock 
     const productResult = await pool.query(
       `SELECT stock_quantity FROM products WHERE id=$1`,
       [productId]
@@ -468,16 +488,14 @@ exports.addItem = async (cartId, productId, quantity, variant) => {
 
     const stockQty = productResult.rows[0].stock_quantity;
 
-    // 3️⃣ تحقق من أن الكمية الجديدة لا تتجاوز الستوك
+    // make sure the quantity <= stock
     if (existingQty + quantity > stockQty) {
       throw new Error(
-        `Cannot add ${quantity} items. Only ${
-          stockQty - existingQty
-        } left in stock.`
+        `Cannot add ${quantity} items. Only ${stockQty - existingQty} left in stock.`
       );
     }
 
-    // 4️⃣ إذا موجود مسبقاً بالكارت، حدث الكمية
+    // if the product exist quantity+1
     if (existingItem) {
       const updatedItem = await pool.query(
         `UPDATE cart_items 
@@ -488,20 +506,23 @@ exports.addItem = async (cartId, productId, quantity, variant) => {
       );
       return updatedItem.rows[0];
     } else {
-      // 5️⃣ إذا غير موجود، أضف جديد
+      // if not exist add it as new card
       const addedItem = await pool.query(
         `INSERT INTO cart_items (cart_id, product_id, quantity, variant)
          VALUES ($1, $2, $3, $4)
          RETURNING *`,
-        [cartId, productId, quantity, variant]
+        [cartId, productId, quantity, normalizedVariant]
       );
       return addedItem.rows[0];
     }
   } catch (err) {
     console.error("Error in addItem:", err.message);
-    throw err; // نعيد الخطأ للكنترولر
+    throw err;
   }
 };
+
+
+
 
 /**
  * Update item in cart
@@ -681,58 +702,99 @@ exports.createCartForGuest = async (guestToken) => {
  * @param {number} [param0.limit=10] - Items per page
  * @returns {Promise<Array>} - Array of product objects with images
  */
-exports.getAllProducts = async ({ search, categoryId, page, limit }) => {
-  try{
-    let baseQuery = `
-      SELECT 
-        p.*, 
-        v.store_name
-      FROM products p
-      LEFT JOIN vendors v ON p.vendor_id = v.id
-      WHERE (p.is_deleted = FALSE OR p.is_deleted IS NULL)
-    `;
+
+exports.getAllProducts = async ({ search, categoryId, page = 1, limit = 10 }) => {
+  try {
     const values = [];
     let idx = 1;
 
+    // Base query
+    let baseQuery = `
+      SELECT 
+        p.*,
+        v.store_name AS vendor_name,
+        COALESCE(
+          (
+            SELECT json_agg(pi.image_url::text ORDER BY pi.id)
+            FROM product_images pi
+            WHERE pi.product_id = p.id
+          )::jsonb,
+          '[]'::jsonb
+        ) AS images
+      FROM products p
+      LEFT JOIN vendors v ON v.id = p.vendor_id
+      WHERE (p.is_deleted = FALSE OR p.is_deleted IS NULL)
+        AND v.status = 'approved'
+    `;
+
+    let countQuery = `
+      SELECT COUNT(*) AS total
+      FROM products p
+      LEFT JOIN vendors v ON v.id = p.vendor_id
+      WHERE (p.is_deleted = FALSE OR p.is_deleted IS NULL)
+        AND v.status = 'approved'
+    `;
+
+    const countValues = [];
+    let countIdx = 1;
+
+    // 🔍 Search filter
     if (search) {
       baseQuery += ` AND (p.name ILIKE $${idx} OR v.store_name ILIKE $${idx})`;
+      countQuery += ` AND (p.name ILIKE $${countIdx} OR v.store_name ILIKE $${countIdx})`;
       values.push(`%${search}%`);
+      countValues.push(`%${search}%`);
       idx++;
+      countIdx++;
     }
 
-    if (categoryId) {
-      baseQuery += ` AND p.category_id = $${idx}`;
-      values.push(categoryId);
-      idx++;
-    }
-
-      const query = `
-        SELECT 
-          p.*,
-          v.store_name AS vendor_name, -- هنا نضيف اسم الفندور
-          COALESCE(
-            (
-              SELECT json_agg(pi.image_url::text ORDER BY pi.id)
-              FROM product_images pi
-              WHERE pi.product_id = p.id
-            )::jsonb,
-            '[]'::jsonb
-          ) AS images
-        FROM products p
-        LEFT JOIN vendors v ON v.id = p.vendor_id
-        WHERE 1=1
-        ${filterQuery}
-        ORDER BY p.created_at DESC
-        LIMIT $1 OFFSET $2
+    //  Category filter مع دعم الـ nested children
+    if (categoryId && categoryId.length) {
+      //recursive CTE لجلب كل الـ child categories
+      const categoryCTE = `
+        WITH RECURSIVE all_categories AS (
+          SELECT id FROM categories WHERE id = ANY($1::int[])
+          UNION ALL
+          SELECT c.id FROM categories c
+          INNER JOIN all_categories ac ON c.parent_id = ac.id
+        )
+        SELECT id FROM all_categories
       `;
+      const categoryResult = await pool.query(categoryCTE, [categoryId.map(Number)]);
 
-      const { rows } = await pool.query(query, values);
-      return rows;
+      const allCategoryIds = categoryResult.rows.map(r => r.id);
+
+      baseQuery += ` AND p.category_id = ANY($${idx}::int[])`;
+      countQuery += ` AND p.category_id = ANY($${countIdx}::int[])`;
+      values.push(allCategoryIds);
+      countValues.push(allCategoryIds);
+      idx++;
+      countIdx++;
+    }
+
+    // ⚡ Pagination
+    baseQuery += ` ORDER BY p.created_at DESC LIMIT $${idx} OFFSET $${idx + 1}`;
+    values.push(limit, (page - 1) * limit);
+
+    const { rows } = await pool.query(baseQuery, values);
+    const countResult = await pool.query(countQuery, countValues);
+    const total = parseInt(countResult.rows[0].total, 10);
+
+    return {
+      items: rows,
+      totalItems: total,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+    };
   } catch (err) {
     console.error("Error in getAllProducts:", err);
     throw err;
   }
-}
+};
+
+
+
+
 
 
 /**
@@ -830,7 +892,7 @@ exports.getVendorProducts = async (vendorId) => {
     ORDER BY created_at DESC
   `;
   const { rows } = await pool.query(query, [vendorId]);
-  return rows; // array من المنتجات
+  return rows; 
 };
 
 exports.Order = {
@@ -847,38 +909,50 @@ exports.Order = {
 };
 
 /**
- * جلب كل المنتجات مع إمكانية ترتيب ديناميكي
+ * get all product with optional dynamic sorting
  * @param {string} sortBy العمود أو النوع ('price_asc', 'price_desc', 'most_sold', أي عمود)
  */
-exports.fetchProductsWithSorting = async (sortBy = "id ASC") => {
+exports.fetchProductsWithSorting = async (sortBy = "id ASC", page = 1, limit = 12) => {
+  let orderClause = "id ASC";
+
+  if (sortBy === "price_asc") orderClause = "price ASC";
+  else if (sortBy === "price_desc") orderClause = "price DESC";
+  else if (sortBy === "most_sold") orderClause = `
+    COALESCE(SUM(oi.quantity), 0) DESC
+  `;
+
+  const totalRes = await pool.query("SELECT COUNT(*) FROM products WHERE is_deleted = false");
+  const totalItems = parseInt(totalRes.rows[0].count);
+  const totalPages = Math.ceil(totalItems / limit);
+
+  // OFFSET
+  const offset = (page - 1) * limit;
+
+  let query = "";
   if (sortBy === "most_sold") {
-    const query = `
+    query = `
       SELECT p.*, COALESCE(SUM(oi.quantity), 0) AS total_sold
       FROM products p
       LEFT JOIN order_items oi ON p.id = oi.product_id
+      WHERE p.is_deleted = false
       GROUP BY p.id
-      ORDER BY total_sold DESC;
+      ORDER BY total_sold DESC
+      LIMIT $1 OFFSET $2;
     `;
-    const { rows } = await pool.query(query);
-    return rows;
+  } else {
+    query = `
+      SELECT *
+      FROM products
+      WHERE is_deleted = false
+      ORDER BY ${orderClause}
+      LIMIT $1 OFFSET $2;
+    `;
   }
 
-  const validColumns = [
-    "id",
-    "price",
-    "stock_quantity",
-    "created_at",
-    "updated_at",
-  ];
-  let orderClause = "id ASC";
-  if (sortBy === "price_asc") orderClause = "price ASC";
-  else if (sortBy === "price_desc") orderClause = "price DESC";
-  else if (validColumns.includes(sortBy)) orderClause = `${sortBy} ASC`;
-
-  const query = `SELECT * FROM products ORDER BY ${orderClause};`;
-  const { rows } = await pool.query(query);
-  return rows;
+  const { rows } = await pool.query(query, [limit, offset]);
+  return { items: rows, totalItems, totalPages, currentPage: page };
 };
+
 
 exports.paymentModel = {
   getUserPayments: async (userId) => {
@@ -910,7 +984,7 @@ exports.paymentModel = {
       expiry_year,
     } = data;
 
-    // ✅ تحقق إذا كان في سجل بنفس user_id + payment_method + transaction_id
+    //  تحقق إذا كان في سجل بنفس user_id + payment_method + transaction_id
     if (payment_method === "paypal" && transaction_id) {
       const checkQuery = `
       SELECT * FROM payments 
@@ -923,7 +997,7 @@ exports.paymentModel = {
         transaction_id,
       ]);
       if (checkRes.rows.length > 0) {
-        return checkRes.rows[0]; // رجع الموجود بدل الإضافة
+        return checkRes.rows[0]; 
       }
     }
 
@@ -964,7 +1038,7 @@ exports.paymentModel = {
 };
 
 exports.deleteProfile = async (req, res) => {
-  const userId = req.user.id; // من middleware التوثيق
+  const userId = req.user.id;
   try {
     await db.query("DELETE FROM users WHERE id = $1", [userId]);
 

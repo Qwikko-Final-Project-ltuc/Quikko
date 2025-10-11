@@ -128,7 +128,7 @@ router.delete("/cart/items/:id",optionalProtect,guestToken,identifyCustomer,  cu
  * @query {number} [page=1] - Page number
  * @query {number} [limit=10] - Items per page
  *///getAllProductsValidator,
-router.get("/products", customerController.getAllProducts);
+router.get("/products",guestToken, customerController.getAllProducts);
 /**
  * @module OrdersRoutes
  * @desc Routes for customer order management. 
@@ -177,12 +177,16 @@ router.get('/orders', protect, customerController.getOrders);
 router.get("/stores/:id/products", customerController.getStoreProducts);
 router.put("/:orderId/payment", customerController.updatePaymentStatus);
 router.get('/sorted', customerController.getProductsWithSorting);
-// Routes
+//payment routes
 router.get("/payment", protect, customerController.paymentController.getUserPayments);
 router.post("/payment", protect, customerController.paymentController.createPayment);
 router.delete("/payment/:id", protect, customerController.paymentController.deletePayment);
+//reorder
 router.post("/:orderId/reorder", protect, customerController.reorder);
+//delete profile
 router.delete("/profile",  protect, customerModel.deleteProfile);
+//assign guest cart to user 
+router.post("/assign-guest-to-user",  customerController.assignGuestToUser);
 
 // wishList
 router.get('/wishlist', protect, customerController.getWishlist);
@@ -190,6 +194,16 @@ router.get('/wishlist', protect, customerController.getWishlist);
 router.post('/wishlist', protect, customerController.addWishlist);
 
 router.delete('/wishlist/:id', protect, customerController.removeWishlist);
+
+
+//guestToken
+router.get("/get-guest-token", guestToken, (req, res) => {
+  res.json({ message: "Guest token sent" });
+});
+
+
+router.post("/contactUs",customerController.sendContactMessage);
+
 
 module.exports = router;
 

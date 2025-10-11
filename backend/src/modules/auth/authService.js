@@ -62,15 +62,15 @@ exports.register = async (data, role) => {
   if (role === 'customer') {
     await insertCustomer({ user_id: postgresUser.id });
   } else if (role === 'vendor') {
-    console.log('store_name:', data.store_name);
-    console.log('store_slug:', data.store_slug || generateSlug(data.store_name));
+    // console.log('store_name:', data.store_name);
+    // console.log('store_slug:', data.store_slug || generateSlug(data.store_name));
 
     await insertVendor({
   user_id: postgresUser.id,
   store_name: data.store_name,
   store_slug: data.store_slug || generateSlug(data.store_name),
   description: data.description || '',
-  status: 'pending', // القيمة الافتراضية قبل الموافقة
+  status: 'pending', //defualt value before approveing
   contact_email: data.email,
   phone: data.phone || null,
   address: data.address || null,
@@ -102,6 +102,15 @@ exports.register = async (data, role) => {
 exports.login = async ({ email, password }) => {
   const { rows } = await pool.query('SELECT * FROM users WHERE email=$1', [email]);
   const user = rows[0];
+
+  // ✅ تحقق من حالة التفعيل من Firebase
+  const firebaseUser = await admin.auth().getUserByEmail(email);
+  if (!firebaseUser.emailVerified) {
+    const err = new Error('Please verify your email before logging in.');
+    err.code = 'EMAIL_NOT_VERIFIED';
+    throw err;
+  }
+
 
   if (!user) {
     const err = new Error('User not found');
@@ -140,4 +149,36 @@ exports.login = async ({ email, password }) => {
   // }
 
   return jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
+};
+
+
+
+
+
+
+const { sendResetEmail } = require('../../utils/sendEmail');
+
+exports.forgotPassword = async (email) => {
+  const link = await admin.auth().generatePasswordResetLink(email, {
+    url: `http://localhost:5173/customer/password-updated?email=${encodeURIComponent(email)}`,
+  });
+
+  await sendResetEmail(email, link);
+  return link;
+};
+
+
+
+exports.resetPassword = async (email, newPassword) => {
+  const user = await admin.auth().getUserByEmail(email);
+  await admin.auth().updateUser(user.uid, { password: newPassword });
+
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  await pool.query(`UPDATE users SET password_hash=$1, updated_at=NOW() WHERE email=$2`, [passwordHash, email]);
+  return true;
+};
+
+exports.verifyEmail = async (oobCode) => {
+  await admin.auth().applyActionCode(oobCode);
+  return true;
 };

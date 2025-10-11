@@ -84,7 +84,7 @@ exports.getChatMessages = async (req, res) => {
  * }
  */
 exports.postChatMessage = async (req, res) => {
-  const sender_id = req.user.id;      // من التوكن
+  const sender_id = req.user.id;    
   const { receiver_id, message } = req.body;
 
   try {

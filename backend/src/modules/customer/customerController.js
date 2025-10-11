@@ -1,6 +1,7 @@
 const customerService = require("./customerService");
 const { validationResult } = require("express-validator");
 const customerModel = require("./customerModel");
+const pool = require("../../config/db");
 
 /**
  * @module CustomerController
@@ -116,15 +117,14 @@ exports.postOrderFromCart = async function (req, res) {
       expiry_month: paymentData.expiry_month || null,
       expiry_year: paymentData.expiry_year || null,
     };
-    // ينفذ دالة الموديل لإنشاء الأوردر + تسجيل الدفع
     const order = await customerModel.placeOrderFromCart({
       userId,
       cartId: cart_id,
       address,
-      paymentMethod, // "cod" أو "paypal"/"credit_card"
+      paymentMethod, // "cod" ,"paypal"/"credit_card"
       paymentData: normalizedPaymentData,
     });
-    console.log("checkout req.body:", req.body);
+    // console.log("checkout req.body:", req.body);
 
     res.status(201).json({
       message: `Order placed successfully (${paymentMethod.toUpperCase()})`,
@@ -293,7 +293,7 @@ exports.createCart = async (req, res) => {
  */
 exports.updateCart = async (req, res) => {
   try {
-    const cart = await customerService.getCartById(req.params.id); // أولاً تجيب الكارت
+    const cart = await customerService.getCartById(req.params.id); 
     if (!cart) return res.status(404).json({ message: "Cart not found" });
 
     // تحقق الملكية
@@ -396,7 +396,7 @@ exports.addItem = async (req, res) => {
 exports.updateItem = async (req, res) => {
   try {
     const { quantity, variant } = req.body;
-    const item = await customerService.getItemById(req.params.id); // لازم تضيف getItemById في السيرفس
+    const item = await customerService.getItemById(req.params.id); 
     if (!item) return res.status(404).json({ message: "Item not found" });
 
     const cart = await customerService.getCartById(item.cart_id);
@@ -458,15 +458,39 @@ exports.deleteItem = async (req, res) => {
  * @query {number} [limit=10] - Items per page
  * @returns {Object} Products list with pagination info
  */
+const getChildCategoryIds = async (parentIds) => {
+  const categoryCTE = `
+    WITH RECURSIVE all_categories AS (
+      SELECT id FROM categories WHERE id = ANY($1::int[])
+      UNION ALL
+      SELECT c.id FROM categories c
+      INNER JOIN all_categories ac ON c.parent_id = ac.id
+    )
+    SELECT id FROM all_categories
+  `;
+  const result = await pool.query(categoryCTE, [parentIds]);
+  return result.rows.map(r => r.id);
+};
+
 exports.getAllProducts = async (req, res) => {
   try {
-    const { search, categoryId, page = 1, limit = 100 } = req.query;
+    const { search, categoryId, page, limit } = req.query;
+
+    let categoryIds = null;
+    if (categoryId) {
+      const ids = Array.isArray(categoryId)
+        ? categoryId.map(id => parseInt(id, 10))
+        : [parseInt(categoryId, 10)];
+
+      // get all child IDs
+      categoryIds = await getChildCategoryIds(ids);
+    }
 
     const filters = {
       search: search || null,
-      categoryId: categoryId ? parseInt(categoryId) : null,
-      page: parseInt(page),
-      limit: parseInt(limit),
+      categoryId: categoryIds,
+      page: page ? parseInt(page) : 1,
+      limit: limit ? parseInt(limit) : 10,
     };
 
     const result = await customerService.getAllProducts(filters);
@@ -476,6 +500,7 @@ exports.getAllProducts = async (req, res) => {
     res.status(500).json({ message: "Error getting products" });
   }
 };
+
 
 /**
  * @function getOrders
@@ -516,7 +541,7 @@ exports.getOrders = async (req, res) => {
     const orders = await customerModel.getCustomerOrders(customer_id);
 
     if (!orders.length) {
-      return res.status(404).json({ message: "No orders found" });
+      res.json([]);
     }
 
     res.json(orders);
@@ -562,15 +587,21 @@ exports.updatePaymentStatus = async (req, res) => {
 
 exports.getProductsWithSorting = async (req, res) => {
   try {
-    const { sort } = req.query; // price_asc, price_desc, most_sold, created_at, stock_quantity, ...
+    const { sort, page = 1, limit = 12 } = req.query;
 
-    const products = await customerService.getProductsWithSorting(sort);
-    res.json(products);
+    const productsData = await customerService.getProductsWithSorting({
+      sort,
+      page: parseInt(page),
+      limit: parseInt(limit),
+    });
+
+    res.json(productsData);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 exports.paymentController = {
   getUserPayments: async (req, res) => {
@@ -638,11 +669,10 @@ exports.paymentController = {
   },
 };
 
-// customerController.js
 exports.reorder = async (req, res) => {
   try {
     const orderId = req.params.orderId;
-    const userId = req.user.id; // بعد middleware auth
+    const userId = req.user.id; 
     const newCart = await customerService.createCartFromOrder(orderId, userId);
     res.json(newCart);
   } catch (err) {
@@ -650,7 +680,6 @@ exports.reorder = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
 // wishList
 exports.getWishlist = async (req, res) => {
   try {
@@ -684,7 +713,7 @@ exports.addWishlist = async (req, res) => {
 exports.removeWishlist = async (req, res) => {
   try {
     const { id } = req.params;
-  console.log("Deleting wishlist id:", id);
+  // console.log("Deleting wishlist id:", id);
   
     const result = await customerModel.removeProductFromWishlist(id);
     res.json({ message: "Product removed from wishlist", ...result });
@@ -695,5 +724,61 @@ exports.removeWishlist = async (req, res) => {
       .json({
         message: err.message || "Failed to remove product from wishlist",
       });
+  }
+};
+
+exports.assignGuestToUser = async (req, res) => {
+  try {
+    const guestToken = req.headers['guest-token'];
+    const userId = req.body.userId;
+
+    if (!guestToken || !userId) {
+      return res.status(400).json({ message: "guestToken and userId are required" });
+    }
+
+    const guestCart = await customerService.getCartByGuestToken(guestToken);
+
+    if (!guestCart) {
+      return res.status(404).json({ message: "Guest cart not found" });
+    }
+
+    const updatedCart = await customerService.updateCart(guestCart.id, userId);
+
+    res.json({
+      message: "Guest cart assigned to user",
+      cart: updatedCart,
+      clearGuestToken: true,
+    });
+  } catch (err) {
+    console.error("Error assigning guest cart:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
+const { sendEmail } = require("../../utils/sendEmail");
+
+exports.sendContactMessage = async (req, res) => {
+  const { name, email, subject, message } = req.body;
+
+  if (!name || !email || !subject || !message) {
+    return res.status(400).json({ message: "All fields are required." });
+  }
+
+  try {
+    await sendEmail({
+      to: process.env.CONTACT_EMAIL, 
+      subject: `Contact Us: ${subject}`,
+      html: `
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Message:</strong><br/> ${message}</p>
+      `,
+    });
+
+    res.status(200).json({ message: "Message sent successfully!" });
+  } catch (err) {
+    console.error("Contact email error:", err);
+    res.status(500).json({ message: "Failed to send message." });
   }
 };

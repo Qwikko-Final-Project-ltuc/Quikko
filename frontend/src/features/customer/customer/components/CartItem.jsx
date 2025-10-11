@@ -28,7 +28,6 @@ const CartItem = ({ item }) => {
         quantity: item.quantity - 1 
       }));
     } else {
-      // إذا الكمية 1 ونقص، نحذف الايتم
       handleRemove();
     }
   };

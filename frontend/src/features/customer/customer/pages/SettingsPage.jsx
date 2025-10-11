@@ -32,7 +32,7 @@ export default function SettingsPage() {
 
   // handle edit profile
   const handleEditProfile = () => {
-    navigate("/profile", { state: { profile } });
+    navigate("/customer/profile", { state: { profile } });
   };
 
   // handle delete account
@@ -41,7 +41,7 @@ export default function SettingsPage() {
       try {
         await dispatch(deleteProfile()).unwrap();
         alert("Account deleted!");
-        navigate("/"); // ارجع للصفحة الرئيسية
+        navigate("/customer/home"); 
       } catch (err) {
         alert("Failed to delete account: " + err.message);
       }

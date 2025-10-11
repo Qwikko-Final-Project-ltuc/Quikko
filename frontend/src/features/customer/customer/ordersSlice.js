@@ -1,4 +1,3 @@
-// src/features/customer/customer/slices/ordersSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import customerAPI from "../customer/services/customerAPI";
 
@@ -14,7 +13,7 @@ export const reorderOrder = createAsyncThunk(
   "orders/reorder",
   async (orderId) => {
     const newCart = await customerAPI.reorder(orderId);
-    return newCart; // الكارت الجديد
+    return newCart; 
   }
 );
 const ordersSlice = createSlice({
@@ -24,8 +23,8 @@ const ordersSlice = createSlice({
       loading: false,
       error: null,
       lastReorderedCart: null,
-      currentPage: 1,      // الصفحة الحالية
-      itemsPerPage: 5,     // عدد الأوردرات لكل صفحة
+      currentPage: 1,
+      itemsPerPage: 5,    
       paymentFilter: "all"
        },
   reducers: {
@@ -34,7 +33,7 @@ const ordersSlice = createSlice({
     },
     setPaymentFilter: (state, action) => {
       state.paymentFilter = action.payload;
-      state.currentPage = 1; // إعادة تعيين الصفحة عند تغيير الفلتر
+      state.currentPage = 1; 
     },
   },
   extraReducers: (builder) => {

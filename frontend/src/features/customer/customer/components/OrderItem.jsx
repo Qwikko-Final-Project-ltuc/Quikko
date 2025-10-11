@@ -1,4 +1,3 @@
-// src/features/customer/customer/components/OrderItem.jsx
 import React from "react";
 
 const OrderItem = ({ order }) => {

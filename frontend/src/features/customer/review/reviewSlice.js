@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import * as reviewAPI from "./services/reviewAPI";
 
-// ==== Thunks ====
+//  Thunks 
 export const addReviewThunk = createAsyncThunk(
   "review/addReview",
   async ({ vendor_id, rating }, { rejectWithValue }) => {
@@ -18,7 +18,19 @@ export const fetchAverageRatingThunk = createAsyncThunk(
   async (vendor_id, { rejectWithValue }) => {
     try {
       const res = await reviewAPI.getVendorAverageRating(vendor_id);
-      return res; // رقم مباشرة
+      return res; 
+    } catch (err) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+export const fetchStoresWithReviews = createAsyncThunk(
+  "stores/fetchStoresWithReviews",
+  async (_, { rejectWithValue }) => {
+    try {
+      const data = await reviewAPI.fetchVendorsWithReviews();
+      return data;
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);
     }
@@ -50,14 +62,22 @@ export const fetchReviewsThunk = createAsyncThunk(
 const reviewSlice = createSlice({
   name: "review",
   initialState: {
+    allStores: [],
+    loading: false,
     averageRating: 0,
     totalReviews: 0,
     userRating: 0,
     reviews: [],
     status: "idle",
     error: null,
+    itemsPerPage: 12,
+    currentPage: 1,
   },
-  reducers: {},
+  reducers: {
+    setCurrentPage: (state, action) => {
+      state.currentPage = action.payload;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchAverageRatingThunk.fulfilled, (state, action) => {
@@ -68,7 +88,6 @@ const reviewSlice = createSlice({
       })
       .addCase(addReviewThunk.fulfilled, (state, action) => {
         state.userRating = action.payload.rating;
-        // تحديث أو إضافة المراجعة الجديدة
         const existingIndex = state.reviews.findIndex(r => r.user_id === action.payload.user_id);
         if (existingIndex >= 0) state.reviews[existingIndex] = action.payload;
         else state.reviews.unshift(action.payload);
@@ -77,8 +96,21 @@ const reviewSlice = createSlice({
       .addCase(fetchReviewsThunk.fulfilled, (state, action) => {
         state.reviews = action.payload;
         state.totalReviews = action.payload.length;
+      })
+      .addCase(fetchStoresWithReviews.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchStoresWithReviews.fulfilled, (state, action) => {
+        state.loading = false;
+        state.allStores = action.payload; 
+      })
+      .addCase(fetchStoresWithReviews.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
+export const { setCurrentPage } = reviewSlice.actions;
 
 export default reviewSlice.reducer;

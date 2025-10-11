@@ -121,3 +121,11 @@ exports.insertDelivery = async ({ user_id, company_name }) => {
   );
   return rows[0];
 };
+exports.updatePassword = async (email, hashedPassword) => {
+  const query = `
+    UPDATE users
+    SET password_hash = $1, updated_at = NOW()
+    WHERE email = $2
+  `;
+  await pool.query(query, [hashedPassword, email]);
+};

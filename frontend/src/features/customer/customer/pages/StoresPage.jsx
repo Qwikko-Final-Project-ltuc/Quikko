@@ -1,23 +1,23 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchStores, setCurrentPage } from "../storesSlice";
+// import { fetchStores, setCurrentPage } from "../storesSlice";
 import StoreCard from "../components/StoreCard";
+import { fetchStoresWithReviews ,setCurrentPage } from "../../review/reviewSlice";
 
 const StoresPage = () => {
   const dispatch = useDispatch();
-  const { allStores, loading, error, currentPage, itemsPerPage } = useSelector(state => state.stores);
+  const { allStores, loading, error, currentPage, itemsPerPage } = useSelector(state => state.reviews);
 
   useEffect(() => {
-    dispatch(fetchStores());
+    dispatch(fetchStoresWithReviews());
+    // console.log("allStores",allStores);
   }, [dispatch]);
 
 
-  // ===== حساب المتاجر للصفحة الحالية =====
   const indexOfLastStore = currentPage * itemsPerPage;
   const indexOfFirstStore = indexOfLastStore - itemsPerPage;
   const currentStores = allStores.slice(indexOfFirstStore, indexOfLastStore);
 
-  // ===== حساب عدد الصفحات =====
   const totalPages = Math.ceil(allStores.length / itemsPerPage);
 
   const handlePageChange = (pageNumber) => {
@@ -35,7 +35,7 @@ const StoresPage = () => {
 
     </div>
 
-    {/* ===== Pagination ===== */}
+    {/*  Pagination  */}
       <div className="flex justify-center mt-6 space-x-2">
         {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
           <button

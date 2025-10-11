@@ -1,4 +1,3 @@
-// src/middleware/adminValidator.js
 const { body, param, query, validationResult } = require('express-validator');
 
 /**

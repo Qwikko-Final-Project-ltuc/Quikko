@@ -1,4 +1,3 @@
-// src/modules/chat/chatModel.js
 const pool = require('../../config/db');
 
 /**

@@ -1,4 +1,5 @@
 import axios from "axios";
+import qs from "qs";
 
 const API_URL = "http://localhost:3000/api/customers";
 const PAYMENT_URL = "http://localhost:3000/api/payment";
@@ -10,7 +11,7 @@ const attachToken = (config) => {
 };
 const api = axios.create({
   baseURL: API_URL,
-  withCredentials: true, // إذا كنت تستخدم الكوكيز مع السيرفر
+  withCredentials: true,
 });
 
 const paymentAPI = axios.create({
@@ -18,7 +19,7 @@ const paymentAPI = axios.create({
   withCredentials: true,
 });
 
-//===== Chat API setup =====
+//Chat API setup 
 const CHAT_URL = "http://localhost:3000/api/chat";
 const chatAPI = axios.create({ baseURL: CHAT_URL, withCredentials: true });
 chatAPI.interceptors.request.use(attachToken);
@@ -37,18 +38,20 @@ const customerAPI = {
   // Carts
   getCart: async () => {
   const res = await api.get("/cart");
+  // console.log("Cart response:", res.data);
   if (res.data.guest_token && !localStorage.getItem("guest_token")) {
     localStorage.setItem("guest_token", res.data.guest_token);
-    console.log("✅ Guest token saved from API:", res.data.guest_token);
+    // console.log(" Guest token saved from API:", res.data.guest_token);
   }
-  return res.data.carts;
+  const carts = res.data.carts || res.data.cart || res.data || []; 
+  return Array.isArray(carts) ? carts : [carts];
 },
   getCartById: async (id) => (await api.get(`/cart/${id}`)).data,
   createCart: async () => {
   const res = await api.post("/cart");
   if (res.data.guest_token && !localStorage.getItem("guest_token")) {
     localStorage.setItem("guest_token", res.data.guest_token);
-    console.log("✅ Guest token saved from API:", res.data.guest_token);
+    // console.log(" Guest token saved from API:", res.data.guest_token);
   }
   return res.data.cart;
 },
@@ -85,23 +88,23 @@ const customerAPI = {
 
   // Products
   getProducts: async (params = {}) => {
-    const res = await api.get("/products", { params });
-    // أضف quantity لكل منتج
-    const products = res.data.map(product => ({
-      ...product,
-      quantity: product.stock_quantity || 0, 
-    }));
-    return products;
-  },
-  getProductsWithSorting: async (sort) => {
-  // sort يمكن يكون: price_asc, price_desc, most_sold, created_at, stock_quantity
-  const res = await api.get("/sorted", { params: { sort } });
-  const products = res.data.map(product => ({
-    ...product,
-    quantity: product.stock_quantity || 0,
-  }));
-  return products;
+  const res = await api.get("/products", { params,paramsSerializer: params => qs.stringify(params, { arrayFormat: 'repeat' })});
+  return res.data; 
 },
+
+
+  getProductsWithSorting: async ({ sort, limit = 12, page = 1, categoryId, search } = {}) => {
+  const res = await api.get("/sorted", { params: { sort, limit, page, categoryId, search } });
+  const products = res.data.items.map(p => ({ ...p, quantity: p.stock_quantity || 0 }));
+  return {
+    items: products,
+    totalItems: res.data.totalItems,
+    totalPages: res.data.totalPages, 
+    currentPage: page
+  };
+},
+
+
   getCategories: async () =>{
   const res = (await axios.get("http://localhost:3000/api/categories")).data;
   return res.data;
@@ -110,17 +113,17 @@ const customerAPI = {
   // Stores
   getStores: async () => {
     const res = await api.get("http://localhost:3000/api/vendor/stores");
-    return res.data.data.filter(store => store.status === "approved"); // خذ array من data ثم فلتر
+    return res.data.data.filter(store => store.status === "approved"); 
   },
 
   getStoreById: async (id) => {
-    const res = await api.get(`/stores/${id}`); // لاحظ تعديل الراوت إذا يلزم
-    return res.data.data; // متجر واحد
+    const res = await api.get(`/stores/${id}`); 
+    return res.data.data;
   },
 
   getStoreProducts: async (storeId) => {
   const res = await api.get(`/stores/${storeId}/products`);
-  return res.data.data; // نرجع مباشرة array المنتجات
+  return res.data.data; 
   },
 
 // Checkout
@@ -129,38 +132,33 @@ const customerAPI = {
   return res.data; // { order: { id, items, address, payment_method, ... } }
   },
   getOrCreateCart: async (cartId = null, userId = null, guestToken = null) => {
-  console.log("getOrCreateCart called with:", { cartId, userId, guestToken });
+  // console.log("getOrCreateCart called with:", { cartId, userId, guestToken });
 
   if (cartId) {
     const cart = await api.get(`/cart/${cartId}`);
     return cart.data;
   }
 
-  // 1️⃣ حاول نقل cart الغوست إذا موجود
   if (guestToken && userId) {
     const newCart = await customerAPI.assignGuestCartsToUser(userId, guestToken);
     return newCart;
   }
 
-  // 2️⃣ جلب الكارتات الحالية للمستخدم المسجل
   if (userId) {
     const res = await api.get(`/cart?user_id=${userId}`);
     const carts = res.data;
     if (Array.isArray(carts) && carts.length > 0) return carts[carts.length - 1];
 
-    // إنشاء كارت جديد للمستخدم المسجّل
     const newCartRes = await api.post("/cart", { user_id: userId });
-    return newCartRes.data.cart || newCartRes.data; // حسب شكل الرد
+    return newCartRes.data.cart || newCartRes.data; 
   }
 
-  // 3️⃣ إذا لا يوجد userId، استخدم guestToken أو أنشئ cart جديد
   if (guestToken) {
     const res = await api.get(`/cart?guest_token=${guestToken}`);
     const carts = res.data;
     if (Array.isArray(carts) && carts.length > 0) return carts[carts.length - 1];
   }
 
-  // 4️⃣ إنشاء cart جديد عام (guest)
   const newCartRes = await api.post("/cart");
   return newCartRes.data.cart || newCartRes.data;
 },
@@ -169,7 +167,7 @@ const customerAPI = {
 
   reorder: async (orderId) => {
     const res = await api.post(`/${orderId}/reorder`);
-    return res.data; // يرجع الكارت الجديد
+    return res.data; 
   },
 
 
@@ -214,12 +212,16 @@ const customerAPI = {
     const res = await chatAPI.get("/conversations");
     return res.data;
   },
-  assignGuestCartsToUser: async (userId, guestToken) => {
-  // استدعي API عندك على السيرفر لنقل كل منتجات الغوست للكارت الجديد للمستخدم
-  const res = await api.post("/assign-guest-to-user", { userId, guestToken });
-  // السيرفر يرجع الكارت الجديد بعد النقل
+assignGuestCartsToUser: async (userId, guestToken) => {
+  const res = await api.post(
+    "/assign-guest-to-user",
+    { userId }, 
+    { headers: { "Guest-Token": guestToken } } 
+  );
+  // console.log("res.data.cart", res.data.cart);
   return res.data.cart;
 },
+
 
 
 };

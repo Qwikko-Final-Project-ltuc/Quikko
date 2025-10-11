@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import CartItem from "../components/CartItem";
 import customerAPI from "../services/customerAPI";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchOrders } from "../ordersSlice";
-import { deleteCart, fetchCart } from "../cartSlice";
+import { deleteCart, fetchCart,setCurrentCart } from "../cartSlice";
 
 const OrderDetailPage = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
+  const cartFromState = location.state?.cart;
+
+
 
   const { data: profile } = useSelector((state) => state.profile);
   const { currentCart, status, error } = useSelector((state) => state.cart);
@@ -40,7 +44,6 @@ const OrderDetailPage = () => {
   });
   const [cardError, setCardError] = useState("");
 
-  // جلب البروفايل => تهيئة العنوان
   useEffect(() => {
     if (profile) {
       setAddress((prev) => ({
@@ -54,10 +57,13 @@ const OrderDetailPage = () => {
 
   // fetch cart by id
   useEffect(() => {
-    if (orderId) {
+    if (cartFromState) {
+      dispatch(setCurrentCart(cartFromState));
+    } else if (orderId) {
       dispatch(fetchCart(orderId));
     }
-  }, [dispatch, orderId]);
+  }, [cartFromState, orderId, dispatch]);
+
 
   const total =
     currentCart?.items?.reduce(
@@ -74,7 +80,6 @@ const OrderDetailPage = () => {
     country: address.country,
   };
 
-  // helper لتحديد نوع الكرت بسرعة من الرقم (مبسّط)
   const detectBrand = (num) => {
     if (!num) return "";
     const v = num.replace(/\D/g, "");
@@ -124,7 +129,7 @@ const OrderDetailPage = () => {
         dispatch(fetchOrders());
 
         setOrderSuccess({ method: "Cash on Delivery", order: newOrder });
-        navigate("/orders");
+        navigate("/customer/orders");
         return;
       }
 
@@ -168,7 +173,7 @@ const OrderDetailPage = () => {
         dispatch(fetchOrders());
 
         setOrderSuccess({ method: "Credit Card", transactionId, order: newOrder });
-        navigate("/orders");
+        navigate("/customer/orders");
         return;
       }
 
@@ -214,7 +219,7 @@ const OrderDetailPage = () => {
               dispatch(fetchOrders());
 
               setOrderSuccess({ method: "PayPal", transactionId, order: newOrder });
-              navigate("/orders");
+              navigate("/customer/orders");
             } catch (err) {
               console.error("Checkout failed:", err);
               setCheckoutError(err.response?.data?.error || err.message);
@@ -247,7 +252,7 @@ const OrderDetailPage = () => {
         </div>
       ) : (
         <>
-          {currentCart.items.length === 0 ? <p>No items in this cart.</p> : (
+          {currentCart?.items?.length === 0 ? <p>No items in this cart.</p> : (
             <div className="space-y-4 mb-6">
               {currentCart.items.map((item) => (
                 <CartItem key={`${item.id}-${item.product_id || ""}`} item={{ ...item, image: Array.isArray(item.images) && item.images.length ? item.images[0] : null }} />
@@ -274,7 +279,7 @@ const OrderDetailPage = () => {
             <select className="border rounded w-full p-2 mb-4" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
               <option value="cod">Cash on Delivery</option>
               <option value="paypal">PayPal</option>
-              <option value="card">Credit / Debit Card (sandbox)</option>
+              <option value="card">Credit / Debit Card</option>
             </select>
 
             {paymentMethod === "paypal" && <div id="paypal-button-container" />}
