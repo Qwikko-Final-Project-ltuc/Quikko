@@ -1,5 +1,6 @@
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
+import { useSelector } from "react-redux";
 
 export default function DeliveryHome() {
   const services = [
@@ -17,8 +18,17 @@ export default function DeliveryHome() {
     },
   ];
 
+  // ✅ جلب حالة الثيم من الريدوكس
+  const isDarkMode = useSelector((state) => state.deliveryTheme.darkMode);
+
   return (
-    <div className="flex min-h-screen bg-white">
+    <div
+      className="flex min-h-screen"
+      style={{
+        backgroundColor: isDarkMode ? "#242625" : "#f0f2f1", // الخلفية
+        color: isDarkMode ? "#ffffff" : "#242625", // النصوص
+      }}
+    >
       {/* Main Content */}
       <div className="flex-1 px-6 py-16">
         {/* Hero Section */}
@@ -28,10 +38,27 @@ export default function DeliveryHome() {
           transition={{ duration: 0.8 }}
           className="text-center max-w-3xl mx-auto"
         >
-          <h1 className="text-5xl font-extrabold text-gray-900 mb-4">
-            Welcome to <span className="text-blue-600">QWIKKO Delivery</span>
+          <h1
+            className="text-5xl font-extrabold mb-4 "
+            style={{
+              color: isDarkMode ? "#ffffff" : "#242625", // النصوص
+            }}
+          >
+            Welcome to{" "}
+            <span
+              style={{
+                color: isDarkMode ? "#ffffff" : "#242625", // النصوص
+              }}
+            >
+              QWIKKO Delivery
+            </span>
           </h1>
-          <p className="text-lg text-gray-600 leading-relaxed mb-12">
+          <p
+            className="text-lg leading-relaxed mb-12 "
+            style={{
+              color: isDarkMode ? "#ffffff" : "#242625", // النصوص
+            }}
+          >
             Our delivery platform is designed to make your business faster,
             smarter, and more organized. Here’s what we offer to help you
             succeed:
@@ -48,12 +75,29 @@ export default function DeliveryHome() {
           {services.map((service, idx) => (
             <div
               key={idx}
-              className="bg-white rounded-2xl shadow-md p-6 text-center hover:shadow-lg transition"
+              className="rounded-2xl p-6 text-center shadow-md hover:shadow-lg transition"
+              style={{
+                backgroundColor: isDarkMode ? "#666666" : "#ffffff", // خلفية الديف
+                color: isDarkMode ? "#ffffff" : "#242625", // النصوص
+              }}
             >
-              <h3 className="text-xl font-bold text-blue-600 mb-3">
+              <h3
+                style={{
+                  color: isDarkMode ? "#ffffff" : "#307A59",
+                  fontWeight: "bold",
+                  marginBottom: "0.75rem",
+                  fontSize: "1.25rem",
+                }}
+              >
                 {service.title}
               </h3>
-              <p className="text-gray-700 text-sm leading-relaxed">
+              <p
+                style={{
+                  color: isDarkMode ? "#f9f9f9" : "#242625",
+                  fontSize: "0.875rem",
+                  lineHeight: "1.25rem",
+                }}
+              >
                 {service.desc}
               </p>
             </div>

@@ -5,6 +5,7 @@ import {
   updateDeliveryProfile,
   fetchCoverageAreas,
 } from "./DeliveryAPI";
+import { useSelector } from "react-redux";
 
 export default function EditProfile() {
   const [formData, setFormData] = useState(null);
@@ -13,6 +14,7 @@ export default function EditProfile() {
   const [originalData, setOriginalData] = useState({});
   const navigate = useNavigate();
   const location = useLocation();
+  const isDarkMode = useSelector((state) => state.deliveryTheme.darkMode);
 
   const ALLOWED_AREAS = [
     "Amman",
@@ -56,8 +58,6 @@ export default function EditProfile() {
     loadProfile();
   }, [location.state?.coverageAreas]);
 
-
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -95,7 +95,7 @@ export default function EditProfile() {
 
       await updateDeliveryProfile(token, payload);
       setMessage("✅ Profile updated successfully!");
-      setTimeout(() => navigate("/delivery/dashboard/getprofile"), 1500);
+      navigate("/delivery/dashboard/getprofile");
     } catch (err) {
       setMessage("❌ " + err.message);
     } finally {
@@ -103,36 +103,59 @@ export default function EditProfile() {
     }
   };
 
+  if (loading)
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="w-16 h-16 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
 
-   if (loading)
-     return (
-       <div className="flex items-center justify-center min-h-screen bg-white">
-         <div className="w-16 h-16 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
-       </div>
-     );
-
-   if (!formData) {
-     return (
-       <div className="flex items-center justify-center min-h-screen bg-white">
-         <div className="w-16 h-16 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
-       </div>
-     );
-   }
-
+  if (!formData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="w-16 h-16 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-5xl mx-auto mt-10 p-6 rounded-3xl shadow-2xl bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 animate-fadeIn">
-      <h2 className="text-3xl font-extrabold text-purple-700 mb-6 text-center animate-pulse">
+    <div
+      className="max-w-5xl mx-auto mt-10 p-6 rounded-3xl shadow-2xl "
+      style={{
+        backgroundColor: isDarkMode ? "#242625" : "#f0f2f1",
+        color: isDarkMode ? "#ffffff" : "#242625",
+      }}
+    >
+      <h2
+        className="text-3xl font-extrabold mb-6 text-center "
+        style={{
+          color: isDarkMode ? "#ffffff" : "#242625",
+        }}
+      >
         Edit Delivery Profile
       </h2>
 
       <form
         onSubmit={handleSubmit}
         className="grid grid-cols-1 md:grid-cols-2 gap-8"
+        style={{
+          color: isDarkMode ? "#ffffff" : "#242625",
+        }}
       >
         {/* Personal Info Card */}
-        <div className="p-6 rounded-2xl shadow-xl bg-white border-l-8 border-indigo-400 hover:shadow-2xl transition-all transform hover:-translate-y-1 hover:scale-102">
-          <h3 className="text-2xl font-bold mb-4 text-gray-800">
+        <div
+          className="p-6 rounded-2xl shadow-xl"
+          style={{
+            color: isDarkMode ? "#ffffff" : "#242625",
+            backgroundColor: isDarkMode ? "#242625" : "#f0f2f1",
+          }}
+        >
+          <h3
+            className="text-2xl font-bold mb-4"
+            style={{
+              color: isDarkMode ? "#ffffff" : "#242625",
+            }}
+          >
             Personal Info
           </h3>
           <div className="mb-4">
@@ -142,7 +165,11 @@ export default function EditProfile() {
               name="user_name"
               value={formData.user_name}
               onChange={handleChange}
-              className="w-full border p-2 rounded-lg focus:ring-2 focus:ring-indigo-400"
+              className="w-full border p-2 rounded-lg focus:ring-2 "
+              style={{
+                backgroundColor: isDarkMode ? "#f9f9f9" : "#f9f9f9",
+                color: isDarkMode ? "#242625" : "#242625",
+              }}
             />
           </div>
           <div>
@@ -152,14 +179,29 @@ export default function EditProfile() {
               name="user_phone"
               value={formData.user_phone}
               onChange={handleChange}
-              className="w-full border p-2 rounded-lg focus:ring-2 focus:ring-indigo-400"
+              className="w-full border p-2 rounded-lg "
+              style={{
+                backgroundColor: isDarkMode ? "#f9f9f9" : "#f9f9f9",
+                color: isDarkMode ? "#242625" : "#242625",
+              }}
             />
           </div>
         </div>
 
         {/* Company Info Card */}
-        <div className="p-6 rounded-2xl shadow-xl bg-white border-l-8 border-green-400 hover:shadow-2xl transition-all transform hover:-translate-y-1 hover:scale-102">
-          <h3 className="text-2xl font-bold mb-4 text-gray-800">
+        <div
+          className="p-6 rounded-2xl shadow-xl "
+          style={{
+            color: isDarkMode ? "#ffffff" : "#242625",
+            backgroundColor: isDarkMode ? "#242625" : "#f0f2f1",
+          }}
+        >
+          <h3
+            className="text-2xl font-bold mb-4"
+            style={{
+              color: isDarkMode ? "#ffffff" : "#242625",
+            }}
+          >
             Company Info
           </h3>
           <div className="mb-4">
@@ -169,14 +211,22 @@ export default function EditProfile() {
               name="company_name"
               value={formData.company_name}
               onChange={handleChange}
-              className="w-full border p-2 rounded-lg focus:ring-2 focus:ring-green-400"
+              className="w-full border p-2 rounded-lg "
+              style={{
+                backgroundColor: isDarkMode ? "#f9f9f9" : "#f9f9f9",
+                color: isDarkMode ? "#242625" : "#242625",
+              }}
             />
           </div>
 
           {/* Coverage Areas */}
           <label className="block font-semibold mb-2">Coverage Areas</label>
           <select
-            className="w-full border p-2 rounded mb-4 focus:ring-2 focus:ring-green-400"
+            className="w-full border p-2 rounded mb-4 "
+            style={{
+              backgroundColor: isDarkMode ? "#f9f9f9" : "#f9f9f9",
+              color: isDarkMode ? "#242625" : "#242625",
+            }}
             onChange={(e) => {
               const area = e.target.value;
               if (!formData.coverage_areas.includes(area)) {
@@ -205,7 +255,11 @@ export default function EditProfile() {
             {formData.coverage_areas.map((area) => (
               <span
                 key={area}
-                className="flex items-center bg-green-200 text-green-800 px-3 py-1 rounded-full shadow-sm hover:shadow-md transition-all"
+                className="flex items-center  px-3 py-1 rounded-full "
+                style={{
+                  backgroundColor: isDarkMode ? "#f9f9f9" : "#f9f9f9",
+                  color: isDarkMode ? "#242625" : "#242625",
+                }}
               >
                 {area}
                 <button
@@ -232,14 +286,22 @@ export default function EditProfile() {
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 bg-green-600 text-white p-3 rounded-2xl font-semibold hover:bg-green-700 hover:scale-105 transition-transform shadow-lg"
+            className="flex-1 bg-  p-3 rounded-2xl font-semibold "
+            style={{
+              backgroundColor: isDarkMode ? "#307A59" : "#307A59", // من button في الثيمين
+              color: "#ffffff",
+            }}
           >
             {loading ? "Saving..." : "Save Changes"}
           </button>
           <button
             type="button"
             onClick={() => navigate("/delivery/dashboard/getprofile")}
-            className="flex-1 bg-gray-300 text-black p-3 rounded-2xl font-semibold hover:bg-gray-400 hover:scale-105 transition-transform shadow-md"
+            className="flex-1 p-3 rounded-2xl font-semibold "
+            style={{
+              backgroundColor: isDarkMode ? "#307A59" : "#307A59", // من button في الثيمين
+              color: "#ffffff",
+            }}
           >
             Cancel
           </button>

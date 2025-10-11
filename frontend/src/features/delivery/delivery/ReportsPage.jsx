@@ -1,11 +1,33 @@
 import { useState, useEffect } from "react";
 import { fetchDeliveryReport } from "./DeliveryAPI";
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  FaClock,
+  FaCheck,
+  FaDollarSign,
+  FaUsers,
+  FaStore,
+} from "react-icons/fa";
+import { useSelector } from "react-redux";
 
 export default function DeliveryReports() {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [days, setDays] = useState(30); // default last 30 days
+  const [days, setDays] = useState(30);
+  const isDarkMode = useSelector((state) => state.deliveryTheme.darkMode);
+
+  const [topCount, setTopCount] = useState(3);
 
   useEffect(() => {
     const loadReport = async () => {
@@ -25,24 +47,45 @@ export default function DeliveryReports() {
   if (loading)
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
-        <div className="w-16 h-16 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   if (error) return <p className="text-center text-red-500 mt-10">{error}</p>;
   if (!report)
     return <p className="text-center mt-10">No report data available</p>;
 
-  return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-center">Delivery Report</h1>
+  const ordersData = report.daily_orders || report.orders_over_time || [];
+  const topCustomers = report?.top_customers?.slice(0, topCount) || [];
+  const topVendors = report?.top_vendors?.slice(0, topCount) || [];
 
-      {/* Select Period */}
-      <div className="mb-6 flex justify-center items-center gap-4">
-        <label className="font-semibold">Select period (days):</label>
+  return (
+    <div
+      style={{
+        backgroundColor: isDarkMode ? "#242625" : "#f0f2f1",
+        color: isDarkMode ? "#ffffff" : "#242625",
+        minHeight: "100vh",
+      }}
+      className="p-8 max-w-7xl mx-auto space-y-10 transition-colors"
+    >
+      <h1
+        style={{
+          color: isDarkMode ? "#f9f9f9" : "#307A59",
+        }}
+        className="text-4xl font-bold text-center mb-8"
+      >
+        Delivery Performance Dashboard
+      </h1>
+
+      <div className="flex justify-center items-center gap-4 mb-10">
+        <label className="font-semibold text-lg">Select period:</label>
         <select
           value={days}
           onChange={(e) => setDays(Number(e.target.value))}
-          className="border rounded px-3 py-1"
+          className="border rounded-lg px-4 py-2  shadow-sm transition "
+          style={{
+            color: isDarkMode ? "#242625" : "#242625",
+            backgroundColor: isDarkMode ? "#f9f9f9" : "#f9f9f9",
+          }}
         >
           <option value={7}>Last 7 days</option>
           <option value={14}>Last 14 days</option>
@@ -52,96 +95,344 @@ export default function DeliveryReports() {
         </select>
       </div>
 
-      {/* Totals */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div className="bg-blue-100 p-4 rounded shadow">
-          <h2 className="text-xl font-semibold mb-2">Total Orders</h2>
+      {/* 📈 الرسم البياني */}
+      <div
+        style={{
+          backgroundColor: isDarkMode ? "#666666" : "#ffffff",
+          color: isDarkMode ? "#ffffff" : "#242625",
+        }}
+        className="p-6 rounded-2xl shadow-lg"
+      >
+        <h2
+          style={{
+            color: isDarkMode ? "#f9f9f9" : "#307A59",
+          }}
+          className="text-2xl font-semibold mb-4"
+        >
+          Orders Over Time
+        </h2>
+        <ResponsiveContainer width="100%" height={350}>
+          <BarChart data={ordersData} barCategoryGap="20%">
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="order_date" />
+            <YAxis />
+            <Tooltip />
+            <Bar
+              dataKey="orders_count"
+              fill={isDarkMode ? "#f9f9f9" : "#307A59"}
+              radius={[8, 8, 0, 0]}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div
+          style={{
+            backgroundColor: isDarkMode ? "#307A59" : "#d3f3e2",
+            color: isDarkMode ? "#ffffff" : "#242625",
+          }}
+          className="p-6 rounded-2xl shadow flex flex-col items-center"
+        >
+          <FaCheck
+            style={{ color: isDarkMode ? "#ffffff" : "#307A59" }}
+            className="text-4xl mb-2"
+          />
+          <h2 className="text-lg font-semibold">Total Orders</h2>
           <p className="text-3xl font-bold">{report.totals.total_orders}</p>
         </div>
-        <div className="bg-green-100 p-4 rounded shadow">
-          <h2 className="text-xl font-semibold mb-2">Total Amount</h2>
+
+        <div
+          style={{
+            backgroundColor: isDarkMode ? "#307A59" : "#e6f4ea",
+            color: isDarkMode ? "#ffffff" : "#242625",
+          }}
+          className="p-6 rounded-2xl shadow flex flex-col items-center"
+        >
+          <FaDollarSign
+            style={{ color: isDarkMode ? "#ffffff" : "#307A59" }}
+            className="text-4xl mb-2"
+          />
+          <h2 className="text-lg font-semibold">Total Revenue</h2>
           <p className="text-3xl font-bold">${report.totals.total_amount}</p>
         </div>
+        <div
+          style={{
+            backgroundColor: isDarkMode ? "#993333" : "#fde2e2",
+            color: isDarkMode ? "#ffffff" : "#242625",
+          }}
+          className="p-6 rounded-2xl shadow flex flex-col items-center"
+        >
+          <FaClock
+            style={{ color: isDarkMode ? "#ffffff" : "#cc0000" }}
+            className="text-4xl mb-2"
+          />
+          <h2 className="text-lg font-semibold">Pending Orders</h2>
+          <p className="text-3xl font-bold">{report.pending_count}</p>
+        </div>
       </div>
 
-      {/* Payment Status */}
-      <div className="bg-white p-4 rounded shadow mb-6">
-        <h2 className="text-xl font-semibold mb-4">Payment Status</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div
+        style={{
+          backgroundColor: isDarkMode ? "#666666" : "#ffffff", // dark.div / light.div
+          padding: "1.5rem",
+          borderRadius: "1rem",
+          boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+        }}
+      >
+        <h2
+          style={{
+            fontSize: "1.5rem",
+            fontWeight: "600",
+            marginBottom: "1.5rem",
+            color: isDarkMode ? "#ffffff" : "#242625", // dark.text / light.text
+          }}
+        >
+          Payment Status
+        </h2>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+            gap: "1rem",
+          }}
+        >
           {Object.entries(report.payment_status).map(([key, val]) => (
-            <div key={key} className="bg-yellow-100 p-3 rounded text-center">
-              <p className="font-semibold capitalize">{key}</p>
-              <p className="text-2xl font-bold">{val}</p>
+            <div
+              key={key}
+              style={{
+                backgroundColor: isDarkMode ? "#242625" : "#f9f9f9", // dark.background / light.textbox
+                padding: "1rem",
+                borderRadius: "0.75rem",
+                textAlign: "center",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+              }}
+            >
+              <p
+                style={{
+                  fontWeight: "600",
+                  textTransform: "capitalize",
+                  color: isDarkMode ? "#f9f9f9" : "#242625", // dark.text / light.text
+                  marginBottom: "0.5rem",
+                }}
+              >
+                {key}
+              </p>
+              <p
+                style={{
+                  fontSize: "1.5rem",
+                  fontWeight: "700",
+                  color: isDarkMode ? "#e2fcf0ff" : "#307A59", // dark.button / light.button
+                }}
+              >
+                {val}
+              </p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Order Status */}
-      <div className="bg-white p-4 rounded shadow mb-6">
-        <h2 className="text-xl font-semibold mb-4">Order Status</h2>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div
+        style={{
+          backgroundColor: isDarkMode ? "#666666" : "#ffffff", // dark.div / light.div
+          padding: "1.5rem",
+          borderRadius: "1rem",
+          boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+        }}
+      >
+        <h2
+          style={{
+            fontSize: "1.5rem",
+            fontWeight: "600",
+            marginBottom: "1.5rem",
+            color: isDarkMode ? "#ffffff" : "#242625", // dark.text / light.text
+          }}
+        >
+          Order Status
+        </h2>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+            gap: "1rem",
+          }}
+        >
           {Object.entries(report.statuses).map(([key, val]) => (
-            <div key={key} className="bg-purple-100 p-3 rounded text-center">
-              <p className="font-semibold capitalize">
+            <div
+              key={key}
+              style={{
+                backgroundColor: isDarkMode ? "#242625" : "#f9f9f9", // dark.background / light.textbox
+                padding: "1rem",
+                borderRadius: "0.75rem",
+                textAlign: "center",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+              }}
+            >
+              <p
+                style={{
+                  fontWeight: "600",
+                  textTransform: "capitalize",
+                  color: isDarkMode ? "#f9f9f9" : "#242625", // dark.text / light.text
+                  marginBottom: "0.5rem",
+                }}
+              >
                 {key.replace(/_/g, " ")}
               </p>
-              <p className="text-2xl font-bold">{val}</p>
+              <p
+                style={{
+                  fontSize: "1.5rem",
+                  fontWeight: "700",
+                  color: isDarkMode ? "#ffffffff" : "#307A59", // dark.button / light.button
+                }}
+              >
+                {val}
+              </p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Top Customers */}
-      <div className="bg-white p-4 rounded shadow mb-6">
-        <h2 className="text-xl font-semibold mb-4">Top Customers</h2>
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b">
-              <th className="py-2">Email</th>
-              <th className="py-2">Orders</th>
-              <th className="py-2">Total Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {report.top_customers.map((c) => (
-              <tr key={c.customer_id} className="border-b">
-                <td className="py-2">{c.customer_email}</td>
-                <td className="py-2">{c.orders_count}</td>
-                <td className="py-2">${c.total_amount}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div
+        style={{
+          backgroundColor: isDarkMode ? "#666666" : "#ffffff", // dark.div / light.div
+          padding: "1.5rem",
+          borderRadius: "1rem",
+          boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+        }}
+      >
+        <h2
+          style={{
+            fontSize: "1.5rem",
+            fontWeight: "600",
+            marginBottom: "1rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            color: isDarkMode ? "#ffffff" : "#242625", // dark.text / light.text
+          }}
+        >
+          <FaUsers />
+          Top Customers
+        </h2>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "1rem",
+          }}
+        >
+          {report.top_customers.slice(0, 3).map((c) => (
+            <div
+              key={c.customer_id}
+              style={{
+                backgroundColor: isDarkMode ? "#242625" : "#f9f9f9", // dark.background / light.textbox
+                padding: "1rem",
+                borderRadius: "0.75rem",
+                textAlign: "center",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+              }}
+            >
+              <p
+                style={{
+                  fontWeight: "600",
+                  color: isDarkMode ? "#f9f9f9" : "#242625", // dark.text / light.text
+                  marginBottom: "0.5rem",
+                }}
+              >
+                {c.customer_email}
+              </p>
+              <p
+                style={{
+                  fontWeight: "500",
+                  color: isDarkMode ? "#ffffffff" : "#307A59", // dark.button / light.button
+                  marginBottom: "0.25rem",
+                }}
+              >
+                Orders: {c.orders_count}
+              </p>
+              <p
+                style={{
+                  fontWeight: "500",
+                  color: isDarkMode ? "#ffffffff" : "#307A59",
+                }}
+              >
+                Total Spent: ${c.total_amount}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Top Vendors */}
-      <div className="bg-white p-4 rounded shadow mb-6">
-        <h2 className="text-xl font-semibold mb-4">Top Vendors</h2>
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b">
-              <th className="py-2">Store Name</th>
-              <th className="py-2">Orders</th>
-              <th className="py-2">Revenue</th>
-            </tr>
-          </thead>
-          <tbody>
-            {report.top_vendors.map((v) => (
-              <tr key={v.vendor_id} className="border-b">
-                <td className="py-2">{v.store_name}</td>
-                <td className="py-2">{v.orders_count}</td>
-                <td className="py-2">${v.revenue}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <div
+        style={{
+          backgroundColor: isDarkMode ? "#666666" : "#ffffff",
+          color: isDarkMode ? "#ffffff" : "#242625",
+          padding: "1.5rem",
+          borderRadius: "1rem",
+        }}
+      >
+        <h2
+          style={{
+            fontSize: "1.5rem",
+            fontWeight: "600",
+            marginBottom: "1rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            color: isDarkMode ? "#ffffff" : "#242625",
+          }}
+        >
+          <FaStore /> Top Vendors
+        </h2>
 
-      {/* Pending Orders */}
-      <div className="bg-red-100 p-4 rounded shadow text-center">
-        <h2 className="text-xl font-semibold mb-2">Pending Orders</h2>
-        <p className="text-3xl font-bold">{report.pending_count}</p>
+        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+          {report.top_vendors.slice(0, 3).map((v) => (
+            <div
+              key={v.vendor_id}
+              style={{
+                color: isDarkMode ? "#ffffff" : "#242625",
+                backgroundColor: isDarkMode ? "#242625" : "#f9f9f9", // dark.background / light.textbox
+                padding: "1rem",
+                borderRadius: "1rem",
+                flex: "1 1 250px",
+                textAlign: "center",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              }}
+            >
+              <p
+                style={{
+                  fontWeight: "600",
+                  marginBottom: "0.5rem",
+                  color: isDarkMode ? "#ffffff" : "#242625",
+                }}
+              >
+                {v.store_name}
+              </p>
+              <p
+                style={{
+                  fontSize: "1.25rem",
+                  fontWeight: "bold",
+                  marginBottom: "0.25rem",
+                  color: isDarkMode ? "#ffffff" : "#242625",
+                }}
+              >
+                Orders: {v.orders_count}
+              </p>
+              <p
+                style={{
+                  fontSize: "1.25rem",
+                  fontWeight: "bold",
+                  color: isDarkMode ? "#ffffff" : "#242625",
+                }}
+              >
+                Revenue: ${v.revenue}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

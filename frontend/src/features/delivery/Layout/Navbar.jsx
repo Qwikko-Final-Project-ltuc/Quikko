@@ -8,27 +8,23 @@ import {
   FiSun,
   FiUser,
   FiCheck,
-
 } from "react-icons/fi";
 import notificationAPI from "../notification/notificatationAPI";
+import { useDispatch, useSelector } from "react-redux";
+import { toggleTheme } from "../delivery/deliveryThemeSlice";
 
-export default function Navbar({
-  isSidebarOpen,
-  toggleSidebar,
-  user,
-  onToggleTheme,
-  isDarkMode,
-}) {
+export default function Navbar({ isSidebarOpen, toggleSidebar, user }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [visibleCount, setVisibleCount] = useState(10);
   const navigate = useNavigate();
-
   const token = localStorage.getItem("token");
 
-  // 📬 جلب الإشعارات وعدد الغير مقروءة
+  const dispatch = useDispatch();
+  const isDarkMode = useSelector((state) => state.deliveryTheme.darkMode);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -56,7 +52,6 @@ export default function Navbar({
     }
   };
 
-  // ✅ تعليم كل الإشعارات كمقروءة
   const markAllAsRead = async () => {
     try {
       const unreadIds = notifications
@@ -73,58 +68,180 @@ export default function Navbar({
     }
   };
 
-  const getAvatar = () => {
-    if (user?.avatarUrl)
-      return (
-        <img
-          src={user.avatarUrl}
-          alt="avatar"
-          className="w-8 h-8 rounded-full object-cover"
-        />
-      );
-    const initials = user?.company_name
-      ? user.company_name
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .slice(0, 2)
-          .toUpperCase()
-      : "GU";
-    return (
-      <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-semibold">
-        {initials}
-      </div>
-    );
-  };
+ const getAvatar = () => {
+   if (user?.avatarUrl)
+     return (
+       <img
+         src={user.avatarUrl}
+         alt="avatar"
+         className="w-8 h-8 rounded-full object-cover"
+       />
+     );
+
+   const initials = user?.company_name
+     ? user.company_name
+         .split(" ")
+         .map((n) => n[0])
+         .join("")
+         .slice(0, 2)
+         .toUpperCase()
+     : "GU";
+
+   return (
+     <div
+       className="w-8 h-8 rounded-full flex items-center justify-center font-semibold"
+       style={{
+         backgroundColor: isDarkMode ? "#666666" : "#ffffff", // خلفية الديف
+         color: isDarkMode ? "#ffffff" : "#242625", // النصوص
+       }}
+     >
+       {initials}
+     </div>
+   );
+ };
+
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-white shadow px-6 py-4 flex justify-between items-center relative z-50">
+    <header
+      className="fixed top-0 left-0 right-0  shadow px-6 py-0 flex justify-between items-center relative z-50"
+      style={{
+        backgroundColor: isDarkMode ? "#242625" : "#f0f2f1",
+        color: isDarkMode ? "#ffffff" : "#242625",
+      }}
+    >
       {/* زر القائمة واللوغو */}
       <div className="flex items-center gap-4">
         {!isSidebarOpen && (
           <button
             onClick={toggleSidebar}
-            className="text-2xl text-gray-700 hover:text-black transition flex-shrink-0"
+            style={{
+              color: isDarkMode ? "#ffffff" : "#242625",
+            }}
+            className="text-2xl hover:text-black transition flex-shrink-0"
           >
             <FiMenu />
           </button>
         )}
         <div
-          className={`text-2xl font-bold text-gray-800 transition-opacity ${
+          className={`text-2xl font-bold transition-opacity ${
             isSidebarOpen ? "opacity-0" : "opacity-100"
           }`}
+          style={{
+            color: isDarkMode ? "#ffffff" : "#242625",
+          }}
         >
-          Qwikko
+          <div className="px-6 py-6 flex items-center">
+            <img
+              src={isDarkMode ? "/darklogo.png" : "/logo.png"}
+              alt="Qwikko Logo"
+              className="h-9"
+            />
+          </div>
         </div>
       </div>
 
-      {/* أيقونات اليمين */}
       <div className="flex items-center gap-4">
-        {/* الإشعارات */}
         <div className="relative">
           <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            style={{
+              backgroundColor: isDarkMode ? "#242625" : "#ffffff", // خلفية button
+              color: isDarkMode ? "#ffffff" : "#242625", // النص
+              border: `1px solid ${isDarkMode ? "#f9f9f9" : "#242625"}`, // الخط
+            }}
+            className="flex items-center gap-2 px-3 py-1 rounded-full transition"
+          >
+            {getAvatar()}
+            <span>{user?.company_name || "Guest"}</span>
+            <FiChevronDown
+              className={`transition-transform ${
+                isDropdownOpen ? "rotate-180" : ""
+              }`}
+              style={{ color: isDarkMode ? "#ffffff" : "#242625" }}
+            />
+          </button>
+
+          {isDropdownOpen && (
+            <div
+              className="absolute right-0 mt-2 w-48 shadow-lg rounded-xl overflow-hidden z-50"
+              style={{
+                backgroundColor: isDarkMode ? "#666666" : "#ffffff",
+                border: `1px solid ${isDarkMode ? "#f9f9f9" : "#242625"}`,
+                color: isDarkMode ? "#ffffff" : "#242625",
+              }}
+            >
+              {/* Profile Button */}
+              <button
+                onClick={() => {
+                  setIsDropdownOpen(false);
+                  setTimeout(() => {
+                    navigate("/delivery/dashboard/getProfile");
+                  }, 0);
+                }}
+                className="flex items-center gap-3 w-full text-left px-4 py-3 transition hover:opacity-80"
+                style={{
+                  color: isDarkMode ? "#ffffff" : "#242625",
+                }}
+              >
+                <FiUser style={{ color: isDarkMode ? "#ffffff" : "#242625" }} />
+                <span>Profile</span>
+              </button>
+
+              {/* Toggle Theme Button */}
+              <button
+                onClick={() => {
+                  setIsDropdownOpen(false); // يغلق أولًا
+                  setTimeout(() => {
+                    dispatch(toggleTheme()); // بعد الإغلاق مباشرة
+                  }, 0);
+                }}
+                className="flex items-center gap-3 w-full text-left px-4 py-3 transition hover:opacity-80"
+              >
+                {isDarkMode ? (
+                  <>
+                    <FiSun
+                      style={{
+                        color: isDarkMode ? "#ffffff" : "#242625",
+                      }}
+                    />
+                    <span
+                      style={{
+                        backgroundColor: isDarkMode ? "#666666" : "#ffffff",
+                      }}
+                    >
+                      Light Mode
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <FiMoon
+                      style={{
+                        color: isDarkMode ? "#ffffff" : "#242625",
+                      }}
+                    />
+                    <span
+                      style={{
+                        backgroundColor: isDarkMode ? "#666666" : "#ffffff",
+                      }}
+                    >
+                      Dark Mode
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* الإشعارات */}
+        <div className="flex items-center gap-4">
+          {/* إشعارات */}
+          <button
             onClick={() => setShowNotifications(true)}
-            className="text-2xl text-gray-600 hover:text-black transition relative"
+            style={{
+              color: isDarkMode ? "#ffffff" : "#242625",
+            }}
+            className="text-2xl hover:text-black transition relative"
           >
             <FiBell />
             {unreadCount > 0 && (
@@ -136,19 +253,38 @@ export default function Navbar({
 
           {showNotifications && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[999]">
-              <div className="bg-white p-6 rounded-xl shadow-lg w-[90%] max-w-[900px] max-h-[70vh] overflow-y-auto relative">
+              <div
+                className=" p-6 rounded-xl shadow-lg w-90%] max-w-[900px] max-h-[70vh] overflow-y-auto relative"
+                style={{
+                  backgroundColor: isDarkMode ? "#242625" : "#f0f2f1",
+                  color: isDarkMode ? "#ffffff" : "#242625",
+                }}
+              >
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">Notifications</h2>
+                  <h2
+                    className="text-xl font-semibold"
+                    style={{
+                      color: isDarkMode ? "#ffffff" : "#242625",
+                    }}
+                  >
+                    Notifications
+                  </h2>
                   <div className="flex gap-2 items-center">
                     <button
                       onClick={markAllAsRead}
-                      className="text-blue-600 hover:underline text-sm"
+                      className=" hover:underline text-sm"
+                      style={{
+                        color: isDarkMode ? "#ffffff" : "#242625",
+                      }}
                     >
                       Mark All as Read
                     </button>
                     <button
                       onClick={() => setShowNotifications(false)}
-                      className="text-gray-500 hover:text-gray-700 text-xl font-bold"
+                      className=" hover:text-gray-700 text-xl font-bold"
+                      style={{
+                        color: isDarkMode ? "#ffffff" : "#242625",
+                      }}
                     >
                       ✕
                     </button>
@@ -156,28 +292,44 @@ export default function Navbar({
                 </div>
 
                 {notifications.length === 0 ? (
-                  <p className="text-gray-500">No notifications yet.</p>
+                  <p
+                    style={{
+                      color: isDarkMode ? "#ffffff" : "#242625",
+                    }}
+                  >
+                    No notifications yet.
+                  </p>
                 ) : (
                   <ul>
-                    {notifications.length === 0 && (
-                      <li className="p-4 text-gray-500">No notifications</li>
-                    )}
                     {notifications.map((n) => (
                       <li
                         key={n.id}
-                        className={`p-4 border-b flex justify-between items-start hover:bg-gray-50 ${
-                          !n.read_status ? "bg-blue-50" : ""
-                        }`}
+                        className="p-4 border-b flex justify-between items-start rounded-lg transition-colors"
+                        style={{
+                          backgroundColor: !n.read_status
+                            ? isDarkMode
+                              ? "#2a3b5f" // خلفية الإشعارات غير المقروءة في الدارك
+                              : "#e8f1ff" // خلفية الإشعارات غير المقروءة في اللايت
+                            : isDarkMode
+                            ? "#242625" // خلفية العادية في الدارك
+                            : "#ffffff", // خلفية العادية في اللايت
+                          color: isDarkMode ? "#ffffff" : "#242625",
+                          borderColor: isDarkMode ? "#444" : "#ddd",
+                        }}
                       >
                         <div>
-                          <h4 className="font-medium">{n.title}</h4>
-                          <p className="text-sm text-gray-600">{n.message}</p>
-                          <span className="text-xs text-gray-400">
-                            {new Date(n.created_at).toLocaleString()}
-                          </span>
+                          <p
+                            style={{
+                              fontWeight: !n.read_status ? "600" : "400",
+                            }}
+                          >
+                            {n.title}
+                          </p>
+                          <p style={{ fontSize: "0.9rem", opacity: 0.8 }}>
+                            {n.message}
+                          </p>
                         </div>
 
-                        {/* زر Mark as Read لكل إشعار */}
                         {!n.read_status && (
                           <button
                             onClick={async () => {
@@ -199,7 +351,7 @@ export default function Navbar({
                                   );
                                 await res.json();
 
-                                // تحديث الحالة محليًا
+                                // ✅ تحديث الحالة محليًا
                                 setNotifications((prev) =>
                                   prev.map((notif) =>
                                     notif.id === n.id
@@ -212,7 +364,17 @@ export default function Navbar({
                                 console.error(err);
                               }
                             }}
-                            className="ml-4 inline-flex text-blue-900 hover:text-blue-800 text-sm items-center gap-1 z-10"
+                            className="ml-4 inline-flex items-center gap-1 text-sm font-medium px-3 py-1 rounded-full transition-colors duration-200 hover:scale-105"
+                            style={{
+                              backgroundColor: isDarkMode
+                                ? "#2a3b5f"
+                                : "#e8f1ff",
+                              color: isDarkMode ? "#ffffff" : "#242625",
+                              border: `1px solid ${
+                                isDarkMode ? "#5f6e68" : "#a0c4ff"
+                              }`,
+                              cursor: "pointer",
+                            }}
                           >
                             <FiCheck /> Mark as read
                           </button>
@@ -233,59 +395,6 @@ export default function Navbar({
                   </div>
                 )}
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* Dropdown المستخدم */}
-        <div className="relative">
-          <button
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-2 px-3 py-1 rounded-full border border-gray-200 hover:bg-gray-100 transition"
-          >
-            {getAvatar()}
-            <span className="font-medium text-gray-700">
-              {user?.company_name || "Guest"}
-            </span>
-            <FiChevronDown
-              className={`transition-transform ${
-                isDropdownOpen ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-
-          {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-xl overflow-hidden z-50 border border-gray-100">
-              <button
-                onClick={() => {
-                  setIsDropdownOpen(false);
-                  navigate("/delivery/dashboard/getProfile");
-                }}
-                className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-gray-100 transition"
-              >
-                <FiUser className="text-gray-600" />
-                <span>Profile</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setIsDropdownOpen(false);
-                  onToggleTheme();
-                }}
-                className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-gray-100 transition"
-              >
-                {isDarkMode ? (
-                  <>
-                    <FiSun className="text-yellow-500" />
-                    <span>Light Mode</span>
-                  </>
-                ) : (
-                  <>
-                    <FiMoon className="text-gray-700" />
-                    <span>Dark Mode</span>
-                  </>
-                )}
-              </button>
             </div>
           )}
         </div>
