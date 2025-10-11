@@ -5,11 +5,14 @@ import { IoStorefront } from "react-icons/io5";
 import { FaUserTie, FaPhoneAlt } from "react-icons/fa";
 import { AiFillProduct } from "react-icons/ai";
 import { ApproveVendors, RejectVendors } from "./vendorApi";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { approveVendorLocal, rejectVendorLocal } from "./vendorSlice";
 
 export default function VendorCard({ vendor }) {
   const dispatch = useDispatch();
+  const mode = useSelector((state) => state.theme.mode);
+  const isDark = mode === "dark";
+
   const {
     vendor_id,
     store_name,
@@ -17,7 +20,7 @@ export default function VendorCard({ vendor }) {
     commission_rate,
     contact_email,
     phone,
-    products,   
+    products,
   } = vendor;
 
   const getStatusIcon = (status) => {
@@ -52,40 +55,57 @@ export default function VendorCard({ vendor }) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 max-w-sm w-full transition-transform transform hover:scale-105">
-      <div className="flex items-center mb-4">
-        <IoStorefront className="text-4xl text-gray-700 mr-4 w-10 h-10" />
-        <h3 className="text-2xl font-bold text-gray-800">{store_name}</h3>
+    <div
+      className={`p-6 rounded-xl shadow-md transition-transform duration-300 hover:scale-105 ${
+        isDark
+          ? "bg-[#333] text-white border border-gray-600"
+          : "bg-white text-gray-900 border border-gray-200"
+      }`}
+    >
+      {/* Header */}
+      <div className="flex items-center mb-4 space-x-4">
+        <IoStorefront
+          className={`w-12 h-12 ${isDark ? "text-white" : "text-gray-800"}`}
+        />
+        <h3 className="text-2xl font-bold">{store_name}</h3>
       </div>
-      <div className="space-y-3 text-gray-600">
-        <div className="flex items-center">
-          <FaUserTie className="w-5 h-5 mr-2" />
+
+      {/* Vendor Info */}
+      <div className="space-y-2 text-sm">
+        <div className="flex items-center gap-2">
+          <FaUserTie />
           <span>Vendor ID: {vendor_id}</span>
         </div>
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           {getStatusIcon(status)}
-          <span className="capitalize ml-2">Status: {status}</span>
+          <span className="capitalize">{status}</span>
         </div>
-        <div className="flex items-center">
-          <MdStarRate className="w-5 h-5 mr-2 text-yellow-500" />
+        <div className="flex items-center gap-2">
+          <MdStarRate className="text-yellow-400" />
           <span>Rate: {commission_rate}</span>
         </div>
-        <div className="flex items-center">
-          <MdEmail className="w-5 h-5 mr-2" />
-          <span>Email: {contact_email}</span>
+        <div className="flex items-center gap-2">
+          <MdEmail />
+          <span>{contact_email}</span>
         </div>
-        <div className="flex items-center">
-          <FaPhoneAlt className="w-5 h-5 mr-2" />
-          <span>Phone: {phone}</span>
+        <div className="flex items-center gap-2">
+          <FaPhoneAlt />
+          <span>{phone}</span>
         </div>
       </div>
-      {products && products.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <h4 className="text-lg font-semibold text-gray-700 flex items-center mb-2">
-            <AiFillProduct className="w-5 h-5 mr-2" />
-            Products:
+
+      {/* Products */}
+      {products?.length > 0 && (
+        <div
+          className={`mt-4 pt-4 border-t ${
+            isDark ? "border-gray-600" : "border-gray-300"
+          }  `}
+        >
+          <h4 className="flex items-center font-semibold mb-2 gap-2">
+            <AiFillProduct />
+            Products
           </h4>
-          <ul className="text-sm text-gray-500 space-y-1">
+          <ul className="text-sm space-y-1">
             {products.map((product) => (
               <li key={product.product_id}>
                 {product.name} - ${product.price} (Stock:{" "}
@@ -96,35 +116,36 @@ export default function VendorCard({ vendor }) {
         </div>
       )}
 
-      <div className="flex gap-2 mt-2">
-        {vendor.status === "pending" && (
+      {/* Actions */}
+      <div className="flex gap-2 mt-4 flex-wrap">
+        {status === "pending" && (
           <>
             <button
-              onClick={() => handleApprove(vendor.vendor_id)}
-              className="bg-green-500 text-white px-3 py-1 rounded-md hover:bg-green-600"
+              onClick={() => handleApprove(vendor_id)}
+              className="px-3 py-1 rounded-md bg-[#307A59] text-white hover:bg-[#265e46] transition-colors"
             >
               Approve
             </button>
             <button
-              onClick={() => handleReject(vendor.vendor_id)}
-              className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600"
+              onClick={() => handleReject(vendor_id)}
+              className="px-3 py-1 rounded-md bg-red-500 text-white hover:bg-red-600 transition-colors"
             >
               Reject
             </button>
           </>
         )}
-        {vendor.status === "approved" && (
+        {status === "approved" && (
           <button
-            onClick={() => handleReject(vendor.vendor_id)}
-            className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600"
+            onClick={() => handleReject(vendor_id)}
+            className="px-3 py-1 rounded-md bg-red-500 text-white hover:bg-red-600 transition-colors"
           >
             Reject
           </button>
         )}
-        {vendor.status === "rejected" && (
+        {status === "rejected" && (
           <button
-            onClick={() => handleApprove(vendor.vendor_id)}
-            className="bg-green-500 text-white px-3 py-1 rounded-md hover:bg-green-600"
+            onClick={() => handleApprove(vendor_id)}
+            className="px-3 py-1 rounded-md bg-[#307A59] text-white hover:bg-[#265e46] transition-colors"
           >
             Approve
           </button>

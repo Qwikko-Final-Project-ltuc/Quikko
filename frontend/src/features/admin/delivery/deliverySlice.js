@@ -5,7 +5,7 @@ const initialState = {
 };
 
 const deliverySlice = createSlice({
-  name: "deliveryCompanies",
+  name: "deliveries",
   initialState,
   reducers: {
     setDelivery: (state, action) => {

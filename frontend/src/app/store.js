@@ -24,6 +24,7 @@ import orderReducer from "../features/admin/orders/orderSlice";
 import cmsReducer from "../features/admin/CMS/cmsSlice";
 import notificationsReducer from "../features/admin/CMS/notification/notificationSlice";
 import categoryReducer from "../features/admin/CMS/categories/categorySlice";
+import themeReducer from "../features/admin/dark-lightMode/themeSlice";
 
 const store = configureStore({
   reducer: {
@@ -45,7 +46,7 @@ const store = configureStore({
     cms: cmsReducer,
     notifications: notificationsReducer,
     categoriesAdmin: categoryReducer,
-
+    theme: themeReducer,
     //Delivery
     auth: authReducer,
     notificationsDelivery: notificationsDeliveryReducer,

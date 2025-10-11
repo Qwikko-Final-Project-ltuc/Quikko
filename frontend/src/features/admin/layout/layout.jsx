@@ -1,8 +1,9 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import SideBar from "./sideBar";
-import { FiChevronDown } from "react-icons/fi";
+import { FiChevronDown, FiMenu, FiSun, FiMoon } from "react-icons/fi";
 import { useState, useEffect, useRef } from "react";
-import { FiMenu } from "react-icons/fi";
+import { useSelector, useDispatch } from "react-redux";
+import { toggleTheme } from "../dark-lightMode/themeSlice";
 
 export default function Layout() {
   const navigate = useNavigate();
@@ -12,10 +13,17 @@ export default function Layout() {
   const [user, setUser] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
+  const dispatch = useDispatch();
+  const isDark = useSelector((state) => state.theme.mode === "dark");
+
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
     setUser(storedUser);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", isDark);
+  }, [isDark]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -26,10 +34,6 @@ export default function Layout() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  const toggleTheme = () => {
-    document.documentElement.classList.toggle("dark");
-  };
 
   const getTitle = () => {
     switch (location.pathname) {
@@ -51,71 +55,131 @@ export default function Layout() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-gray-100 dark:bg-gray-900">
-      <SideBar isOpen={isSidebarOpen} />
+    <div
+      className={`flex h-screen w-full transition-colors duration-500 ease-in-out
+      ${
+        isDark
+          ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-100"
+          : "bg-gradient-to-br from-gray-100 via-gray-200 to-gray-100 text-gray-900"
+      }`}
+    >
+      <SideBar isOpen={isSidebarOpen} isDark={isDark} />
 
       <div className="flex-1 flex flex-col min-h-0">
-        <header className="sticky top-0 z-20 flex justify-between items-center bg-white dark:bg-gray-800 shadow px-6 py-4">
+        <header
+          className={`sticky top-0 z-20 flex justify-between items-center shadow px-6 py-4 transition-colors duration-500 ease-in-out
+          ${isDark ? "bg-gray-800" : "bg-white"}`}
+        >
           <div className="flex items-center space-x-4">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"
+              className={`p-2 rounded-md transition-colors duration-500 ease-in-out
+                ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-200"}`}
             >
-              <FiMenu className="w-6 h-6 text-gray-700 dark:text-gray-200" />
+              <FiMenu
+                className={`w-6 h-6 ${
+                  isDark ? "text-gray-100" : "text-gray-900"
+                }`}
+              />
             </button>
-            <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+            <h1
+              className={`text-xl font-bold transition-colors duration-500 ease-in-out ${
+                isDark ? "text-gray-100" : "text-gray-900"
+              }`}
+            >
               {getTitle()}
             </h1>
           </div>
-          <div
-            className="relative flex items-center space-x-4"
-            ref={dropdownRef}
-          >
+          <div className=" flex items-center space-x-4">
             <div
-              className="flex items-center space-x-2 cursor-pointer"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="relative flex items-center space-x-2 cursor-pointer"
+              ref={dropdownRef}
             >
-              <div className="w-8 h-8 rounded-full bg-gray-500 flex items-center justify-center text-white font-bold">
-                {user?.name
-                  ? user.name
-                      .split(" ")
-                      .map((n) => n[0].toUpperCase())
-                      .slice(0, 2)
-                      .join("")
-                  : "A"}
+              <div
+                className="flex items-center space-x-2"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center font-bold transition-colors duration-500 ease-in-out
+                  ${
+                    isDark
+                      ? "bg-green-900 text-gray-100 hover:shadow-lg"
+                      : "bg-green-700 text-white hover:shadow-md"
+                  }`}
+                >
+                  {user?.name
+                    ? user.name
+                        .split(" ")
+                        .map((n) => n[0].toUpperCase())
+                        .slice(0, 2)
+                        .join("")
+                    : "A"}
+                </div>
+                <span
+                  className={`transition-colors duration-500 ease-in-out ${
+                    isDark ? "text-gray-100" : "text-gray-900"
+                  }`}
+                >
+                  {user?.name || "Admin"}
+                </span>
+                <FiChevronDown
+                  className={`transition-colors duration-500 ease-in-out ${
+                    isDark ? "text-gray-100" : "text-gray-900"
+                  }`}
+                />
               </div>
-              <span className="text-gray-800 dark:text-gray-100">
-                {user?.name || "Admin"}
-              </span>
-              <FiChevronDown className="text-gray-600 dark:text-gray-200" />
+
+              {dropdownOpen && (
+                <div
+                  className={`absolute right-1 mt-20 w-30 transition-colors duration-500 ease-in-out
+              ${
+                isDark
+                  ? "bg-gray-800 border-gray-700"
+                  : "bg-white border-gray-200"
+              } border shadow-lg rounded-md z-50 overflow-hidden`}
+                >
+                  <button
+                    className={`block w-full text-left px-4 py-2 transition-colors duration-500 ease-in-out
+              ${
+                isDark
+                  ? "text-gray-100 hover:bg-gray-700"
+                  : "text-gray-900 hover:bg-gray-200"
+              }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDropdownOpen(false);
+                      navigate("/adminProfile");
+                    }}
+                  >
+                    Profile
+                  </button>
+                </div>
+              )}
             </div>
 
-            {dropdownOpen && (
-              <div className="absolute right-5 mt-35 w-48 bg-white dark:bg-gray-700 shadow-lg rounded-md z-50">
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600"
-                  onClick={() => {
-                    setDropdownOpen(false);
-                    navigate("/adminProfile");
-                  }}
-                >
-                  Profile
-                </button>
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600"
-                  onClick={() => {
-                    toggleTheme();
-                    setDropdownOpen(false);
-                  }}
-                >
-                  Dark/Light Mode
-                </button>
-              </div>
-            )}
+            <button
+              onClick={() => dispatch(toggleTheme())}
+              className={`p-2 rounded-full transition-colors duration-500 ease-in-out
+                ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-200"}`}
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDark ? (
+                <FiSun className="w-5 h-5 text-yellow-400" />
+              ) : (
+                <FiMoon
+                  className={`w-5 h-5 ${
+                    isDark ? "text-gray-100" : "text-gray-700"
+                  }`}
+                />
+              )}
+            </button>
           </div>
         </header>
 
-        <main className="p-6 overflow-auto flex-1 bg-gray-50 dark:bg-gray-900">
+        <main
+          className={`p-6 overflow-auto flex-1 transition-colors duration-500 ease-in-out
+          ${isDark ? "bg-gray-900" : "bg-gray-50"}`}
+        >
           <Outlet />
         </main>
       </div>

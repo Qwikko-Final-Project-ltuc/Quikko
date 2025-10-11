@@ -16,6 +16,9 @@ export default function DeliveryPage() {
   const dispatch = useDispatch();
   const delivery = useSelector((state) => state.deliveries.deliveries);
 
+  const mode = useSelector((state) => state.theme.mode);
+  const isDark = mode === "dark";
+
   useEffect(() => {
     const handleDelivery = async () => {
       try {
@@ -52,39 +55,55 @@ export default function DeliveryPage() {
   const visibleDelivery = filteredDelivery.slice(0, visibleCount);
 
   return (
-    <>
-      <div className="p-4 bg-white rounded-lg shadow-md mb-6">
-        <div className="flex items-center mb-4 space-x-4">
+    <div className={`min-h-screen p-6 transition-colors duration-500 ${
+      isDark ? "bg-[#242625] text-white" : "bg-[#f0f2f1] text-[#242625]"
+    }`}>
+      {/* Search & Filters */}
+      <div className={`p-4 rounded-xl shadow-md mb-6 transition-colors duration-500 ${
+        isDark ? "bg-[#333]" : "bg-white"
+      }`}>
+        <div className="flex flex-col sm:flex-row items-center mb-4 sm:space-x-4 space-y-4 sm:space-y-0">
           <div className="relative flex-1">
-            <IoIosSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <IoIosSearch className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${
+              isDark ? "text-gray-400" : "text-gray-500"
+            }`} />
             <input
               type="text"
-              placeholder="Search..."
+              placeholder="Search delivery companies..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full pl-10 pr-4 py-2 rounded-lg border transition-colors duration-300 focus:outline-none focus:ring-2 ${
+                isDark
+                  ? "bg-[#444] border-gray-600 text-white focus:ring-[#307A59]"
+                  : "bg-white border-gray-300 text-[#242625] focus:ring-[#307A59]"
+              }`}
             />
           </div>
+
+          {/* Coverage Filter */}
           <div className="relative">
             <button
               onClick={() => setShowCoverageDropdown(!showCoverageDropdown)}
-              className="flex items-center space-x-2 p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+              className={`flex items-center space-x-2 p-2 rounded-lg transition-colors ${
+                isDark
+                  ? "bg-[#555] text-white hover:bg-[#666]"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
             >
               <FaFilter className="w-5 h-5" />
               <span className="hidden sm:inline">Coverage</span>
             </button>
 
             {showCoverageDropdown && (
-              <div className="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg z-50">
+              <div className={`absolute right-0 mt-2 w-40 rounded-lg shadow-lg z-50 ${
+                isDark ? "bg-[#333] border border-gray-600" : "bg-white border border-gray-300"
+              }`}>
                 <button
-                  onClick={() => {
-                    setCoverageFilter("all");
-                    setShowCoverageDropdown(false);
-                  }}
-                  className={`block w-full text-left px-4 py-2 ${
+                  onClick={() => { setCoverageFilter("all"); setShowCoverageDropdown(false); }}
+                  className={`block w-full text-left px-4 py-2 rounded transition-colors duration-200 ${
                     coverageFilter === "all"
-                      ? "bg-blue-500 text-white"
-                      : "hover:bg-gray-100"
+                      ? "bg-[#307A59] text-white"
+                      : isDark ? "hover:bg-[#444] text-white" : "hover:bg-gray-100"
                   }`}
                 >
                   All Areas
@@ -92,14 +111,11 @@ export default function DeliveryPage() {
                 {allCoverageAreas.map((area) => (
                   <button
                     key={area}
-                    onClick={() => {
-                      setCoverageFilter(area);
-                      setShowCoverageDropdown(false);
-                    }}
-                    className={`block w-full text-left px-4 py-2 ${
+                    onClick={() => { setCoverageFilter(area); setShowCoverageDropdown(false); }}
+                    className={`block w-full text-left px-4 py-2 rounded transition-colors duration-200 ${
                       coverageFilter === area
-                        ? "bg-blue-500 text-white"
-                        : "hover:bg-gray-100"
+                        ? "bg-[#307A59] text-white"
+                        : isDark ? "hover:bg-[#444] text-white" : "hover:bg-gray-100"
                     }`}
                   >
                     {area}
@@ -109,15 +125,17 @@ export default function DeliveryPage() {
             )}
           </div>
         </div>
-        <div className="flex space-x-4 text-sm font-medium">
+
+        {/* Status Filters */}
+        <div className="flex flex-wrap gap-3 text-sm font-medium">
           {["all", "approved", "pending", "rejected"].map((filter) => (
             <button
               key={filter}
               onClick={() => setActiveFilter(filter)}
-              className={`px-3 py-1 rounded-full ${
+              className={`px-3 py-1 rounded-full transition-colors duration-200 ${
                 activeFilter === filter
-                  ? "bg-blue-500 text-white"
-                  : "text-gray-600 hover:bg-gray-200"
+                  ? "bg-[#307A59] text-white"
+                  : isDark ? "bg-[#555] text-white hover:bg-[#666]" : "bg-gray-200 text-gray-800 hover:bg-gray-300"
               }`}
             >
               {filter.charAt(0).toUpperCase() + filter.slice(1)}
@@ -125,6 +143,8 @@ export default function DeliveryPage() {
           ))}
         </div>
       </div>
+
+      {/* Delivery Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {Array.isArray(filteredDelivery) &&
           visibleDelivery.map((delivery) => (
@@ -132,16 +152,19 @@ export default function DeliveryPage() {
           ))}
       </div>
 
+      {/* Load More */}
       {visibleCount < filteredDelivery.length && (
         <div className="flex justify-center mt-6">
           <button
             onClick={() => setVisibleCount(visibleCount + increment)}
-            className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className={`px-6 py-2 rounded-full font-medium transition-colors duration-300 ${
+              isDark ? "bg-[#307A59] hover:bg-[#265e46] text-white" : "bg-[#307A59] hover:bg-[#265e46] text-white"
+            }`}
           >
             Load More
           </button>
         </div>
       )}
-    </>
+    </div>
   );
 }

@@ -3,17 +3,20 @@ import { useDispatch, useSelector } from "react-redux";
 import { setOrders } from "../orders/orderSlice";
 import { Orders } from "../orders/orderApi";
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
+  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
 
 export default function TotalOrders() {
   const dispatch = useDispatch();
-  const { orders } = useSelector((state) => state.orders);
+  const orders = useSelector((state) => state.ordersAdmin.orders);
+  const mode = useSelector((state) => state.theme.mode);
+  const isDark = mode === "dark";
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -27,51 +30,84 @@ export default function TotalOrders() {
     fetchOrders();
   }, [dispatch]);
 
-  const totalOrders = Array.isArray(orders)
-    ? orders.reduce((acc, order) => acc + 1, 0)
+  const totalOrders = Array.isArray(orders) ? orders.length : 0;
+
+  const totalSales = Array.isArray(orders)
+    ? orders.reduce((sum, order) => sum + parseFloat(order.total_amount || 0), 0)
     : 0;
 
-  const totalSales = orders.reduce(
-    (sum, order) => sum + parseFloat(order.total_amount || 0),
-    0
-  );
-
   const ordersByDate = {};
-  orders.forEach((order) => {
-    const date = new Date(order.created_at).toLocaleDateString();
-    ordersByDate[date] = (ordersByDate[date] || 0) + 1;
-  });
+  if (Array.isArray(orders)) {
+    orders.forEach((order) => {
+      const date = new Date(order.created_at).toLocaleDateString();
+      ordersByDate[date] = (ordersByDate[date] || 0) + 1;
+    });
+  }
 
-  const chartData = Object.keys(ordersByDate).map((date) => ({
-    date,
-    count: ordersByDate[date],
-  }));
+  const chartData = Object.keys(ordersByDate)
+    .sort((a, b) => new Date(a) - new Date(b)) 
+    .map((date) => ({ date, count: ordersByDate[date] }));
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Cards */}
-      <div className="grid grid-cols-2 gap-6">
-        <div className="bg-white shadow rounded p-4">
-          <h2 className="text-gray-600 text-sm">Total Sales</h2>
-          <p className="text-2xl font-bold">$ {totalSales.toFixed(2)}</p>
+    <div
+      className={`rounded-2xl shadow-lg transition-all duration-500 ease-in-out p-6 ${
+        isDark
+          ? "bg-gradient-to-b from-[#555] to-[#242625] text-white"
+          : "bg-gradient-to-b from-[#ffffff] to-[#f3f3f3] text-[#242625]"
+      }`}
+    >
+      <h2 className="text-xl font-semibold mb-6 border-b pb-3 opacity-90">Orders Overview</h2>
+
+      <div className="grid grid-cols-2 gap-6 mb-6">
+        <div
+          className={`rounded-xl p-5 shadow-md transform hover:scale-[1.02] transition-all duration-300 ${
+            isDark ? "bg-[#242625]" : "bg-white"
+          }`}
+        >
+          <h2 className="text-sm opacity-80">Total Sales</h2>
+          <p className="text-3xl font-bold mt-1">$ {totalSales.toFixed(2)}</p>
         </div>
-        <div className="bg-white shadow rounded p-4">
-          <h2 className="text-gray-600 text-sm">Total Orders</h2>
-          <p className="text-2xl font-bold">{totalOrders}</p>
+
+        <div
+          className={`rounded-xl p-5 shadow-md transform hover:scale-[1.02] transition-all duration-300 ${
+            isDark ? "bg-[#242625]" : "bg-white"
+          }`}
+        >
+          <h2 className="text-sm opacity-80">Total Orders</h2>
+          <p className="text-3xl font-bold mt-1">{totalOrders}</p>
         </div>
       </div>
 
-      {/* Chart */}
-      <div className="bg-white shadow rounded p-4">
-        <h2 className="text-lg font-semibold mb-4">Statistics</h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData}>
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="count" fill="#4F46E5" />
-          </BarChart>
-        </ResponsiveContainer>
+      <div
+        className={`rounded-xl p-5 shadow-md ${isDark ? "bg-[#242625]" : "bg-white"}`}
+      >
+        <h2 className="text-lg font-semibold mb-4 border-b pb-2 opacity-90">Orders by Date</h2>
+        {chartData.length === 0 ? (
+          <p>No orders yet</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart
+              data={chartData}
+              margin={{ top: 5, right: 20, bottom: 5, left: 0 }}
+            >
+              <CartesianGrid stroke={isDark ? "#555" : "#e5e5e5"} />
+              <XAxis dataKey="date" stroke={isDark ? "#f9f9f9" : "#242625"} />
+              <YAxis allowDecimals={false} stroke={isDark ? "#f9f9f9" : "#242625"} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: isDark ? "#444" : "#fff",
+                  color: isDark ? "#fff" : "#242625",
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="count"
+                stroke={isDark ? "#3baa78ff" : "#307A59"}
+                strokeWidth={2}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );
