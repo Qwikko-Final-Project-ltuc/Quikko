@@ -1,3 +1,4 @@
+// src/features/vendor/VendorRoutes.jsx
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import VendorLayout from "./VendorLayout";
@@ -13,18 +14,29 @@ import SettingsPage from "./settings/SettingsPage";
 import VendorProfilepage from "./profile/VendorProfilePage";
 import ProtectedRoute from "./ProtectedRoute";
 import VendorNotifications from "./VendorNotifications";
- 
+
+
+
+// صفحات جديدة
+import VendorForgotPassword from "./auth/VendorForgotPassword";
+import VendorResetPassword from "./auth/VendorResetPassword";
+import VerifyEmailPage from "./auth/VerifyEmailPage";
+
+
 export default function VendorRoutes() {
   return (
     <Routes>
       <Route path="/vendor" element={<VendorLayout />}>
         {/* Landing Page عند الدخول على /vendor */}
         <Route index element={<VendorLanding />} />
- 
+
         {/* Auth */}
-        <Route path="/vendor/login" element={<Login />} />
+        <Route path="login" element={<Login />} />
         <Route path="register" element={<RegisterVendor />} />
- 
+        <Route path="/vendor/verify-email" element={<VerifyEmailPage />} />
+        <Route path="forgot-password" element={<VendorForgotPassword />} />
+        <Route path="reset-password" element={<VendorResetPassword />} />
+
         {/* الصفحات المحمية */}
         <Route
           path="dashboard"
@@ -51,7 +63,7 @@ export default function VendorRoutes() {
           }
         />
         <Route
-          path="/vendor/chat"
+          path="chat"
           element={
             <ProtectedRoute>
               <ChatPage />
@@ -82,7 +94,7 @@ export default function VendorRoutes() {
             </ProtectedRoute>
           }
         />
-        <Route path="/vendor/notifications" element={<VendorNotifications />} />
+        <Route path="notifications" element={<VendorNotifications />} />
       </Route>
     </Routes>
   );

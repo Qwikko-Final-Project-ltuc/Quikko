@@ -1,59 +1,116 @@
 import { useEffect, useState } from "react";
-import { fetchNotifications } from "./VendorAPI2";
+import { fetchNotifications, markNotificationsRead } from "./VendorAPI2";
+import { FaCheck } from "react-icons/fa";
 
 export default function VendorNotifications() {
   const [notifications, setNotifications] = useState([]);
-  const [visibleCount, setVisibleCount] = useState(5); // How many notifications to display
+  const [visibleCount, setVisibleCount] = useState(5);
+  const [isDarkMode, setIsDarkMode] = useState(
+    localStorage.getItem("theme") === "dark"
+  );
 
+  // تحميل الإشعارات
   useEffect(() => {
     const loadNotifications = async () => {
-      const data = await fetchNotifications(); // 🔹 Fetch all notifications
+      const data = await fetchNotifications();
       setNotifications(data);
     };
     loadNotifications();
+
+    const handleStorageChange = () => {
+      setIsDarkMode(localStorage.getItem("theme") === "dark");
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  const handleLoadMore = () => {
-    setVisibleCount((prev) => prev + 5); // Show 5 more on each click
-  };
+  // عرض المزيد
+  const handleLoadMore = () => setVisibleCount((prev) => prev + 5);
 
   const visibleNotifications = notifications.slice(0, visibleCount);
 
-  return (
-    <div className="p-6">
-      <h2 className="text-xl font-bold mb-4">All Notifications</h2>
-      {notifications.length > 0 ? (
-        <>
-          <ul className="space-y-3">
-            {visibleNotifications.map((notif, idx) => (
-              <li
-                key={idx}
-                className="p-3 border rounded-lg shadow-sm hover:bg-gray-50"
-              >
-                <p className="font-medium">{notif.title || "No Title"}</p>
-                <p className="text-gray-600 text-sm">{notif.message}</p>
-                <p className="text-gray-400 text-xs mt-1">
-                  {new Date(notif.created_at).toLocaleString()}
-                </p>
-              </li>
-            ))}
-          </ul>
+  // تعيين كمقروء
+  const handleMarkRead = async (id) => {
+    try {
+      await markNotificationsRead([id]);
+      setNotifications((prev) =>
+        prev.map((notif) =>
+          notif.id === id ? { ...notif, read_status: true } : notif
+        )
+      );
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
 
-          {/* 🔹 Load More button */}
-          {visibleCount < notifications.length && (
-            <div className="mt-4 flex justify-center">
-              <button
-                onClick={handleLoadMore}
-                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Load More
-              </button>
+  // ألوان الثيم
+  const pageBg = isDarkMode ? "#242625" : "#f0f2f1";
+  const cardBg = isDarkMode ? "#666666" : "#ffffff";
+  const textColor = isDarkMode ? "#ffffff" : "#242625";
+  const textGray = isDarkMode ? "#f9f9f9" : "#6b7280";
+  const buttonBg = "#307A59";
+  const buttonHover = "#256d4c";
+
+  return (
+    <div className="min-h-screen p-8 flex flex-col items-center" style={{ backgroundColor: pageBg }}>
+      <div className="w-full max-w-3xl">
+        <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: textColor }}>
+          All Notifications
+        </h2>
+
+        {notifications.length > 0 ? (
+          <>
+            <div className="space-y-4">
+              {visibleNotifications.map((notif) => (
+                <div
+                  key={notif.id}
+                  className="rounded-2xl shadow-md p-5 transition hover:shadow-lg"
+                  style={{ backgroundColor: cardBg }}
+                >
+                  <p className="font-semibold mb-1" style={{ color: textColor }}>
+                    {notif.title || "No Title"}
+                  </p>
+                  <p className="text-sm" style={{ color: textGray }}>
+                    {notif.message}
+                  </p>
+                  <p className="text-xs mt-2" style={{ color: textGray }}>
+                    {new Date(notif.created_at).toLocaleString()}
+                  </p>
+
+                  {/* زر Mark as Read */}
+                  {!notif.read_status && (
+                    <button
+                      onClick={() => handleMarkRead(notif.id)}
+                      className="text-xs font-medium mt-2 inline-flex items-center gap-1 px-2 py-1 rounded"
+                      style={{ backgroundColor: "#FFD700", color: "#000" }}
+                    >
+                      <FaCheck /> Mark as Read
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
-          )}
-        </>
-      ) : (
-        <p className="text-gray-500">No notifications available</p>
-      )}
+
+            {visibleCount < notifications.length && (
+              <div className="mt-8 flex justify-center">
+                <button
+                  onClick={handleLoadMore}
+                  className="px-6 py-2 text-sm font-medium rounded-lg transition"
+                  style={{ backgroundColor: buttonBg, color: "#ffffff" }}
+                  onMouseEnter={(e) => (e.target.style.backgroundColor = buttonHover)}
+                  onMouseLeave={(e) => (e.target.style.backgroundColor = buttonBg)}
+                >
+                  Load More
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="p-6 rounded-2xl shadow text-center" style={{ backgroundColor: cardBg, color: textGray }}>
+            No notifications available
+          </div>
+        )}
+      </div>
     </div>
   );
 }
