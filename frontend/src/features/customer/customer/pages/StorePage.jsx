@@ -9,11 +9,13 @@ import ReviewSection from "../../review/ReviewSection";
 import { addReviewThunk, fetchAverageRatingThunk, fetchReviewsThunk, fetchUserRatingThunk } from "../../review/reviewSlice";
 import customerAPI from "../services/customerAPI";
 import { setSelectedConversation, fetchMessages, setConversationsRead } from "../chatSlice";
+import ReviewStatic from "../../review/ReviewStatic";
 
 const StorePage = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const token = localStorage.getItem("token");
 
   const { selectedStore, storeProducts, loading, error, currentProductPage, productsPerPage } = useSelector(
     (state) => state.stores
@@ -22,9 +24,9 @@ const StorePage = () => {
   const { user, currentCart, tempCartId } = useSelector((state) => state.cart);
   const guestToken = localStorage.getItem("guest_token");
 
-  const indexOfLastProduct = currentProductPage * productsPerPage;
-  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-  const currentProducts = storeProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+  // const indexOfLastProduct = currentProductPage * productsPerPage;
+  // const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = selectedStore?.products || [];
   const totalProductPages = Math.ceil(storeProducts.length / productsPerPage);
 
   const handleProductPageChange = (pageNumber) => {
@@ -53,11 +55,11 @@ const StorePage = () => {
     dispatch(fetchReviewsThunk(id));
     dispatch(fetchAverageRatingThunk(id));
     dispatch(fetchUserRatingThunk(id));
+    
   }, [dispatch, id]);
 
-  // ================================================
-  // ✅ handleAddToCart باستخدام currentCart
-  // ================================================
+
+
   const handleAddToCart = async (product, quantity = 1) => {
     try {
       let cart = currentCart;
@@ -70,7 +72,7 @@ const StorePage = () => {
       }
 
       if (!cart?.id) {
-        console.error("❌ No cart ID found!");
+        console.error(" No cart ID found!");
         return;
       }
 
@@ -82,21 +84,30 @@ const StorePage = () => {
       });
 
       dispatch(fetchCart(cart.id));
-      console.log("✅ Item added to cart!");
+      // console.log(" Item added to cart!");
     } catch (err) {
-      console.error("❌ Failed to add item:", err);
+      console.error("Failed to add item:", err);
       alert(err.response?.data?.message || err.message);
     }
   };
 
   const handleChatWithVendor = () => {
-    if (!selectedStore?.user_id) return;
+      // console.log("Chat button clicked", selectedStore);
+
+    try{
+       if (!selectedStore?.user_id) return;
+      //  console.log("Selected store:", selectedStore);
+
 
     dispatch(setSelectedConversation(selectedStore.user_id));
     dispatch(fetchMessages(selectedStore.user_id));
     dispatch(setConversationsRead(selectedStore.user_id));
-    navigate("/chat");
-  };
+    navigate("/customer/chat");
+  }
+  catch(err){
+    console.log(err);
+  }
+    }
 
   if (loading) return <p className="text-center mt-10">Loading...</p>;
   if (error) return <p className="text-center mt-10 text-red-500">{error}</p>;
@@ -114,26 +125,33 @@ const StorePage = () => {
         </button>
       </div>
 
-      <ReviewSection
-        userRating={userRating}
-        averageRating={displayRating}
-        totalReviews={uniqueReviewsCount}
-        readOnly={false}
-        onRate={(value) => {
-          if (!selectedStore?.store_id) return;
-          dispatch(addReviewThunk({
-            vendor_id: selectedStore.store_id,
-            rating: value,
-          }))
-          .unwrap()
-          .then(() => {
-            dispatch(fetchReviewsThunk(selectedStore.store_id));
-            dispatch(fetchAverageRatingThunk(selectedStore.store_id));
-            dispatch(fetchUserRatingThunk(selectedStore.store_id));
-          })
-          .catch(err => console.error("Add review failed:", err));
-        }}
-      />
+      {token ? (
+        <ReviewSection
+          userRating={userRating}
+          averageRating={displayRating}
+          totalReviews={uniqueReviewsCount}
+          readOnly={false}
+          onRate={(value) => {
+            if (!selectedStore?.store_id) return;
+            dispatch(addReviewThunk({
+              vendor_id: selectedStore.store_id,
+              rating: value,
+            }))
+            .unwrap()
+            .then(() => {
+              dispatch(fetchReviewsThunk(selectedStore.store_id));
+              dispatch(fetchAverageRatingThunk(selectedStore.store_id));
+              dispatch(fetchUserRatingThunk(selectedStore.store_id));
+            })
+            .catch(err => console.error("Add review failed:", err));
+          }}
+        />
+        ) : (
+        <ReviewStatic
+          averageRating={displayRating}
+          totalReviews={uniqueReviewsCount}
+        />
+      )}
 
       <h2 className="text-2xl font-bold mt-8 mb-4">Products</h2>
       {storeProducts.length === 0 ? (
@@ -143,8 +161,12 @@ const StorePage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {currentProducts.map((product) => (
               <ProductCard
-                key={product.id}
-                product={product}
+                key={product.product_id}
+                product={{
+                  ...product,
+                  id: product.product_id, 
+                  images: Array.isArray(product.images) ? product.images : [],
+                }}
                 onAddToCart={handleAddToCart}
               />
             ))}

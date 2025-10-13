@@ -174,7 +174,6 @@ exports.updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // فقط الحقول المسموح تعديلها
     const allowedFields = ['store_name', 'address', 'description', 'store_logo'];
     const profileData = {};
     allowedFields.forEach(field => {
@@ -196,9 +195,9 @@ exports.updateProfile = async (req, res) => {
  */
 exports.updateOrderItemStatus = async (req, res) => {
   try {
-    const { id } = req.params; // order_item id
+    const { id } = req.params; 
     const { status } = req.body;
-    const userId = req.user.id; // from JWT token
+    const userId = req.user.id;
 
     if (!["accepted", "rejected"].includes(status)) {
       return res.status(400).json({

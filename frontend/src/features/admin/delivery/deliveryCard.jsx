@@ -7,11 +7,14 @@ import {
   ApproveDeliveryCompanies,
   RejectDeliveryCompanies,
 } from "./deliveryApi";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { approveDeliveryLocal, rejectDeliveryLocal } from "./deliverySlice";
 
 export default function DeliveryCard({ delivery }) {
   const dispatch = useDispatch();
+  const mode = useSelector((state) => state.theme.mode);
+  const isDark = mode === "dark";
+
   const { company_id, company_name, coverage_areas, status } = delivery;
 
   const getStatusIcon = (status) => {
@@ -46,58 +49,61 @@ export default function DeliveryCard({ delivery }) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 max-w-sm w-full transition-transform transform hover:scale-105">
+    <div className={`rounded-xl shadow-md p-6 max-w-sm w-full transition-transform transform hover:scale-105 ${
+      isDark ? "bg-[#333] text-white border border-gray-600" : "bg-white text-gray-800 border border-gray-300"
+    }`}>
+      {/* Header */}
       <div className="flex items-center mb-4">
-        <FaTruck className="text-4xl text-gray-700 mr-4 w-10 h-10" />
-        <h3 className="text-2xl font-bold text-gray-800">{company_name}</h3>
+        <FaTruck className={`w-10 h-10 mr-4 ${isDark ? "text-white" : "text-gray-700"}`} />
+        <h3 className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-800"}`}>{company_name}</h3>
       </div>
-      <div className="space-y-3 text-gray-600">
-        <div className="flex items-center">
-          <FaTruckLoading className="w-5 h-5 mr-2" />
+
+      {/* Info */}
+      <div className={`space-y-2 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
+        <div className="flex items-center gap-2">
+          <FaTruckLoading className="w-5 h-5" />
           <span>Company ID: {company_id}</span>
         </div>
-        <div className="flex items-center">
-          <PiMapPinAreaFill className="w-5 h-5 mr-2" />
-          <span>
-            Coverage Areas:{" "}
-            {coverage_areas ? coverage_areas.join(", ") : "Not specified"}
-          </span>
+        <div className="flex items-center gap-2">
+          <PiMapPinAreaFill className="w-5 h-5" />
+          <span>Coverage Areas: {coverage_areas?.join(", ") || "Not specified"}</span>
         </div>
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           {getStatusIcon(status)}
-          <span className="capitalize ml-2">Status: {status}</span>
+          <span className="capitalize ml-1">Status: {status}</span>
         </div>
       </div>
 
-      <div className="flex gap-2 mt-2">
-        {delivery.status === "pending" && (
+      {/* Actions */}
+      <div className="flex gap-2 mt-4 flex-wrap">
+        {status === "pending" && (
           <>
             <button
-              onClick={() => handleApprove(delivery.company_id)}
-              className="bg-green-500 text-white px-3 py-1 rounded-md hover:bg-green-600"
+              onClick={() => handleApprove(company_id)}
+              className="px-3 py-1 rounded-md bg-[#307A59] text-white hover:bg-[#265e46] transition-colors"
             >
               Approve
             </button>
             <button
-              onClick={() => handleReject(delivery.company_id)}
-              className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600"
+              onClick={() => handleReject(company_id)}
+              className="px-3 py-1 rounded-md bg-red-500 text-white hover:bg-red-600 transition-colors"
             >
               Reject
             </button>
           </>
         )}
-        {delivery.status === "approved" && (
+        {status === "approved" && (
           <button
-            onClick={() => handleReject(delivery.company_id)}
-            className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600"
+            onClick={() => handleReject(company_id)}
+            className="px-3 py-1 rounded-md bg-red-500 text-white hover:bg-red-600 transition-colors"
           >
             Reject
           </button>
         )}
-        {delivery.status === "rejected" && (
+        {status === "rejected" && (
           <button
-            onClick={() => handleApprove(delivery.company_id)}
-            className="bg-green-500 text-white px-3 py-1 rounded-md hover:bg-green-600"
+            onClick={() => handleApprove(company_id)}
+            className="px-3 py-1 rounded-md bg-[#307A59] text-white hover:bg-[#265e46] transition-colors"
           >
             Approve
           </button>

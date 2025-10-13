@@ -2,30 +2,29 @@ import React, { useState, useEffect } from "react";
 import { FaStar } from "react-icons/fa";
 
 const ReviewSection = ({
-  userRating = 0,       // تقييم المستخدم الخاص بالنجوم
-  averageRating = 0,    // الرقم الذي يظهر بجانب النجوم (المتوسط)
-  totalReviews = 0,     // عدد التقييمات
+  userRating = 0,      
+  averageRating = 0,    
+  totalReviews = 0,    
   readOnly = true,
   onRate,
 }) => {
   const [hover, setHover] = useState(null);
   const [currentRating, setCurrentRating] = useState(userRating);
 
-  // تحديث النجوم عند تغيير تقييم المستخدم من DB
   useEffect(() => {
     setCurrentRating(userRating);
   }, [userRating]);
 
-  useEffect(() => {
-  console.log("reviews:", totalReviews);
-  console.log("averageRating:", averageRating);
-  console.log("currentRating:", currentRating);
-}, [totalReviews, averageRating,currentRating]);
+//   useEffect(() => {
+//   // console.log("reviews:", totalReviews);
+//   // console.log("averageRating:", averageRating);
+//   // console.log("currentRating:", currentRating);
+// }, [totalReviews, averageRating,currentRating]);
 
   const handleClick = (value) => {
     if (!readOnly && onRate) {
-      setCurrentRating(value); // تحديث النجوم فورًا
-      onRate(value);           // إرسال التقييم للباك اند
+      setCurrentRating(value); 
+      onRate(value);           
     }
   };
 

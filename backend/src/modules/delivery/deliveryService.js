@@ -110,7 +110,6 @@ exports.getCoverageAreas = async (userId) => {
 exports.getCompanyOrders = async (companyId) => {
   const orders = await DeliveryModel.getOrdersByCompanyId(companyId);
 
-  // ✅ نمرّ على كل أوردر ونفحص الآيتيمز
   for (const order of orders) {
     const orderItems = await DeliveryModel.getOrderItems(order.id);
 

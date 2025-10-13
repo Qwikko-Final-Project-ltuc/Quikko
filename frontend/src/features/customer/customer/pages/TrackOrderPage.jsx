@@ -11,7 +11,7 @@ const TrackOrderPage = () => {
     const fetchOrder = async () => {
       try {
         const data = await customerAPI.trackOrder(orderId);
-        setOrder(data.data); // لأن الـ API ترجع { message, data }
+        setOrder(data.data); 
       } catch (err) {
         console.error(err);
       } finally {
@@ -29,7 +29,6 @@ const TrackOrderPage = () => {
       <h1 className="text-3xl font-bold mb-6">Tracking Order #{order.order_id}</h1>
       <p>Status: {order.status}</p>
       <p>Last Updated: {new Date(order.updated_at).toLocaleString()}</p>
-      {/* إذا لاحقًا تريد تعرض مراحل التوصيل يمكنك إضافتها هنا */}
     </div>
   );
 };

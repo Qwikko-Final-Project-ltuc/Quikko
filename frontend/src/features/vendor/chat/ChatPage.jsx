@@ -1,17 +1,24 @@
 import React, { useEffect, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import { fetchConversations, fetchMessages, sendMessage } from "../VendorAPI2";
 import { getUserIdFromToken } from "./auth";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import utc from "dayjs/plugin/utc";
+
+dayjs.extend(relativeTime);
+dayjs.extend(utc);
 
 const ChatPage = () => {
+  const { isDarkMode } = useOutletContext();
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUserName, setSelectedUserName] = useState("");
   const [newMessage, setNewMessage] = useState("");
 
   const currentUserId = getUserIdFromToken();
-  console.log("Current user ID:", currentUserId);
 
-  // تحميل المحادثات عند فتح الصفحة
   useEffect(() => {
     const loadConversations = async () => {
       const data = await fetchConversations();
@@ -20,22 +27,21 @@ const ChatPage = () => {
     loadConversations();
   }, []);
 
-  // تحديد مستخدم من المحادثات
   const handleSelectUser = async (conversation) => {
     if (!conversation) return;
 
-    const { sender_id, receiver_id } = conversation;
+    const otherUserId =
+      conversation.sender_id === currentUserId ? conversation.receiver_id : conversation.sender_id;
+    const otherUserName =
+      conversation.sender_id === currentUserId ? conversation.receiver_name : conversation.sender_name;
 
-    // تحديد الطرف الآخر
-    const otherUserId = sender_id === currentUserId ? receiver_id : sender_id;
-    console.log("Selected user:", otherUserId);
     setSelectedUser(otherUserId);
+    setSelectedUserName(otherUserName);
 
     const msgs = await fetchMessages(otherUserId);
     setMessages(msgs);
   };
 
-  // إرسال رسالة
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedUser) return;
 
@@ -46,77 +52,114 @@ const ChatPage = () => {
     }
   };
 
-  return (
-    <div className="flex h-screen">
-      {/* العمود الأيسر - قائمة المحادثات */}
-      <div className="w-1/3 border-r border-gray-300 p-4 overflow-y-auto">
-        <h2 className="font-bold mb-4">Chats</h2>
-        <ul>
-          {conversations.map((conv, idx) => {
-            const otherUserId =
-              conv.sender_id === currentUserId ? conv.receiver_id : conv.sender_id;
-            const name =
-              conv.sender_id === currentUserId ? conv.receiver_name : conv.sender_name;
+  const sortedConversations = [...conversations].sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+  );
 
-            return (
-              <li
-                key={conv.id || idx}
-                className={`p-2 cursor-pointer rounded ${
-                  selectedUser === otherUserId ? "bg-gray-200" : "hover:bg-gray-100"
-                }`}
-                onClick={() => handleSelectUser(conv)}
-              >
-                {name}
-              </li>
-            );
-          })}
-        </ul>
+  // ← ألوان الوضع الداكن / الفاتح
+  const pageBg = isDarkMode ? "#242625" : "#f0f2f1";
+  const divBg = isDarkMode ? "#666666" : "#ffffff";
+  const textColor = isDarkMode ? "#ffffff" : "#242625";
+  const buttonBg = "#307A59";
+  const textboxBg = "#f9f9f9";
+  const lineColor = isDarkMode ? "#f9f9f9" : "#ccc";
+
+  return (
+    <div className="flex h-screen" style={{ backgroundColor: pageBg, color: textColor }}>
+      {/* العمود الأيسر - قائمة المحادثات */}
+      <div
+        className="w-1/3 border-r p-4 overflow-y-auto rounded-lg "
+        style={{ backgroundColor: divBg, borderColor: lineColor }}
+      >
+        <h2 className="font-bold mb-4" style={{ color: textColor }}>
+          Chats
+        </h2>
+        {sortedConversations.map((conv, idx) => {
+          const isMine = conv.sender_id === currentUserId;
+          const otherUserId = isMine ? conv.receiver_id : conv.sender_id;
+          const otherUserName = isMine ? conv.receiver_name : conv.sender_name;
+
+          return (
+            <div
+              key={conv.id || idx}
+              onClick={() => handleSelectUser(conv)}
+              className="p-4 cursor-pointer border-b flex justify-between items-center hover:bg-gray-100 transition"
+              style={{ backgroundColor: divBg, color: textColor, borderColor: lineColor }}
+            >
+              <div className="flex flex-col">
+                <span className="font-semibold">{otherUserName}</span>
+                <span className="text-sm truncate max-w-[200px]">{conv.message}</span>
+              </div>
+              <div className="text-xs flex-shrink-0 ml-2">{dayjs(conv.created_at).fromNow()}</div>
+            </div>
+          );
+        })}
       </div>
 
       {/* العمود الأيمن - المحادثة المفتوحة */}
       <div className="w-2/3 flex flex-col">
-        <div className="flex-1 p-4 overflow-y-auto">
-          {messages.length === 0 && selectedUser && (
-            <div className="text-gray-500 text-center mt-4">
-              No messages yet. Start the conversation!
-            </div>
-          )}
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`mb-2 p-2 rounded max-w-xs ${
-                msg.sender_id === currentUserId
-                  ? "bg-green-200 ml-auto text-right"
-                  : "bg-gray-200 mr-auto text-left"
-              }`}
-            >
-              {msg.message}
-              <div className="text-xs text-gray-500">
-                {new Date(msg.created_at).toLocaleTimeString()}
-              </div>
-            </div>
-          ))}
+        {/* Header */}
+        <div
+          className="flex items-center justify-between p-4 border-b flex-shrink-0 rounded-lg"
+          style={{ backgroundColor: divBg, color: textColor, borderColor: lineColor }}
+        >
+          <span className="font-semibold truncate">{selectedUserName || "Select a conversation"}</span>
         </div>
 
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 rounded-lg" style={{ backgroundColor: pageBg }}>
+          {messages.length === 0 && selectedUser && (
+            <div className="text-center mt-4">No messages yet. Start the conversation!</div>
+          )}
+          {messages.map((msg) => {
+            const isMine = msg.sender_id === currentUserId;
+            const time = dayjs(msg.created_at).fromNow();
+
+            return (
+              <div key={msg.id} className={`flex flex-col ${isMine ? "items-end" : "items-start"} px-2`}>
+                <div
+                  className="px-4 py-2 rounded-lg break-words max-w-[60%] border"
+                  style={{
+                    backgroundColor: isMine ? buttonBg : divBg,
+                    color: isMine ? "#fff" : textColor,
+                    borderColor: lineColor,
+                  }}
+                >
+                  {msg.message}
+                </div>
+                <span className={`text-xs mt-1 ${isMine ? "text-right" : "text-left"}`} style={{ color: textColor }}>
+                  {time}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Input */}
         {selectedUser ? (
-          <div className="p-4 border-t flex">
+          <div
+            className="p-4 border-t flex items-center gap-2 flex-shrink-0 rounded-lg"
+            style={{ backgroundColor: divBg, borderColor: lineColor }}
+          >
             <input
               type="text"
-              className="flex-1 border rounded px-3 py-2"
-              placeholder="Type a message..."
+              className="flex-1 rounded-lg px-4 py-2 focus:outline-none focus:ring-2"
+              style={{ borderColor: lineColor, backgroundColor: textboxBg, color: textColor }}
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+              placeholder="Type a message..."
             />
             <button
               onClick={handleSendMessage}
-              className="ml-2 bg-green-500 text-white px-4 py-2 rounded"
+              className="px-4 py-2 rounded-lg hover:opacity-90 transition"
+              style={{ backgroundColor: buttonBg, color: "#fff" }}
             >
               Send
             </button>
           </div>
         ) : (
-          <div className="p-4 text-gray-500">
+          <div className="p-4 text-center" style={{ color: textColor }}>
             Select a chat to start messaging
           </div>
         )}

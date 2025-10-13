@@ -1,11 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { fetchOrderItems, updateOrderItemStatus } from "../VendorAPI2";
 
+const STATUS_LABELS = {
+  "": "All",
+  pending: "Pending",
+  accepted: "Accepted",
+  rejected: "Rejected",
+};
+
 export default function OrderManagement() {
   const [items, setItems] = useState([]);
   const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(5); // show 5 orders initially
+  const [visibleCount, setVisibleCount] = useState(5);
+  const [isDarkMode, setIsDarkMode] = useState(
+    localStorage.getItem("theme") === "dark"
+  );
 
   const allowedStatuses = ["pending", "accepted", "rejected"];
 
@@ -27,6 +37,12 @@ export default function OrderManagement() {
 
   useEffect(() => {
     loadItems();
+
+    const handleStorageChange = () => {
+      setIsDarkMode(localStorage.getItem("theme") === "dark");
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   const handleStatusChange = async (itemId, newStatus) => {
@@ -35,48 +51,49 @@ export default function OrderManagement() {
     loadItems(filter);
   };
 
-  const handleFilterChange = (e) => {
-    const status = e.target.value;
-    setFilter(status);
-    loadItems(status);
-    setVisibleCount(5); // reset to 5 when filter changes
-  };
-
   const visibleItems = items.slice(0, visibleCount);
 
-  return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold mb-4">Order Management</h1>
+  // 🎨 ألوان حسب الثيم
+  const pageBg = isDarkMode ? "#242625" : "#f0f2f1";
+  const innerBg = isDarkMode ? "#666666" : "#ffffff";
+  const textColor = isDarkMode ? "#ffffff" : "#242625";
+  const borderColor = isDarkMode ? "#f9f9f9" : "#ccc";
+  const inputBg = isDarkMode ? "#666666" : "#ffffff";
 
-      {/* Filter by status */}
-      <div className="mb-6 flex items-center gap-3">
-        <label htmlFor="statusFilter" className="font-medium text-gray-700">
-          Filter by Item Status:
-        </label>
-        <select
-          id="statusFilter"
-          value={filter}
-          onChange={handleFilterChange}
-          className="border rounded-lg p-2 bg-gray-50 text-gray-700 focus:ring-2 focus:ring-orange-300"
-        >
-          <option value="">All</option>
-          {allowedStatuses.map((status) => (
-            <option key={status} value={status}>
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </option>
-          ))}
-        </select>
+  return (
+    <div className="p-6 space-y-6" style={{ backgroundColor: pageBg, color: textColor }}>
+      <h1 className="text-2xl font-bold mb-6 text-center">Order Management</h1>
+
+      {/* Filter Buttons */}
+      <div className="mb-6 flex flex-wrap gap-3 justify-center">
+        {Object.keys(STATUS_LABELS).map((key) => (
+          <button
+            key={key}
+            onClick={() => {
+              setFilter(key);
+              setVisibleCount(4); // إعادة تعيين عدد الطلبات المرئية عند تغيير الفلتر
+              loadItems(key);
+            }}
+            className={`px-4 py-1 rounded-2xl border transition-all duration-300 ${
+              filter === key
+                ? "bg-[#307A59] text-white border-[#307A59] shadow-md"
+                : "bg-white text-gray-500 border-gray-300 hover:bg-gray-100"
+            }`}
+          >
+            {STATUS_LABELS[key]}
+          </button>
+        ))}
       </div>
 
       {/* Orders Table */}
-      <div className="bg-white p-6 rounded-2xl shadow">
+      <div className="p-6 rounded-2xl shadow" style={{ backgroundColor: innerBg, color: textColor }}>
         {loading ? (
-          <p className="text-gray-500">Loading items...</p>
+          <p style={{ color: textColor }}>Loading items...</p>
         ) : (
           <>
-            <table className="w-full border-collapse">
+            <table className="w-full border-collapse" style={{ color: textColor }}>
               <thead>
-                <tr className="text-left text-gray-600 border-b">
+                <tr style={{ borderBottom: `1px solid ${borderColor}` }}>
                   <th className="p-2">Item ID</th>
                   <th className="p-2">Order ID</th>
                   <th className="p-2">Product</th>
@@ -89,6 +106,11 @@ export default function OrderManagement() {
                   <tr
                     key={item.order_item_id}
                     className="border-b hover:bg-gray-50 transition"
+                    style={{
+                      borderBottom: `1px solid ${borderColor}`,
+                      color: textColor,
+                      backgroundColor: "transparent",
+                    }}
                   >
                     <td className="p-2">{item.order_item_id}</td>
                     <td className="p-2">{item.order_id}</td>
@@ -100,13 +122,12 @@ export default function OrderManagement() {
                         onChange={(e) =>
                           handleStatusChange(item.order_item_id, e.target.value)
                         }
-                        className={`p-1 rounded-md font-medium ${
-                          item.vendor_status === "pending"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : item.vendor_status === "accepted"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
+                        className="p-1 rounded-md font-medium"
+                        style={{
+                          backgroundColor: inputBg,
+                          color: textColor,
+                          borderColor: borderColor,
+                        }}
                       >
                         {allowedStatuses.map((status) => (
                           <option key={status} value={status}>
@@ -119,7 +140,7 @@ export default function OrderManagement() {
                 ))}
                 {items.length === 0 && (
                   <tr>
-                    <td colSpan="5" className="p-4 text-center text-gray-500">
+                    <td colSpan="5" className="p-4 text-center italic" style={{ color: "#f9f9f9" }}>
                       No items found
                     </td>
                   </tr>
@@ -127,13 +148,13 @@ export default function OrderManagement() {
               </tbody>
             </table>
 
-            {/* 🔹 Load More button */}
+            {/* Show More Button (نفسها بدون تعديل) */}
             {visibleCount < items.length && (
               <div className="mt-4 flex justify-center">
                 <button
                   onClick={() => setVisibleCount(items.length)}
                   className="px-4 py-2 bg-gray-100 rounded-lg text-gray-700 hover:bg-gray-200 transition"
-            >
+                >
                   Show More
                 </button>
               </div>

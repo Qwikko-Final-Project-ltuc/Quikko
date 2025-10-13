@@ -18,10 +18,22 @@ const reviewModel = require('./reviewModel');
  * @param {number} rating - Rating value given by the user
  * @returns {Promise<Object>} Newly created review object
  */
-exports.createReview = async (user_id, vendor_id, rating) => {
-  // TODO: add logic to prevent multiple reviews by same user if needed
-  return reviewModel.addReview({ user_id, vendor_id, rating });
+
+exports.createOrUpdateReview = async (user_id, vendor_id, rating) => {
+  if (rating < 1 || rating > 5) {
+    throw new Error("Rating must be between 1 and 5");
+  }
+
+  const existing = await reviewModel.getUserReview(user_id, vendor_id);
+
+  if (existing) {
+    return reviewModel.updateReview(user_id, vendor_id, rating);
+  } else {
+    return reviewModel.addReview({ user_id, vendor_id, rating });
+  }
 };
+
+
 
 /**
  * Get all reviews for a vendor.
@@ -45,4 +57,12 @@ exports.listVendorReviews = async (vendor_id) => {
  */
 exports.getVendorAverageRating = async (vendor_id) => {
   return reviewModel.getAverageRating(vendor_id);
+};
+exports.getUserReviewForVendor = async (user_id, vendor_id) => {
+  return reviewModel.getUserReview(user_id, vendor_id);
+};
+
+exports.listVendorsWithReviews = async () => {
+  const vendors = await reviewModel.getAllVendorsWithReviews();
+  return vendors;
 };

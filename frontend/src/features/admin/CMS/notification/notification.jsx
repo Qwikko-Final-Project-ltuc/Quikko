@@ -1,13 +1,17 @@
 import { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { addNotification } from "./notificationSlice";
+import { colors } from "../../dark-lightMode/colors";
 
 export default function NotificationsForm() {
   const dispatch = useDispatch();
+  const mode = useSelector((state) => state.theme.mode);
+  const isDark = mode === "dark";
+  const c = colors[isDark ? "dark" : "light"];
 
   const [form, setForm] = useState({
     userId: "",
-    role: "role",
+    role: "",
     title: "",
     message: "",
     type: "",
@@ -19,14 +23,24 @@ export default function NotificationsForm() {
     e.preventDefault();
 
     const payload = form.userId
-      ? { userId: form.userId, title: form.title, message: form.message, type: form.type }
-      : { role: form.role, title: form.title, message: form.message, type: form.type };
+      ? {
+          userId: form.userId,
+          title: form.title,
+          message: form.message,
+          type: form.type,
+        }
+      : {
+          role: form.role,
+          title: form.title,
+          message: form.message,
+          type: form.type,
+        };
 
     dispatch(addNotification(form))
       .unwrap()
       .then(() => {
         setSuccessMsg("Notification sent successfully!");
-        setForm({ userId: "", role: "role", title: "", message: "", type: "" });
+        setForm({ userId: "", role: "", title: "", message: "", type: "" });
 
         setTimeout(() => setSuccessMsg(""), 3000);
       })
@@ -37,61 +51,114 @@ export default function NotificationsForm() {
   };
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-xl font-bold mb-4">Send Notification</h2>
-      <div className="flex items-center mb-6 space-x-4">
-        <form onSubmit={handleAdd} className="space-y-4 max-w-lg">
-          <input
-          type="text"
-          placeholder="User ID (optional)"
-          value={form.userId}
-          onChange={(e) => setForm({ ...form, userId: e.target.value })}
-          className="w-full border p-2"
-        />
+    <div
+      style={{ backgroundColor: c.pageBg, color: c.text }}
+      className="min-h-screen p-6"
+    >
+      <div
+        style={{ backgroundColor: c.cardBg, borderColor: c.line }}
+        className="p-6 rounded-2xl shadow-md max-w-lg mx-auto transition-colors"
+      >
+        <h2 className="text-xl font-bold mb-6">Send Notification</h2>
+        <form onSubmit={handleAdd} className="space-y-4">
+          {["userId", "title", "type"].map((field) => (
+            <input
+              key={field}
+              type="text"
+              placeholder={
+                field === "userId"
+                  ? "User ID (optional)"
+                  : field.charAt(0).toUpperCase() + field.slice(1)
+              }
+              value={form[field]}
+              onChange={(e) => setForm({ ...form, [field]: e.target.value })}
+              style={{
+                backgroundColor: c.inputBg,
+                color: isDark ? "#514e4eff" : "#111",
+                borderColor: isDark ? "#666666" : "#ccc",
+              }}
+              className={`w-full p-3 rounded placeholder-opacity-50 ${
+                isDark ? "placeholder-gray-600" : "placeholder-gray-500"
+              }`}
+            />
+          ))}
 
           <select
             value={form.role}
             onChange={(e) => setForm({ ...form, role: e.target.value })}
-            className="w-full border p-2"
             disabled={!!form.userId}
+            style={{
+              backgroundColor: c.inputBg,
+              color: form.role === "" ? (isDark ? "#5b5a5aff" : "#777") : c.text,
+              borderColor: isDark ? "#666666" : "#ccc",
+              appearance: "none",
+            }}
+            className="w-full p-3 rounded border focus:outline-none focus:ring-2 transition-colors duration-300"
           >
-            <option value="role">Role</option>
-            <option value="customer">Customer</option>
-            <option value="vendor">Vendor</option>
-            <option value="delivery">Delivery</option>
+            <option value="" disabled hidden>
+              Select Role
+            </option>
+            <option
+              value="customer"
+              style={{
+                backgroundColor: isDark ? "#2d2d2d" : "#fff",
+                color: isDark ? "#f1f1f1" : "#222",
+              }}
+            >
+              Customer
+            </option>
+            <option
+              value="vendor"
+              style={{
+                backgroundColor: isDark ? "#2d2d2d" : "#fff",
+                color: isDark ? "#f1f1f1" : "#222",
+              }}
+            >
+              Vendor
+            </option>
+            <option
+              value="delivery"
+              style={{
+                backgroundColor: isDark ? "#2d2d2d" : "#fff",
+                color: isDark ? "#f1f1f1" : "#222",
+              }}
+            >
+              Delivery
+            </option>
           </select>
 
-          <input
-            type="text"
-            placeholder="Title"
-            value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-            className="w-full border p-2"
-            required
-          />
           <textarea
             placeholder="Message"
             value={form.message}
             onChange={(e) => setForm({ ...form, message: e.target.value })}
-            className="w-full border p-2"
+            style={{
+              backgroundColor: c.inputBg,
+              color: c.text,
+              borderColor: isDark ? "#666666" : "#ccc",
+            }}
+            className={`w-full p-3 rounded placeholder-opacity-50 ${
+              isDark ? "placeholder-gray-600" : "placeholder-gray-500"
+            }`}
+            rows={4}
             required
-          />
-
-          <input
-            type="text"
-            placeholder="type"
-            value={form.type}
-            onChange={(e) => setForm({ ...form, type: e.target.value })}
-            className="w-full border p-2"
           />
 
           <button
             type="submit"
-            className="px-4 py-2 bg-green-500 text-white rounded"
+            style={{ backgroundColor: c.button }}
+            className="w-full py-3 text-white rounded hover:opacity-90 transition-colors"
           >
             Send Notification
           </button>
-          {successMsg && <p className="text-green-600 mt-2">{successMsg}</p>}
+
+          {successMsg && (
+            <p
+              className="mt-2"
+              style={{ color: isDark ? "#589458ff" : "#307A59" }}
+            >
+              {successMsg}
+            </p>
+          )}
         </form>
       </div>
     </div>

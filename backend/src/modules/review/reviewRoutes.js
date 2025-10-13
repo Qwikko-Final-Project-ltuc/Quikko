@@ -31,6 +31,8 @@ router.get('/vendor/:vendor_id', reviewController.getVendorReviews);
  * @access Public
  */
 router.get('/vendor/:vendor_id/average', reviewController.getVendorAverageRating);
+router.get('/vendor/:vendor_id/me',protect,authorizeRole('customer'),reviewController.getMyReview);
+router.get('/reviews', reviewController.getVendorsWithReviews);
 
 module.exports = router;
 

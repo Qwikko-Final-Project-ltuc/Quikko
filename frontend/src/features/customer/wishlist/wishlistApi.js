@@ -7,6 +7,7 @@ export async function GetWishlist( ) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
+    credentials: "include",
   });
 
   const data = await response.json();
@@ -27,6 +28,7 @@ export async function AddWishlist(productId) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
+    credentials: "include",
     body: JSON.stringify({ productId }),
   });
 
@@ -48,6 +50,7 @@ export async function RemoveWishlist(wishlistId) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
+    credentials: "include",
   });
 
   if (!response.ok) {

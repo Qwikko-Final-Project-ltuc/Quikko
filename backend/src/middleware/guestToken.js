@@ -1,22 +1,26 @@
-// src/middleware/guestToken.js
 const { v4: uuidv4 } = require('uuid');
 
 module.exports = (req, res, next) => {
-  // إذا المستخدم مسجل، لا نعمل أي كوكي للـ guest
   if (req.customerId) return next();
 
-  if (!req.cookies?.guest_token) {
-    const token = uuidv4();
+  let token = req.cookies?.guest_token || req.headers['guest-token'];
+
+  if (!token) {
+    token = uuidv4();
     res.cookie('guest_token', token, {
-      httpOnly: true,
+      httpOnly: false,
       maxAge: 1000 * 60 * 60 * 24 * 30,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      secure: false,
+      path: '/',
     });
-    req.guestToken = token;
+    // console.log("New guest token created:", token);
   } else {
-    req.guestToken = req.cookies.guest_token;
+    // console.log("Existing guest token:", token);
   }
+
+  res.setHeader('Guest-Token', token);
+  req.guestToken = token;
 
   next();
 };

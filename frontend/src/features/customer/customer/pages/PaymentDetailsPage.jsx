@@ -1,4 +1,3 @@
-// src/features/customer/customer/pages/PaymentDetailsPage.jsx
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import customerAPI from "../services/customerAPI";
@@ -17,14 +16,13 @@ const PaymentDetailsPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // ===== HANDLE PAYPAL REDIRECT SUCCESS =====
+  //HANDLE PAYPAL REDIRECT SUCCESS
   useEffect(() => {
     const query = new URLSearchParams(location.search);
     const paymentId = query.get("paymentId");
     const payerID = query.get("PayerID");
 
     if (paymentId && payerID) {
-      // استرجاع البيانات من localStorage
       const saved = JSON.parse(localStorage.getItem("checkoutData"));
 
       if (!saved) {
@@ -39,13 +37,11 @@ const PaymentDetailsPage = () => {
         address: saved.address,
         total: saved.total,
       });
-
-      // امسح البيانات بعد ما نستخدمها
       localStorage.removeItem("checkoutData");
     }
   }, [location.search]);
 
-  // ===== HANDLE PAYMENT SUCCESS AFTER REDIRECT =====
+  //  HANDLE PAYMENT SUCCESS AFTER REDIRECT 
   const handlePaymentSuccess = async ({ paymentId, payerID, cartId, address }) => {
     setLoading(true);
     setError("");
@@ -60,7 +56,7 @@ const PaymentDetailsPage = () => {
 
       await customerAPI.deleteCart(cartId);
 
-      navigate("/orders");
+      navigate("/customer/orders");
     } catch (err) {
       setError(err.response?.data?.error || err.message);
     } finally {
@@ -68,7 +64,7 @@ const PaymentDetailsPage = () => {
     }
   };
 
-  // ===== HANDLE CARD PAYMENT / PAYPAL / COD =====
+  //  HANDLE CARD PAYMENT / PAYPAL / COD 
   const handlePayment = async () => {
     setLoading(true);
     setError("");
@@ -81,7 +77,6 @@ const PaymentDetailsPage = () => {
           return;
         }
 
-        // حفظ بيانات الـ checkout قبل التحويل
         localStorage.setItem(
           "checkoutData",
           JSON.stringify({ cartId, address, total })
@@ -135,10 +130,9 @@ const PaymentDetailsPage = () => {
         
 
         await customerAPI.deleteCart(cartId);
-        navigate("/orders");
+        navigate("/customer/orders");
 
       } else if (paymentMethod === "paypal") {
-        // خزّن البيانات قبل الذهاب لـ PayPal
         localStorage.setItem(
           "checkoutData",
           JSON.stringify({ cartId, address, total })
@@ -165,7 +159,7 @@ const PaymentDetailsPage = () => {
         });
 
         await customerAPI.deleteCart(cartId);
-        navigate("/orders");
+        navigate("/customer/orders");
       }
     } catch (err) {
       setError(err.response?.data?.error || err.message);

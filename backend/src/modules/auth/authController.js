@@ -22,9 +22,33 @@ const authService = require('./authService');
  * POST /api/auth/register
  * Body: { "name": "John Doe", "email": "john@example.com", "password": "123456" }
  */
+const nodemailer = require("nodemailer");
+const admin = require("firebase-admin");
+
 exports.registerUser = async (req, res) => {
   try {
     const { postgresUser, firebaseUser } = await authService.register(req.body, 'customer');
+
+    const verificationLink = await admin.auth().generateEmailVerificationLink(firebaseUser.email, {
+      url: `http://localhost:5173/customer/login`,
+    });
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      from: `"Quikko Support" <${process.env.EMAIL_USER}>`,
+      to: firebaseUser.email,
+      subject: "Verify your Quikko account",
+      html: `<p>Hi ${postgresUser.name},</p>
+             <p>Please verify your email by clicking the link below:</p>
+             <a href="${verificationLink}">Verify Email</a>`,
+    });
 
     const userData = {
       id: postgresUser.id,
@@ -34,12 +58,13 @@ exports.registerUser = async (req, res) => {
       role: postgresUser.role,
     };
 
-    res.status(201).json({ message: 'Customer registered successfully', user: userData });
+    res.status(201).json({ message: 'Customer registered successfully. Check email to verify.', user: userData });
   } catch (err) {
     console.error('Register customer error:', err);
     res.status(400).json({ error: err.message });
   }
 };
+
 
 /**
  * @function registerVendor
@@ -131,6 +156,8 @@ exports.login = async (req, res) => {
   } catch (err) {
     console.error('Login error:', err);
     switch (err.code) {
+      case 'EMAIL_NOT_VERIFIED':
+        return res.status(403).json({ error: err.message });
       case 'NOT_APPROVED':
         return res.status(403).json({ error: err.message });
       case 'NOT_FOUND_RECORD':
@@ -141,5 +168,63 @@ exports.login = async (req, res) => {
       default:
         return res.status(500).json({ error: 'Internal server error' });
     }
+  }
+};
+
+
+
+
+
+
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const link = await authService.forgotPassword(email);
+    res.status(200).json({ message: 'Reset link sent', resetLink: link });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: 'Failed to send reset link' });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    await authService.resetPassword(email, newPassword);
+    res.status(200).json({ message: 'Password reset successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: 'Failed to reset password' });
+  }
+};
+
+exports.verifyEmail = async (req, res) => {
+  try {
+        console.log("Received body:", req.body); // ✅ تحقق إذا يوصل
+
+    const { oobCode } = req.body;
+    await authService.verifyEmail(oobCode);
+    res.status(200).json({ message: 'Email verified successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: 'Failed to verify email' });
+  }
+};
+
+
+const bcrypt = require("bcrypt");
+const authModel = require("./authModel");
+
+exports.updatePassword = async (req, res) => {
+  const { email, newPassword } = req.body;
+
+  try {
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await authModel.updatePassword(email, hashed);
+    res.status(200).json({ message: "Password updated in PostgreSQL" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update password" });
   }
 };

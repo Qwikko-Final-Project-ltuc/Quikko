@@ -1,4 +1,3 @@
-// src/features/payment/PaymentMethodsPanel.jsx
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchPayments, deletePayment } from "../paymentSlice";
@@ -38,7 +37,7 @@ const PaymentMethodsPanel = () => {
             ? `PayPal — ${p.transaction_id}`
             : `${p.card_brand || "Card"} ****${p.card_last4}` + (p.transaction_id ? ` — TX: ${p.transaction_id}` : "")}
         </div>
-        <div className="text-sm text-gray-500">{new Date(p.created_at).toLocaleString()}</div>
+        <div className="text-sm text-gray-500">{new Date(p.created_at).toLocaleString("en-US", { timeZone: "Asia/Amman" })}</div>
       </div>
       <div className="text-gray-700 mt-1">
         Amount Paid: ${parseFloat(p.amount || 0).toFixed(2)}
@@ -56,7 +55,7 @@ const PaymentMethodsPanel = () => {
     </div>
   );
 
-  // ===== Filter payments =====
+  //Filter payments
   const filteredPayments = payments.filter((p) => {
     if (paymentFilter === "all") return true;
     if (paymentFilter === "paypal") return p.payment_method === "paypal";
@@ -65,7 +64,7 @@ const PaymentMethodsPanel = () => {
         return true;
       });
 
-  // ===== Pagination =====
+  // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentPayments = filteredPayments.slice(indexOfFirstItem, indexOfLastItem);
@@ -78,7 +77,7 @@ const PaymentMethodsPanel = () => {
       {status === "loading" && <p className="text-gray-500">Loading transactions...</p>}
       {sliceError && <p className="text-red-500">{sliceError}</p>}
 
-      {/* ===== Filter Buttons ===== */}
+      {/* Filter Buttons */}
       <div className="mb-4 flex space-x-2">
         {["all", "paypal", "visa"].map((filter) => (
           <button
@@ -102,7 +101,7 @@ const PaymentMethodsPanel = () => {
         )}
       </div>
 
-      {/* ===== Pagination Buttons ===== */}
+      {/*  Pagination Buttons*/}
       {totalPages > 1 && (
         <div className="flex justify-center mt-4 space-x-2">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (

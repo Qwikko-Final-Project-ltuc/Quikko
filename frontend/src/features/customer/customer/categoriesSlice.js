@@ -1,4 +1,3 @@
-// src/features/customer/customer/categoriesSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import customerAPI from "./services/customerAPI";
 
@@ -15,23 +14,23 @@ const categoriesSlice = createSlice({
     items: [],
     status: "idle",
     error: null,
-    selectedCategories: [], // مصفوفة بدل واحد
+    selectedCategories: [], 
   },
   reducers: {
     toggleCategory: (state, action) => {
-      const id = action.payload.id;
+      const id = action.payload.id === "all" ? "all" : Number(action.payload.id);
+
       if (id === "all") {
-        // لو All مختارة، نفضي الاختيارات الأخرى
         state.selectedCategories = [];
       } else {
-        // إضافة أو إزالة الكاتيجوري
-        if (state.selectedCategories.find(cat => cat.id === id)) {
-          state.selectedCategories = state.selectedCategories.filter(cat => cat.id !== id);
+        if (state.selectedCategories.includes(id)) {
+          state.selectedCategories = state.selectedCategories.filter(catId => catId !== id);
         } else {
-          state.selectedCategories.push(action.payload);
+          state.selectedCategories.push(id);
         }
       }
-    },
+},
+
   },
   extraReducers: (builder) => {
     builder

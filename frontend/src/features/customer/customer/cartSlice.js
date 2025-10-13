@@ -44,7 +44,7 @@ export const deleteCart = createAsyncThunk(
 export const createNewCart = createAsyncThunk(
   "cart/createNewCart",
   async (_, { dispatch }) => {
-    const newCart = await customerAPI.createCart(); // بدون userId
+    const newCart = await customerAPI.createCart(); 
     dispatch(fetchAllCarts());
     return newCart;
   }
@@ -54,7 +54,7 @@ export const fetchCurrentUser = createAsyncThunk(
   "auth/fetchCurrentUser",
   async (_, { rejectWithValue }) => {
     const token = localStorage.getItem("token");
-    if (!token) return null; // لو ما في login، نتجاهل
+    if (!token) return null; 
     try {
       const response = await customerAPI.getProfile();
       return response;
@@ -71,7 +71,6 @@ export const updateItemQuantity = createAsyncThunk(
   "cart/updateItemQuantity",
   async ({ cartId, itemId, quantity }, { dispatch }) => {
     await customerAPI.updateItem(itemId, { quantity });
-    // بعد التحديث نجيب الكارت من جديد
     dispatch(fetchCart(cartId));
     return { itemId, quantity };
   }
@@ -110,11 +109,14 @@ const cartSlice = createSlice({
         state.status = "loading";
       })
       .addCase(fetchAllCarts.fulfilled, (state, action) => {
-        state.allCarts = Array.isArray(action.payload)
-          ? action.payload
-          : [action.payload];
+        state.allCarts = (Array.isArray(action.payload) ? action.payload : [action.payload])
+          .map(cart => ({
+            ...cart,
+            items: Array.isArray(cart.items) ? cart.items : [], 
+          }));
         state.status = "succeeded";
       })
+
       .addCase(fetchAllCarts.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.error.message;
@@ -123,7 +125,7 @@ const cartSlice = createSlice({
       // fetchCart
       .addCase(fetchCart.pending, (state) => {
         state.status = "loading";
-        state.currentCart = null; // optional
+        state.currentCart = null;
 
       })
       .addCase(fetchCart.fulfilled, (state, action) => {
@@ -138,7 +140,7 @@ const cartSlice = createSlice({
       state.status = "loading";
     })
     .addCase(fetchCurrentUser.fulfilled, (state, action) => {
-      state.user = action.payload; // هنا يتم تحديث user
+      state.user = action.payload; 
       state.status = "succeeded";
     })
     .addCase(fetchCurrentUser.rejected, (state, action) => {

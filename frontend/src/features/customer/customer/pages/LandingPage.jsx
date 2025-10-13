@@ -61,7 +61,6 @@ const LandingPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
       <div className="flex flex-col md:flex-row items-center max-w-6xl w-full bg-white rounded-xl shadow-lg overflow-hidden">
         
-        {/* الصورة على اليسار */}
         <div className="md:w-1/2 w-full">
           <img
             src={content.image_url}
@@ -70,7 +69,6 @@ const LandingPage = () => {
           />
         </div>
 
-        {/* النص والزر على اليمين */}
         <div className="md:w-1/2 w-full p-8 flex flex-col justify-center items-start h-full">
           <div className="max-w-md">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -82,7 +80,7 @@ const LandingPage = () => {
               </p>
             )}
             <button
-              onClick={() => navigate("/products")}
+              onClick={() => navigate("/customer/products")}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition duration-300"
             >
               Start Shopping

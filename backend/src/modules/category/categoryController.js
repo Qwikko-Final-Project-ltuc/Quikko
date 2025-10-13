@@ -1,4 +1,4 @@
-const { protectAdmin } = require('../admin/adminValidators'); // تحقق من صلاحيات الادمن
+const { protectAdmin } = require('../admin/adminValidators');
 const categoryService = require('./CategoryService');
 /**
  * @module CategoryController

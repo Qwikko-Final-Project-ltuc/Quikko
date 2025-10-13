@@ -1,4 +1,3 @@
-// src/config/paypal.js
 const paypal = require("paypal-rest-sdk");
 
 /**

@@ -2,10 +2,10 @@ import React from "react";
 import { FaShoppingBag, FaStore, FaTruck } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-
+ 
 export default function LandingPage() {
   const isDarkMode = useSelector((state) => state.deliveryTheme.darkMode);
-
+ 
   return (
     <div
       className="min-h-screen font-sans transition-colors duration-300 "
@@ -44,7 +44,7 @@ export default function LandingPage() {
           </Link>
         </div>
       </section>
-
+ 
       {/* 🧱 Features Section */}
       <section className="py-24 px-6 grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto">
         {[
@@ -98,7 +98,7 @@ export default function LandingPage() {
           </div>
         ))}
       </section>
-
+ 
       <section
         className={`py-24 text-center ${
           isDarkMode ? "bg-dark-div" : "bg-light-div"

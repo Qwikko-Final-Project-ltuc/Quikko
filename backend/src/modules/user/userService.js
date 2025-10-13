@@ -16,7 +16,6 @@ const userModel = require('./userModel');
  * @returns {Promise<Object>} Newly created user
  */
 exports.createUser = async (userData) => {
-  // يمكن إضافة تحقق من الإيميل أو الهاتف قبل الإدخال
   return userModel.insertUser(userData);
 };
 

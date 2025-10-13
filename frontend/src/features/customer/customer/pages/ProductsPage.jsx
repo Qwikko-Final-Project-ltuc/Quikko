@@ -1,8 +1,8 @@
-import React, { useEffect } from "react";
+import React, { useEffect,useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchProducts,
-  fetchProductsWithSorting,
+  // fetchProductsWithSorting,
   setSortBy,
   setCurrentPage,
 } from "../productsSlice";
@@ -12,65 +12,75 @@ import CategoryList from "../components/CategoryList";
 import ProductCard from "../components/ProductCard";
 import customerAPI from "../services/customerAPI";
 import { useLocation } from "react-router-dom";
+import { GetWishlist } from "../../wishlist/wishlistApi";
 
 const ProductsPage = () => {
   const dispatch = useDispatch();
   const location = useLocation();
+  const token = localStorage.getItem("token");
 
+
+  //  Cart data
   const currentCart = useSelector((state) => state.cart.currentCart);
   const tempCartId = useSelector((state) => state.cart.tempCartId);
   const userId = useSelector((state) => state.cart.user?.id);
-
   const initialCartId = location.state?.cartId;
 
+  //  Products & Categories state
   const {
     items: products = [],
+    totalPages = 1,
     status,
     error,
     searchQuery,
     sortBy,
     currentPage,
-    itemsPerPage,
   } = useSelector((state) => state.products);
 
   const { items: categories = [], selectedCategories = [] } = useSelector(
     (state) => state.categories
   );
 
-  // Fetch products and categories
+  // Fetch products & categories
   useEffect(() => {
-    if (sortBy && sortBy !== "default") {
-      dispatch(fetchProductsWithSorting({ sort: sortBy }));
-    } else {
-      dispatch(fetchProducts());
-    }
+    
+    const params = {
+      page: currentPage,
+      categoryId: selectedCategories.length ? selectedCategories : undefined,
+      search: searchQuery || undefined,
+    };
+    // console.log("Fetching products with params:", params);
+
+
+    dispatch(fetchProducts(params)); 
     dispatch(fetchCategories());
-  }, [dispatch, sortBy, searchQuery]);
+  }, [dispatch,searchQuery,  currentPage, selectedCategories]);
 
+  // Sorting
   const handleSortChange = (e) => {
-    const selectedSort = e.target.value;
-    dispatch(setSortBy(selectedSort));
-    dispatch(fetchProductsWithSorting({ sort: selectedSort }));
+    dispatch(setSortBy(e.target.value));
+    dispatch(setCurrentPage(1));
   };
+  const sortProducts = (products) => {
+    if (sortBy === "price_asc") return [...products].sort((a, b) => a.price - b.price);
+    if (sortBy === "price_desc") return [...products].sort((a, b) => b.price - a.price);
+    if (sortBy === "most_sold") return [...products].sort((a, b) => (b.total_sold || 0) - (a.total_sold || 0));
+    return products; // default
+  };
+  const displayedProducts = sortProducts(products);
 
+
+  // Add to cart
   const handleAddToCart = async (product, quantity = 1) => {
     try {
       let cart = currentCart;
       const guestToken = tempCartId || localStorage.getItem("guest_token");
 
-      // جرب cart الحالي
-      if (!cart) {
+      if (!cart?.id) {
         cart = await customerAPI.getOrCreateCart(initialCartId, userId, guestToken);
         dispatch(setCurrentCart(cart));
       }
 
-      // إذا ما في cart، أنشئ جديد
-      if (!cart?.id) {
-        cart = await customerAPI.getOrCreateCart(null, userId, guestToken);
-        dispatch(setCurrentCart(cart));
-      }
-
-      // أضف المنتج
       await customerAPI.addItem({
         cartId: cart.id,
         product,
@@ -79,34 +89,49 @@ const ProductsPage = () => {
       });
 
       dispatch(fetchCart(cart.id));
-      alert("✅ Added to cart");
+      // alert("Added to cart");
     } catch (err) {
-      const msg = err.response?.data?.message || err.message;
-      alert(msg);
+      alert(err.response?.data?.message || err.message);
     }
   };
 
+  // Category toggle
   const handleToggleCategory = (category) => {
     dispatch(toggleCategory(category));
     dispatch(setCurrentPage(1));
+
   };
 
-  const filteredProducts = products
-    .filter((p) => p.quantity > 0)
-    .filter((p) =>
-      selectedCategories.length === 0
-        ? true
-        : selectedCategories.some((c) => c.id === p.category_id)
-    )
-    .filter((p) =>
-      searchQuery ? p.name.toLowerCase().includes(searchQuery) : true
-    );
+  //  Pagination
+  const handlePageChange = (page) => {
+    dispatch(setCurrentPage(page));
+  };
 
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  //wishlist
+  const [wishlist, setWishlist] = useState([]);
+  const handleToggleWishlist = (productId, added, wishlist_id = null) => {
+    setWishlist((prev) => {
+      if (added) {
+        return [...prev, { product_id: productId, wishlist_id }];
+      } else {
+        return prev.filter((w) => w.product_id !== productId);
+      }
+    });
+  };
 
+  useEffect(() => {
+    const fetchWishlistData = async () => {
+      try {
+        const data = await GetWishlist();
+        setWishlist(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchWishlistData();
+  }, []);
+
+  //  Loading & error
   if (status === "loading") {
     return (
       <p className="text-center mt-10 text-gray-500 animate-pulse">
@@ -123,6 +148,7 @@ const ProductsPage = () => {
     );
   }
 
+  //  UI
   return (
     <div className="container mx-auto px-4 py-6">
       <h1 className="text-4xl font-bold mb-8 text-center text-gray-800">
@@ -150,35 +176,63 @@ const ProductsPage = () => {
         onToggle={handleToggleCategory}
       />
 
-      {/* Products grid */}
-      {paginatedProducts.length === 0 ? (
+      {/* Products Grid */}
+      {displayedProducts.length === 0 ? (
         <p className="text-center text-gray-600 mt-10">No products found.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {paginatedProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onAddToCart={handleAddToCart}
-            />
-          ))}
+          {displayedProducts.map((product) => {
+            const wishlistItem = wishlist.find(
+              (w) => w.product_id === product.id);
+              return(
+                <ProductCard
+                key={product.id}
+                product={{
+                  ...product,
+                  isInWishlist: !!wishlistItem,
+                  wishlist_id: wishlistItem?.wishlist_id || null,
+                }}
+                onAddToCart={handleAddToCart}
+                onToggleWishlistFromPage={handleToggleWishlist}
+                isLoggedIn={!!token}
+              />
+              );
+              })}
         </div>
       )}
 
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center mt-6 gap-2">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => handlePageChange(currentPage - 1)}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Prev
+          </button>
+
           {Array.from({ length: totalPages }).map((_, idx) => (
             <button
               key={idx}
-              className={`px-3 py-1 border rounded ${
-                currentPage === idx + 1 ? "bg-gray-300" : ""
+              className={`px-3 py-1 border rounded transition ${
+                currentPage === idx + 1
+                  ? "bg-gray-800 text-white"
+                  : "bg-white hover:bg-gray-100"
               }`}
-              onClick={() => dispatch(setCurrentPage(idx + 1))}
+              onClick={() => handlePageChange(idx + 1)}
             >
               {idx + 1}
             </button>
           ))}
+
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => handlePageChange(currentPage + 1)}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Next
+          </button>
         </div>
       )}
     </div>

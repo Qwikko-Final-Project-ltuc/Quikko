@@ -1,9 +1,8 @@
 import axios from "axios";
 
-// دالة موحدة لكل الطلبات
 const apiRequest = async (url, options = {}) => {
   try {
-    const token = localStorage.getItem("token"); // أو أي مكان خزنتي فيه التوكن
+    const token = localStorage.getItem("token"); 
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
     const response = await axios({
@@ -14,13 +13,11 @@ const apiRequest = async (url, options = {}) => {
 
     return response.data;
   } catch (error) {
-    // إذا الخطأ 401
     if (error.response && error.response.status === 401) {
-      return { error: "لا تملك صلاحية عرض هذه البيانات" };
+      return { error: "not aoutharized     " };
     }
 
-    // أي خطأ آخر
-    return { error: error.message || "حدث خطأ" };
+    return { error: error.message || " error happen" };
   }
 };
 

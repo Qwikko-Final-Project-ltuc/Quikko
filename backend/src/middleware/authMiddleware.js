@@ -31,7 +31,7 @@ exports.protect = (req, res, next) => {
         req.user = decoded;
         next();
     } catch (err) {
-        console.log("JWT ERROR:", err.message);
+        // console.log("JWT ERROR:", err.message);
 
         res.status(401).json({ message: 'Token invalid or expired' });
     }
@@ -65,13 +65,12 @@ exports.optionalProtect = (req, res, next) => {
     try {
       const token = authHeader.split(' ')[1];
       const decoded = verifyToken(token);
-      req.customerId = decoded.id; // أو req.user حسب الكنترولر
+      req.customerId = decoded.id; 
     } catch (err) {
-      console.log("JWT ERROR:", err.message);
-      // ما نرجع 401 هنا، نكمل كـ guest
+      // console.log("JWT ERROR:", err.message);
     }
   }
-  next(); // نكمل سواء كان المستخدم مسجل أو guest
+  next(); 
 };
 
 

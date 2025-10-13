@@ -138,7 +138,7 @@ exports.getOrderWithCompany = async function (orderId) {
   const order = orderRes.rows[0];
   if (!order) return null;
 
-  // جلب المنتجات المرتبطة بالطلب مع الصور
+  // جلب المنتجات المرتبطة بالطلب مع الصور وبيانات الفندور
   const itemsRes = await pool.query(
     `SELECT
         oi.id AS order_item_id,
@@ -149,7 +149,7 @@ exports.getOrderWithCompany = async function (orderId) {
         oi.price AS item_price,
         oi.variant,
         v.id AS vendor_id,
-        v.store_name as vendor_name,
+        v.store_name AS vendor_name,
         u.email AS vendor_email,
         u.phone AS vendor_phone,
         COALESCE(json_agg(pi.image_url) FILTER (WHERE pi.id IS NOT NULL), '[]') AS images
@@ -163,10 +163,11 @@ exports.getOrderWithCompany = async function (orderId) {
     [orderId]
   );
 
-  order.items = itemsRes.rows; // أضف كل المنتجات للطلب مع بيانات الفندور والصور
+  order.items = itemsRes.rows;
 
   return order;
 };
+
 
 /**
  * Update order status
@@ -347,7 +348,6 @@ exports.getWeeklyReport = async (deliveryCompanyId, days = 7) => {
   endPlus.setDate(endPlus.getDate() + 1);
   const endTsExclusive = endPlus.toISOString();
 
-  // 1️⃣ إجمالي الطلبات والمبلغ
   const totalQuery = `
     SELECT COUNT(*)::int AS total_orders,
            COALESCE(SUM(total_amount)::numeric, 0) AS total_amount
@@ -362,7 +362,6 @@ exports.getWeeklyReport = async (deliveryCompanyId, days = 7) => {
     endTsExclusive,
   ]);
 
-  // 2️⃣ حالات الدفع
   const paymentQuery = `
     SELECT payment_status, COUNT(*)::int AS count
     FROM orders
@@ -377,7 +376,6 @@ exports.getWeeklyReport = async (deliveryCompanyId, days = 7) => {
     endTsExclusive,
   ]);
 
-  // 3️⃣ حالات الطلب
   const statusQuery = `
     SELECT status, COUNT(*)::int AS count
     FROM orders
@@ -392,7 +390,6 @@ exports.getWeeklyReport = async (deliveryCompanyId, days = 7) => {
     endTsExclusive,
   ]);
 
-  // 4️⃣ أفضل العملاء
   const topCustomersQuery = `
     SELECT o.customer_id,
            u.email AS customer_email,
@@ -413,7 +410,6 @@ exports.getWeeklyReport = async (deliveryCompanyId, days = 7) => {
     endTsExclusive,
   ]);
 
-  // 5️⃣ أفضل البائعين
   const topVendorsQuery = `
     SELECT v.id AS vendor_id,
            v.store_name,
@@ -436,7 +432,6 @@ exports.getWeeklyReport = async (deliveryCompanyId, days = 7) => {
     endTsExclusive,
   ]);
 
-  // 6️⃣ عدد الطلبات الـ pending
   const pendingQuery = `
     SELECT COUNT(*)::int AS pending_count
     FROM orders
@@ -482,8 +477,7 @@ exports.getWeeklyReport = async (deliveryCompanyId, days = 7) => {
     "cancelled",
   ];
 
-  // تجهيز النتائج
-  const totals = totalRes.rows[0] || { total_orders: 0, total_amount: "0" };
+  const totals = totalRes.rows[0] || { total_orders: 0, total_amount: '0' };
   const payment_status = paymentRes.rows.reduce((acc, r) => {
     acc[r.payment_status] = r.count;
     return acc;
@@ -563,7 +557,6 @@ exports.checkAndUpdateAcceptedOrdersForCompany = async (companyId) => {
       (item) => item.vendor_status === "accepted"
     );
 
-    // ✅ لو كلهم accepted نحدث حالة الأوردر
     if (allAccepted) {
       await pool.query(
         `UPDATE orders SET status = 'accepted', updated_at = NOW() WHERE id = $1`,

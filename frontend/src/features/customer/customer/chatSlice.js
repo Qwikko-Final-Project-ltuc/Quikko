@@ -1,4 +1,3 @@
-// chatSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import customerAPI from "./services/customerAPI";
 import { getUserIdFromToken } from "../../../utlis/auth";
@@ -7,7 +6,6 @@ import { collection, doc, setDoc, serverTimestamp} from "firebase/firestore";
 
 
 export const sendMessageToFirebase = async (message) => {
-  // chatId ثابت بغض النظر عن ترتيب المستخدمين
   const chatId = `chat_${[message.sender_id, message.receiver_id].sort().join('_')}`;
   const docRef = doc(collection(db, 'chats', chatId, 'messages'));
 
@@ -16,10 +14,9 @@ export const sendMessageToFirebase = async (message) => {
     receiver_id: message.receiver_id,
     message: message.message,
     read_status: false,
-    created_at: serverTimestamp(), // مهم لضبط التوقيت لكل المستخدمين
+    created_at: serverTimestamp(), 
   });
 };
-// جلب كل المحادثات
 export const fetchConversations = createAsyncThunk(
   "chat/fetchConversations",
   async () => {
@@ -28,7 +25,6 @@ export const fetchConversations = createAsyncThunk(
   }
 );
 
-// جلب رسائل محادثة معينة
 export const fetchMessages = createAsyncThunk(
   "chat/fetchMessages",
   async (user2Id) => {
@@ -37,7 +33,6 @@ export const fetchMessages = createAsyncThunk(
   }
 );
 
-// إرسال رسالة
 export const sendMessage = createAsyncThunk(
   "chat/sendMessage",
   async ({ receiver_id, message }) => {
@@ -67,7 +62,6 @@ const chatSlice = createSlice({
       if (!state.messages[otherUserId]) state.messages[otherUserId] = [];
       state.messages[otherUserId].push(msg);
     },
-    // 🔥 تحديث المحادثة كمقروءة محلياً
     setConversationsRead: (state, action) => {
       const userId = action.payload;
       state.conversations = state.conversations.map((conv) => {

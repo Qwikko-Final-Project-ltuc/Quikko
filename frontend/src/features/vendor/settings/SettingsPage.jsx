@@ -1,59 +1,82 @@
 import React, { useEffect, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 
-const SettingsPage = () => {
-  const [theme, setTheme] = useState("light");
-  const [notifications, setNotifications] = useState(true);
+export default function SettingsPage() {
+  const { isDarkMode, setIsDarkMode } = useOutletContext();
+  const [notificationsOn, setNotificationsOn] = useState(true);
 
-  // تحميل الإعدادات من localStorage عند بدء الصفحة
+  // تخزين الوضع في localStorage
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    const savedNotifications = localStorage.getItem("notifications");
+    localStorage.setItem("theme", isDarkMode ? "dark" : "light");
+  }, [isDarkMode]);
 
-    if (savedTheme) setTheme(savedTheme);
-    if (savedNotifications) setNotifications(savedNotifications === "true");
-  }, []);
+  const toggleTheme = () => {
+    setIsDarkMode(prev => !prev);
+  };
 
-  // تحديث localStorage عند تغير الإعدادات
-  useEffect(() => {
-    localStorage.setItem("theme", theme);
-    localStorage.setItem("notifications", notifications);
-  }, [theme, notifications]);
+  const toggleNotifications = () => {
+    setNotificationsOn(prev => !prev);
+  };
+
+  const pageBg = isDarkMode ? "#242625" : "#f0f2f1";
+  const cardBg = isDarkMode ? "#666666" : "#ffffff";
+  const textColor = isDarkMode ? "#ffffff" : "#242625";
+  const buttonBg = isDarkMode ? "#307A59" : "#307A59"; // الأخضر في الدارك، الرمادي في اللايت
+  const buttonHover = isDarkMode ? "#256d4c" : "#307A59";
+  const buttonText = "#ffffff";
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold mb-4">Settings</h1>
+    <div className="min-h-screen p-8" style={{ backgroundColor: pageBg }}>
+      <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: textColor }}>
+        Settings
+      </h2>
 
-      {/* اختيار الثيم */}
-      <div className="flex items-center space-x-4">
-        <label className="font-semibold">Theme:</label>
-        <select
-          value={theme}
-          onChange={(e) => setTheme(e.target.value)}
-          className="border p-2 rounded"
+      <div className="space-y-6 max-w-3xl mx-auto">
+        {/* Dark Mode Toggle */}
+        <div
+          className="flex items-center justify-between p-4 rounded-2xl shadow-md"
+          style={{ backgroundColor: cardBg }}
         >
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-        </select>
-      </div>
+          <span className="text-lg font-medium" style={{ color: textColor }}>
+            Mode
+          </span>
+          <button
+            onClick={toggleTheme}
+            className="px-4 py-2 rounded-md transition"
+            style={{ backgroundColor: buttonBg, color: buttonText }}
+            onMouseEnter={e => (e.target.style.backgroundColor = buttonHover)}
+            onMouseLeave={e => (e.target.style.backgroundColor = buttonBg)}
+          >
+            {isDarkMode ? "Light Mode" : "Dark Mode"}
+          </button>
+        </div>
 
-      {/* تفعيل الإشعارات */}
-      <div className="flex items-center space-x-4">
-        <label className="font-semibold">Notifications:</label>
-        <input
-          type="checkbox"
-          checked={notifications}
-          onChange={(e) => setNotifications(e.target.checked)}
-          className="w-5 h-5"
-        />
-      </div>
-
-      <div className="mt-4 text-gray-500">
-        {/* عرض الإعدادات الحالية */}
-        <p>Current Theme: {theme}</p>
-        <p>Notifications: {notifications ? "On" : "Off"}</p>
+        {/* Notifications Toggle */}
+        <div
+          className="flex items-center justify-between p-4 rounded-2xl shadow-md"
+          style={{ backgroundColor: cardBg }}
+        >
+          <span className="text-lg font-medium" style={{ color: textColor }}>
+            Enable Notifications
+          </span>
+          <button
+            onClick={toggleNotifications}
+            className="px-4 py-2 rounded-md transition"
+            style={{
+              backgroundColor: notificationsOn ? "#307A59" : "#307A59",
+              color: buttonText,
+            }}
+            onMouseEnter={e =>
+              (e.target.style.backgroundColor = notificationsOn ? "#256d4c" : "#d1d5db")
+            }
+            onMouseLeave={e =>
+              (e.target.style.backgroundColor = notificationsOn ? "#307A59" : "#e5e7eb")
+            }
+          >
+            {notificationsOn ? "On" : "Off"}
+          </button>
+        </div>
       </div>
     </div>
   );
-};
-
-export default SettingsPage;
+}

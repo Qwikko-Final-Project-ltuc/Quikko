@@ -12,6 +12,8 @@ const CartDetailPage = () => {
   const { id: cartId } = useParams();
   const { currentCart } = useSelector((state) => state.cart);
   const [groupedItems, setGroupedItems] = useState({});
+  const token = localStorage.getItem("token");
+
 
   // Fetch cart from server
   useEffect(() => {
@@ -22,6 +24,8 @@ const CartDetailPage = () => {
 
   // Group items by vendor whenever currentCart changes
   useEffect(() => {
+      // console.log("currentCart updated:", currentCart);
+
     if (currentCart?.items?.length) {
       const grouped = currentCart.items.reduce((acc, item) => {
         const vendor = item.vendor_name || "Unknown Vendor";
@@ -37,9 +41,9 @@ const CartDetailPage = () => {
 
 
   const handleAddProduct = () => {
-    dispatch(setTempCartId(currentCart.id)); // نحفظ cartId في tempCartId
+    dispatch(setTempCartId(currentCart.id));
 
-    navigate("/products", { state: { cartId: currentCart.id } });
+    navigate("/customer/products", { state: { cartId: currentCart.id } });
   };
 
 
@@ -50,12 +54,20 @@ const CartDetailPage = () => {
 
     const handleCheckout = async () => {
     try {
-        navigate(`/order-details/${currentCart.id}`);
+        if (!token) {
+          alert("Please log in to proceed to checkout.");
+          return navigate("/customer/login");
+        }
+        if (!currentCart?.id) return alert("Cart not loaded yet");
+        navigate(`/customer/order-details/${currentCart.id}`, { state: { cartId: currentCart.id } });
+
     } catch (err) {
         console.error("Checkout failed", err);
     }
     };
 
+//     console.log("currentCart:", currentCart);
+// console.log("items:", currentCart?.items);
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -86,15 +98,14 @@ const CartDetailPage = () => {
       </p>
 
       {currentCart?.items?.length > 0 && (
+        
         <button
-          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 relative z-10"
           onClick={handleCheckout}
         >
           Proceed to Checkout
         </button>
-      )}
-
-
+      )} 
           </div>
   );
 };
