@@ -17,6 +17,7 @@ import AboutPage from "../genral/aboutPage/about";
 import CartListPage from "./customer/pages/CartListPage";
 import CartDetailPage from "./customer/pages/CartDetailPage";
 import NotFound from "../notFound";
+import ProductDetails from "./customer/pages/ProductDetails";
 
 import LoginForm from "./auth/LoginForm";
 import SignupForm from "./auth/SignupForm";
@@ -26,6 +27,7 @@ import ResetPasswordPage from "./auth/ResetPasswordPage";
 import ContactUs from "./customer/pages/ContactUs";
 import ChatPage from "./customer/pages/ChatPage";
 import PasswordUpdated from "./auth/PasswordUpdated";
+
 
 
 const CustomerRoutes = () => {
@@ -58,6 +60,7 @@ const CustomerRoutes = () => {
         <Route path="/customer/profile" element={<ProfilePage />} />
         <Route path="/customer/contact" element={<ContactUs />} />
         <Route path="/customer/chat" element={<ChatPage />} />
+        <Route path="/customer/product/:id" element={<ProductDetails />} />
 
       </Route>
       <Route path="*" element={<NotFound />} />

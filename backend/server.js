@@ -127,6 +127,9 @@ app.use("/api/products", productsRoutes);
 const reviewRoutes = require("./src/modules/review/reviewRoutes");
 app.use("/api/reviews", reviewRoutes);
 
+// Coupon Routes
+const couponRoutes = require("./src/modules/coupon/CouponRoutes");
+app.use("/api/coupons", couponRoutes);
 
 
 const awarenessRouter = require('./src/modules/AwarenessAI/awareness');

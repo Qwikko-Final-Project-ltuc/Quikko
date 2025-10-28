@@ -62,6 +62,15 @@ router.put("/:id", protect,authorizeRole('vendor'), productController.updateProd
  */
 router.delete("/:id", protect,authorizeRole('vendor'), productController.deleteProduct);
 
+// أي مستخدم مسجل يمكنه إضافة مراجعة إذا اشترى المنتج
+router.post("/review", protect, productController.addReview);
+
+// عرض التعليقات لأي شخص
+router.get("/review/:product_id", productController.getProductReviews);
+
+// الأدمن فقط يمكنه حذف تعليق
+router.delete("/review/:review_id", protect, authorizeRole("admin"), productController.deleteReview);
+
 module.exports = router;
 
 

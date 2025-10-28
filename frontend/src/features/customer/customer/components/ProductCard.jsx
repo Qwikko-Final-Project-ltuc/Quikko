@@ -2,14 +2,14 @@ import React, { useState } from "react";
 import "yet-another-react-lightbox/styles.css";
 import Lightbox from "yet-another-react-lightbox";
 import { ImHeart } from "react-icons/im";
+import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-
 import { AddWishlist, RemoveWishlist } from "../../wishlist/wishlistApi";
 import customerAPI from "../services/customerAPI";
 
 const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedIn }) => {
   const [currentImage, setCurrentImage] = useState(0);
-  const [isOpen, setIsOpen] = useState(false); 
+  const [isOpen, setIsOpen] = useState(false);
   const images = Array.isArray(product.images) ? product.images : [];
   const [wishlist, setWishlist] = useState(product.isInWishlist || false);
   const [wishlistId, setWishlistId] = useState(product.wishlist_id || null);
@@ -40,6 +40,9 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
         setWishlist(false);
         setWishlistId(null);
         onToggleWishlistFromPage &&
+          onToggleWishlistFromPage(wishlistId, product.product_id, false);
+        window.location.reload();
+
           onToggleWishlistFromPage(productId, false, wishlistId);
 
         if (isLoggedIn && userId) {
@@ -71,14 +74,15 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
       <div className="h-48 w-full mb-2 overflow-hidden rounded relative cursor-pointer">
         {images.length > 0 ? (
           <>
-            <div className="h-48 w-full mb-2 overflow-hidden rounded relative flex items-center justify-center bg-gray-100">
-              <img
-                src={images[currentImage]}
-                alt={product.name}
-                className="max-h-full max-w-full object-contain"
-                onClick={openLightbox}
-              />
-            </div>
+            <Link to={`/customer/product/${product.id}`}>
+              <div className="h-48 w-full mb-2 overflow-hidden rounded relative flex items-center justify-center bg-gray-100">
+                <img
+                  src={images[currentImage]}
+                  alt={product.name}
+                  className="max-h-full max-w-full object-contain"
+                />
+              </div>
+            </Link>
 
             {images.length > 1 && (
               <>
@@ -119,7 +123,6 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
           <ImHeart />
         </button>
       )}
-
 
       <button
         className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"

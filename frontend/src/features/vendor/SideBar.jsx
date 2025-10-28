@@ -44,6 +44,17 @@ export default function SideBar({ handleLogout }) {
             <FaBoxOpen />
             <span>Orders</span>
           </NavLink>
+          <NavLink
+            to="/vendor/Coupons"
+            className={({ isActive }) =>
+              `flex items-center space-x-2 p-2 rounded hover:bg-gray-200 ${
+                isActive ? "bg-gray-200 font-semibold" : ""
+              }`
+            }
+          >
+            <FaBoxOpen />
+            <span>Coupons</span>
+          </NavLink>
 
           <NavLink
             to="/vendor/chat"

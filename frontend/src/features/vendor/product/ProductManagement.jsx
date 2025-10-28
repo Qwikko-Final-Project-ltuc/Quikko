@@ -132,13 +132,12 @@ export default function ProductManagement() {
                 <td className="p-2">
                   {p.images && p.images.length > 0 ? (
                     <img
-                      src={
-                        p.images[0]?.image_url?.startsWith("http")
-                          ? p.images[0].image_url
-                          : `${process.env.REACT_APP_API_URL || ""}/${
-                              p.images[0].image_url
-                            }`
-                      }
+                     src={
+  p.images[0]?.image_url?.startsWith("http")
+    ? p.images[0].image_url
+    : `${import.meta.env.VITE_API_URL || ""}/${p.images[0].image_url}`
+}
+
                       alt={p.name}
                       className="w-12 h-12 object-cover rounded-md"
                     />

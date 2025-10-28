@@ -1,11 +1,18 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { deleteItem, updateItemQuantity  } from "../cartSlice";
+import { deleteItem, updateItemQuantity } from "../cartSlice";
 import customerAPI from "../services/customerAPI";
 
 const CartItem = ({ item }) => {
   const dispatch = useDispatch();
   const { currentCart } = useSelector((state) => state.cart);
+
+  // إضافة vendor_id للعنصر إذا موجود
+  const itemWithVendorId = {
+    ...item,
+    vendor_id: item.vendor_id || item.vendorId || null, // لو موجود في الداتا
+  };
+
   const firstImage =
     Array.isArray(item.images) && item.images.length > 0
       ? item.images[0]
@@ -43,15 +50,16 @@ const CartItem = ({ item }) => {
 
 
 
-
   const handleDecrease = () => {
     if (!currentCart?.id) return;
     if (item.quantity > 1) {
-      dispatch(updateItemQuantity({ 
-        cartId: currentCart.id, 
-        itemId: item.id, 
-        quantity: item.quantity - 1 
-      }));
+      dispatch(
+        updateItemQuantity({
+          cartId: currentCart.id,
+          itemId: item.id,
+          quantity: item.quantity - 1,
+        })
+      );
     } else {
       handleRemove();
     }
@@ -59,11 +67,13 @@ const CartItem = ({ item }) => {
 
   const handleIncrease = () => {
     if (!currentCart?.id) return;
-    dispatch(updateItemQuantity({ 
-      cartId: currentCart.id, 
-      itemId: item.id, 
-      quantity: item.quantity + 1 
-    }));
+    dispatch(
+      updateItemQuantity({
+        cartId: currentCart.id,
+        itemId: item.id,
+        quantity: item.quantity + 1,
+      })
+    );
   };
 
   return (
@@ -80,25 +90,18 @@ const CartItem = ({ item }) => {
         <div>
           <p className="font-bold">{item.name}</p>
 
-
           <p className="flex items-center space-x-2">
-            <button 
-              onClick={handleDecrease}
-              className="bg-gray-300 px-2 rounded"
-            >
+            <button onClick={handleDecrease} className="bg-gray-300 px-2 rounded">
               -
             </button>
             <span>{item.quantity}</span>
-            <button 
-              onClick={handleIncrease}
-              className="bg-gray-300 px-2 rounded"
-            >
+            <button onClick={handleIncrease} className="bg-gray-300 px-2 rounded">
               +
             </button>
           </p>
 
-          
           <p>Price: ${item.price}</p>
+          <p className="text-sm text-gray-500">Vendor ID: {itemWithVendorId.vendor_id}</p>
         </div>
       </div>
 

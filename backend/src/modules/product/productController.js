@@ -183,3 +183,53 @@ exports.deleteProduct = async (req, res) => {
 
 
 
+
+/**
+ * Add a review
+ */
+exports.addReview = async (req, res) => {
+  try {
+    const user_id = req.user.id;
+    const { product_id, rating, comment, sentiment } = req.body;
+
+    // تحقق إن المستخدم اشترى المنتج
+    const purchased = await productModel.hasPurchasedProduct(user_id, product_id);
+   if (!purchased) {
+      return res.status(403).json({ message: "You can only review products you purchased" });
+    }
+
+    const review = await productModel.addReview({ user_id, product_id, rating, comment, sentiment });
+    res.status(201).json({ message: "Review added successfully", review });
+  } catch (err) {
+    console.error("Add review error:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * Get reviews for a product
+ */
+exports.getProductReviews = async (req, res) => {
+  try {
+    const product_id = req.params.product_id;
+    const reviews = await productModel.getProductReviews(product_id);
+    res.json(reviews);
+  } catch (err) {
+    console.error("Get reviews error:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * Admin delete a review
+ */
+exports.deleteReview = async (req, res) => {
+  try {
+    const review_id = req.params.review_id;
+    const deletedReview = await productModel.deleteReview(review_id);
+    res.json({ message: "Review deleted successfully", review: deletedReview });
+  } catch (err) {
+    console.error("Delete review error:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
