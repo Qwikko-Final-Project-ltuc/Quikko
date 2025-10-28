@@ -194,9 +194,9 @@ exports.addReview = async (req, res) => {
 
     // تحقق إن المستخدم اشترى المنتج
     const purchased = await productModel.hasPurchasedProduct(user_id, product_id);
-   // if (!purchased) {
-     // return res.status(403).json({ message: "You can only review products you purchased" });
-  //  }
+   if (!purchased) {
+      return res.status(403).json({ message: "You can only review products you purchased" });
+    }
 
     const review = await productModel.addReview({ user_id, product_id, rating, comment, sentiment });
     res.status(201).json({ message: "Review added successfully", review });

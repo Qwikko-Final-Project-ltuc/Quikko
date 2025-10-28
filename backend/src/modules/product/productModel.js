@@ -278,7 +278,7 @@ exports.hasPurchasedProduct = async (user_id, product_id) => {
   const result = await db.query(
     `SELECT 1 FROM orders o
      JOIN order_items oi ON o.id = oi.order_id
-     WHERE o.customer_id = $1 AND oi.product_id = $2 AND o.status = 'completed'`,
+     WHERE o.customer_id = $1 AND oi.product_id = $2`,
     [user_id, product_id]
   );
   return result.rowCount > 0;
