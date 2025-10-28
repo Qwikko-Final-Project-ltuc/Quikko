@@ -341,6 +341,14 @@ export default function VendorLayout() {
             >
               Settings
             </Link>
+
+            <Link to="/vendor/dashboard" className={`px-6 py-3 rounded-lg ${isDarkMode ? "text-white hover:bg-[#666666]" : "text-gray-700 hover:bg-[#f0f2f1]"}`}>Dashboard</Link>
+            <Link to="/vendor/products" className={`px-6 py-3 rounded-lg ${isDarkMode ? "text-white hover:bg-[#666666]" : "text-gray-700 hover:bg-[#f0f2f1]"}`}>My Products</Link>
+            <Link to="/vendor/orders" className={`px-6 py-3 rounded-lg ${isDarkMode ? "text-white hover:bg-[#666666]" : "text-gray-700 hover:bg-[#f0f2f1]"}`}>Orders</Link>
+            <Link to="/vendor/Coupons" className={`px-6 py-3 rounded-lg ${isDarkMode ? "text-white hover:bg-[#666666]" : "text-gray-700 hover:bg-[#f0f2f1]"}`}>Coupons</Link>
+            <Link to="/vendor/chat" className={`px-6 py-3 rounded-lg ${isDarkMode ? "text-white hover:bg-[#666666]" : "text-gray-700 hover:bg-[#f0f2f1]"}`}>Chats</Link>
+            <Link to="/vendor/notifications" className={`px-6 py-3 rounded-lg ${isDarkMode ? "text-white hover:bg-[#666666]" : "text-gray-700 hover:bg-[#f0f2f1]"}`}>Notifications</Link>
+            <Link to="/vendor/settings" className={`px-6 py-3 rounded-lg ${isDarkMode ? "text-white hover:bg-[#666666]" : "text-gray-700 hover:bg-[#f0f2f1]"}`}>Settings</Link>
           </nav>
           <div className="mt-auto mb-6 flex flex-col px-6 space-y-2">
             <button

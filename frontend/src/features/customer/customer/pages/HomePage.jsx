@@ -17,6 +17,7 @@ const HomePage = () => {
   const currentCart = useSelector((state) => state.cart.currentCart);
   const tempCartId = useSelector((state) => state.cart.tempCartId);
   // const cartIdToUse = tempCartId || currentCart?.id;
+  const token = localStorage.getItem("token");
 
   //Fetch Products 
   useEffect(() => {
@@ -47,29 +48,36 @@ const HomePage = () => {
   }, []);
 
   // Add to cart
-    const handleAddToCart = async (product, quantity = 1) => {
-      try {
-        let cart = currentCart;
-        const guestToken = tempCartId || localStorage.getItem("guest_token");
-  
-        if (!cart?.id) {
-          cart = await customerAPI.getOrCreateCart(initialCartId, userId, guestToken);
-          dispatch(setCurrentCart(cart));
-        }
-  
-        await customerAPI.addItem({
-          cartId: cart.id,
-          product,
-          quantity,
-          variant: product.variant || {},
-        });
-  
-        dispatch(fetchCart(cart.id));
-        // alert("Added to cart");
-      } catch (err) {
-        alert(err.response?.data?.message || err.message);
+  const handleAddToCart = async (product, quantity = 1) => {
+    try {
+      let cart = currentCart;
+      const guestToken = tempCartId || localStorage.getItem("guest_token");
+
+      if (!cart?.id) {
+        cart = await customerAPI.getOrCreateCart(initialCartId, userId, guestToken);
+        dispatch(setCurrentCart(cart));
       }
-    };
+
+      await customerAPI.addItem({
+        cartId: cart.id,
+        product,
+        quantity,
+        variant: product.variant || {},
+      });
+
+      dispatch(fetchCart(cart.id));
+    if (token) {
+      await customerAPI.logInteraction(userId, product.id, "add_to_cart");
+    }
+
+    alert("Added to cart!");
+      // alert("Added to cart");
+    } catch (err) {
+      alert(err.response?.data?.message || err.message);
+    }
+  };
+
+    
 
   if (loading)
     return <p className="text-center mt-20 text-gray-500">Loading...</p>;

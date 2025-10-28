@@ -300,3 +300,43 @@ export const markNotificationsRead = async (ids) => {
   return await res.json();
 };
 
+
+// 🔹 جلب جميع الكوبونات
+export const fetchCoupons = async () => {
+  const res = await fetch("http://localhost:3000/api/coupons", { headers: getAuthHeaders() });
+  if (!res.ok) throw new Error("Failed to fetch coupons");
+  const json = await res.json();
+  console.log("🔹 API Response (coupons):", json);
+  return json || [];
+};
+
+// 🔹 إضافة كوبون جديد
+export const addCoupon = async (coupon) => {
+  const res = await fetch("http://localhost:3000/api/coupons/create", { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(coupon) });
+  const json = await res.json();
+  console.log("🔹 Coupon Added Response:", json);
+  return json;
+};
+
+// 🔹 تعديل كوبون موجود
+export const updateCoupon = async (id, coupon) => {
+  const res = await fetch(`http://localhost:3000/api/coupons/${id}`, { method: "PUT", headers: getAuthHeaders(), body: JSON.stringify(coupon) });
+  const json = await res.json();
+  console.log("🔹 Coupon Updated Response:", json);
+  return json || [];
+};
+
+// 🔹 تفعيل / تعطيل الكوبون
+export const toggleCouponStatus = async (id, is_active) => {
+  const res = await fetch(`http://localhost:3000/api/coupons/${id}/status`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ is_active }),
+  });
+
+  const json = await res.json();
+  console.log("🔹 Coupon Status Toggled Response:", json);
+  return json;
+};
+
+

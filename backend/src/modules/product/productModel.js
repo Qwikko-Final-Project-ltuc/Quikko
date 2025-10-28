@@ -79,6 +79,11 @@ exports.insertProduct = async (productData) => {
 
     const product = productResult.rows[0];
 
+    await client.query(
+    `INSERT INTO product_embedding_queue (product_id) VALUES ($1)`,
+    [product.id]
+  );
+
     if (images && images.length > 0) {
       const imageQuery = `
         INSERT INTO product_images (product_id, image_url)
@@ -232,4 +237,55 @@ exports.deleteProduct = async (id, vendor_id) => {
   return deleteResult.rows[0];
 };
 
+exports.addReview = async ({ user_id, product_id, rating, comment, sentiment }) => {
+  const result = await db.query(
+    `INSERT INTO product_reviews (user_id, product_id, rating, comment, sentiment)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING *`,
+    [user_id, product_id, rating, comment, sentiment ? JSON.stringify(sentiment) : null]
+  );
+  return result.rows[0];
+};
+
+/**
+ * Get all reviews for a product (exclude deleted)
+ */
+exports.getProductReviews = async (product_id) => {
+  const result = await db.query(
+    `SELECT r.*, u.name AS user_name
+     FROM product_reviews r
+     JOIN users u ON r.user_id = u.id
+     WHERE r.product_id = $1 AND (r.is_deleted = FALSE OR r.is_deleted IS NULL)
+     ORDER BY r.created_at DESC`,
+    [product_id]
+  );
+  return result.rows;
+};
+
+/**
+ * Soft delete a review (admin only)
+ */
+exports.deleteReview = async (review_id) => {
+  const result = await db.query(
+    `UPDATE product_reviews
+     SET is_deleted = TRUE
+     WHERE id = $1
+     RETURNING *`,
+    [review_id]
+  );
+  return result.rows[0];
+};
+
+/**
+ * Check if user purchased the product
+ */
+exports.hasPurchasedProduct = async (user_id, product_id) => {
+  const result = await db.query(
+    `SELECT 1 FROM orders o
+     JOIN order_items oi ON o.id = oi.order_id
+     WHERE o.customer_id = $1 AND oi.product_id = $2`,
+    [user_id, product_id]
+  );
+  return result.rowCount > 0;
+};
 

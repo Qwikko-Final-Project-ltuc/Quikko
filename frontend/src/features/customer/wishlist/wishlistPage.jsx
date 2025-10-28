@@ -32,28 +32,42 @@ export default function WishlistPage() {
 
   // Add to cart
   const handleAddToCart = async (product, quantity = 1) => {
-    try {
-      let cart = currentCart;
-      const guestToken = tempCartId || localStorage.getItem("guest_token");
+  try {
+    let cart = currentCart;
+    const guestToken = tempCartId || localStorage.getItem("guest_token");
 
-      if (!cart?.id) {
-        cart = await customerAPI.getOrCreateCart(null, null, guestToken);
-        dispatch(setCurrentCart(cart));
-      }
-
-      await customerAPI.addItem({
-        cartId: cart.id,
-        product: { ...product, id: product.product_id }, 
-        quantity,
-        variant: product.variant || {},
-      });
-
-      dispatch(fetchCart(cart.id));
-      alert("Product added to cart");
-    } catch (err) {
-      alert(err.response?.data?.message || err.message);
+    if (!cart?.id) {
+      cart = await customerAPI.getOrCreateCart(null, null, guestToken);
+      dispatch(setCurrentCart(cart));
     }
-  };
+
+    await customerAPI.addItem({
+      cartId: cart.id,
+      product: { ...product, id: product.product_id }, 
+      quantity,
+      variant: product.variant || {},
+    });
+
+    dispatch(fetchCart(cart.id));
+
+    if (token) {
+      const userId = JSON.parse(atob(token.split(".")[1])).id; 
+      const productId = product.product_id || product.id; 
+      if (productId) {
+        await customerAPI.logInteraction(userId, productId, "add_to_cart");
+        console.log("Interaction logged for product:", productId);
+      } else {
+        console.warn("No valid product ID found for interaction");
+      }
+    }
+
+    alert("Added to cart!");
+  } catch (err) {
+    console.error("Error in handleAddToCart:", err);
+    alert(err.response?.data?.message || err.message);
+  }
+};
+
 
   // Toggle wishlist
   const handleToggleWishlist = (productId, added, wishlist_id = null) => {

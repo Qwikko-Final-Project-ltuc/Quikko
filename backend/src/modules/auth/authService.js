@@ -5,6 +5,7 @@ const { insertUser, insertCustomer, insertVendor, insertDelivery } = require('./
 const pool = require('../../config/db');
 const generateSlug = require('../../utils/stringHelpers')
 const JWT_SECRET = process.env.JWT_SECRET;
+const nodemailer = require("nodemailer");
 
 /**
  * @module AuthService
@@ -62,24 +63,44 @@ exports.register = async (data, role) => {
   if (role === 'customer') {
     await insertCustomer({ user_id: postgresUser.id });
   } else if (role === 'vendor') {
-    // console.log('store_name:', data.store_name);
-    // console.log('store_slug:', data.store_slug || generateSlug(data.store_name));
-
     await insertVendor({
-  user_id: postgresUser.id,
-  store_name: data.store_name,
-  store_slug: data.store_slug || generateSlug(data.store_name),
-  description: data.description || '',
-  status: 'pending', //defualt value before approveing
-  contact_email: data.email,
-  phone: data.phone || null,
-  address: data.address || null,
-  social_links: null,
-  commission_rate: 0.0,
-});
+      user_id: postgresUser.id,
+      store_name: data.store_name,
+      store_slug: data.store_slug || generateSlug(data.store_name),
+      description: data.description || '',
+      status: 'pending',
+      contact_email: data.email,
+      phone: data.phone || null,
+      address: data.address || null,
+    });
   } else if (role === 'delivery') {
     await insertDelivery({ user_id: postgresUser.id, company_name: data.company_name });
   }
+
+  // 4️⃣ توليد رابط التحقق حسب الدور
+  const redirectUrl = `http://localhost:5173/${role}/login`;
+  const verificationLink = await admin.auth().generateEmailVerificationLink(firebaseUser.email, { url: redirectUrl });
+
+  // 5️⃣ إرسال الإيميل
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  await transporter.sendMail({
+    from: `"Quikko Support" <${process.env.EMAIL_USER}>`,
+    to: firebaseUser.email,
+    subject: "Verify your Quikko account",
+    html: `
+      <p>Hi ${postgresUser.name},</p>
+      <p>Welcome to Quikko as a ${role}!</p>
+      <p>Please verify your email by clicking below:</p>
+      <a href="${verificationLink}">Verify Email</a>
+    `,
+  });
 
   return { postgresUser, firebaseUser };
 };
@@ -103,7 +124,6 @@ exports.login = async ({ email, password }) => {
   const { rows } = await pool.query('SELECT * FROM users WHERE email=$1', [email]);
   const user = rows[0];
 
-  // ✅ تحقق من حالة التفعيل من Firebase
   const firebaseUser = await admin.auth().getUserByEmail(email);
   if (!firebaseUser.emailVerified) {
     const err = new Error('Please verify your email before logging in.');

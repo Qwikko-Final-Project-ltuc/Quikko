@@ -82,6 +82,9 @@ export default function VendorNavbar() {
           <Link to="/vendor/orders" className="px-6 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
             Orders
           </Link>
+          <Link to="/vendor/coupons" className="px-6 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+            Coupons
+          </Link>
           <Link to="/vendor/notifications" className="px-6 py-3 text-gray-700 hover:bg-blue-50 rounded-lg">
             Notifications
           </Link>

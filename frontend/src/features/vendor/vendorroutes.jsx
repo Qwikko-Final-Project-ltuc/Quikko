@@ -14,6 +14,7 @@ import SettingsPage from "./settings/SettingsPage";
 import VendorProfilepage from "./profile/VendorProfilePage";
 import ProtectedRoute from "./ProtectedRoute";
 import VendorNotifications from "./VendorNotifications";
+import CouponManagement from "./coupons/CouponsManagement";
 
 
 
@@ -95,7 +96,17 @@ export default function VendorRoutes() {
           }
         />
         <Route path="notifications" element={<VendorNotifications />} />
+        <Route
+          path="coupons"
+          element={
+            <ProtectedRoute>
+              <CouponManagement />
+            </ProtectedRoute>
+          }
+        />
+
       </Route>
+      
     </Routes>
   );
 }

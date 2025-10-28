@@ -27,43 +27,14 @@ const admin = require("firebase-admin");
 
 exports.registerUser = async (req, res) => {
   try {
-    const { postgresUser, firebaseUser } = await authService.register(req.body, 'customer');
-
-    const verificationLink = await admin.auth().generateEmailVerificationLink(firebaseUser.email, {
-      url: `http://localhost:5173/customer/login`,
-    });
-
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    await transporter.sendMail({
-      from: `"Quikko Support" <${process.env.EMAIL_USER}>`,
-      to: firebaseUser.email,
-      subject: "Verify your Quikko account",
-      html: `<p>Hi ${postgresUser.name},</p>
-             <p>Please verify your email by clicking the link below:</p>
-             <a href="${verificationLink}">Verify Email</a>`,
-    });
-
-    const userData = {
-      id: postgresUser.id,
-      name: postgresUser.name,
-      email: postgresUser.email,
-      phone: postgresUser.phone,
-      role: postgresUser.role,
-    };
-
-    res.status(201).json({ message: 'Customer registered successfully. Check email to verify.', user: userData });
+    const { postgresUser } = await authService.register(req.body, 'customer');
+    res.status(201).json({ message: 'Customer registered. Please verify your email.', user: postgresUser });
   } catch (err) {
     console.error('Register customer error:', err);
     res.status(400).json({ error: err.message });
   }
 };
+
 
 
 /**
@@ -81,23 +52,14 @@ exports.registerUser = async (req, res) => {
  */
 exports.registerVendor = async (req, res) => {
   try {
-    const { postgresUser, firebaseUser } = await authService.register(req.body, 'vendor');
-
-    const userData = {
-      id: postgresUser.id,
-      name: postgresUser.name,
-      email: postgresUser.email,
-      phone: postgresUser.phone,
-      role: postgresUser.role,
-      store_name: req.body.store_name,
-    };
-
-    res.status(201).json({ message: 'Vendor registered successfully', user: userData });
+    const { postgresUser } = await authService.register(req.body, 'vendor');
+    res.status(201).json({ message: 'Vendor registered. Please verify your email.', user: postgresUser });
   } catch (err) {
     console.error('Register vendor error:', err);
     res.status(400).json({ error: err.message });
   }
 };
+
 
 /**
  * @function registerDelivery
@@ -114,23 +76,14 @@ exports.registerVendor = async (req, res) => {
  */
 exports.registerDelivery = async (req, res) => {
   try {
-    const { postgresUser, firebaseUser } = await authService.register(req.body, 'delivery');
-
-    const userData = {
-      id: postgresUser.id,
-      name: postgresUser.name,
-      email: postgresUser.email,
-      phone: postgresUser.phone,
-      role: postgresUser.role,
-      company_name: req.body.company_name,
-    };
-
-    res.status(201).json({ message: 'Delivery registered successfully', user: userData });
+    const { postgresUser } = await authService.register(req.body, 'delivery');
+    res.status(201).json({ message: 'Delivery registered. Please verify your email.', user: postgresUser });
   } catch (err) {
     console.error('Register delivery error:', err);
     res.status(400).json({ error: err.message });
   }
 };
+
 
 /**
  * @function login

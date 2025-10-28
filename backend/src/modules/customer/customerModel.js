@@ -95,6 +95,8 @@ exports.placeOrderFromCart = async function ({
   address,
   paymentMethod,
   paymentData,
+  coupon_code,
+  use_loyalty_points = false // ✅ خيار استخدام النقاط كخصم
 }) {
   try {
     // 1. Fetch cart items
@@ -151,18 +153,62 @@ exports.placeOrderFromCart = async function ({
       total_amount += item.price * item.quantity;
     }
 
+    // 4b. Apply coupon if provided
+    let discount_amount = 0;
+    let final_amount = total_amount;
+    let discount_reason = "";
+
+    if (coupon_code) {
+      const { valid, message, discount_amount: disc, final_amount: final } =
+        await validateCoupon(coupon_code, userId, cartItemsResult.rows);
+
+      if (!valid) throw new Error(message);
+
+      discount_amount = disc;
+      final_amount = final;
+      discount_reason = `Coupon (${coupon_code})`;
+    }
+
+    // 4c. ✅ Apply loyalty points as discount (if chosen)
+    let points_used = 0;
+    let discount_from_points = 0;
+    if (use_loyalty_points) {
+      const loyaltyData = await exports.getPointsByUser(userId);
+
+      if (loyaltyData.points_balance >= 100) {
+        // كل 100 نقطة = 10% خصم
+        const discountPercent = Math.floor(loyaltyData.points_balance / 100) * 10;
+
+        // تطبيق الخصم بحد أقصى 50%
+        const appliedDiscount = Math.min(discountPercent, 50);
+
+        discount_from_points = (total_amount * appliedDiscount) / 100;
+        final_amount -= discount_from_points;
+
+        // احسبي كم نقطة تم استخدامها فعلاً
+        points_used = (appliedDiscount / 10) * 100;
+
+        // خصم النقاط فعليًا من المستخدم
+        await exports.redeemPoints(userId, points_used, `Used for ${appliedDiscount}% discount on order`);
+
+        discount_reason = discount_reason ? `${discount_reason} + Loyalty Points` : "Loyalty Points";
+      }
+    }
+
     // 5. Insert order
     const payment_status = paymentMethod === "cod" ? "pending" : "paid";
-
     const orderResult = await pool.query(
-      `INSERT INTO orders (customer_id, delivery_company_id, status, shipping_address, total_amount, payment_status, created_at, updated_at)
-       VALUES ($1, $2, 'pending', $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      `INSERT INTO orders (customer_id, delivery_company_id, status, shipping_address, total_amount, discount_amount, final_amount, coupon_code, payment_status, created_at, updated_at)
+       VALUES ($1, $2, 'pending', $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
        RETURNING *`,
       [
         userId,
         deliveryCompanyId,
         JSON.stringify(savedAddress),
         total_amount,
+        discount_amount + discount_from_points,
+        final_amount,
+        coupon_code || null,
         payment_status,
       ]
     );
@@ -198,44 +244,78 @@ exports.placeOrderFromCart = async function ({
           paymentData.card_brand || null,
           paymentData.expiry_month || null,
           paymentData.expiry_year || null,
-          total_amount,
+          final_amount,
         ]
       );
     }
 
-    // 8. Return order + payments
+    // 8. سجل استخدام الكوبون
+    if (coupon_code) {
+      await pool.query(
+        `INSERT INTO coupon_usages (coupon_code, user_id, order_id, used_at)
+         VALUES ($1, $2, $3, CURRENT_TIMESTAMP)`,
+        [coupon_code, userId, order.id]
+      );
+
+      await pool.query(
+        `UPDATE coupons
+         SET usage_limit = CASE 
+           WHEN usage_limit IS NOT NULL THEN usage_limit - 1
+           ELSE NULL
+         END
+         WHERE code = $1`,
+        [coupon_code]
+      );
+    }
+
+    // 9️⃣ ✅ Add loyalty points earned (2% of final_amount)
+    const pointsEarned = Math.floor(final_amount * 0.02); // 2% من قيمة الطلب
+    await exports.addPoints(userId, pointsEarned, `Earned from order #${order.id}`);
+
+
+    // 10️⃣ Return order with payment + loyalty info
     const orderWithPaymentsResult = await pool.query(
       `SELECT 
-     o.*,
-     COALESCE(
-       json_agg(
-         json_build_object(
-           'id', p.id,
-           'payment_method', p.payment_method,
-           'amount', p.amount,
-           'status', p.status,
-           'transaction_id', p.transaction_id,
-           'card_last4', p.card_last4,
-           'card_brand', p.card_brand,
-           'expiry_month', p.expiry_month,
-           'expiry_year', p.expiry_year,
-           'created_at', p.created_at
-         )
-       ) FILTER (WHERE p.id IS NOT NULL),
-       '[]'
-     ) AS payments
-   FROM orders o
-   LEFT JOIN payments p ON p.order_id = o.id
-   WHERE o.id = $1
-   GROUP BY o.id`,
+        o.*,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', p.id,
+              'payment_method', p.payment_method,
+              'amount', p.amount,
+              'status', p.status,
+              'transaction_id', p.transaction_id,
+              'card_last4', p.card_last4,
+              'card_brand', p.card_brand,
+              'expiry_month', p.expiry_month,
+              'expiry_year', p.expiry_year,
+              'created_at', p.created_at
+            )
+          ) FILTER (WHERE p.id IS NOT NULL),
+          '[]'
+        ) AS payments
+      FROM orders o
+      LEFT JOIN payments p ON p.order_id = o.id
+      WHERE o.id = $1
+      GROUP BY o.id`,
       [order.id]
     );
 
-    return orderWithPaymentsResult.rows[0];
+    const result = orderWithPaymentsResult.rows[0];
+    result.loyalty = {
+      points_used,
+      discount_from_points,
+      points_earned: pointsEarned,
+      message: `You earned ${pointsEarned} loyalty points!`
+    };
+
+    return result;
   } catch (err) {
     throw err;
   }
 };
+
+
 
 /**
  * Get order details for a specific customer
@@ -1095,7 +1175,7 @@ exports.addProductToWishlist = async (userId, productId) => {
 };
 
 exports.removeProductFromWishlist = async (wishlistId) => {
-  const { rowCount } = await pool.query(`DELETE FROM wishlist WHERE id = $1`, [
+  const { rowCount } = await db.query(`DELETE FROM wishlist WHERE id = $1`, [
     wishlistId,
   ]);
 
@@ -1104,4 +1184,65 @@ exports.removeProductFromWishlist = async (wishlistId) => {
   }
 
   return { success: true };
+};
+exports.getPointsByUser = async (userId) => {
+  const result = await pool.query(
+    'SELECT points_balance, points_history FROM loyalty_points WHERE user_id = $1',
+    [userId]
+  );
+
+  if (result.rows.length === 0) return { points_balance: 0, points_history: [] };
+
+  const row = result.rows[0];
+
+  let history = row.points_history;
+
+  // ✅ تأكدي أنه نص قبل استخدام JSON.parse
+  if (typeof history === "string") {
+    history = JSON.parse(history || "[]");
+  }
+
+  return { 
+    points_balance: row.points_balance, 
+    points_history: history
+  };
+};
+
+
+exports.addPoints = async (userId, points, description) => {
+  const data = await exports.getPointsByUser(userId);
+  const newBalance = data.points_balance + points;
+  const newHistory = [...data.points_history, { type: 'earn', points, description, date: new Date() }];
+
+  await pool.query(
+    `INSERT INTO loyalty_points (user_id, points_balance, points_history, created_at, updated_at)
+     VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+     ON CONFLICT (user_id) DO UPDATE
+       SET points_balance = loyalty_points.points_balance + $2,
+           points_history = loyalty_points.points_history || $3,
+           updated_at = CURRENT_TIMESTAMP`,
+    [userId, points, JSON.stringify(newHistory)]
+  );
+};
+
+exports.redeemPoints = async (userId, points, description) => {
+  const data = await exports.getPointsByUser(userId);
+
+  if(points > data.points_balance) throw new Error("Insufficient points");
+
+  const newBalance = data.points_balance - points;
+  const newHistory = [...data.points_history, { type: 'redeem', points, description, date: new Date() }];
+
+  await pool.query(
+    `UPDATE loyalty_points
+     SET points_balance = $1,
+         points_history = $2,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE user_id = $3`,
+    [newBalance, JSON.stringify(newHistory), userId]
+  );
+
+  // 100 نقطة = 10% خصم
+  const discountPercentage = Math.floor(points / 100) * 10;
+  return discountPercentage;
 };

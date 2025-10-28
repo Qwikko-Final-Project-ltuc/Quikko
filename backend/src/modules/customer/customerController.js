@@ -782,3 +782,49 @@ exports.sendContactMessage = async (req, res) => {
     res.status(500).json({ message: "Failed to send message." });
   }
 };
+
+
+exports.getLoyaltyPoints = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const data = await customerModel.getPointsByUser(userId);
+
+    // حتى لو ما في نقاط، نرجع رسالة واضحة
+    res.json({
+      message: data.points_balance === 0 ? "No loyalty points yet" : "Loyalty points fetched successfully",
+      points: data
+    });
+  } catch (error) {
+    console.error("Error getting loyalty points:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+// 🔹 Add loyalty points after completing an order
+exports.addLoyaltyPoints = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { points, description } = req.body;
+    await customerModel.addPoints(userId, points, description);
+    res.json({ message: "Points added successfully" });
+  } catch (error) {
+    console.error("Error adding loyalty points:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// 🔹 Redeem loyalty points for discount
+exports.redeemLoyaltyPoints = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { points, description } = req.body;
+    const discount = await customerModel.redeemPoints(userId, points, description);
+    res.json({ message: "Points redeemed successfully", discount });
+  } catch (error) {
+    console.error("Error redeeming loyalty points:", error);
+    res.status(500).json({ message: error.message || "Server error" });
+  }
+};

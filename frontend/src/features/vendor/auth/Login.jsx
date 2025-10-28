@@ -30,7 +30,8 @@ export default function VendorLogin() {
         setMessage("✅ Login successful!");
         navigate("/vendor/dashboard");
       } else {
-        setMessage("❌ " + (data.message || "Login failed"));
+        // هنا التعديل: قراءة data.error بدل data.message
+        setMessage("❌ " + (data.error || "Login failed"));
       }
     } catch (err) {
       console.error(err);
@@ -66,48 +67,47 @@ export default function VendorLogin() {
           <h2 className="text-2xl font-bold mb-6 text-center">Vendor Login</h2>
 
           <form onSubmit={handleLogin} className="space-y-4">
-  <input
-    type="email"
-    name="email"
-    placeholder="Email"
-    value={email}
-    onChange={(e) => setEmail(e.target.value)}
-    className="w-full p-3 rounded focus:ring-2 outline-none text-center"
-    style={{ backgroundColor: inputBg, color: inputText }}
-    required
-  />
-  <input
-    type="password"
-    name="password"
-    placeholder="Password"
-    value={password}
-    onChange={(e) => setPassword(e.target.value)}
-    className="w-full p-3 rounded focus:ring-2 outline-none text-center"
-    style={{ backgroundColor: inputBg, color: inputText }}
-    required
-  />
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-3 rounded focus:ring-2 outline-none text-center"
+              style={{ backgroundColor: inputBg, color: inputText }}
+              required
+            />
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-3 rounded focus:ring-2 outline-none text-center"
+              style={{ backgroundColor: inputBg, color: inputText }}
+              required
+            />
 
-  {/* Transparent Login Button */}
-  <button
-    type="submit"
-    disabled={loading}
-    className="w-full bg-black text-white p-3 rounded-lg transition duration-300 ease-in-out
-     hover:bg-gray-800 hover:shadow-lg hover:scale-105 active:scale-95 cursor-pointer"
-  >
-    {loading ? "Logging in..." : "Login"}
-  </button>
+            {/* Transparent Login Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-black text-white p-3 rounded-lg transition duration-300 ease-in-out
+                hover:bg-gray-800 hover:shadow-lg hover:scale-105 active:scale-95 cursor-pointer"
+            >
+              {loading ? "Logging in..." : "Login"}
+            </button>
 
-  {/* Forgot Password Link */}
-  <p className="text-center text-sm mt-2">
-    <span
-      className="text-blue-600 hover:underline cursor-pointer"
-      onClick={() => navigate("/vendor/forgot-password")}
-    >
-      Forgot Password?
-    </span>
-  </p>
-</form>
-
+            {/* Forgot Password Link */}
+            <p className="text-center text-sm mt-2">
+              <span
+                className="text-blue-600 hover:underline cursor-pointer"
+                onClick={() => navigate("/vendor/forgot-password")}
+              >
+                Forgot Password?
+              </span>
+            </p>
+          </form>
 
           {message && (
             <p

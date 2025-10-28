@@ -203,6 +203,44 @@ router.get("/get-guest-token", guestToken, (req, res) => {
 
 
 router.post("/contactUs",customerController.sendContactMessage);
+// Loyalty Points Routes
+/**
+ * @route GET /api/customer/loyalty
+ * @desc Get loyalty points balance and history
+ * @access Private (customer)
+ */
+router.get(
+  "/loyalty",
+  protect,
+  authorizeRole('customer'),
+  customerController.getLoyaltyPoints
+);
+
+/**
+ * @route POST /api/customer/loyalty/add
+ * @desc Add loyalty points after completing an order
+ * @access Private (customer)
+ */
+router.post(
+  "/loyalty/add",
+  protect,
+  authorizeRole('customer'),
+  customerController.addLoyaltyPoints
+);
+
+/**
+ * @route POST /api/customer/loyalty/redeem
+ * @desc Redeem loyalty points for a discount
+ * @access Private (customer)
+ */
+router.post(
+  "/loyalty/redeem",
+  protect,
+  authorizeRole('customer'),
+  customerController.redeemLoyaltyPoints
+);
+
+
 
 
 module.exports = router;

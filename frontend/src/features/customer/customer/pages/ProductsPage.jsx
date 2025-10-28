@@ -89,6 +89,11 @@ const ProductsPage = () => {
       });
 
       dispatch(fetchCart(cart.id));
+    if (token) {
+      await customerAPI.logInteraction(userId, product.id, "add_to_cart");
+    }
+
+    alert("Added to cart!");
       // alert("Added to cart");
     } catch (err) {
       alert(err.response?.data?.message || err.message);
