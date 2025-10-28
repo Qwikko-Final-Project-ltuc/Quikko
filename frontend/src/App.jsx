@@ -5,7 +5,7 @@ import CustomerRoutes from "./features/customer/CustomerRoutes";
 import AdminRoutes from "./features/admin/AdminRoutes";
 import DeliveryRoutes from "./features/delivery/routes/deliveryRoutes";
 import { fetchCurrentUser } from "./features/customer/customer/cartSlice";
-import { requestAndSaveToken, listenToMessages ,registerServiceWorker } from "./utlis/fcm"; 
+import { requestAndSaveToken ,registerServiceWorker } from "./utlis/fcm"; 
 import GenralRoutes from "./features/genral/Routes";
 import VendorRoutes from "./features/vendor/vendorroutes";
 import { getToken, onMessage  } from "firebase/messaging";
@@ -27,39 +27,40 @@ const App = () => {
   const dispatch = useDispatch();
   const token = useSelector((state) => state.customerAuth.token);
 
-  useEffect(() => {
-    if (token) {
-      dispatch(fetchCurrentUser());
-      registerServiceWorker().then(() => {
+    useEffect(() => {
+  console.log("User token effect fired, token:", token);
+  console.log("Current guest token:", localStorage.getItem("guest_token"));
+
+  if (token) {
+    if (localStorage.getItem("guest_token")) {
+      localStorage.removeItem("guest_token");
+      console.log("Guest token removed because user token exists");
+    }
+
+    dispatch(fetchCurrentUser());
+
+    registerServiceWorker().then(() => {
       requestAndSaveToken(token);
     });
-      // listenToMessages((payload) => {
-      // console.log("Foreground notification:", payload);
-      // if (payload.notification) {
-        // new Notification(payload.notification.title, {
-          // body: payload.notification.body,
-          // icon: "/favicon.ico"
-        // }
-      // );
-      // }
-    // });
-    }
-  }, [token, dispatch]);
+  }
+}, [token, dispatch]);
+
+
 
 
 useEffect(() => {
   const fetchGuestToken = async () => {
+    // تحقق من وجود user token قبل أي شيء
+    if (token) return;
+
     try {
       const res = await fetch("http://localhost:3000/api/customers/get-guest-token", {
         credentials: "include",
       });
 
-      const token = res.headers.get("Guest-Token");
-      // console.log("guest", token);
-
-      if (token && !localStorage.getItem("guest_token")) {
-        localStorage.setItem("guest_token", token);
-        // console.log("Guest token saved in localStorage:", token);
+      const guestToken = res.headers.get("Guest-Token");
+      if (guestToken && !localStorage.getItem("guest_token")) {
+        localStorage.setItem("guest_token", guestToken);
       }
     } catch (err) {
       console.error("Failed to get guest token:", err);
@@ -67,7 +68,8 @@ useEffect(() => {
   };
 
   fetchGuestToken();
-}, []);
+}, [token]);
+
 
 
 
