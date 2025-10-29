@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
+import { useSelector } from "react-redux";
+import customerAPI from "../services/customerAPI"; // تأكد من وجودها
 
 const ProductDetails = () => {
   const { id } = useParams(); // product_id من الرابط
@@ -13,12 +15,22 @@ const ProductDetails = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
 
-  // جلب تفاصيل المنتج
+  const user = useSelector((state) => state.cart.user); // للوصول إلى user.id
+
   useEffect(() => {
+    let hasLoggedView = false; // 🔒 متغير محلي لمنع التكرار
+
     const fetchProduct = async () => {
       try {
         const res = await axios.get(`http://localhost:3000/api/products/${id}`);
         setProduct(res.data);
+
+        // تسجيل تفاعل "view" مرة واحدة فقط
+        if (user?.id && !hasLoggedView) {
+          hasLoggedView = true;
+          await customerAPI.logInteraction(user.id, id, "view");
+          console.log("✅ View interaction logged once");
+        }
       } catch (err) {
         console.error("Error fetching product:", err);
       }
@@ -35,7 +47,12 @@ const ProductDetails = () => {
 
     fetchProduct();
     fetchReviews();
-  }, [id]);
+
+    // cleanup: يمنع تكرار تسجيل التفاعل عند unmount/remount السريع
+    return () => {
+      hasLoggedView = true;
+    };
+  }, [id, user?.id]); // يعيد التشغيل فقط عند تغير المنتج أو المستخدم
 
   // إرسال مراجعة جديدة
   const handleAddReview = async (e) => {
@@ -57,7 +74,8 @@ const ProductDetails = () => {
       alert("Review added successfully!");
       setRating(0);
       setComment("");
-      // إعادة تحميل التعليقات
+
+      // إعادة تحميل التعليقات بعد الإضافة
       const res = await axios.get(`http://localhost:3000/api/products/review/${id}`);
       setReviews(res.data);
     } catch (err) {

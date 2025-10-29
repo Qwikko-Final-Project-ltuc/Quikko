@@ -1,3 +1,4 @@
+// routes/recommendations.js
 const express = require('express');
 const pool = require('../../../config/db');
 const { cosine } = require('../cosine');
@@ -6,11 +7,17 @@ const { protect } = require('../../../middleware/authMiddleware');
 
 const router = express.Router();
 
-async function getRecommendations(userId, topN = 5) {
+/**
+ * Fetch product recommendations for a user
+ * @param {number} userId
+ * @param {Array} excludeIds - product IDs to exclude
+ * @returns {Array} recommended products
+ */
+async function getRecommendations(userId, excludeIds = []) {
   await updateUserEmbedding(userId);
 
   const { rows: userRow } = await pool.query(
-  `SELECT vector_embedding FROM users WHERE id = $1`,
+    `SELECT vector_embedding FROM users WHERE id = $1`,
     [userId]
   );
 
@@ -23,36 +30,48 @@ async function getRecommendations(userId, topN = 5) {
     return [];
   }
 
-  const { rows: allProducts } = await pool.query(
-    `SELECT id, name, category_id, vector_embedding
-     FROM products
-     WHERE is_deleted = false AND vector_embedding IS NOT NULL`
-  );
+  // جلب جميع المنتجات القابلة للتوصية مع كامل البيانات
+ const { rows: allProducts } = await pool.query(
+  `SELECT 
+     p.id, p.name, p.category_id, p.price, p.description, p.vector_embedding,
+     COALESCE(
+       json_agg(pi.image_url) FILTER (WHERE pi.id IS NOT NULL),
+       '[]'
+     ) AS images
+   FROM products p
+   LEFT JOIN product_images pi ON pi.product_id = p.id
+   WHERE p.is_deleted = false AND p.vector_embedding IS NOT NULL
+   GROUP BY p.id`
+);
 
-  const scored = allProducts.map(p => {
-    if (!p.vector_embedding || !Array.isArray(p.vector_embedding)) return null;
-    const cleanVec = p.vector_embedding.filter(v => Number.isFinite(v));
-    if (!cleanVec.length) return null;
 
-    return {
-      id: p.id,
-      name: p.name,
-      category_id: p.category_id,
-      score: cosine(userEmbedding, cleanVec)
-    };
-  }).filter(Boolean);
+  const scored = allProducts
+    .filter(p => p.vector_embedding && Array.isArray(p.vector_embedding))
+    .map(p => {
+      const cleanVec = p.vector_embedding.filter(v => Number.isFinite(v));
+      if (!cleanVec.length) return null;
+      return {
+        ...p, // احتفظ بجميع الحقول
+        score: cosine(userEmbedding, cleanVec)
+      };
+    })
+    .filter(Boolean)
+    .filter(p => !excludeIds.includes(p.id));
 
   scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, topN);
+
+  return scored;
 }
 
 // API endpoint
 router.get('/', protect, async (req, res) => {
   try {
     const userId = req.user.id;
+    const excludeIds = req.query.excludeIds ? JSON.parse(req.query.excludeIds) : [];
+
     if (!userId) return res.status(400).json({ error: "User not authenticated" });
 
-    const recommendations = await getRecommendations(userId);
+    const recommendations = await getRecommendations(userId, excludeIds);
     res.json(recommendations);
   } catch (err) {
     console.error(err);
