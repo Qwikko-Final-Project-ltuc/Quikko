@@ -1,12 +1,20 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getTrackingOrder } from "./DeliveryAPI"; // عدّل المسار حسب مشروعك
-import { FaUser, FaIndustry, FaBox, FaCreditCard } from "react-icons/fa";
+import { getTrackingOrder, getDeliveryEstimate } from "./DeliveryAPI";
+import MapView from "../../../components/MapView";
+import {
+  FaUser,
+  FaIndustry,
+  FaBox,
+  FaCreditCard,
+  FaRoute,
+} from "react-icons/fa";
 import { useSelector } from "react-redux";
 
 export default function TrackingPage() {
   const { orderId } = useParams();
   const [order, setOrder] = useState(null);
+  const [estimate, setEstimate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
@@ -17,6 +25,31 @@ export default function TrackingPage() {
       try {
         const data = await getTrackingOrder(orderId);
         setOrder(data);
+
+        const customerAddressId = data?.shipping_address
+          ? JSON.parse(data.shipping_address).id
+          : null;
+
+        const vendorIds = data.items?.map((item) => item.vendor_id) || [];
+
+        const deliveryUserId =
+          data?.delivery_user_id || data?.delivery_company_user_id || null;
+
+        if (!deliveryUserId) {
+          setMessage("No delivery user assigned to this order");
+          setLoading(false);
+          return;
+        }
+
+        if (customerAddressId && vendorIds.length > 0 && deliveryUserId) {
+          const est = await getDeliveryEstimate({
+            userId: deliveryUserId,
+            customerAddressId,
+            vendorIds,
+          });
+          setEstimate(est);
+          console.log("Delivery estimate:", est);
+        }
       } catch (err) {
         setMessage(err.message);
       } finally {
@@ -25,7 +58,7 @@ export default function TrackingPage() {
     };
     loadOrder();
   }, [orderId]);
- 
+
   const mergedItems =
     order?.items && Array.isArray(order.items)
       ? order.items.reduce((acc, item) => {
@@ -41,7 +74,7 @@ export default function TrackingPage() {
         }, {})
       : {};
 
-const mergedItemsArray = Object.values(mergedItems || {});
+  const mergedItemsArray = Object.values(mergedItems || {});
 
   if (loading) return <p className="text-center mt-10"> Loading order...</p>;
   if (message)
@@ -50,6 +83,73 @@ const mergedItemsArray = Object.values(mergedItems || {});
 
   const formatCurrency = (value) =>
     value.toLocaleString("en-US", { style: "currency", currency: "USD" });
+
+  const productsTotal = mergedItemsArray.reduce(
+    (acc, item) => acc + item.quantity * item.item_price,
+    0
+  );
+  const totalWithShipping = productsTotal + (estimate?.total_delivery_fee || 0);
+
+  // Route segments for vendors (from estimate)
+  const vendorsInRoute =
+    estimate?.route?.filter((r) => r.vendor_id !== null) || [];
+
+  // Map each vendor with products + contact info
+  const vendorsGrouped = vendorsInRoute.map((vr) => {
+    const products = mergedItemsArray.filter(
+      (item) => item.vendor_id === vr.vendor_id
+    );
+
+    // Find first product for vendor info (email, phone, store_name)
+    const vendorInfo = order.items.find(
+      (item) => item.vendor_id === vr.vendor_id
+    );
+
+    return {
+      vendor: {
+        vendor_id: vr.vendor_id,
+        vendor_name: vendorInfo?.store_name || vr.to || "Unknown Vendor",
+        vendor_email: vendorInfo?.vendor_email || "N/A",
+        vendor_phone: vendorInfo?.vendor_phone || "N/A",
+        distance_km: vr.distance_km,
+        delivery_fee: vr.delivery_fee,
+        duration_min: vr.duration_min,
+      },
+      products,
+    };
+  });
+
+  // Sort vendors by distance
+  vendorsGrouped.sort(
+    (a, b) =>
+      (a.vendor.distance_km ?? Infinity) - (b.vendor.distance_km ?? Infinity)
+  );
+
+  // Nearest vendor
+  const nearestVendor = vendorsGrouped[0]?.vendor.vendor_name || "N/A";
+
+  const routePoints =
+    estimate?.route?.map((r) => ({
+      lat: r.latitude || r.lat,
+      lng: r.longitude || r.lng,
+      label: r.to,
+    })) || [];
+
+  if (estimate?.delivery_start) {
+    routePoints.unshift({
+      lat: estimate.delivery_start.latitude,
+      lng: estimate.delivery_start.longitude,
+      label: estimate.delivery_start.label,
+    });
+  }
+
+  if (estimate?.customer) {
+    routePoints.push({
+      lat: estimate.customer.latitude,
+      lng: estimate.customer.longitude,
+      label: estimate.customer.label,
+    });
+  }
 
   return (
     <div className="max-w-5xl mx-auto mt-10 space-y-10 p-6">
@@ -119,6 +219,53 @@ const mergedItemsArray = Object.values(mergedItems || {});
         </div>
       </section>
 
+      {/* ✅ قسم جديد لعرض تفاصيل التوصيل العامة */}
+
+      <section
+        className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+        style={{
+          backgroundColor: isDarkMode ? "#555" : "#fdfdfd",
+          color: isDarkMode ? "#ffffff" : "#242625",
+        }}
+      >
+        <h3 className="flex items-center gap-2 text-xl font-semibold mb-4">
+          <FaRoute /> Delivery Route Details
+        </h3>
+        <div className="space-y-2 text-sm">
+          {estimate?.route?.map((segment, idx) => (
+            <p key={idx}>
+              <strong>{segment.from || `Step ${idx + 1}`}</strong> →{" "}
+              <strong>{segment.to}</strong> : {segment.distance_km?.toFixed(2)}{" "}
+              km, Delivery Fee: {formatCurrency(segment.delivery_fee || 0)},
+              Duration: {segment.duration_min?.toFixed(0)} min
+            </p>
+          ))}
+        </div>
+
+        {estimate?.route && (
+          <p className="mt-2 text-sm opacity-70">
+            Total Distance:{" "}
+            {estimate.route
+              .reduce((sum, step) => sum + (step.distance_km || 0), 0)
+              .toFixed(2)}{" "}
+            km | Total Delivery Fee:{" "}
+            {formatCurrency(
+              estimate.route.reduce(
+                (sum, step) => sum + (step.delivery_fee || 0),
+                0
+              )
+            )}
+          </p>
+        )}
+      </section>
+
+      {routePoints.length >= 2 && (
+        <section className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <h3 className="text-xl font-semibold mb-4">Delivery Route</h3>
+          <MapView routePoints={routePoints} drawPolyline={true} />
+        </section>
+      )}
+
       {/* Vendor / Product Info */}
       <section
         className="p-6 bg-white rounded-2xl shadow-lg"
@@ -141,108 +288,93 @@ const mergedItemsArray = Object.values(mergedItems || {});
           Vendor - Product Info
         </h3>
 
-        {/** Group items by vendor **/}
-        {Object.values(
-          mergedItemsArray.reduce((acc, item) => {
-            if (!acc[item.vendor_id])
-              acc[item.vendor_id] = { vendor: item, products: [] };
-            acc[item.vendor_id].products.push(item);
-            return acc;
-          }, {})
-        ).map(({ vendor, products }) => (
-          <div
-            key={vendor.vendor_id}
-            className="p-4 border rounded-2xl mb-4 shadow-sm hover:shadow-md transition-shadow duration-300"
-          >
-            <h4
-              className="text-lg font-bold mb-3 "
-              style={{
-                color: isDarkMode ? "#ffffff" : "#242625",
-              }}
+        {vendorsGrouped.length > 0 ? (
+          vendorsGrouped.map(({ vendor, products }, idx) => (
+            <div
+              key={vendor.vendor_id}
+              className="p-4 border rounded-2xl mb-4 shadow-sm hover:shadow-md transition-shadow duration-300"
             >
-              {vendor.vendor_name}
-            </h4>
+              <h4
+                className="text-lg font-bold mb-3"
+                style={{
+                  color: isDarkMode ? "#ffffff" : "#242625",
+                }}
+              >
+                {vendor.vendor_name}
+              </h4>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {products.map((item) => (
-                <div
-                  key={item.order_item_id}
-                  className="flex gap-4 p-3  transition-colors duration-300"
-                  style={{
-                    color: isDarkMode ? "#ffffff" : "#242625",
-                  }}
-                >
-                  {/* Product Image */}
-                  {item.images?.[0] && (
-                    <img
-                      src={item.images[0]}
-                      alt={item.product_name}
-                      className="w-28 h-28 object-cover rounded-lg"
-                    />
-                  )}
+              {/* Delivery Info */}
+              <div className="flex gap-4 mb-3 text-sm font-semibold">
+                <p>
+                  <strong>Distance:</strong> {vendor.distance_km?.toFixed(2)} km
+                </p>
+                <p>
+                  <strong>Delivery Fee:</strong> $
+                  {vendor.delivery_fee?.toFixed(2)}
+                </p>
+                <p>
+                  <strong>Duration:</strong> {vendor.duration_min} min
+                </p>
+                <span className="text-sm opacity-80">Rank: {idx + 1}</span>
+              </div>
 
-                  {/* Product Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {products.map((item) => (
                   <div
-                    className="flex-1"
+                    key={item.order_item_id}
+                    className="flex gap-4 p-3 transition-colors duration-300"
                     style={{
                       color: isDarkMode ? "#ffffff" : "#242625",
                     }}
                   >
-                    <p
-                      className="font-semibold"
-                      style={{
-                        color: isDarkMode ? "#ffffff" : "#242625",
-                      }}
-                    >
-                      {item.product_name}
-                    </p>
-                    {item.variant && (
-                      <p
-                        className="text-sm "
-                        style={{
-                          color: isDarkMode ? "#ffffff" : "#242625",
-                        }}
-                      >
-                        {typeof item.variant === "object"
-                          ? Object.entries(item.variant)
-                              .map(([key, value]) => `${key}: ${value}`)
-                              .join(", ")
-                          : item.variant}
-                      </p>
+                    {/* Product Image */}
+                    {item.images?.[0] && (
+                      <img
+                        src={item.images[0]}
+                        alt={item.product_name}
+                        className="w-28 h-28 object-cover rounded-lg"
+                      />
                     )}
-                    <p
-                      style={{
-                        color: isDarkMode ? "#ffffff" : "#242625",
-                      }}
-                    >
-                      Quantity: {item.quantity} x{" "}
-                      {formatCurrency(item.item_price)}
-                    </p>
-                    <p
-                      className="font-semibold "
-                      style={{
-                        color: isDarkMode ? "#ffffff" : "#242625",
-                      }}
-                    >
-                      Total: {formatCurrency(item.quantity * item.item_price)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
 
-            {/* Vendor contact */}
-            <div
-              className="mt-3 text-sm "
-              style={{
-                color: isDarkMode ? "#ffffff" : "#242625",
-              }}
-            >
-              <p>Email: {vendor.vendor_email}</p>
-              <p>Phone: {vendor.vendor_phone}</p>
+                    {/* Product Info */}
+                    <div
+                      className="flex-1"
+                      style={{
+                        color: isDarkMode ? "#ffffff" : "#242625",
+                      }}
+                    >
+                      <p className="font-semibold">{item.product_name}</p>
+                      {item.variant && (
+                        <p className="text-sm">
+                          {typeof item.variant === "object"
+                            ? Object.entries(item.variant)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join(", ")
+                            : item.variant}
+                        </p>
+                      )}
+                      <p>
+                        Quantity: {item.quantity} x{" "}
+                        {formatCurrency(item.item_price)}
+                      </p>
+                      <p className="font-semibold">
+                        Total: {formatCurrency(item.quantity * item.item_price)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Vendor contact */}
+              <div className="mt-3 text-sm">
+                <p>Email: {vendor.vendor_email || "N/A"}</p>
+                <p>Phone: {vendor.vendor_phone || "N/A"}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          <p className="text-sm opacity-70">No vendors found.</p>
+        )}
       </section>
 
       {/* Order Details */}
@@ -365,26 +497,27 @@ const mergedItemsArray = Object.values(mergedItems || {});
               ))}
             </div>
 
-            <div className="mt-6 text-right text-xl font-bold text-purple-700 flex items-center justify-end gap-2">
-              <FaCreditCard
-                className="text-2xl"
-                style={{
-                  color: isDarkMode ? "#ffffff" : "#242625",
-                }}
-              />
-              <span
-                style={{
-                  color: isDarkMode ? "#ffffff" : "#242625",
-                }}
-              >
-                Order Total:{" "}
-                {formatCurrency(
-                  mergedItemsArray.reduce(
-                    (acc, item) => acc + item.quantity * item.item_price,
-                    0
-                  )
-                )}
-              </span>
+            <div className="mt-6 text-right flex flex-col items-end gap-2 text-xl font-bold text-purple-700">
+              <div className="flex items-center gap-2">
+                <FaCreditCard
+                  className="text-2xl"
+                  style={{ color: isDarkMode ? "#ffffff" : "#242625" }}
+                />
+                <span style={{ color: isDarkMode ? "#ffffff" : "#242625" }}>
+                  Order Total: {formatCurrency(productsTotal)}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <FaCreditCard
+                  className="text-2xl"
+                  style={{ color: isDarkMode ? "#ffffff" : "#242625" }}
+                />
+                <span style={{ color: isDarkMode ? "#ffffff" : "#242625" }}>
+                  Order Total (with Shipping):{" "}
+                  {formatCurrency(totalWithShipping)}
+                </span>
+              </div>
             </div>
           </div>
         )}
