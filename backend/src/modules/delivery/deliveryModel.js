@@ -1,4 +1,8 @@
 const pool = require("../../config/db");
+const axios = require("axios");
+const { geocodeAddress } = require("../../utils/geocoding");
+const { calculateDistanceKm } = require("../../utils/distance");
+require("dotenv").config();
 
 /**
  * @module DeliveryModel
@@ -138,7 +142,38 @@ exports.getOrderWithCompany = async function (orderId) {
   const order = orderRes.rows[0];
   if (!order) return null;
 
-  // ✅ أضفنا u.id AS vendor_user_id
+  let deliveryUserId = null;
+  if (order.delivery_company_id) {
+    const res = await pool.query(
+      "SELECT user_id FROM delivery_companies WHERE id = $1",
+      [order.delivery_company_id]
+    );
+    deliveryUserId = res.rows[0]?.user_id || null;
+  }
+
+  order.delivery_user_id = deliveryUserId;
+
+  // Parse shipping address
+  let shippingAddress = null;
+  try {
+    shippingAddress = JSON.parse(order.shipping_address);
+  } catch (err) {
+    console.error("Failed to parse shipping address:", err);
+  }
+
+  if (
+    shippingAddress &&
+    (!shippingAddress.latitude || !shippingAddress.longitude)
+  ) {
+    const geo = await geocodeAddress(shippingAddress.address_line1 || "");
+    if (geo) {
+      shippingAddress.latitude = geo.latitude;
+      shippingAddress.longitude = geo.longitude;
+    }
+  }
+
+  
+  // جلب المنتجات المرتبطة بالطلب مع الصور وبيانات الفندور
   const itemsRes = await pool.query(
     `SELECT
         oi.id AS order_item_id,
@@ -149,7 +184,8 @@ exports.getOrderWithCompany = async function (orderId) {
         oi.price AS item_price,
         oi.variant,
         v.id AS vendor_id,
-        u.id AS vendor_user_id,                    -- 👈 هذا هو المطلوب
+        v.latitude,
+        v.longitude,
         v.store_name AS vendor_name,
         u.email AS vendor_email,
         u.phone AS vendor_phone,
@@ -160,11 +196,38 @@ exports.getOrderWithCompany = async function (orderId) {
      JOIN users u ON v.user_id = u.id
      LEFT JOIN product_images pi ON pi.product_id = p.id
      WHERE oi.order_id = $1
-     GROUP BY oi.id, p.id, v.id, u.id`,          
+     GROUP BY oi.id, p.id, v.id, u.id`,
     [orderId]
   );
 
   order.items = itemsRes.rows;
+
+  order.shipping_address = JSON.stringify(shippingAddress);
+
+  if (itemsRes.rows.length > 0 && shippingAddress?.latitude) {
+    const vendor = itemsRes.rows[0];
+    const vendorCoords = {
+      lat: Number(vendor.latitude),
+      lng: Number(vendor.longitude),
+    };
+    const customerCoords = {
+      lat: Number(shippingAddress.latitude),
+      lng: Number(shippingAddress.longitude),
+    };
+
+    const distanceKm = calculateDistanceKm(
+      vendorCoords.lat,
+      vendorCoords.lng,
+      customerCoords.lat,
+      customerCoords.lng
+    );
+
+    order.distance_km = distanceKm;
+    order.delivery_fee = distanceKm
+      ? parseFloat((distanceKm * 0.25).toFixed(2))
+      : null;
+  }
+
   return order;
 };
 
@@ -253,12 +316,19 @@ exports.getOrdersByCompanyId = async (companyId) => {
  */
 exports.getCoverageById = async (userId) => {
   const result = await pool.query(
-    `SELECT id, user_id, company_name, coverage_areas, status, created_at, updated_at
-     FROM delivery_companies
-     WHERE user_id = $1`,
+    `SELECT dc.id AS company_id,
+            dc.company_name,
+            dcl.id AS coverage_id,
+            dcl.city,
+            dcl.latitude,
+            dcl.longitude
+     FROM delivery_companies dc
+     LEFT JOIN delivery_coverage_locations dcl
+       ON dcl.delivery_company_id = dc.id
+     WHERE dc.user_id = $1`,
     [userId]
   );
-  return result.rows[0];
+  return result.rows;
 };
 
 /**
@@ -266,16 +336,67 @@ exports.getCoverageById = async (userId) => {
  * @param {number} userId
  * @param {Array<string>} mergedAreas
  */
-exports.addCoverage = async (userId, mergedAreas) => {
-  const result = await pool.query(
-    `UPDATE delivery_companies
-     SET coverage_areas = $1,
-         updated_at = NOW()
-     WHERE user_id = $2
-     RETURNING id AS company_id, user_id, company_name, coverage_areas, status, created_at, updated_at`,
-    [mergedAreas, userId]
+// exports.addCoverage = async (userId, mergedAreas) => {
+//   try {
+//     const enrichedAreas = [];
+
+//     for (const areaName of mergedAreas) {
+//       const geo = await geocodeAddress(areaName);
+//       if (geo) {
+//         enrichedAreas.push({
+//           name: areaName,
+//           latitude: geo.latitude,
+//           longitude: geo.longitude,
+//         });
+//       } else {
+//         enrichedAreas.push({ name: areaName });
+//       }
+//     }
+
+//     const result = await pool.query(
+//       `UPDATE delivery_companies
+//        SET coverage_areas = $1,
+//            updated_at = NOW()
+//        WHERE user_id = $2
+//        RETURNING id AS company_id, user_id, company_name, coverage_areas, status, created_at, updated_at`,
+//       [enrichedAreas, userId]
+//     );
+
+//     return result.rows[0];
+//   } catch (err) {
+//     console.error("addCoverage error:", err.message);
+//     throw err;
+//   }
+// };
+
+exports.addCoverage = async (userId, cities) => {
+  const companyRes = await pool.query(
+    `SELECT id FROM delivery_companies WHERE user_id=$1`,
+    [userId]
   );
-  return result.rows[0];
+  if (!companyRes.rows[0]) throw new Error("Company not found");
+  const companyId = companyRes.rows[0].id;
+
+  const insertedRows = [];
+
+  for (const city of cities) {
+    const geo = await geocodeAddress(city);
+    const latitude = geo?.latitude || null;
+    const longitude = geo?.longitude || null;
+
+    const res = await pool.query(
+      `INSERT INTO delivery_coverage_locations
+       (delivery_company_id, city, latitude, longitude)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (delivery_company_id, city) DO NOTHING
+       RETURNING *`,
+      [companyId, city, latitude, longitude]
+    );
+
+    if (res.rows[0]) insertedRows.push(res.rows[0]);
+  }
+
+  return insertedRows;
 };
 
 /**
@@ -284,28 +405,61 @@ exports.addCoverage = async (userId, mergedAreas) => {
  * @param {number} user_id
  * @param {Object} data
  */
-exports.updateCoverage = async (id, user_id, data) => {
-  const company = await pool.query(
-    `SELECT * FROM delivery_companies WHERE id=$1 AND user_id=$2`,
-    [id, user_id]
-  );
+// exports.updateCoverage = async (id, user_id, data) => {
+//   const company = await pool.query(
+//     `SELECT * FROM delivery_companies WHERE id=$1 AND user_id=$2`,
+//     [id, user_id]
+//   );
+//   if (!company.rows[0]) return null;
 
-  if (!company.rows[0]) return null;
+//   const updatedCompanyName = data.company_name || company.rows[0].company_name;
+//   const updatedCoverage = data.coverage_areas || company.rows[0].coverage_areas;
 
-  const updatedCompanyName = data.company_name || company.rows[0].company_name;
-  const updatedCoverage = data.coverage_areas || company.rows[0].coverage_areas;
+//   let latitude = company.rows[0].latitude;
+//   let longitude = company.rows[0].longitude;
 
-  const result = await pool.query(
-    `UPDATE delivery_companies
-     SET company_name = $1,
-         coverage_areas = $2,
-         updated_at = NOW()
-     WHERE id = $3 AND user_id = $4
-     RETURNING *`,
-    [updatedCompanyName, updatedCoverage, id, user_id]
-  );
+//   if (data.company_name || data.coverage_areas?.length) {
+//     const areaToGeocode = data.coverage_areas?.[0] || updatedCoverage?.[0];
+//     const geo = await geocodeAddress(areaToGeocode);
+//     if (geo) {
+//       latitude = geo.latitude;
+//       longitude = geo.longitude;
+//     }
+//   }
 
-  return result.rows[0];
+//   const result = await pool.query(
+//     `UPDATE delivery_companies
+//      SET company_name = $1,
+//          coverage_areas = $2,
+//          latitude = $3,
+//          longitude = $4,
+//          updated_at = NOW()
+//      WHERE id = $5 AND user_id = $6
+//      RETURNING *`,
+//     [updatedCompanyName, updatedCoverage, latitude, longitude, id, user_id]
+//   );
+
+//   return result.rows[0];
+// };
+
+exports.updateCoverage = async (userId, data) => {
+  if (data.company_name) {
+    await pool.query(
+      `UPDATE delivery_companies SET company_name=$1, updated_at=NOW()
+       WHERE user_id=$2`,
+      [data.company_name, userId]
+    );
+  }
+
+  if (data.new_cities?.length) {
+    await exports.addCoverage(userId, data.new_cities);
+  }
+
+  if (data.delete_cities?.length) {
+    await exports.deleteCoverageAreas(userId, data.delete_cities);
+  }
+
+  return exports.getCoverageById(userId);
 };
 
 /**
@@ -313,22 +467,47 @@ exports.updateCoverage = async (id, user_id, data) => {
  * @param {number} userId
  * @param {Array<string>} areasToRemove
  */
-exports.deleteCoverageAreas = async (userId, areasToRemove) => {
-  const company = await exports.getCoverageById(userId);
-  if (!company) return null;
+// exports.deleteCoverageAreas = async (userId, areasToRemove) => {
+//   const company = await exports.getCoverageById(userId);
+//   if (!company) return null;
+
+//   const currentAreas = company.coverage_areas || [];
+//   const newAreas = currentAreas.filter(
+//     (area) => !areasToRemove.includes(area.name)
+//   );
+
+//   const result = await pool.query(
+//     `UPDATE delivery_companies
+//      SET coverage_areas = $1, updated_at = NOW()
+//      WHERE user_id = $2
+//      RETURNING *`,
+//     [newAreas, userId]
+//   );
+
+//   return result.rows[0];
+// };
+
+exports.deleteCoverageAreas = async (userId, citiesToRemove) => {
+  const companyRes = await pool.query(
+    `SELECT id FROM delivery_companies WHERE user_id=$1`,
+    [userId]
+  );
+  if (!companyRes.rows[0]) return null;
+
+  const companyId = companyRes.rows[0].id;
 
   const currentAreas = company.coverage_areas || [];
   const newAreas = currentAreas.filter((area) => !areasToRemove.includes(area));
 
   const result = await pool.query(
-    `UPDATE delivery_companies
-     SET coverage_areas = $1, updated_at = NOW()
-     WHERE user_id = $2
+    `DELETE FROM delivery_coverage_locations
+     WHERE delivery_company_id=$1
+       AND city = ANY($2::text[])
      RETURNING *`,
-    [newAreas, userId]
+    [companyId, citiesToRemove]
   );
 
-  return result.rows[0];
+  return result.rows;
 };
 /**
  * Get weekly report for a delivery company
@@ -446,6 +625,7 @@ exports.getWeeklyReport = async (deliveryCompanyId, days = 7) => {
     endTsExclusive,
   ]);
 
+
   // 7️⃣ الطلبات اليومية (للرسم البياني) - مع الأيام الفارغة
   const dailyOrdersQuery = `
   WITH days AS (
@@ -477,7 +657,7 @@ exports.getWeeklyReport = async (deliveryCompanyId, days = 7) => {
     "cancelled",
   ];
 
-  const totals = totalRes.rows[0] || { total_orders: 0, total_amount: '0' };
+  const totals = totalRes.rows[0] || { total_orders: 0, total_amount: "0" };
   const payment_status = paymentRes.rows.reduce((acc, r) => {
     acc[r.payment_status] = r.count;
     return acc;
@@ -582,4 +762,209 @@ exports.updatePaymentStatus = async (orderId, paymentStatus) => {
     [paymentStatus, orderId]
   );
   return result.rows[0] || null;
+};
+
+exports.getCustomerCoordinates = async (customerAddressId) => {
+  const result = await pool.query(
+    `SELECT id, address_line1, city, latitude, longitude FROM addresses WHERE id = $1`,
+    [customerAddressId]
+  );
+
+  const row = result.rows[0];
+  if (!row) return null;
+
+  let { id, address_line1, city, latitude, longitude } = row;
+
+  if (!latitude || !longitude) {
+    const geo = await geocodeAddress(address_line1, city);
+    if (geo) {
+      latitude = geo.latitude;
+      longitude = geo.longitude;
+
+      await pool.query(
+        `UPDATE addresses SET latitude = $1, longitude = $2 WHERE id = $3`,
+        [latitude, longitude, id]
+      );
+      console.log(`Coordinates added for address ID ${id}`);
+    }
+  }
+
+  return { id, label: address_line1, city, latitude, longitude };
+};
+
+exports.getVendorCoordinates = async (vendorId) => {
+  const result = await pool.query(
+    `SELECT id, store_name, latitude, longitude, address FROM vendors WHERE id = $1`,
+    [vendorId]
+  );
+
+  const row = result.rows[0];
+  if (!row) return null;
+
+  let { id, store_name, latitude, longitude, address } = row;
+
+  if (!latitude || !longitude) {
+    const geo = await geocodeAddress(address || store_name);
+    if (geo) {
+      latitude = geo.latitude;
+      longitude = geo.longitude;
+
+      await pool.query(
+        `UPDATE vendors SET latitude = $1, longitude = $2 WHERE id = $3`,
+        [latitude, longitude, id]
+      );
+      console.log(
+        `✅ Updated vendor ${store_name} with coords: ${latitude}, ${longitude}`
+      );
+    } else {
+      console.warn(`⚠️ No coordinates found for vendor: ${store_name}`);
+    }
+  }
+
+  return { id, label: store_name, address, latitude, longitude };
+};
+
+/**
+ * Get distances from delivery company to multiple addresses
+ * @param {number} userId - الشركة
+ * @param {Array<Object>} addresses - كل العناوين المطلوبة [{latitude, longitude, label}]
+ * @returns {Promise<Array>} - [{city, distance_in_meters, duration_in_seconds, address}]
+ */
+exports.getDistancesToAddresses = async (userId, addresses) => {
+  // 1. جلب جميع مناطق تغطية الشركة
+  const coverage = await exports.getCoverageById(userId);
+  if (!coverage || !coverage.length)
+    throw new Error("No coverage locations found");
+
+  const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+  const results = [];
+
+  // 2. تجهيز origins (التغطيات) و destinations (عناوين العملاء)
+  const origins = coverage
+    .filter((loc) => loc.latitude && loc.longitude)
+    .map((loc) => `${loc.latitude},${loc.longitude}`)
+    .join("|");
+
+  const destinations = addresses
+    .filter((addr) => addr.latitude && addr.longitude)
+    .map((addr) => `${addr.latitude},${addr.longitude}`)
+    .join("|");
+
+  try {
+    // 3. إرسال طلب واحد فقط إلى Google Distance Matrix API
+    const url = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${origins}&destinations=${destinations}&key=${GOOGLE_MAPS_API_KEY}`;
+    const res = await axios.get(url);
+
+    const rows = res.data.rows; // صفوف النتائج (كل صف = origin)
+    if (!rows || !rows.length)
+      throw new Error("Invalid response from Google Maps API");
+
+    // 4. لكل وجهة (destination) نحسب أقرب نقطة تغطية
+    for (let destIdx = 0; destIdx < addresses.length; destIdx++) {
+      let closest = null;
+
+      for (let originIdx = 0; originIdx < coverage.length; originIdx++) {
+        const element = rows[originIdx].elements[destIdx];
+        if (element.status === "OK") {
+          const dist = element.distance.value; // بالمتر
+          const duration = element.duration.value; // بالثواني
+
+          if (!closest || dist < closest.distance) {
+            closest = {
+              city: coverage[originIdx].city,
+              distance: dist,
+              duration,
+              address: addresses[destIdx].label,
+            };
+          }
+        }
+      }
+
+      if (closest) results.push(closest);
+    }
+  } catch (err) {
+    console.error("Google Maps Distance Matrix request failed:", err.message);
+  }
+
+  // 5. ترتيب النتائج حسب المسافة الأقصر
+  results.sort((a, b) => a.distance - b.distance);
+
+  return results;
+};
+
+/**
+ * Get optimized distances for all order items + customer address
+ * @param {number} userId - الشركة
+ * @param {Array<Object>} orderItems - كل المنتجات مع الإحداثيات [{latitude, longitude, label}]
+ * @param {Object} customerAddress - عنوان الزبون {latitude, longitude, label}
+ * @returns {Promise<Array>} - [{city, distance_in_meters, duration_in_seconds, label}]
+ */
+exports.getOptimizedOrderDistances = async function (
+  userId,
+  orderItems,
+  customerAddress
+) {
+  const coverage = await exports.getCoverageById(userId);
+  if (!coverage || !coverage.length)
+    throw new Error("No coverage locations found");
+
+  const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+  const axios = require("axios");
+
+  // 🧩 1. نحضّر كل النقاط بالترتيب المبدئي
+  const startPoint = {
+    ...coverage[0],
+    name: coverage[0].company_name,
+  }; // نقطة انطلاق الشركة (أول تغطية)
+  const vendors = orderItems.filter((v) => v.latitude && v.longitude);
+  const customer = customerAddress;
+
+  let points = [
+    {
+      name: startPoint.company_name,
+      lat: startPoint.latitude,
+      lng: startPoint.longitude,
+    },
+    ...vendors.map((v, i) => ({
+      name: v.label || `Vendor ${i + 1}`,
+      lat: v.latitude,
+      lng: v.longitude,
+    })),
+    { name: "Customer", lat: customer.latitude, lng: customer.longitude },
+  ];
+
+  // 🧭 2. بناء مسار فعلي (يبدأ من الشركة، ويمر على كل Vendor، وينتهي بالزبون)
+  const route = [];
+  let totalDistance = 0;
+  let totalDuration = 0;
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const origin = `${points[i].lat},${points[i].lng}`;
+    const destination = `${points[i + 1].lat},${points[i + 1].lng}`;
+
+    const url = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${origin}&destinations=${destination}&key=${GOOGLE_MAPS_API_KEY}`;
+    const res = await axios.get(url);
+
+    const data = res.data.rows[0].elements[0];
+    if (data.status === "OK") {
+      const distanceKm = data.distance.value / 1000;
+      const durationMin = data.duration.value / 60;
+
+      totalDistance += distanceKm;
+      totalDuration += durationMin;
+
+      route.push({
+        from: points[i].name,
+        to: points[i + 1].name,
+        distance_km: distanceKm,
+        duration_min: durationMin,
+      });
+    }
+  }
+
+  return {
+    route,
+    total_distance_km: totalDistance,
+    total_duration_min: totalDuration,
+  };
 };

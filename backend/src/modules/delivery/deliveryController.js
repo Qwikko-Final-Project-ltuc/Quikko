@@ -160,7 +160,6 @@ exports.updateOrderStatus = async function (req, res) {
   }
 };
 
-
 /**
  * Get tracking information for an order
  * @async
@@ -238,8 +237,6 @@ exports.listCompanyOrders = async function (req, res) {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
-
-
 
 /**
  * Display coverage areas for a delivery company
@@ -382,11 +379,9 @@ exports.getDeliveryReport = async function (req, res) {
     const userRole = req.user.role;
 
     if (userRole !== "delivery") {
-      return res
-        .status(403)
-        .json({
-          error: "Forbidden: only delivery companies can access this report",
-        });
+      return res.status(403).json({
+        error: "Forbidden: only delivery companies can access this report",
+      });
     }
 
     const company = await Delivery.getCompanyProfile(userId);
@@ -394,7 +389,7 @@ exports.getDeliveryReport = async function (req, res) {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
-    const deliveryCompanyId = company.company_id; 
+    const deliveryCompanyId = company.company_id;
     const days = parseInt(req.query.days, 10) || 7;
 
     const report = await Delivery.getWeeklyReport(deliveryCompanyId, days);
@@ -413,7 +408,6 @@ exports.getDeliveryReport = async function (req, res) {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
-
 
 /**
  * @desc Update payment status for an order
@@ -485,3 +479,25 @@ if (["unpaid", "pending"].includes(currentStatus) && newStatus === "paid") {
   }
 };
 
+exports.getDeliveryEstimate = async (req, res) => {
+  try {
+    const { userId, customerAddressId, vendorIds, useGoogle } = req.body;
+
+    if (!userId || !vendorIds?.length) {
+      return res.status(400).json({ message: "Missing required parameters" });
+    }
+
+    const useGoogleMaps = useGoogle !== undefined ? Boolean(useGoogle) : true;
+
+    const result = await Delivery.calculateTotalDistanceAndFee(
+      userId,
+      customerAddressId,
+      vendorIds,
+      useGoogleMaps
+    );
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error in getDeliveryEstimate:", err.message);
+    res.status(500).json({ error: "Failed to calculate delivery estimate" });
+  }
+};

@@ -1,4 +1,5 @@
 const pool = require("../../config/db");
+const { geocodeAddress } = require("../../utils/geocoding");
 
 /**
  * ===============================
@@ -67,7 +68,7 @@ exports.getVendorReport = async (userId) => {
  * @returns {Promise<Object|null>} Vendor ID object or null
  */
 exports.getVendorIdByUserId = async (userId) => {
-  const query = `SELECT id FROM vendors WHERE id = $1`;
+  const query = `SELECT id FROM vendors WHERE user_id = $1`;
   const { rows } = await pool.query(query, [userId]);
   return rows[0];
 };
@@ -175,7 +176,7 @@ exports.getProfile = async (userId) => {
   const query = `
     SELECT id, user_id, store_name, store_slug, store_logo, store_banner, 
            description, status, commission_rate, contact_email, phone, 
-           address, social_links, rating, created_at, updated_at
+           address, social_links, rating, created_at, updated_at, latitude, longitude
     FROM vendors
     WHERE user_id = $1
   `;
@@ -198,6 +199,19 @@ exports.updateProfile = async (userId, profileData) => {
   let setClause = [];
   let values = [];
   let idx = 1;
+
+  // لو العنوان موجود، جلب الإحداثيات
+  let latitude, longitude;
+  if (profileData.address) {
+    const geo = await geocodeAddress(profileData.address);
+    if (geo) {
+      latitude = geo.lat;
+      longitude = geo.lon;
+      profileData.latitude = latitude;
+      profileData.longitude = longitude;
+      allowedFields.push("latitude", "longitude");
+    }
+  }
 
   allowedFields.forEach((field) => {
     if (profileData[field] !== undefined) {

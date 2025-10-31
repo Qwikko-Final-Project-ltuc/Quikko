@@ -98,41 +98,59 @@ exports.fetchStoreDetails = async function (req, res) {
 exports.postOrderFromCart = async function (req, res) {
   try {
     const userId = req.user.id;
-    const { cart_id, address, paymentMethod, paymentData } = req.body;
+    const { cart_id, address, addressId, paymentMethod, paymentData } =
+      req.body;
 
-    if (!cart_id || typeof cart_id !== "number") {
+    // if (!cart_id || typeof cart_id !== "number") {
+    //   return res.status(400).json({ error: "cart_id must be a valid number" });
+    // }
+
+    const parsedCartId = Number(cart_id);
+    if (!cart_id || Number.isNaN(parsedCartId)) {
       return res.status(400).json({ error: "cart_id must be a valid number" });
     }
 
-    if (!address || !address.address_line1 || !address.city) {
+     if (!addressId && (!address || !address.address_line1 || !address.city)) {
       return res.status(400).json({
-        error: "Address must include at least address_line1 and city",
+        error: "Please provide a valid address or select a saved address.",
       });
     }
-    const normalizedPaymentData = {
-      transactionId:
-        paymentData.transactionId || paymentData.transaction_id || null,
-      card_last4: paymentData.card_last4 || null,
-      card_brand: paymentData.card_brand || null,
-      expiry_month: paymentData.expiry_month || null,
-      expiry_year: paymentData.expiry_year || null,
-    };
+
+    const normalizedPaymentData = paymentData
+      ? {
+          transactionId:
+            paymentData.transactionId || paymentData.transaction_id || null,
+          card_last4: paymentData.card_last4 || null,
+          card_brand: paymentData.card_brand || null,
+          expiry_month: paymentData.expiry_month || null,
+          expiry_year: paymentData.expiry_year || null,
+        }
+      : {};
+
     const order = await customerModel.placeOrderFromCart({
       userId,
-      cartId: cart_id,
+      cartId: parsedCartId,
       address,
+      addressId,
       paymentMethod, // "cod" ,"paypal"/"credit_card"
       paymentData: normalizedPaymentData,
     });
-    // console.log("checkout req.body:", req.body);
 
     res.status(201).json({
       message: `Order placed successfully (${paymentMethod.toUpperCase()})`,
-      order,
+      order: {
+        ...order,
+        distance_km: order.distance_km,
+        delivery_fee: order.delivery_fee,
+        total_with_shipping: order.total_with_shipping,
+      },
     });
   } catch (err) {
     console.error("Error placing order from cart:", err.message);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("STACK TRACE:", err.stack);
+    return res
+      .status(500)
+      .json({ error: "Failed to place order. Please try again." });
   }
 };
 
@@ -293,7 +311,7 @@ exports.createCart = async (req, res) => {
  */
 exports.updateCart = async (req, res) => {
   try {
-    const cart = await customerService.getCartById(req.params.id); 
+    const cart = await customerService.getCartById(req.params.id);
     if (!cart) return res.status(404).json({ message: "Cart not found" });
 
     // تحقق الملكية
@@ -396,7 +414,7 @@ exports.addItem = async (req, res) => {
 exports.updateItem = async (req, res) => {
   try {
     const { quantity, variant } = req.body;
-    const item = await customerService.getItemById(req.params.id); 
+    const item = await customerService.getItemById(req.params.id);
     if (!item) return res.status(404).json({ message: "Item not found" });
 
     const cart = await customerService.getCartById(item.cart_id);
@@ -469,7 +487,7 @@ const getChildCategoryIds = async (parentIds) => {
     SELECT id FROM all_categories
   `;
   const result = await pool.query(categoryCTE, [parentIds]);
-  return result.rows.map(r => r.id);
+  return result.rows.map((r) => r.id);
 };
 
 exports.getAllProducts = async (req, res) => {
@@ -479,7 +497,7 @@ exports.getAllProducts = async (req, res) => {
     let categoryIds = null;
     if (categoryId) {
       const ids = Array.isArray(categoryId)
-        ? categoryId.map(id => parseInt(id, 10))
+        ? categoryId.map((id) => parseInt(id, 10))
         : [parseInt(categoryId, 10)];
 
       // get all child IDs
@@ -500,7 +518,6 @@ exports.getAllProducts = async (req, res) => {
     res.status(500).json({ message: "Error getting products" });
   }
 };
-
 
 /**
  * @function getOrders
@@ -602,7 +619,6 @@ exports.getProductsWithSorting = async (req, res) => {
   }
 };
 
-
 exports.paymentController = {
   getUserPayments: async (req, res) => {
     try {
@@ -672,7 +688,7 @@ exports.paymentController = {
 exports.reorder = async (req, res) => {
   try {
     const orderId = req.params.orderId;
-    const userId = req.user.id; 
+    const userId = req.user.id;
     const newCart = await customerService.createCartFromOrder(orderId, userId);
     res.json(newCart);
   } catch (err) {
@@ -713,27 +729,27 @@ exports.addWishlist = async (req, res) => {
 exports.removeWishlist = async (req, res) => {
   try {
     const { id } = req.params;
-  // console.log("Deleting wishlist id:", id);
-  
+    // console.log("Deleting wishlist id:", id);
+
     const result = await customerModel.removeProductFromWishlist(id);
     res.json({ message: "Product removed from wishlist", ...result });
   } catch (err) {
     console.error(err);
-    res
-      .status(500)
-      .json({
-        message: err.message || "Failed to remove product from wishlist",
-      });
+    res.status(500).json({
+      message: err.message || "Failed to remove product from wishlist",
+    });
   }
 };
 
 exports.assignGuestToUser = async (req, res) => {
   try {
-    const guestToken = req.headers['guest-token'];
+    const guestToken = req.headers["guest-token"];
     const userId = req.body.userId;
 
     if (!guestToken || !userId) {
-      return res.status(400).json({ message: "guestToken and userId are required" });
+      return res
+        .status(400)
+        .json({ message: "guestToken and userId are required" });
     }
 
     const guestCart = await customerService.getCartByGuestToken(guestToken);
@@ -755,7 +771,6 @@ exports.assignGuestToUser = async (req, res) => {
   }
 };
 
-
 const { sendEmail } = require("../../utils/sendEmail");
 
 exports.sendContactMessage = async (req, res) => {
@@ -767,7 +782,7 @@ exports.sendContactMessage = async (req, res) => {
 
   try {
     await sendEmail({
-      to: process.env.CONTACT_EMAIL, 
+      to: process.env.CONTACT_EMAIL,
       subject: `Contact Us: ${subject}`,
       html: `
         <p><strong>Name:</strong> ${name}</p>

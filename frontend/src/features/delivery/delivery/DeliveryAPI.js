@@ -1,4 +1,4 @@
-//delivery profile 
+//delivery profile
 //all endpoints in profile:
 export const fetchDeliveryProfile = async (token) => {
   const res = await fetch("http://localhost:3000/api/delivery/profile", {
@@ -8,7 +8,7 @@ export const fetchDeliveryProfile = async (token) => {
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to fetch profile");
 
-  return data; 
+  return data;
 };
 
 export const fetchCoverageAreas = async (token) => {
@@ -55,14 +55,17 @@ export const updateDeliveryProfile = async (token, payload) => {
 };
 
 export async function updateCoverage(token, companyId, data) {
-  const res = await fetch(`http://localhost:3000/api/delivery/coverage/${companyId}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-  });
+  const res = await fetch(
+    `http://localhost:3000/api/delivery/coverage/${companyId}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    }
+  );
 
   const result = await res.json();
 
@@ -155,7 +158,7 @@ export async function getTrackingOrder(orderId) {
     return data;
   } catch (err) {
     console.log(err);
-     err;
+    err;
   }
 }
 
@@ -179,5 +182,36 @@ export async function fetchDeliveryReport(days) {
   return data.report;
 }
 
+// ===============================
+// Delivery Estimate
+// ===============================
+export const getDeliveryEstimate = async ({
+  userId,
+  customerAddressId,
+  vendorIds,
+  useGoogle,
+}) => {
+  const token = localStorage.getItem("token");
 
+  const res = await fetch("http://localhost:3000/api/delivery/estimate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      userId,
+      customerAddressId,
+      vendorIds,
+      useGoogle,
+    }),
+  });
 
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to fetch delivery estimate");
+  }
+
+  return data; // بيرجع { customer, vendors, total_distance_km, total_delivery_fee }
+};

@@ -111,6 +111,8 @@ router.get("/reports", protect, authorizeRole("delivery"),DeliveryController.get
 
 router.put("/:id/paymentstatus", protect, authorizeRole("delivery"),DeliveryController.updatePaymentStatus);
 
+router.post("/estimate", protect, authorizeRole("delivery"), DeliveryController.getDeliveryEstimate);
+
 
 module.exports = router;
 

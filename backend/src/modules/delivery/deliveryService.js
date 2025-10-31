@@ -1,4 +1,6 @@
 const DeliveryModel = require('./deliveryModel');
+const axios = require("axios");
+const { calculateDistanceKm, calculateTotalRouteDistance } = require("../../utils/distance");
 
 /**
  * @module DeliveryService
@@ -167,4 +169,209 @@ exports.getOrderById = async (orderId) => {
   return await DeliveryModel.getOrderById(orderId);
 };
 
+
+exports.getDistanceFromGoogle = async (fromLat, fromLng, toLat, toLng) => {
+  try {
+    const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+    const url = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${fromLat},${fromLng}&destinations=${toLat},${toLng}&key=${GOOGLE_MAPS_API_KEY}`;
+    
+    const response = await axios.get(url);
+    const element = response.data.rows[0].elements[0];
+
+    if (element.status === "OK") {
+      const distanceKm = element.distance.value / 1000; // meters → km
+      const durationMin = element.duration.value / 60; // seconds → minutes
+      return { distanceKm, durationMin };
+    } else {
+      return { distanceKm: 0, durationMin: 0 };
+    }
+  } catch (err) {
+    console.error("Google Maps distance error:", err.message);
+    return { distanceKm: 0, durationMin: 0 };
+  }
+};
+
+exports.calculateDeliveryFee = (distanceKm) => {
+  const baseFee = 1;
+  const perKmRate = 0.4;
+  const fee = baseFee + distanceKm * perKmRate;
+  return Math.round(fee * 100) / 100;
+};
+
+exports.getDistance = async (fromLat, fromLng, toLat, toLng, useGoogle = true) => {
+  if (useGoogle) {
+    return await exports.getDistanceFromGoogle(fromLat, fromLng, toLat, toLng);
+  } else {
+    const distanceKm = calculateDistanceKm(fromLat, fromLng, toLat, toLng) || 0;
+    const durationMin = Math.round((distanceKm / 40) * 60); // سرعة تقديرية 40 كم/س
+    return { distanceKm, durationMin };
+  }
+};
+
+exports.calculateTotalDistanceAndFee = async (userId, customerAddressId, vendorIds, useGoogle = true) => {
+  try {
+    console.log("🔹 Starting delivery calculation");
+
+    // 1. جلب نقاط تغطية الشركة
+    const coverage = await DeliveryModel.getCoverageById(userId);
+    console.log("Coverage points:", coverage);
+
+    if (!coverage || !coverage.length)
+      throw new Error("No delivery coverage found");
+
+    // 2. جلب عنوان الكستمر
+    const customer = await DeliveryModel.getCustomerCoordinates(customerAddressId);
+    console.log("Customer coordinates:", customer);
+
+    if (!customer?.latitude || !customer?.longitude) {
+      throw new Error("Customer address coordinates missing");
+    }
+
+    // 3. جلب بيانات كل المحلات
+    const vendors = [];
+    for (const vendorId of vendorIds) {
+      const vendor = await DeliveryModel.getVendorCoordinates(vendorId);
+      console.log(`Vendor ${vendorId} coordinates:`, vendor);
+
+      if (vendor?.latitude && vendor?.longitude) {
+        vendors.push(vendor);
+      }
+    }
+    if (!vendors.length) throw new Error("No valid vendors found");
+
+    // 4. تحديد نقطة الانطلاق الأقرب (من بين تغطيات الشركة)
+    let startingCoverage = null;
+    let minDistance = Infinity;
+
+    for (const cov of coverage) {
+      const { distanceKm } = await exports.getDistance(
+        cov.latitude,
+        cov.longitude,
+        vendors[0].latitude,
+        vendors[0].longitude,
+        useGoogle
+      );
+      console.log(`Distance from coverage ${cov.city} to first vendor: ${distanceKm} km`);
+
+      if (distanceKm < minDistance) {
+        minDistance = distanceKm;
+        startingCoverage = cov;
+      }
+    }
+
+    if (!startingCoverage)
+      throw new Error("No valid starting coverage point found");
+
+    console.log("Starting coverage point:", startingCoverage);
+
+    let currentPoint = startingCoverage;
+
+    // 5. بناء المسار: من الشركة → أقرب محل → ... → آخر محل
+    const route = [];
+    const remainingVendors = [...vendors];
+
+    while (remainingVendors.length > 0) {
+      const distances = await Promise.all(
+        remainingVendors.map(async (vendor) => {
+          const { distanceKm, durationMin } = await exports.getDistance(
+            currentPoint.latitude,
+            currentPoint.longitude,
+            vendor.latitude,
+            vendor.longitude,
+            useGoogle
+          );
+          return { vendor, distanceKm, durationMin };
+        })
+      );
+
+      // اختيار أقرب محل من النقطة الحالية
+      const nearest = distances.reduce((a, b) =>
+        a.distanceKm < b.distanceKm ? a : b
+      );
+
+      const fee = exports.calculateDeliveryFee(nearest.distanceKm);
+
+      console.log(`Route segment: ${currentPoint.city || currentPoint.label} -> ${nearest.vendor.store_name || nearest.vendor.label}, Distance: ${nearest.distanceKm}, Fee: ${fee}`);
+
+      route.push({
+        from: currentPoint.label || currentPoint.city || "Delivery Start",
+        to: nearest.vendor.store_name || nearest.vendor.label,
+        vendor_id: nearest.vendor.id,
+        distance_km: parseFloat(nearest.distanceKm.toFixed(2)),
+        duration_min: Math.round(nearest.durationMin),
+        delivery_fee: fee,
+      });
+
+      // تحديث الموقع الحالي
+      currentPoint = nearest.vendor;
+
+      // إزالة هذا المحل من القائمة
+      const idx = remainingVendors.findIndex(
+        (v) => v.id === nearest.vendor.id
+      );
+      remainingVendors.splice(idx, 1);
+    }
+
+    // 6. أخيرًا: من آخر محل إلى الزبون
+    const { distanceKm: backDistance, durationMin: backDuration } =
+      await exports.getDistance(
+        currentPoint.latitude,
+        currentPoint.longitude,
+        customer.latitude,
+        customer.longitude,
+        useGoogle
+      );
+
+    const backFee = exports.calculateDeliveryFee(backDistance);
+
+    console.log(`Last leg: ${currentPoint.store_name || currentPoint.label} -> Customer, Distance: ${backDistance}, Fee: ${backFee}`);
+
+    route.push({
+      from: currentPoint.store_name || currentPoint.label,
+      to: customer.label || "Customer",
+      vendor_id: null,
+      distance_km: parseFloat(backDistance.toFixed(2)),
+      duration_min: Math.round(backDuration),
+      delivery_fee: backFee,
+    });
+
+    // حساب المسافة الكلية باستخدام دالة calculateTotalRouteDistance
+    const points = [
+      { lat: startingCoverage.latitude, lng: startingCoverage.longitude },
+      ...vendors.map(v => ({ lat: v.latitude, lng: v.longitude })),
+      { lat: customer.latitude, lng: customer.longitude }
+    ];
+    const totalDistance = calculateTotalRouteDistance(points);
+    const totalFee = route.reduce((acc, r) => acc + r.delivery_fee, 0);
+
+    console.log("Total distance:", totalDistance);
+    console.log("Total delivery fee:", totalFee);
+
+    // 8. الإخراج النهائي
+    return {
+      delivery_start: {
+        label: startingCoverage.city || "Delivery Company",
+        latitude: startingCoverage.latitude,
+        longitude: startingCoverage.longitude,
+      },
+      customer: {
+        id: customer.id,
+        label: customer.address_line1 || customer.label,
+        latitude: customer.latitude,
+        longitude: customer.longitude,
+      },
+      route,
+      total_distance_km: totalDistance,
+      total_delivery_fee: Math.round(totalFee * 100) / 100,
+    };
+  } catch (err) {
+    console.error("Error calculating optimized delivery route:", err.message);
+    return {
+      delivery_start: null,
+      route: [],
+      total_distance_km: 0,
+      total_delivery_fee: 0,
+    };
+  }
+};
 

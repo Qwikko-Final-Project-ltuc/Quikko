@@ -1,14 +1,24 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchOrders, reorderOrder, setCurrentPage, setPaymentFilter } from "../ordersSlice";
+import {
+  fetchOrders,
+  reorderOrder,
+  setCurrentPage,
+  setPaymentFilter,
+} from "../ordersSlice";
 import { useNavigate } from "react-router-dom";
 
 const OrdersPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { list: items=[], loading, error, currentPage, itemsPerPage, paymentFilter } = useSelector(
-    (state) => state.orders
-  );
+  const {
+    list: items = [],
+    loading,
+    error,
+    currentPage,
+    itemsPerPage,
+    paymentFilter,
+  } = useSelector((state) => state.orders);
 
   const [searchTx, setSearchTx] = useState("");
 
@@ -16,11 +26,12 @@ const OrdersPage = () => {
     dispatch(fetchOrders());
   }, [dispatch]);
 
-  if (loading) return <p className="text-center mt-10 text-gray-500">Loading orders...</p>;
-  if (error) return <p className="text-center mt-10 text-red-500">Error: {error}</p>;
+  if (loading)
+    return <p className="text-center mt-10 text-gray-500">Loading orders...</p>;
+  if (error)
+    return <p className="text-center mt-10 text-red-500">Error: {error}</p>;
 
-  const filteredItems = (items || []).filter((order) => 
- {
+  const filteredItems = (items || []).filter((order) => {
     const payments = order.payments || [];
 
     if (paymentFilter !== "all") {
@@ -30,7 +41,8 @@ const OrdersPage = () => {
           (p) => p.status?.toLowerCase() === paymentFilter.toLowerCase()
         );
       } else {
-        isMatch = order.payment_status?.toLowerCase() === paymentFilter.toLowerCase();
+        isMatch =
+          order.payment_status?.toLowerCase() === paymentFilter.toLowerCase();
       }
       if (!isMatch) return false;
     }
@@ -45,7 +57,7 @@ const OrdersPage = () => {
     return true;
   });
 
-  //  Pagination 
+  //  Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentOrders = filteredItems.slice(indexOfFirstItem, indexOfLastItem);
@@ -79,7 +91,9 @@ const OrdersPage = () => {
           <button
             key={filter}
             className={`px-4 py-2 rounded ${
-              paymentFilter === filter ? "bg-blue-500 text-white" : "bg-gray-200"
+              paymentFilter === filter
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200"
             }`}
             onClick={() => handleFilterClick(filter)}
           >
@@ -92,7 +106,130 @@ const OrdersPage = () => {
         <p className="text-gray-500">No orders found</p>
       ) : (
         <div className="space-y-6">
-          {currentOrders.map((order) => (
+          {currentOrders.map((order) => {
+            const shippingAddress = order.shipping_address
+              ? JSON.parse(order.shipping_address)
+              : null;
+
+            return (
+              <div
+                key={order.id}
+                className="border p-4 rounded shadow hover:shadow-lg transition"
+              >
+                <h2 className="text-xl font-semibold mb-2">
+                  Order #{order.id} - {order.status}
+                </h2>
+                <p className="text-gray-600 mb-2">
+                  Payment: {order.payment_status}
+                </p>
+
+                <p className="text-gray-600 mb-2">
+                  Shipping Address:{" "}
+                  {shippingAddress ? (
+                    <>
+                      {shippingAddress.address_line1}
+                      {shippingAddress.address_line2 &&
+                        `, ${shippingAddress.address_line2}`}
+                      {shippingAddress.city && `, ${shippingAddress.city}`}
+                    </>
+                  ) : (
+                    "N/A"
+                  )}
+                </p>
+
+                <p className="text-gray-600 mb-2">
+                  Delivery Fee: ${order?.delivery_fee}
+                </p>
+
+                <p className="text-gray-600 mb-2">
+                  Total: ${order.total_amount}
+                </p>
+
+                <div className="border-t pt-2">
+                  {order.items.map((item) => (
+                    <div
+                      key={item.product_id}
+                      className="flex justify-between mb-1"
+                    >
+                      <span>
+                        {item.name} x {item.quantity}
+                      </span>
+                      <span>${(item.price * item.quantity).toFixed(2)}</span>
+                    </div>
+                  ))}
+
+                  <div className="flex justify-between mt-2 font-semibold">
+                    <span>Total:</span>
+                    <span>
+                      $
+                      {order.items
+                        .reduce(
+                          (sum, item) => sum + item.price * item.quantity,
+                          0
+                        )
+                        .toFixed(2)}
+                    </span>
+                  </div>
+
+                  {/* Total with shipping */}
+                  <div className="flex justify-between mt-2 font-semibold border-t pt-2">
+                    <span>Total with shipping:</span>
+                    <span>
+                      $
+                      {(
+                        order.items.reduce(
+                          (sum, item) => sum + item.price * item.quantity,
+                          0
+                        ) + Number(order.delivery_fee)
+                      ).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+
+                {order.payments && order.payments.length > 0 && (
+                  <div className="mt-2 border-t pt-2">
+                    <h3 className="font-semibold mb-1">Payment Details:</h3>
+                    {order.payments.map((payment) => (
+                      <div key={payment.id} className="text-gray-700 mb-1">
+                        Method: {payment.payment_method} | Amount: $
+                        {payment.amount} | Status: {payment.status}
+                        {payment.card_last4 &&
+                          ` | Card: **** **** **** ${payment.card_last4} (${payment.card_brand})`}
+                        {payment.transaction_id &&
+                          ` | Transaction: ${payment.transaction_id}`}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  className="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  onClick={() => navigate(`/customer/track-order/${order.id}`)}
+                >
+                  Track Order
+                </button>
+                <button
+                  className="ml-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                  onClick={async () => {
+                    try {
+                      const action = await dispatch(
+                        reorderOrder(order.id)
+                      ).unwrap();
+                      navigate(`/customer/order-details/${action.id}`, {
+                        state: { reorder: true },
+                      });
+                    } catch (err) {
+                      alert("Failed to reorder: " + err.message);
+                    }
+                  }}
+                >
+                  Reorder
+                </button>
+              </div>
+            );
+          })}
+
+          {/* {currentOrders.map((order) => (
             <div
               key={order.id}
               className="border p-4 rounded shadow hover:shadow-lg transition"
@@ -103,11 +240,29 @@ const OrdersPage = () => {
               <p className="text-gray-600 mb-2">
                 Payment: {order.payment_status} | Total: ${(order.final_amount ?? order.total_amount)}
               </p>
-              <p className="text-gray-600 mb-2">Shipping: {order.shipping_address}</p>
 
+              <p className="text-gray-600 mb-2">
+                Shipping: {order.shipping_address}
+              </p>
+              <p className="text-gray-600 mb-2">
+                Delivery Fee: ${order.delivery_fee?.toFixed(2) || 0}
+              </p>
+              <p className="text-gray-600 mb-2">
+                Distance:{" "}
+                {order.distance_km
+                  ? `${order.distance_km.toFixed(2)} km`
+                  : "N/A"}
+              </p>
+              <p className="text-gray-600 mb-2">
+                Total (with shipping): $
+                {order.total_with_shipping?.toFixed(2) || order.total_amount}
+              </p>
               <div className="border-t pt-2">
                 {order.items.map((item) => (
-                  <div key={item.product_id} className="flex justify-between mb-1">
+                  <div
+                    key={item.product_id}
+                    className="flex justify-between mb-1"
+                  >
                     <span>
                       {item.name} x {item.quantity}
                     </span>
@@ -121,9 +276,12 @@ const OrdersPage = () => {
                   <h3 className="font-semibold mb-1">Payment Details:</h3>
                   {order.payments.map((payment) => (
                     <div key={payment.id} className="text-gray-700 mb-1">
-                      Method: {payment.payment_method} | Amount: ${payment.amount} | Status: {payment.status}
-                      {payment.card_last4 && ` | Card: **** **** **** ${payment.card_last4} (${payment.card_brand})`}
-                      {payment.transaction_id && ` | Transaction: ${payment.transaction_id}`}
+                      Method: {payment.payment_method} | Amount: $
+                      {payment.amount} | Status: {payment.status}
+                      {payment.card_last4 &&
+                        ` | Card: **** **** **** ${payment.card_last4} (${payment.card_brand})`}
+                      {payment.transaction_id &&
+                        ` | Transaction: ${payment.transaction_id}`}
                     </div>
                   ))}
                 </div>
@@ -139,8 +297,12 @@ const OrdersPage = () => {
                 className="ml-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
                 onClick={async () => {
                   try {
-                    const action = await dispatch(reorderOrder(order.id)).unwrap();
-                    navigate(`/customer/order-details/${action.id}`, { state: { reorder: true } });
+                    const action = await dispatch(
+                      reorderOrder(order.id)
+                    ).unwrap();
+                    navigate(`/customer/order-details/${action.id}`, {
+                      state: { reorder: true },
+                    });
                   } catch (err) {
                     alert("Failed to reorder: " + err.message);
                   }
@@ -149,7 +311,7 @@ const OrdersPage = () => {
                 Reorder
               </button>
             </div>
-          ))}
+          ))} */}
 
           <button
             onClick={() => navigate("/customer/products")}
@@ -165,7 +327,9 @@ const OrdersPage = () => {
                 key={page}
                 onClick={() => handlePageChange(page)}
                 className={`px-3 py-1 rounded ${
-                  currentPage === page ? "bg-blue-500 text-white" : "bg-gray-200"
+                  currentPage === page
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-200"
                 }`}
               >
                 {page}
