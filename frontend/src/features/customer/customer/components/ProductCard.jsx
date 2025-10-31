@@ -16,7 +16,6 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
   const userId = useSelector((state) => state.cart.user?.id);
   const navigate = useNavigate();
 
-  // تحويل الصور إذا كانت نص JSON
   const images = Array.isArray(product.images)
     ? product.images
     : typeof product.images === "string"
@@ -25,30 +24,52 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
 
   const nextImage = () => setCurrentImage((prev) => (prev + 1) % images.length);
   const prevImage = () => setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
+
+
+  const nextImage = () => setCurrentImage((prev) => (prev + 1) % images.length);
+  const prevImage = () => setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
+
   const openLightbox = () => setIsOpen(true);
 
   const onToggleWishlist = async () => {
     if (loading) return;
     setLoading(true);
+
     try {
       const productId = product.id || product.product_id;
       if (!productId) throw new Error("Product ID not found");
 
       if (wishlist) {
-        await RemoveWishlist(wishlistId);
+        // حذف المنتج من wishlist
+        if (!wishlistId) throw new Error("Cannot remove wishlist: wishlistId not found");
+
+        const removed = await RemoveWishlist(wishlistId);
         setWishlist(false);
         setWishlistId(null);
         onToggleWishlistFromPage?.(wishlistId, productId, false);
         if (isLoggedIn && userId) await customerAPI.logInteraction(userId, productId, "unlike");
+
+
+        onToggleWishlistFromPage && onToggleWishlistFromPage(productId, false, wishlistId);
+
+        if (isLoggedIn && userId) {
+          await customerAPI.logInteraction(userId, productId, "unlike");
+        }
       } else {
         const added = await AddWishlist(productId);
         setWishlist(true);
         setWishlistId(added.id);
         onToggleWishlistFromPage?.(productId, true, added.id);
         if (isLoggedIn && userId) await customerAPI.logInteraction(userId, productId, "like");
+
+        onToggleWishlistFromPage && onToggleWishlistFromPage(productId, true, added.id);
+
+        if (isLoggedIn && userId) {
+          await customerAPI.logInteraction(userId, productId, "like");
+        }
       }
     } catch (err) {
-      console.error(err);
+      console.error("Wishlist toggle error:", err);
       alert(err.message);
     } finally {
       setLoading(false);
@@ -69,6 +90,21 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
     }
   }}
 >
+
+    <div className="p-4 border rounded shadow hover:shadow-lg transition flex flex-col justify-between">
+      {/* صور المنتج */}
+      <div className="h-48 w-full mb-2 overflow-hidden rounded relative cursor-pointer">
+        {images.length > 0 ? (
+          <>
+            <Link to={`/customer/product/${product.id}`}>
+              <div className="h-48 w-full mb-2 overflow-hidden rounded relative flex items-center justify-center bg-gray-100">
+                <img
+                  src={images[currentImage]}
+                  alt={product.name}
+                  className="max-h-full max-w-full object-contain"
+                />
+              </div>
+            </Link>
 
       <div className="h-48 w-full mb-2 overflow-hidden rounded relative flex items-center justify-center bg-gray-100">
         {images.length > 0 ? (
@@ -108,12 +144,14 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
         )}
       </div>
 
+      {/* بيانات المنتج */}
       <div>
         <h3 className="text-lg font-bold">{product.name}</h3>
         <p className="text-gray-600">{product.description}</p>
         <p className="text-blue-600 font-semibold">${product.price}</p>
       </div>
 
+      {/* زر wishlist */}
       {isLoggedIn && (
         <button
           onClick={(e) => {
@@ -122,11 +160,13 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
           }}
           className="mt-2 text-2xl flex justify-end"
           style={{ color: wishlist ? "red" : "gray" }}
+          disabled={loading}
         >
           <ImHeart />
         </button>
       )}
 
+      {/* زر إضافة للسلة */}
       <button
         className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         onClick={(e) => {

@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
+import { useSelector } from "react-redux";
+import customerAPI from "../services/customerAPI"; // تأكد من وجودها
 
 const ProductDetails = () => {
   const { id } = useParams(); // product_id من الرابط
@@ -13,12 +15,22 @@ const ProductDetails = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
 
-  // جلب تفاصيل المنتج
+  const user = useSelector((state) => state.cart.user); // للوصول إلى user.id
+
   useEffect(() => {
+    let hasLoggedView = false; // 🔒 متغير محلي لمنع التكرار
+
     const fetchProduct = async () => {
       try {
         const res = await axios.get(`http://localhost:3000/api/products/${id}`);
         setProduct(res.data);
+
+        // تسجيل تفاعل "view" مرة واحدة فقط
+        if (user?.id && !hasLoggedView) {
+          hasLoggedView = true;
+          await customerAPI.logInteraction(user.id, id, "view");
+          console.log("✅ View interaction logged once");
+        }
       } catch (err) {
         console.error("Error fetching product:", err);
       }
@@ -35,7 +47,12 @@ const ProductDetails = () => {
 
     fetchProduct();
     fetchReviews();
-  }, [id]);
+
+    // cleanup: يمنع تكرار تسجيل التفاعل عند unmount/remount السريع
+    return () => {
+      hasLoggedView = true;
+    };
+  }, [id, user?.id]); // يعيد التشغيل فقط عند تغير المنتج أو المستخدم
 
   // إرسال مراجعة جديدة
   const handleAddReview = async (e) => {
@@ -57,6 +74,7 @@ const ProductDetails = () => {
       alert("Review added successfully!");
       setRating(0);
       setComment("");
+
       const res = await axios.get(`http://localhost:3000/api/products/review/${id}`);
       setReviews(res.data);
     } catch (err) {
@@ -71,7 +89,6 @@ const ProductDetails = () => {
 
   return (
     <div className="max-w-5xl mx-auto p-8">
-      {/* تفاصيل المنتج */}
       <div className="flex flex-col md:flex-row gap-8">
         <div className="relative w-full md:w-1/2">
           {images.length > 0 && (
@@ -105,11 +122,9 @@ const ProductDetails = () => {
         </div>
       </div>
 
-      {/* قسم الريفيوز */}
       <div className="mt-10">
         <h2 className="text-2xl font-semibold mb-4">Customer Reviews</h2>
 
-        {/* عرض التعليقات */}
         {reviews.length === 0 ? (
           <p className="text-gray-600">No reviews yet.</p>
         ) : (
@@ -126,7 +141,6 @@ const ProductDetails = () => {
           </div>
         )}
 
-        {/* إضافة مراجعة جديدة */}
         <form onSubmit={handleAddReview} className="mt-8 border-t pt-4">
           <h3 className="text-xl font-bold mb-2">Add your review</h3>
 

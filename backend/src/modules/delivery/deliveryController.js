@@ -132,15 +132,6 @@ exports.updateOrderStatus = async function (req, res) {
       });
 
     const orderItems = await Delivery.getOrderItems(orderId);
-
-    // ✅ إذا كل الـ items مقبولة والأوردر مش accepted → حدثه تلقائياً
-    // const allAccepted = orderItems.every(
-    //   (item) => item.vendor_status === "accepted"
-    // );
-    // if (allAccepted && order.status !== "accepted") {
-    //   order = await Delivery.updateOrderStatus(orderId, "accepted");
-    // }
-
     const allowedNextStatuses = STATUS_FLOW[order.status] || [];
     if (!allowedNextStatuses.includes(status)) {
       return res.status(400).json({
@@ -476,13 +467,13 @@ exports.updatePaymentStatus = async (req, res) => {
         .json({ message: "Cannot revert payment status from paid to unpaid" });
     }
 
-    if (currentStatus === "unpaid" && newStatus === "paid") {
-      const updatedOrder = await Delivery.updatePaymentStatus(id, "paid");
-      return res.status(200).json({
-        message: "Payment status updated successfully",
-        order: updatedOrder,
-      });
-    }
+if (["unpaid", "pending"].includes(currentStatus) && newStatus === "paid") {
+  const updatedOrder = await Delivery.updatePaymentStatus(id, "paid");
+  return res.status(200).json({
+    message: "Payment status updated successfully",
+    order: updatedOrder,
+  });
+}
 
     return res.status(200).json({
       message: `Payment status is already ${currentStatus}`,

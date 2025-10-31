@@ -8,12 +8,13 @@ import RegisterVendor from "./auth/RegisterVendor";
 import VendorDashboard from "./dashboard/VendorDashboard";
 import ProductManagement from "./product/ProductManagement";
 import OrderManagement from "./order/OrderManagement";
-import ChatPage from "./chat/ChatPage";
+// import ChatPage from "./chat/ChatPage";
 import ReportsPage from "./profile/VendorProfilePage";
 import SettingsPage from "./settings/SettingsPage";
 import VendorProfilepage from "./profile/VendorProfilePage";
 import ProtectedRoute from "./ProtectedRoute";
 import VendorNotifications from "./VendorNotifications";
+import ChatPage from "./chat/vendorChat";
 import CouponManagement from "./coupons/CouponsManagement";
 
 

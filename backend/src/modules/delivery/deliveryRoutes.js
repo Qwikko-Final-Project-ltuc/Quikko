@@ -59,7 +59,7 @@ router.get(
  * @middleware protect - checks JWT token
  * @controller DeliveryController.listCompanyOrders
  */
-router.get("/orders", protect,authorizeRole('delivery'), DeliveryController.listCompanyOrders);//hvpud a,tdih
+router.get("/orders", protect,authorizeRole('delivery'), DeliveryController.listCompanyOrders);
 
 /**
  * @route   GET /coverage

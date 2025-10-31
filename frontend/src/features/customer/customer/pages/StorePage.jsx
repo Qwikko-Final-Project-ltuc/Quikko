@@ -91,23 +91,16 @@ const StorePage = () => {
     }
   };
 
-  const handleChatWithVendor = () => {
-      // console.log("Chat button clicked", selectedStore);
+const handleChatWithVendor = () => {
+  if (!selectedStore?.user_id) return;
+  navigate("/customer/chat", {
+    state: {
+      vendorId: selectedStore.user_id,
+      vendorName: selectedStore.store_name || null,
+    },
+  });
+};
 
-    try{
-       if (!selectedStore?.user_id) return;
-      //  console.log("Selected store:", selectedStore);
-
-
-    dispatch(setSelectedConversation(selectedStore.user_id));
-    dispatch(fetchMessages(selectedStore.user_id));
-    dispatch(setConversationsRead(selectedStore.user_id));
-    navigate("/customer/chat");
-  }
-  catch(err){
-    console.log(err);
-  }
-    }
 
   if (loading) return <p className="text-center mt-10">Loading...</p>;
   if (error) return <p className="text-center mt-10 text-red-500">{error}</p>;

@@ -1,116 +1,231 @@
-const chatService = require('./chatService');
+const Chat = require("./chatModel");
+const { roomKey } = require("./helper/chatrooms");
+const n = (v) => Number(v);
 
-/**
- * @module ChatController
- * @desc Controller for handling chat-related operations including fetching and sending messages.
- */
-
-/**
- * @function getChatMessages
- * @route GET /api/chat
- * @summary Retrieve chat messages between two users
- * @tags Chat
- * @param {string} user1.query.required - ID of the first user
- * @param {string} user2.query.required - ID of the second user
- * @returns {Object[]} 200 - Array of chat messages
- * @returns {number} 200[].id - Message ID
- * @returns {string} 200[].sender_id - Sender user ID
- * @returns {string} 200[].receiver_id - Receiver user ID
- * @returns {string} 200[].message - Message content
- * @returns {string} 200[].created_at - Message creation timestamp
- * @returns {string} 500 - Internal server error
- *
- * @example
- * // Request
- * GET /api/chat?user1=1&user2=2
- *
- * // Response
- * [
- *   { "id": 1, "sender_id": "1", "receiver_id": "2", "message": "Hello!", "created_at": "2025-09-20T12:00:00Z" },
- *   { "id": 2, "sender_id": "2", "receiver_id": "1", "message": "Hi!", "created_at": "2025-09-20T12:01:00Z" }
- * ]
- */
-exports.getChatMessages = async (req, res) => {
-  const currentUserId = parseInt(req.user?.id, 10);
-  const user2Id = parseInt(req.query?.user2, 10);
-  // تحقق من صحة القيم
-  if (isNaN(currentUserId) || isNaN(user2Id)) {
-    return res.status(400).json({ message: "Invalid user IDs" });
-  }
-
+/* ===================== GET /:customerId/:vendorId ===================== */
+// chatController.js
+exports.getMessages = async (req, res) => {
   try {
-    const messages = await chatService.getMessages(currentUserId, user2Id);
-    res.json(messages);
+    const me = n(req.user?.id);
+    const customerId = n(req.params.customerId);
+    const vendorId = n(req.params.vendorId);
+
+    if (!Number.isFinite(me) || !Number.isFinite(customerId) || !Number.isFinite(vendorId)) {
+      return res.status(400).json({ error: "Bad ids" });
+    }
+    if (me !== customerId && me !== vendorId) {
+      return res.status(403).json({ error: "Forbidden (not a participant)" });
+    }
+
+    const rows = await Chat.getMessagesBetween(customerId, vendorId);
+
+    const messages = rows.map((r) => ({
+      id: r.id,
+      sender_id: r.sender_id,
+      receiver_id: r.receiver_id,
+      sender_role: r.sender_role,                         // 👈 جديد
+      sender_user_name: r.sender_user_name || null,       // 👈 جديد
+      sender_company_name: r.sender_company_name || null, // 👈 جديد
+      message: r.message,
+      read_status: r.read_status,
+      created_at: r.created_at_iso,
+    }));
+
+    return res.json({ messages });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    console.error("getMessages error:", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
 
-
-/**
- * @function postChatMessage
- * @route POST /api/chat
- * @summary Send a new chat message from one user to another
- * @tags Chat
- * @param {string} sender_id.body.required - ID of the sending user
- * @param {string} receiver_id.body.required - ID of the receiving user
- * @param {string} message.body.required - Message content
- * @returns {Object} 201 - Created chat message object
- * @returns {number} 201.id - Message ID
- * @returns {string} 201.sender_id - Sender user ID
- * @returns {string} 201.receiver_id - Receiver user ID
- * @returns {string} 201.message - Message content
- * @returns {string} 201.created_at - Message creation timestamp
- * @returns {string} 500 - Internal server error
- *
- * @example
- * // Request
- * POST /api/chat
- * {
- *   "sender_id": "1",
- *   "receiver_id": "2",
- *   "message": "Hello!"
- * }
- *
- * // Response
- * {
- *   "id": 3,
- *   "sender_id": "1",
- *   "receiver_id": "2",
- *   "message": "Hello!",
- *   "created_at": "2025-09-20T12:05:00Z"
- * }
- */
-exports.postChatMessage = async (req, res) => {
-  const sender_id = req.user.id;    
-  const { receiver_id, message } = req.body;
-
+/* ===================== POST / (send message) ===================== */
+// chatController.js
+exports.postMessage = (io) => async (req, res) => {
   try {
-    const newMessage = await chatService.sendMessage(sender_id, receiver_id, message);
-    res.status(201).json(newMessage);
+    let { sender_id, receiver_id, message, client_id } = req.body;
+
+    const me = n(req.user?.id);
+    sender_id = n(sender_id);
+    receiver_id = n(receiver_id);
+
+    if (!Number.isFinite(me)) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    if (!sender_id || !receiver_id || !message || !String(message).trim()) {
+      return res.status(400).json({ error: "sender_id, receiver_id, message are required" });
+    }
+    if (!Number.isFinite(sender_id) || !Number.isFinite(receiver_id)) {
+      return res.status(400).json({ error: "sender_id/receiver_id must be numbers" });
+    }
+    if (me !== sender_id) {
+      return res.status(403).json({ error: "Forbidden (sender must be the authenticated user)" });
+    }
+
+    const text = String(message).trim();
+
+    const saved = await Chat.insertMessage(sender_id, receiver_id, text);
+    if (!saved) {
+      console.error("Insert returned no rows!");
+      return res.status(500).json({ error: "Insert failed" });
+    }
+
+    // 👇 هوية المُرسل (role + الاسم) اعتمادًا على جداول users/delivery_companies
+    // نحتاج vendorId لتمييز المرسِل إن كان بائعًا؛ بما إن الرسائل عندك بين customer↔vendor
+    // vendorId هو الطرف الثاني هنا:
+    const identity = await Chat.getIdentityForUser(sender_id, receiver_id);
+    const payload = {
+      id: saved.id,
+      sender_id: saved.sender_id,
+      receiver_id: saved.receiver_id,
+      sender_role: identity?.role || null,               // 'vendor' | 'customer' | 'delivery'
+      sender_user_name: identity?.user_name || null,
+      sender_company_name: identity?.company_name || null,
+      message: saved.message,
+      createdAt: saved.created_at_iso, // UTC ISO
+      clientId: client_id ?? null,
+    };
+
+    const room = roomKey(sender_id, receiver_id);
+    io.to(room).emit("receiveChat", payload);
+    console.log("EMIT →", room, payload);
+
+    const data = { ...saved, created_at: saved.created_at_iso };
+    delete data.created_at_iso;
+
+    return res.status(201).json({ success: true, data });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-exports.getConversations = async (req, res) => {
-  const currentUserId = parseInt(req.user?.id, 10);
-
-  if (isNaN(currentUserId)) {
-    return res.status(400).json({ message: "Invalid user ID" });
-  }
-
-  try {
-    const conversations = await chatService.getConversations(currentUserId);
-    res.json(conversations);
-  } catch (err) {
-    console.error("Error fetching conversations:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("postMessage error:", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
 
+/* ===================== GET /vendor/:vendorId/conversations ===================== */
+// chatController.js
+exports.getVendorConversations = async (req, res) => {
+  try {
+    const me = n(req.user?.id);
+    const vendorId = n(req.params.vendorId);
 
+    if (!Number.isFinite(me) || !Number.isFinite(vendorId)) {
+      return res.status(400).json({ error: "Bad vendorId" });
+    }
+    if (me !== vendorId) {
+      return res.status(403).json({ error: "Forbidden (vendor mismatch)" });
+    }
+
+    const rows = await Chat.getVendorConversations(vendorId);
+
+    return res.json({
+      conversations: rows.map((r) => ({
+        other_user_id: Number(r.other_user_id),
+        other_role: r.other_role,                         // 'customer' | 'delivery'
+        other_user_name: r.other_name || `User ${r.other_user_id}`,
+        last_message: r.last_message || "",
+        unread_count: Number(r.unread_count || 0),
+        last_at: r.last_at_iso,
+      })),
+    });
+  } catch (err) {
+    console.error("getVendorConversations error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+/* ===================== POST /mark-read ===================== */
+exports.markRead = async (req, res) => {
+  try {
+    let { vendorId, customerId } = req.body || {};
+    const me = n(req.user?.id);
+    vendorId = n(vendorId);
+    customerId = n(customerId);
+
+    if (
+      !Number.isFinite(me) ||
+      !Number.isFinite(vendorId) ||
+      !Number.isFinite(customerId)
+    ) {
+      return res
+        .status(400)
+        .json({ error: "vendorId and customerId are required (numbers)" });
+    }
+
+    if (me !== vendorId && me !== customerId) {
+      return res.status(403).json({ error: "Forbidden (not a participant)" });
+    }
+
+    const receiverId = me;
+    const senderId = me === vendorId ? customerId : vendorId;
+
+    const updated = await Chat.markReadFor(receiverId, senderId);
+
+    return res.json({ updated });
+  } catch (err) {
+    console.error("markRead error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+/* ===================== GET /customer/:customerId/conversations ===================== */
+exports.getCustomerConversations = async (req, res) => {
+  try {
+    const me = n(req.user?.id);
+    const customerId = n(req.params.customerId);
+
+    if (!Number.isFinite(me) || !Number.isFinite(customerId)) {
+      return res.status(400).json({ error: "Bad customerId" });
+    }
+    if (me !== customerId) {
+      return res.status(403).json({ error: "Forbidden (customer mismatch)" });
+    }
+
+    const rows = await Chat.getCustomerConversations(customerId);
+
+    const data = rows.map((r) => ({
+      vendor_id: r.vendor_id != null ? Number(r.vendor_id) : null,
+      vendor_user_id: Number(r.vendor_user_id),
+      vendor_name: r.vendor_name || null,
+      last_message: r.last_message || "",
+      unread_count: Number(r.unread_count || 0),
+      last_at: r.last_at_iso,
+    }));
+
+    return res.json({ conversations: data });
+  } catch (err) {
+    console.error("getCustomerConversations error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// controllers/chatController.js
+exports.getDeliveryConversations = async (req, res) => {
+  try {
+    const me = Number(req.user?.id);
+    const deliveryId = Number(req.params.deliveryId);
+
+    if (!Number.isFinite(me) || !Number.isFinite(deliveryId)) {
+      return res.status(400).json({ error: "Bad deliveryId" });
+    }
+    if (me !== deliveryId) {
+      return res.status(403).json({ error: "Forbidden (delivery mismatch)" });
+    }
+
+    const rows = await Chat.getDeliveryConversations(deliveryId);
+
+    const conversations = rows.map((r) => ({
+      vendor_id: r.vendor_id != null ? Number(r.vendor_id) : null,
+      vendor_user_id: Number(r.vendor_user_id),
+      vendor_name: r.vendor_name || null,
+      last_message: r.last_message || "",
+      unread_count: Number(r.unread_count || 0),
+      last_at: r.last_at_iso,
+    }));
+
+    return res.json({ conversations });
+  } catch (err) {
+    console.error("getDeliveryConversations error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};

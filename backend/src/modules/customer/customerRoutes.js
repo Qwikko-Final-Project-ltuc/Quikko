@@ -6,6 +6,7 @@ const router = express.Router();
 const identifyCustomer = require("../../middleware/identifyCustomer");
 const guestToken = require("../../middleware/guestToken");
 const customerModel = require("./customerModel");
+const db = require("../../config/db");
 
 /**
  * @route GET /api/customer/
@@ -241,6 +242,86 @@ router.post(
 );
 
 
+
+router.get("/most-popular", async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT 
+          p.id,
+          p.name,
+          p.price,
+          COALESCE(SUM(oi.quantity), 0) AS total_sold,
+          COALESCE(
+            json_agg(pi.image_url) FILTER (WHERE pi.id IS NOT NULL),
+            '[]'
+          ) AS images
+      FROM products p
+      LEFT JOIN order_items oi ON p.id = oi.product_id
+      LEFT JOIN product_images pi ON p.id = pi.product_id
+      GROUP BY p.id
+      HAVING COALESCE(SUM(oi.quantity), 0) > 0
+      ORDER BY total_sold DESC
+      LIMIT 10;
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+router.get("/newest", async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT 
+          p.id,
+          p.name,
+          p.price,
+          COALESCE(
+            json_agg(pi.image_url) FILTER (WHERE pi.id IS NOT NULL),
+            '[]'
+          ) AS images
+      FROM products p
+      LEFT JOIN product_images pi ON p.id = pi.product_id
+      GROUP BY p.id
+      ORDER BY p.created_at DESC
+      LIMIT 10;
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.get("/top-rated", async (req, res) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT 
+        p.id,
+        p.name,
+        p.price,
+        p.description,
+        COALESCE(json_agg(pi.image_url) FILTER (WHERE pi.id IS NOT NULL), '[]') AS images,
+        ROUND(AVG(r.rating), 2) AS avg_rating,
+        COUNT(r.id) AS rating_count
+      FROM products p
+      LEFT JOIN product_reviews r ON r.product_id = p.id AND r.is_deleted = false
+      LEFT JOIN product_images pi ON pi.product_id = p.id
+      WHERE p.is_deleted = false
+      GROUP BY p.id
+      HAVING COUNT(r.id) > 0
+      ORDER BY avg_rating DESC, rating_count DESC
+      LIMIT 10
+    `);
+
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch top-rated products" });
+  }
+});
 
 
 module.exports = router;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getTrackingOrder } from "./DeliveryAPI"; // عدّل المسار حسب مشروعك
+import { getTrackingOrder } from "./DeliveryAPI";
 import { FaUser, FaIndustry, FaBox, FaCreditCard } from "react-icons/fa";
 import { useSelector } from "react-redux";
 
@@ -25,7 +25,7 @@ export default function TrackingPage() {
     };
     loadOrder();
   }, [orderId]);
- 
+
   const mergedItems =
     order?.items && Array.isArray(order.items)
       ? order.items.reduce((acc, item) => {
@@ -41,7 +41,7 @@ export default function TrackingPage() {
         }, {})
       : {};
 
-const mergedItemsArray = Object.values(mergedItems || {});
+  const mergedItemsArray = Object.values(mergedItems || {});
 
   if (loading) return <p className="text-center mt-10"> Loading order...</p>;
   if (message)
@@ -50,6 +50,34 @@ const mergedItemsArray = Object.values(mergedItems || {});
 
   const formatCurrency = (value) =>
     value.toLocaleString("en-US", { style: "currency", currency: "USD" });
+
+  const goChatWithVendor = (vendor) => {
+    const vendorName =
+      vendor.vendor_name || `Vendor #${vendor.vendor_id || ""}`;
+
+    // لازم يكون vendor_user_id راجع من الـ backend ضمن item/vendor
+    const vendorUserId =
+      Number(
+        vendor.vendor_user_id ??
+          vendor.user_id ??
+          vendor.vendorUserId ??
+          vendor.vendor_userId ??
+          vendor.vendor_owner_id
+      ) || null;
+
+    if (!Number.isFinite(vendorUserId) || vendorUserId <= 0) {
+      alert("Vendor user id not available for this order item.");
+      return;
+    }
+
+    // ✅ مرّري القيم الصح للـ state
+    navigate("/delivery/dashboard/chat", {
+      state: {
+        vendorUserId,
+        vendorName,
+      },
+    });
+  };
 
   return (
     <div className="max-w-5xl mx-auto mt-10 space-y-10 p-6">
@@ -85,7 +113,7 @@ const mergedItemsArray = Object.values(mergedItems || {});
           Customer Info
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" v>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <p>
             <strong
               style={{
@@ -141,7 +169,6 @@ const mergedItemsArray = Object.values(mergedItems || {});
           Vendor - Product Info
         </h3>
 
-        {/** Group items by vendor **/}
         {Object.values(
           mergedItemsArray.reduce((acc, item) => {
             if (!acc[item.vendor_id])
@@ -154,14 +181,27 @@ const mergedItemsArray = Object.values(mergedItems || {});
             key={vendor.vendor_id}
             className="p-4 border rounded-2xl mb-4 shadow-sm hover:shadow-md transition-shadow duration-300"
           >
-            <h4
-              className="text-lg font-bold mb-3 "
-              style={{
-                color: isDarkMode ? "#ffffff" : "#242625",
-              }}
-            >
-              {vendor.vendor_name}
-            </h4>
+            <div className="flex items-center justify-between mb-3">
+              <h4
+                className="text-lg font-bold "
+                style={{
+                  color: isDarkMode ? "#ffffff" : "#242625",
+                }}
+              >
+                {vendor.vendor_name}
+              </h4>
+
+              <button
+                onClick={() => goChatWithVendor(vendor)}
+                className="px-4 py-2 rounded-xl hover:scale-105 transition-transform duration-200"
+                style={{
+                  backgroundColor: "#307A59",
+                  color: "#ffffff",
+                }}
+              >
+                Chat with vendor
+              </button>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {products.map((item) => (
@@ -172,7 +212,6 @@ const mergedItemsArray = Object.values(mergedItems || {});
                     color: isDarkMode ? "#ffffff" : "#242625",
                   }}
                 >
-                  {/* Product Image */}
                   {item.images?.[0] && (
                     <img
                       src={item.images[0]}
@@ -181,7 +220,6 @@ const mergedItemsArray = Object.values(mergedItems || {});
                     />
                   )}
 
-                  {/* Product Info */}
                   <div
                     className="flex-1"
                     style={{
@@ -231,7 +269,6 @@ const mergedItemsArray = Object.values(mergedItems || {});
               ))}
             </div>
 
-            {/* Vendor contact */}
             <div
               className="mt-3 text-sm "
               style={{
@@ -305,7 +342,6 @@ const mergedItemsArray = Object.values(mergedItems || {});
           </p>
         </div>
 
-        {/* Products List */}
         {order?.items?.length > 0 && (
           <div className="mt-6">
             <h4
@@ -390,7 +426,6 @@ const mergedItemsArray = Object.values(mergedItems || {});
         )}
       </section>
 
-      {/* Back Button */}
       <div className="text-center">
         <button
           onClick={() => navigate(-1)}

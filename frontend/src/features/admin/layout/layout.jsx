@@ -5,6 +5,11 @@ import { useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { toggleTheme } from "../dark-lightMode/themeSlice";
 
+import ChatBot from "./ChatBot";
+import { Bot, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+
 export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -12,6 +17,11 @@ export default function Layout() {
   const dropdownRef = useRef(null);
   const [user, setUser] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const toggleChat = () => setIsChatOpen(!isChatOpen);
+  const currentUser = useSelector((state) => state.customerAuth.user);
 
   const dispatch = useDispatch();
   const isDark = useSelector((state) => state.theme.mode === "dark");
@@ -182,6 +192,43 @@ export default function Layout() {
         >
           <Outlet />
         </main>
+
+        <button
+          onClick={toggleChat}
+          className="fixed bottom-8 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition flex items-center justify-center z-50"
+        >
+          <Bot size={28} />
+        </button>
+
+        {/* المودال */}
+        <AnimatePresence>
+          {isChatOpen && (
+            <motion.div
+              className="fixed top-4 right-4 sm:right-6 z-50 w-full sm:w-96 h-[90vh] sm:h-[90vh] bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              {/* زر الإغلاق كأيقونة */}
+              <button
+                onClick={toggleChat}
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10"
+              >
+                <X size={24} />
+              </button>
+
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 p-4 border-b">
+                <Bot size={20} className="text-blue-600" />
+                AI Chatbot
+              </h2>
+
+              <div className="flex-grow overflow-auto p-2">
+                <ChatBot userId={currentUser?.id || "guest"} />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

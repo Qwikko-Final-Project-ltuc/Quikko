@@ -35,7 +35,6 @@ exports.getProfileByUserId = async (userId) => {
   return result.rows[0];
 };
 
-
 /**
  * Update delivery company profile by user ID
  /**
@@ -67,7 +66,7 @@ exports.getProfileByUserId = async (userId) => {
 //        WHERE id = $5
 //        RETURNING *
 //      )
-//      SELECT 
+//      SELECT
 //        c.id AS company_id, c.company_name, c.coverage_areas, c.status,
 //        u.name AS user_name, u.email AS user_email, u.phone AS user_phone
 //      FROM updated_company c
@@ -107,7 +106,6 @@ exports.updateProfileByUserId = async (userId, data) => {
   return result.rows[0];
 };
 
-
 /**
  * Get order with delivery company info
  * @async
@@ -140,32 +138,36 @@ exports.getOrderWithCompany = async function (orderId) {
   const order = orderRes.rows[0];
   if (!order) return null;
 
-const itemsRes = await pool.query(
-  `SELECT
-      oi.id AS order_item_id,
-      p.id AS product_id,
-      p.name AS product_name,
-      p.description AS product_description,
-      oi.quantity,
-      oi.price AS item_price,
-      oi.variant,
-      v.id AS vendor_id,
-      u.name AS vendor_name,
-      u.email AS vendor_email,
-      u.phone AS vendor_phone
-   FROM order_items oi
-   JOIN products p ON p.id = oi.product_id
-   JOIN vendors v ON p.vendor_id = v.id
-   JOIN users u ON v.user_id = u.id
-   WHERE oi.order_id = $1`,
-  [orderId]
-);
+  // ✅ أضفنا u.id AS vendor_user_id
+  const itemsRes = await pool.query(
+    `SELECT
+        oi.id AS order_item_id,
+        p.id AS product_id,
+        p.name AS product_name,
+        p.description AS product_description,
+        oi.quantity,
+        oi.price AS item_price,
+        oi.variant,
+        v.id AS vendor_id,
+        u.id AS vendor_user_id,                    -- 👈 هذا هو المطلوب
+        v.store_name AS vendor_name,
+        u.email AS vendor_email,
+        u.phone AS vendor_phone,
+        COALESCE(json_agg(pi.image_url) FILTER (WHERE pi.id IS NOT NULL), '[]') AS images
+     FROM order_items oi
+     JOIN products p ON p.id = oi.product_id
+     JOIN vendors v ON p.vendor_id = v.id
+     JOIN users u ON v.user_id = u.id
+     LEFT JOIN product_images pi ON pi.product_id = p.id
+     WHERE oi.order_id = $1
+     GROUP BY oi.id, p.id, v.id, u.id`,          
+    [orderId]
+  );
 
-order.items = itemsRes.rows;
-
-return order;
-
+  order.items = itemsRes.rows;
+  return order;
 };
+
 
 /**
  * Update order status
@@ -185,7 +187,6 @@ exports.updateStatus = async (orderId, status) => {
   return result.rows[0];
 };
 
-
 /**
  * Get order by ID
  * @async
@@ -193,7 +194,9 @@ exports.updateStatus = async (orderId, status) => {
  * @returns {Promise<Object|null>} Order or null
  */
 exports.getOrderById = async (orderId) => {
-  const result = await pool.query(`SELECT * FROM orders WHERE id = $1`, [orderId]);
+  const result = await pool.query(`SELECT * FROM orders WHERE id = $1`, [
+    orderId,
+  ]);
   return result.rows[0];
 };
 
@@ -244,7 +247,6 @@ exports.getOrdersByCompanyId = async (companyId) => {
   return result.rows;
 };
 
-
 /**
  * Get delivery company by user ID
  * @param {number} userId
@@ -275,7 +277,6 @@ exports.addCoverage = async (userId, mergedAreas) => {
   );
   return result.rows[0];
 };
-
 
 /**
  * Update company coverage completely
@@ -317,7 +318,7 @@ exports.deleteCoverageAreas = async (userId, areasToRemove) => {
   if (!company) return null;
 
   const currentAreas = company.coverage_areas || [];
-  const newAreas = currentAreas.filter(area => !areasToRemove.includes(area));
+  const newAreas = currentAreas.filter((area) => !areasToRemove.includes(area));
 
   const result = await pool.query(
     `UPDATE delivery_companies
@@ -355,7 +356,11 @@ exports.getWeeklyReport = async (deliveryCompanyId, days = 7) => {
       AND created_at >= $2
       AND created_at < $3
   `;
-  const totalRes = await pool.query(totalQuery, [deliveryCompanyId, startTs, endTsExclusive]);
+  const totalRes = await pool.query(totalQuery, [
+    deliveryCompanyId,
+    startTs,
+    endTsExclusive,
+  ]);
 
   const paymentQuery = `
     SELECT payment_status, COUNT(*)::int AS count
@@ -365,7 +370,11 @@ exports.getWeeklyReport = async (deliveryCompanyId, days = 7) => {
       AND created_at < $3
     GROUP BY payment_status
   `;
-  const paymentRes = await pool.query(paymentQuery, [deliveryCompanyId, startTs, endTsExclusive]);
+  const paymentRes = await pool.query(paymentQuery, [
+    deliveryCompanyId,
+    startTs,
+    endTsExclusive,
+  ]);
 
   const statusQuery = `
     SELECT status, COUNT(*)::int AS count
@@ -375,7 +384,11 @@ exports.getWeeklyReport = async (deliveryCompanyId, days = 7) => {
       AND created_at < $3
     GROUP BY status
   `;
-  const statusRes = await pool.query(statusQuery, [deliveryCompanyId, startTs, endTsExclusive]);
+  const statusRes = await pool.query(statusQuery, [
+    deliveryCompanyId,
+    startTs,
+    endTsExclusive,
+  ]);
 
   const topCustomersQuery = `
     SELECT o.customer_id,
@@ -391,7 +404,11 @@ exports.getWeeklyReport = async (deliveryCompanyId, days = 7) => {
     ORDER BY orders_count DESC, total_amount DESC
     LIMIT 5
   `;
-  const topCustomersRes = await pool.query(topCustomersQuery, [deliveryCompanyId, startTs, endTsExclusive]);
+  const topCustomersRes = await pool.query(topCustomersQuery, [
+    deliveryCompanyId,
+    startTs,
+    endTsExclusive,
+  ]);
 
   const topVendorsQuery = `
     SELECT v.id AS vendor_id,
@@ -409,7 +426,11 @@ exports.getWeeklyReport = async (deliveryCompanyId, days = 7) => {
     ORDER BY orders_count DESC, revenue DESC
     LIMIT 5
   `;
-  const topVendorsRes = await pool.query(topVendorsQuery, [deliveryCompanyId, startTs, endTsExclusive]);
+  const topVendorsRes = await pool.query(topVendorsQuery, [
+    deliveryCompanyId,
+    startTs,
+    endTsExclusive,
+  ]);
 
   const pendingQuery = `
     SELECT COUNT(*)::int AS pending_count
@@ -419,9 +440,42 @@ exports.getWeeklyReport = async (deliveryCompanyId, days = 7) => {
       AND created_at >= $2
       AND created_at < $3
   `;
-  const pendingRes = await pool.query(pendingQuery, [deliveryCompanyId, startTs, endTsExclusive]);
+  const pendingRes = await pool.query(pendingQuery, [
+    deliveryCompanyId,
+    startTs,
+    endTsExclusive,
+  ]);
 
-  const STATUSES = ['pending', 'processing', 'out_for_delivery', 'delivered', 'cancelled'];
+  // 7️⃣ الطلبات اليومية (للرسم البياني) - مع الأيام الفارغة
+  const dailyOrdersQuery = `
+  WITH days AS (
+    SELECT generate_series($2::date, ($3::date - interval '1 day'), interval '1 day')::date AS order_date
+  )
+  SELECT 
+    d.order_date,
+    COALESCE(COUNT(o.id), 0) AS orders_count,
+    COALESCE(SUM(o.total_amount), 0) AS total_amount
+  FROM days d
+  LEFT JOIN orders o 
+    ON DATE(o.created_at) = d.order_date 
+    AND o.delivery_company_id = $1
+  GROUP BY d.order_date
+  ORDER BY d.order_date ASC
+`;
+
+  const dailyOrdersRes = await pool.query(dailyOrdersQuery, [
+    deliveryCompanyId,
+    startTs,
+    endTsExclusive,
+  ]);
+
+  const STATUSES = [
+    "pending",
+    "processing",
+    "out_for_delivery",
+    "delivered",
+    "cancelled",
+  ];
 
   const totals = totalRes.rows[0] || { total_orders: 0, total_amount: '0' };
   const payment_status = paymentRes.rows.reduce((acc, r) => {
@@ -447,6 +501,9 @@ exports.getWeeklyReport = async (deliveryCompanyId, days = 7) => {
     top_customers: topCustomersRes.rows,
     top_vendors: topVendorsRes.rows,
     pending_count: pendingRes.rows[0]?.pending_count || 0,
+
+    // 📊 البيانات الجديدة للرسم البياني
+    daily_orders: dailyOrdersRes.rows,
   };
 };
 /**
@@ -526,13 +583,3 @@ exports.updatePaymentStatus = async (orderId, paymentStatus) => {
   );
   return result.rows[0] || null;
 };
-
-
-
-
-
-
-
-
-
-

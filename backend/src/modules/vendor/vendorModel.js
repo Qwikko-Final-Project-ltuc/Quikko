@@ -114,6 +114,7 @@ exports.getVendorProducts = async (vendorId) => {
  * @param {number|string} vendorId
  * @returns {Promise<Array<Object>>} Array of orders with items & product details
  */
+// model
 exports.getVendorOrders = async (vendorId) => {
   const query = `
     SELECT
@@ -121,6 +122,9 @@ exports.getVendorOrders = async (vendorId) => {
       o.status,
       o.total_amount,
       o.shipping_address,
+      o.delivery_company_id,                           -- مفيد كمرجع
+      dc.company_name AS delivery_company_name,        -- اسم شركة التوصيل
+      dc.user_id AS delivery_company_user_id,          -- user_id تبع شركة التوصيل (للدردشة)
       oi.id AS item_id,
       oi.quantity,
       oi.price,
@@ -130,12 +134,14 @@ exports.getVendorOrders = async (vendorId) => {
     FROM orders o
     JOIN order_items oi ON o.id = oi.order_id
     JOIN products p ON p.id = oi.product_id
+    LEFT JOIN delivery_companies dc ON dc.id = o.delivery_company_id
     WHERE p.vendor_id = $1
     ORDER BY o.created_at DESC
   `;
   const { rows } = await pool.query(query, [vendorId]);
   return rows;
 };
+
 
 /**
  * Update the status of an order.

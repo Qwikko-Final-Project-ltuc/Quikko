@@ -9,6 +9,7 @@ const LandingPage = () => {
   const [subtitleText, setSubtitleText] = useState("");
   const navigate = useNavigate();
 
+
   useEffect(() => {
     const fetchCMS = async () => {
       try {
@@ -51,16 +52,17 @@ const LandingPage = () => {
     return <p className="text-center mt-20 text-gray-500">Loading...</p>;
 
   if (error)
-    return (
-      <p className="text-center mt-20 text-red-500">
-        Error: {error}
-      </p>
-    );
+    return <p className="text-center mt-20 text-red-500">Error: {error}</p>;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
-      <div className="flex flex-col md:flex-row items-center max-w-6xl w-full bg-white rounded-xl shadow-lg overflow-hidden">
-        
+    <div
+      className="min-h-screen flex items-center justify-center p-6 transition-colors duration-500"
+      style={{ backgroundColor: "var(--bg)" }}
+    >
+      <div
+        className="flex flex-col md:flex-row items-center max-w-6xl w-full rounded-xl overflow-hidden shadow-lg transition-colors duration-500"
+        style={{ backgroundColor: "var(--div)" }}
+      >
         <div className="md:w-1/2 w-full">
           <img
             src={content.image_url}
@@ -71,23 +73,29 @@ const LandingPage = () => {
 
         <div className="md:w-1/2 w-full p-8 flex flex-col justify-center items-start h-full">
           <div className="max-w-md">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <h1
+              className="text-3xl md:text-4xl font-bold mb-4 transition-colors duration-500"
+              style={{ color: "var(--text)" }}
+            >
               {titleText || "Welcome"}
             </h1>
             {subtitleText && (
-              <p className="text-lg md:text-xl text-gray-700 mb-6 whitespace-pre-line">
+              <p
+                className="text-lg md:text-xl mb-6 whitespace-pre-line transition-colors duration-500"
+                style={{ color: "var(--text)" }}
+              >
                 {subtitleText}
               </p>
             )}
             <button
               onClick={() => navigate("/customer/products")}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition duration-300"
+              className="font-semibold py-3 px-8 rounded-lg hover:opacity-90 transition duration-300"
+              style={{ backgroundColor: "var(--button)", color: "var(--textbox)" }}
             >
               Start Shopping
             </button>
           </div>
         </div>
-
       </div>
     </div>
   );

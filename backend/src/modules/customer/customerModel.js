@@ -1195,7 +1195,7 @@ exports.addProductToWishlist = async (userId, productId) => {
 };
 
 exports.removeProductFromWishlist = async (wishlistId) => {
-  const { rowCount } = await db.query(`DELETE FROM wishlist WHERE id = $1`, [
+  const { rowCount } = await pool.query(`DELETE FROM wishlist WHERE id = $1`, [
     wishlistId,
   ]);
 

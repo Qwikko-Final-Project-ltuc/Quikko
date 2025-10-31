@@ -106,6 +106,15 @@ const customerAPI = {
       currentPage: page
     };
   },
+  getProductsByIds: async (ids) => {
+  if (!ids || !ids.length) return [];
+  const query = ids.map((id) => `id=${id}`).join("&");
+  const res = await axios.get(`${API_URL}/products?${query}`, {
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  });
+  return res.data.items || [];
+},
+
 
   getCategories: async () =>{
     const res = (await axios.get("http://localhost:3000/api/categories")).data;
@@ -215,18 +224,30 @@ const customerAPI = {
     return res.data.cart;
   },
 
-//AI
-logInteraction: async (userId, productId, type) => {
-  try {
-    const res = await interactionAPI.post("/", { userId, productId, type });
-    console.log("Logging interaction:", { userId, productId, type });
+  //AI
+  logInteraction: async (userId, productId, type) => {
+    try {
+      const res = await interactionAPI.post("/", { userId, productId, type });
+      console.log("Logging interaction:", { userId, productId, type });
 
-    return res.data;
-  } catch (err) {
-    console.error("Error logging interaction:", err);
-    throw err;
-  }
-},
+      return res.data;
+    } catch (err) {
+      console.error("Error logging interaction:", err);
+      throw err;
+    }
+  },// Recommendations
+  getRecommendations: async ({ excludeIds = [] } = {}) => {
+    try {
+      const params = {
+        excludeIds: JSON.stringify(excludeIds),
+      };
+      const res = await api.get(`http://localhost:3000/api/recommendations`, { params });
+      return res.data;
+    } catch (err) {
+      console.error("Failed to fetch recommendations:", err);
+      return [];
+    }
+  },
 
 
   // Loyalty Points Endpoints

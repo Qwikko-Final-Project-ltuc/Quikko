@@ -25,6 +25,7 @@ const app = express();
 const cookieParser = require("cookie-parser");
 const identifyCustomer = require("./src/middleware/identifyCustomer");
 const guestToken = require("./src/middleware/guestToken");
+const OpenAI = require("openai");
 
 
 // ===============================
@@ -32,17 +33,38 @@ const guestToken = require("./src/middleware/guestToken");
 // ===============================
 // Uncomment and configure if frontend runs on a different origin
 const cors = require('cors');
-app.use(cors({
-  origin: 'http://localhost:5173', 
-  methods: ['GET','POST','PUT','DELETE','PATCH'],
-  credentials: true ,
-  allowedHeaders: ['Content-Type', 'Authorization','Guest-Token'],
-  exposedHeaders: ['Guest-Token']
-}));
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization", "Guest-Token"],
+    exposedHeaders: ["Guest-Token"],
+  })
+);
+
 
 
 // Middleware to parse incoming JSON requests
 app.use(express.json());
+// ======== PING ENDPOINTS ========
+// 1) Ping بسيط للتأكد من اشتغال السيرفر
+app.get('/__ping', (req, res) => {
+  res.json({ ok: true, service: 'api', time: new Date().toISOString() });
+});
+
+// 2) Ping للقاعدة (DB)
+app.get('/__db', async (req, res) => {
+  try {
+    // لو db عندك Pool: استخدمي pool.query مباشرة
+    const { rows } = await pool.query('SELECT NOW() as now');
+    res.json({ ok: true, db: 'up', now: rows?.[0]?.now });
+  } catch (err) {
+    console.error('DB ping error:', err);
+    res.status(500).json({ ok: false, db: 'down', error: err.message });
+  }
+});
+
 app.use(cookieParser());
 
 const path = require("path");
@@ -122,8 +144,9 @@ const customerRoutes = require("./src/modules/customer/customerRoutes");
 app.use("/api/customers", customerRoutes);
 
 // Chat Routes
-const chatRoutes = require("./src/modules/chat/chatRoutes");
-app.use("/api/chat", chatRoutes);
+// const chatRoutesFactory = require("./src/modules/chat/chatRoutes");
+// app.use("/api/chat", chatRoutesFactory(io));
+
 
 // Product Routes
 const productsRoutes = require("./src/modules/product/productRoutes");
@@ -133,6 +156,9 @@ app.use("/api/products", productsRoutes);
 const reviewRoutes = require("./src/modules/review/reviewRoutes");
 app.use("/api/reviews", reviewRoutes);
 
+// ChatBot
+// const chatbotRoute = require("./src/modules/chatbot/chatbotRoutes");
+// app.use("/api/chatbot", chatbotRoute);
 // Coupon Routes
 const couponRoutes = require("./src/modules/coupon/CouponRoutes");
 app.use("/api/coupons", couponRoutes);
@@ -152,4 +178,16 @@ app.use('/api/recommendations', recommendationsRouter);
 // SERVER LISTENER
 // ===============================
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const io = require("socket.io")(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"],
+  },
+});
+  console.log("✅ Socket.io server initialized");
+const chatRoutesFactory = require("./src/modules/chat/chatRoutes");
+app.use("/api/chat", chatRoutesFactory(io));
+
+require("./src/modules/chatbot/chatSocket")(io); 
+require("./src/modules/chat/chatSocket")(io);
