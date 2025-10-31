@@ -50,7 +50,6 @@ const App = () => {
 
 useEffect(() => {
   const fetchGuestToken = async () => {
-    // تحقق من وجود user token قبل أي شيء
     if (token) return;
 
     try {

@@ -1,58 +1,82 @@
-import logo from "/logo.png";
+// import logo from "/logo.png";
 import { FaGithub, FaLinkedin } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 export default function Footer() {
+    const themeMode = useSelector((state) => state.customerTheme.mode);
+
   return (
-    <footer className="bg-لقثغ-100 text-black py-6 px-10">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+    <footer className="bg-[var(--bg)] text-[var(--text)] py-8 px-10 border-t border-[var(--border)]">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
         {/* Logo */}
-        <div className="flex items-center space-x-2">
-          <img
-            src={logo}
-            alt="Qwikko Logo"
-            className="w-50 h-50 object-contain absolute butttom-25 left-25 transform -translate-x-1/2"
-          />
+        <div className="flex items-center">
+          <img 
+          src={themeMode === "dark" ? "/LogoDark.png" : "/logo.png"} 
+          alt="Qwikko Logo" 
+          className="h-9" 
+        />
         </div>
 
-        {/* Links */}
-        <div className="flex flex-col items-center">
-          <div className="flex space-x-6 text-sm mb-2">
+        {/* Links and Copyright */}
+        <div className="flex flex-col items-center text-center">
+          <div className="flex space-x-8 text-sm mb-3">
             <Link
               to="/customer/contact"
-              className="hover:text-black hover:underline transition"
+              className="hover:text-[var(--primary)] hover:underline transition-colors duration-200 font-medium"
             >
               Contact Us
             </Link>
             <Link
               to="/customer/about"
-              className="hover:text-black hover:underline transition"
+              className="hover:text-[var(--primary)] hover:underline transition-colors duration-200 font-medium"
             >
               About Us
             </Link>
+            <Link
+              to="/customer/privacy"
+              className="hover:text-[var(--primary)] hover:underline transition-colors duration-200 font-medium"
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              to="/customer/terms"
+              className="hover:text-[var(--primary)] hover:underline transition-colors duration-200 font-medium"
+            >
+              Terms of Service
+            </Link>
           </div>
-          <p className="text-xs text-gray-600">2025 © All rights reserved</p>
+          <p className="text-xs text-[var(--light-gray)]">
+            © 2025 Qwikko. All rights reserved.
+          </p>
         </div>
 
         {/* Social Icons */}
-        <div className="flex space-x-4">
+        <div className="flex space-x-3">
           <a
             href="https://github.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="p-2 rounded hover:bg-gray-100 hover:text-gray-800 transition"
+            className="p-3 rounded-full bg-[var(--bg)] text-[var(--text)] hover:bg-[var(--primary)] hover:text-white transition-all duration-200 shadow-sm"
           >
-            <FaGithub size={20} />
+            <FaGithub size={18} />
           </a>
           <a
             href="https://linkedin.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="p-2 rounded hover:bg-gray-100 hover:text-gray-800 transition"
+            className="p-3 rounded-full bg-[var(--bg)] text-[var(--text)] hover:bg-[var(--primary)] hover:text-white transition-all duration-200 shadow-sm"
           >
-            <FaLinkedin size={20} />
+            <FaLinkedin size={18} />
           </a>
         </div>
+      </div>
+
+      {/* Bottom Section */}
+      <div className="max-w-7xl mx-auto mt-6 pt-6 border-t border-[var(--border)] text-center">
+        <p className="text-xs text-[var(--light-gray)]">
+          Made with ❤️ for better shopping experience
+        </p>
       </div>
     </footer>
   );
