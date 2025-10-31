@@ -160,14 +160,13 @@ exports.getOrderWithCompany = async function (orderId) {
      JOIN users u ON v.user_id = u.id
      LEFT JOIN product_images pi ON pi.product_id = p.id
      WHERE oi.order_id = $1
-     GROUP BY oi.id, p.id, v.id, u.id`,          
+     GROUP BY oi.id, p.id, v.id, u.id`,
     [orderId]
   );
 
   order.items = itemsRes.rows;
   return order;
 };
-
 
 /**
  * Update order status
@@ -477,7 +476,7 @@ exports.getWeeklyReport = async (deliveryCompanyId, days = 7) => {
     "cancelled",
   ];
 
-  const totals = totalRes.rows[0] || { total_orders: 0, total_amount: '0' };
+  const totals = totalRes.rows[0] || { total_orders: 0, total_amount: "0" };
   const payment_status = paymentRes.rows.reduce((acc, r) => {
     acc[r.payment_status] = r.count;
     return acc;

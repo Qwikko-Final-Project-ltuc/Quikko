@@ -29,6 +29,13 @@ export default function LandingPage() {
     loadCMS();
   }, []);
 
+  useEffect(() => {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, []);
+
   return (
     <>
       <div
@@ -38,14 +45,12 @@ export default function LandingPage() {
           color: isDarkMode ? "#ffffff" : "#242625",
         }}
       >
-        {/*    <header className="w-full flex justify-between items-center p-6 max-w-6xl mx-auto">
-      //     <div className="text-2xl font-bold">QWIKKO</div>
-      //   </header> */}
-        {/* ✅ Hero Section */}
-        <section
-          className="flex flex-col md:flex-row items-center justify-between w-full max-w-6xl p-6 mt-10 gap-10"
+        <div
+          className="flex flex-col md:flex-row items-center justify-between w-full max-w-6xl p-10 mt-10 gap-12 rounded-2xl shadow-lg"
           style={{
+            backgroundColor: isDarkMode ? "#2d2d2d" : "#ffffff",
             color: isDarkMode ? "#ffffff" : "#242625",
+            minHeight: "80vh", // 👈 يخليها أطول
           }}
         >
           <div className="md:w-1/2 flex justify-center order-1 md:order-1">
@@ -53,11 +58,11 @@ export default function LandingPage() {
               <img
                 src={cmsContent.image_url}
                 alt="Landing visual"
-                className="w-full max-w-md object-contain rounded-lg shadow-lg"
+                className="w-full max-w-md object-contain rounded-lg shadow-xl"
               />
             ) : (
               <div
-                className="w-full max-w-md h-72 bg-gray-200 flex items-center justify-center rounded-lg"
+                className="w-full max-w-md h-80 bg-gray-200 flex items-center justify-center rounded-lg"
                 style={{
                   color: isDarkMode ? "#ffffff" : "#242625",
                 }}
@@ -67,9 +72,9 @@ export default function LandingPage() {
             )}
           </div>
 
-          <div className="md:w-1/2 text-center md:text-left flex flex-col items-center md:items-start order-2 md:order-2">
+          <div className="md:w-1/2 text-center md:text-left flex flex-col items-center md:items-start order-2 md:order-2 space-y-4">
             <h1
-              className="text-4xl md:text-5xl font-bold mb-4 leading-tight"
+              className="text-4xl md:text-5xl font-bold leading-tight"
               style={{
                 color: isDarkMode ? "#ffffff" : "#242625",
               }}
@@ -79,117 +84,37 @@ export default function LandingPage() {
 
             {subtitle && (
               <p
-                className="text-lg  mb-6 whitespace-pre-line"
+                className="text-lg mb-4 whitespace-pre-line leading-relaxed"
                 style={{
-                  color: isDarkMode ? "#ffffff" : "#242625",
+                  color: isDarkMode ? "#dcdcdc" : "#333333",
                 }}
               >
                 {subtitle}
               </p>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-              <Link
-                to="/delivery/register"
-                className="px-8 py-3 rounded transition-all duration-300 text-center w-full sm:w-auto"
-                style={{
-                  backgroundColor: isDarkMode ? "#666666" : "#ffffff",
-                  color: isDarkMode ? "#ffffff" : "#242625",
-                }}
-              >
-                Start Now
-              </Link>
-
-              <Link
-                to="/delivery/login"
-                className="px-8 py-3 rounded transition-all duration-300 text-center w-full sm:w-auto border"
-                style={{
-                  backgroundColor: "transparent",
-                  borderColor: "#666666",
-                  color: "#666666",
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = "#666666";
-                  e.target.style.color = "#ffffff";
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = "transparent";
-                  e.target.style.color = "#666666";
-                }}
-              >
-                Already have an account? Login
-              </Link>
-            </div>
-          </div>
-        </section>
-        <section
-          className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-4 gap-6 p-6 mt-16"
-          style={{
-            color: isDarkMode ? "#ffffff" : "#242625",
-          }}
-        >
-          {[
-            {
-              icon: <FaClipboardList size={32} />,
-              title: "Easy Management",
-              text: "Manage orders with ease.",
-            },
-            {
-              icon: <FaChartLine size={32} />,
-              title: "Track Progress",
-              text: "Monitor deliveries in real-time.",
-            },
-            {
-              icon: <FaUsers size={32} />,
-              title: "Grow Your Network",
-              text: "Connect with more customers.",
-            },
-            {
-              icon: <FaDollarSign size={32} />,
-              title: "Increase Revenue",
-              text: "Boost your income efficiently.",
-            },
-          ].map((f, i) => (
-            <div
-              key={i}
-              className=" rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition"
+            <Link
+              to="/delivery/login"
+              className="px-10 py-4 rounded-lg text-lg text-center shadow-md transition-all duration-300 transform hover:scale-105"
               style={{
-                backgroundColor: isDarkMode ? "#666666" : "#ffffff",
-                color: isDarkMode ? "#ffffff" : "#242625",
+                backgroundColor: isDarkMode ? "#307A59" : "#307A59",
+                color: "#ffffff",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = "#2b6b4f"; // أغمق شوي عند الهوفر
+                e.target.style.boxShadow = "0 6px 15px rgba(48, 122, 89, 0.4)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = "#307A59";
+                e.target.style.boxShadow = "0 4px 10px rgba(48, 122, 89, 0.3)";
               }}
             >
-              <div
-                className="text-blue-600 mb-4"
-                style={{
-                  backgroundColor: isDarkMode ? "#666666" : "#ffffff",
-                  color: isDarkMode ? "#ffffff" : "#242625",
-                }}
-              >
-                {f.icon}
-              </div>
-              <h3
-                className="text-xl font-semibold mb-2"
-                style={{
-                  backgroundColor: isDarkMode ? "#666666" : "#ffffff",
-                  color: isDarkMode ? "#ffffff" : "#242625",
-                }}
-              >
-                {f.title}
-              </h3>
-              <p
-                className=" text-sm"
-                style={{
-                  backgroundColor: isDarkMode ? "#666666" : "#ffffff",
-                  color: isDarkMode ? "#ffffff" : "#242625",
-                }}
-              >
-                {f.text}
-              </p>
-            </div>
-          ))}
-        </section>
-        {/* ✅ How It Works Section */}
-        <section className="w-full max-w-5xl p-10 mt-7 text-center">
+              Start Now
+            </Link>
+          </div>
+        </div>
+
+        <div className="w-full max-w-5xl p-10 mt-7 text-center">
           <h2
             className="text-4xl font-bold mb-16"
             style={{
@@ -198,14 +123,16 @@ export default function LandingPage() {
           >
             How It Works
           </h2>
+
           <div className="flex flex-col md:flex-row items-center justify-between relative">
             <div
-              className="hidden md:block absolute top-14 left-0 w-full h-1  z-0"
+              className="hidden md:block absolute top-14 left-0 w-full h-1 z-0"
               style={{
                 backgroundColor: isDarkMode ? "#666666" : "#ffffff",
                 color: isDarkMode ? "#ffffff" : "#242625",
               }}
             ></div>
+
             {[
               {
                 step: "1",
@@ -214,8 +141,8 @@ export default function LandingPage() {
               },
               {
                 step: "2",
-                title: "Connect your team",
-                desc: "Add drivers and employees to start managing deliveries.",
+                title: "Set up your delivery zones",
+                desc: "Define the areas where your company will operate and deliver.",
               },
               {
                 step: "3",
@@ -225,14 +152,14 @@ export default function LandingPage() {
             ].map((item, i) => (
               <div
                 key={i}
-                className="relative z-10 flex flex-col items-center bg-white rounded-2xl shadow-md p-6 w-64 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl cursor-pointer"
+                className="relative z-10 flex flex-col items-center bg-white rounded-2xl shadow-md p-6 w-64"
                 style={{
                   backgroundColor: isDarkMode ? "#666666" : "#ffffff",
                   color: isDarkMode ? "#ffffff" : "#242625",
                 }}
               >
                 <div
-                  className="w-16 h-16 flex items-center justify-center rounded-full    text-2xl font-bold mb-4 shadow-md"
+                  className="w-16 h-16 flex items-center justify-center rounded-full text-2xl font-bold mb-4 shadow-md"
                   style={{
                     backgroundColor: isDarkMode ? "#666666" : "#ffffff",
                     color: isDarkMode ? "#ffffff" : "#242625",
@@ -249,9 +176,9 @@ export default function LandingPage() {
                   {item.title}
                 </p>
                 <p
-                  className="text-sm  mt-2"
+                  className="text-sm mt-2"
                   style={{
-                    color: isDarkMode ? "#ffffff" : "#242625",
+                    color: isDarkMode ? "#dcdcdc" : "#333333",
                   }}
                 >
                   {item.desc}
@@ -259,7 +186,8 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
-        </section>
+        </div>
+
         <section className="w-full max-w-6xl p-6 mt-10 text-center">
           <h2
             className="text-3xl font-bold mb-10"
