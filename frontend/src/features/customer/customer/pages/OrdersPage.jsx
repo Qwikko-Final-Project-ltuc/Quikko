@@ -238,7 +238,7 @@ const OrdersPage = () => {
                 Order #{order.id} - {order.status}
               </h2>
               <p className="text-gray-600 mb-2">
-                Payment: {order.payment_status} | Total: ${order.total_amount}
+                Payment: {order.payment_status} | Total: ${(order.final_amount ?? order.total_amount)}
               </p>
 
               <p className="text-gray-600 mb-2">

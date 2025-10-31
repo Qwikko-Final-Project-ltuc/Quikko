@@ -75,7 +75,6 @@ const ProductDetails = () => {
       setRating(0);
       setComment("");
 
-      // إعادة تحميل التعليقات بعد الإضافة
       const res = await axios.get(`http://localhost:3000/api/products/review/${id}`);
       setReviews(res.data);
     } catch (err) {
@@ -90,7 +89,6 @@ const ProductDetails = () => {
 
   return (
     <div className="max-w-5xl mx-auto p-8">
-      {/* تفاصيل المنتج */}
       <div className="flex flex-col md:flex-row gap-8">
         <div className="relative w-full md:w-1/2">
           {images.length > 0 && (
@@ -124,11 +122,9 @@ const ProductDetails = () => {
         </div>
       </div>
 
-      {/* قسم الريفيوز */}
       <div className="mt-10">
         <h2 className="text-2xl font-semibold mb-4">Customer Reviews</h2>
 
-        {/* عرض التعليقات */}
         {reviews.length === 0 ? (
           <p className="text-gray-600">No reviews yet.</p>
         ) : (
@@ -145,25 +141,26 @@ const ProductDetails = () => {
           </div>
         )}
 
-        {/* إضافة مراجعة جديدة */}
         <form onSubmit={handleAddReview} className="mt-8 border-t pt-4">
           <h3 className="text-xl font-bold mb-2">Add your review</h3>
+
           <label className="block mb-2">
             Rating:
-            <select
-              value={rating}
-              onChange={(e) => setRating(Number(e.target.value))}
-              className="ml-2 border rounded px-2 py-1"
-              required
-            >
-              <option value="">Select...</option>
+            <div className="flex gap-1 mt-1">
               {[1, 2, 3, 4, 5].map((num) => (
-                <option key={num} value={num}>
-                  {num} Star{num > 1 && "s"}
-                </option>
+                <span
+                  key={num}
+                  className={`cursor-pointer text-2xl ${
+                    rating >= num ? "text-yellow-500" : "text-gray-300"
+                  }`}
+                  onClick={() => setRating(num)}
+                >
+                  ⭐
+                </span>
               ))}
-            </select>
+            </div>
           </label>
+
           <textarea
             placeholder="Write your comment..."
             className="w-full border rounded p-2 mb-3"
@@ -171,6 +168,7 @@ const ProductDetails = () => {
             onChange={(e) => setComment(e.target.value)}
             required
           />
+
           <button
             type="submit"
             className="bg-green-600 text-white px-4 py-2 rounded"

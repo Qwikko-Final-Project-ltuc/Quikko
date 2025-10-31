@@ -7,7 +7,7 @@ export const registerDelivery = createAsyncThunk(
   async (formData, { rejectWithValue }) => {
     try {
       const response = await registerDeliveryAPI(formData);
-      return response; // عادة user + token
+      return response; // يحتوي user + token
     } catch (err) {
       return rejectWithValue(err.message);
     }
@@ -20,14 +20,13 @@ export const loginDelivery = createAsyncThunk(
   async (formData, { rejectWithValue }) => {
     try {
       const response = await loginAPI(formData);
-      return response; // عادة user + token
+      return response; // يحتوي user + token
     } catch (err) {
       return rejectWithValue(err.message);
     }
   }
 );
 
-// ===== الحالة الأولية
 const initialState = {
   user: null,
   token: null,
@@ -36,7 +35,19 @@ const initialState = {
   successMessage: null,
 };
 
-// ===== إنشاء slice
+// 🔍 دالة مساعدة لاستخراج الـ id من الـ user أياً كان اسمه
+const extractUserId = (user) =>
+  Number(
+    user?.id ??
+      user?.user_id ??
+      user?.delivery_id ??
+      user?.vendor_id ??
+      user?.customer_id ??
+      user?.deliveryId ??
+      user?.vendorId ??
+      user?.customerId
+  ) || null;
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -48,6 +59,12 @@ const authSlice = createSlice({
     setUserFromToken: (state, action) => {
       state.user = action.payload.user;
       state.token = action.payload.token;
+
+      const userId = extractUserId(action.payload.user);
+      if (userId) localStorage.setItem("userId", String(userId));
+
+      if (action.payload.token)
+        localStorage.setItem("token", action.payload.token);
     },
     logout: (state) => {
       state.user = null;
@@ -55,11 +72,13 @@ const authSlice = createSlice({
       state.error = null;
       state.successMessage = null;
       localStorage.removeItem("token");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("deliveryId");
     },
   },
   extraReducers: (builder) => {
-    // === Register
     builder
+      // ===== Register
       .addCase(registerDelivery.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -70,14 +89,22 @@ const authSlice = createSlice({
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.successMessage = "✅ Delivery registered successfully!";
+
+        const userId = extractUserId(action.payload.user);
+        if (userId) localStorage.setItem("userId", String(userId));
+
+        const deliveryId = action.payload.user?.id || userId;
+        if (deliveryId) localStorage.setItem("deliveryId", String(deliveryId));
+
+        if (action.payload.token)
+          localStorage.setItem("token", action.payload.token);
       })
       .addCase(registerDelivery.rejected, (state, action) => {
         state.loading = false;
         state.error = "❌ " + action.payload;
-      });
+      })
 
-    // === Login
-    builder
+      // ===== Login
       .addCase(loginDelivery.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -89,7 +116,14 @@ const authSlice = createSlice({
         state.token = action.payload.token;
         state.successMessage = "✅ Login successful!";
 
-        localStorage.setItem("token", action.payload.token);
+        const userId = extractUserId(action.payload.user);
+        if (userId) localStorage.setItem("userId", String(userId));
+
+        const deliveryId = action.payload.user?.id || userId;
+        if (deliveryId) localStorage.setItem("deliveryId", String(deliveryId));
+
+        if (action.payload.token)
+          localStorage.setItem("token", action.payload.token);
       })
       .addCase(loginDelivery.rejected, (state, action) => {
         state.loading = false;

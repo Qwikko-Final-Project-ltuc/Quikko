@@ -16,6 +16,7 @@ import storesReducer from "../features/customer/customer/storesSlice";
 import reviewsReducer from "../features/customer/review/reviewSlice";
 import paymentReducer from "../features/customer/customer/paymentSlice";
 import chatReducer from "../features/customer/customer/chatSlice";
+import customerThemeReducer from "../features/customer/themeSlice";
 
 //admin slice
 import vendorsReducer from "../features/admin/vendor/vendorSlice";
@@ -39,6 +40,7 @@ const store = configureStore({
     reviews: reviewsReducer,
     payment: paymentReducer,
     chat: chatReducer,
+    customerTheme: customerThemeReducer,
     //Admin
     vendors: vendorsReducer,
     deliveries: deliveriesReducer,

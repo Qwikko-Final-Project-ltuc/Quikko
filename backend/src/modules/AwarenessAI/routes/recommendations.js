@@ -21,7 +21,36 @@ async function getRecommendations(userId, excludeIds = []) {
     [userId]
   );
 
-  if (!userRow.length || !userRow[0].vector_embedding) return [];
+  // 🔹 fallback logic إذا ما في embedding
+  if (!userRow.length || !userRow[0].vector_embedding) {
+    console.log("No user embedding found — returning fallback recommendations.");
+
+    const { rows: fallback } = await pool.query(`
+      SELECT 
+        p.id,
+        p.name,
+        p.category_id,
+        p.price,
+        p.description,
+        COALESCE(
+          json_agg(pi.image_url) FILTER (WHERE pi.id IS NOT NULL),
+          '[]'
+        ) AS images,
+        ROUND(AVG(r.rating), 2) AS avg_rating,
+        COUNT(r.id) AS rating_count
+      FROM products p
+      LEFT JOIN product_reviews r ON r.product_id = p.id AND r.is_deleted = false
+      LEFT JOIN product_images pi ON pi.product_id = p.id
+      WHERE p.is_deleted = false
+      GROUP BY p.id
+      HAVING COUNT(r.id) > 0
+      ORDER BY avg_rating DESC, rating_count DESC
+      LIMIT 10
+    `);
+
+    return fallback;
+  }
+
   let userEmbedding;
   try {
     userEmbedding = userRow[0].vector_embedding;
@@ -30,30 +59,25 @@ async function getRecommendations(userId, excludeIds = []) {
     return [];
   }
 
-  // جلب جميع المنتجات القابلة للتوصية مع كامل البيانات
- const { rows: allProducts } = await pool.query(
-  `SELECT 
-     p.id, p.name, p.category_id, p.price, p.description, p.vector_embedding,
-     COALESCE(
-       json_agg(pi.image_url) FILTER (WHERE pi.id IS NOT NULL),
-       '[]'
-     ) AS images
-   FROM products p
-   LEFT JOIN product_images pi ON pi.product_id = p.id
-   WHERE p.is_deleted = false AND p.vector_embedding IS NOT NULL
-   GROUP BY p.id`
-);
-
+  const { rows: allProducts } = await pool.query(`
+    SELECT 
+      p.id, p.name, p.category_id, p.price, p.description, p.vector_embedding,
+      COALESCE(
+        json_agg(pi.image_url) FILTER (WHERE pi.id IS NOT NULL),
+        '[]'
+      ) AS images
+    FROM products p
+    LEFT JOIN product_images pi ON pi.product_id = p.id
+    WHERE p.is_deleted = false AND p.vector_embedding IS NOT NULL
+    GROUP BY p.id
+  `);
 
   const scored = allProducts
     .filter(p => p.vector_embedding && Array.isArray(p.vector_embedding))
     .map(p => {
       const cleanVec = p.vector_embedding.filter(v => Number.isFinite(v));
       if (!cleanVec.length) return null;
-      return {
-        ...p, // احتفظ بجميع الحقول
-        score: cosine(userEmbedding, cleanVec)
-      };
+      return { ...p, score: cosine(userEmbedding, cleanVec) };
     })
     .filter(Boolean)
     .filter(p => !excludeIds.includes(p.id));
@@ -62,6 +86,7 @@ async function getRecommendations(userId, excludeIds = []) {
 
   return scored;
 }
+
 
 // API endpoint
 router.get('/', protect, async (req, res) => {

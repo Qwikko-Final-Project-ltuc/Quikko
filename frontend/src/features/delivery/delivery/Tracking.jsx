@@ -9,6 +9,8 @@ import {
   FaCreditCard,
   FaRoute,
 } from "react-icons/fa";
+import { getTrackingOrder } from "./DeliveryAPI";
+import { FaUser, FaIndustry, FaBox, FaCreditCard } from "react-icons/fa";
 import { useSelector } from "react-redux";
 
 export default function TrackingPage() {
@@ -151,6 +153,32 @@ export default function TrackingPage() {
     });
   }
 
+  const goChatWithVendor = (vendor) => {
+    const vendorName =
+      vendor.vendor_name || `Vendor #${vendor.vendor_id || ""}`;
+
+    const vendorUserId =
+      Number(
+        vendor.vendor_user_id ??
+          vendor.user_id ??
+          vendor.vendorUserId ??
+          vendor.vendor_userId ??
+          vendor.vendor_owner_id
+      ) || null;
+
+    if (!Number.isFinite(vendorUserId) || vendorUserId <= 0) {
+      alert("Vendor user id not available for this order item.");
+      return;
+    }
+
+    navigate("/delivery/dashboard/chat", {
+      state: {
+        vendorUserId,
+        vendorName,
+      },
+    });
+  };
+
   return (
     <div className="max-w-5xl mx-auto mt-10 space-y-10 p-6">
       <h2
@@ -185,7 +213,7 @@ export default function TrackingPage() {
           Customer Info
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" v>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <p>
             <strong
               style={{
@@ -219,7 +247,6 @@ export default function TrackingPage() {
         </div>
       </section>
 
-      {/* ✅ قسم جديد لعرض تفاصيل التوصيل العامة */}
 
       <section
         className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300"
@@ -296,6 +323,21 @@ export default function TrackingPage() {
             >
               <h4
                 className="text-lg font-bold mb-3"
+        {Object.values(
+          mergedItemsArray.reduce((acc, item) => {
+            if (!acc[item.vendor_id])
+              acc[item.vendor_id] = { vendor: item, products: [] };
+            acc[item.vendor_id].products.push(item);
+            return acc;
+          }, {})
+        ).map(({ vendor, products }) => (
+          <div
+            key={vendor.vendor_id}
+            className="p-4 border rounded-2xl mb-4 shadow-sm hover:shadow-md transition-shadow duration-300"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h4
+                className="text-lg font-bold "
                 style={{
                   color: isDarkMode ? "#ffffff" : "#242625",
                 }}
@@ -320,6 +362,36 @@ export default function TrackingPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {products.map((item) => (
+
+              <button
+                onClick={() => goChatWithVendor(vendor)}
+                className="px-4 py-2 rounded-xl hover:scale-105 transition-transform duration-200"
+                style={{
+                  backgroundColor: "#307A59",
+                  color: "#ffffff",
+                }}
+              >
+                Chat with vendor
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {products.map((item) => (
+                <div
+                  key={item.order_item_id}
+                  className="flex gap-4 p-3  transition-colors duration-300"
+                  style={{
+                    color: isDarkMode ? "#ffffff" : "#242625",
+                  }}
+                >
+                  {item.images?.[0] && (
+                    <img
+                      src={item.images[0]}
+                      alt={item.product_name}
+                      className="w-28 h-28 object-cover rounded-lg"
+                    />
+                  )}
+
                   <div
                     key={item.order_item_id}
                     className="flex gap-4 p-3 transition-colors duration-300"
@@ -370,6 +442,14 @@ export default function TrackingPage() {
                 <p>Email: {vendor.vendor_email || "N/A"}</p>
                 <p>Phone: {vendor.vendor_phone || "N/A"}</p>
               </div>
+            <div
+              className="mt-3 text-sm "
+              style={{
+                color: isDarkMode ? "#ffffff" : "#242625",
+              }}
+            >
+              <p>Email: {vendor.vendor_email}</p>
+              <p>Phone: {vendor.vendor_phone}</p>
             </div>
           ))
         ) : (
@@ -437,7 +517,6 @@ export default function TrackingPage() {
           </p>
         </div>
 
-        {/* Products List */}
         {order?.items?.length > 0 && (
           <div className="mt-6">
             <h4
@@ -523,7 +602,6 @@ export default function TrackingPage() {
         )}
       </section>
 
-      {/* Back Button */}
       <div className="text-center">
         <button
           onClick={() => navigate(-1)}

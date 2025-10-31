@@ -70,6 +70,7 @@ router.get("/review/:product_id", productController.getProductReviews);
 
 // الأدمن فقط يمكنه حذف تعليق
 router.delete("/review/:review_id", protect, authorizeRole("admin"), productController.deleteReview);
+router.post("/upload", protect, productController.uploadProductImages);
 
 module.exports = router;
 

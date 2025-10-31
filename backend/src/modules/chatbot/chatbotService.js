@@ -1,4 +1,3 @@
-// src/modules/chatbot/chatbotService.js
 const OpenAI = require("openai");
 const userSessions = require("./sessionStore");
 const { classifyUserIntent, handleIntent } = require("./intentHandler.js");
@@ -7,21 +6,17 @@ const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 exports.getAIResponse = async (userId, role, message, token) => {
   try {
-    // تأكد من وجود session
     if (!userId) userId = "guest"; // fallback لو مافي
     if (!userSessions[userId]) userSessions[userId] = {};
     if (!userSessions[userId].conversation) userSessions[userId].conversation = [];
 
     userSessions[userId].conversation.push({ role: "user", content: message });
 
-    // rest of code...
 
-    // === classify user intent ===
     const intent = await classifyUserIntent(message, role);
     const dynamicInfo =
       (await handleIntent(intent, message, token, role)) || "";
 
-    // === role-based system prompt ===
     const rolePrompts = {
       customer: `You are a helpful AI assistant for customers.`,
       vendor: `You are a smart assistant for vendors.`,
@@ -49,6 +44,8 @@ exports.getAIResponse = async (userId, role, message, token) => {
       model: "gpt-4o-mini",
       messages,
       max_tokens: 400,
+      temperature: 0,
+      top_p: 1,
     });
 
     const reply = completion.choices[0].message.content?.trim() || "";
@@ -60,6 +57,6 @@ exports.getAIResponse = async (userId, role, message, token) => {
     return reply;
   } catch (err) {
     console.error("Error in AI service:", err);
-    return "⚠️ Sorry, can't process request right now.";
+    return " Sorry, can't process request right now.";
   }
 };

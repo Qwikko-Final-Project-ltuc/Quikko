@@ -16,6 +16,7 @@ const ProfilePage = () => {
 
   const [successMsg, setSuccessMsg] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0); // <-- state لنقاط الولاء
 
   useEffect(() => {
     dispatch(fetchProfile());
@@ -31,6 +32,24 @@ const ProfilePage = () => {
       });
     }
   }, [profile]);
+
+  // جلب نقاط الولاء من الباكيند
+  useEffect(() => {
+    const fetchLoyaltyPoints = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const res = await fetch("http://localhost:3000/api/customers/loyalty", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setLoyaltyPoints(data.points?.points_balance || 0);
+      } catch (err) {
+        console.error("Error fetching loyalty points:", err);
+      }
+    };
+    fetchLoyaltyPoints();
+  }, []);
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -130,6 +149,14 @@ const ProfilePage = () => {
           </div>
         </form>
       )}
+
+      {/* قسم نقاط الولاء */}
+      <div className="mt-6 p-4 border rounded shadow text-center">
+        <span className="font-bold text-lg">Loyalty Points: </span>
+        <span className="text-xl flex items-center justify-center gap-1">
+          {loyaltyPoints} <span>⭐</span>
+        </span>
+      </div>
 
       <div>
         <PaymentMethodsPanel />
