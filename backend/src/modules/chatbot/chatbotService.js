@@ -1,4 +1,3 @@
-// src/modules/chatbot/chatbotService.js
 const OpenAI = require("openai");
 const userSessions = require("./sessionStore");
 const { classifyUserIntent, handleIntent } = require("./intentHandler.js");
@@ -58,6 +57,6 @@ exports.getAIResponse = async (userId, role, message, token) => {
     return reply;
   } catch (err) {
     console.error("Error in AI service:", err);
-    return "⚠️ Sorry, can't process request right now.";
+    return " Sorry, can't process request right now.";
   }
 };

@@ -31,7 +31,7 @@ export default function LandingPage() {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
-            to="/customer/landing"
+            to="/customer/home"
             className="px-8 py-3 bg-white text-[#307A59] font-semibold rounded-full shadow hover:scale-105 transition"
           >
             Start Shopping
@@ -54,7 +54,7 @@ export default function LandingPage() {
             ),
             title: "Discover Products",
             desc: "Browse thousands of products from top stores with exclusive deals.",
-            link: "/customer/landing",
+            link: "/customer/home",
             btn: "Shop Now",
           },
           {

@@ -1,11 +1,48 @@
 const productService = require("./productService");
 const productModel = require("./productModel");
 const db = require('../../config/db');
+const multer = require("multer");
+const path = require("path");
 
 /**
  * @module ProductController
  * @desc Handles product-related operations including fetching, creating, updating, and deleting products.
  */
+/**
+ * ===============================
+ * Image Upload
+ * ===============================
+ */
+
+// إعداد التخزين
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/products/");
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage });
+
+// دالة رفع الصور
+exports.uploadProductImages = (req, res) => {
+  upload.array("images")(req, res, function (err) {
+    if (err) {
+      console.error("Upload error:", err);
+      return res.status(500).json({ message: "Error uploading images" });
+    }
+
+    // الرابط الكامل بدل المسار النسبي
+     const imagePaths = req.files.map(
+      (file) => `http://localhost:3000/uploads/products/${file.filename}`
+    );
+
+    res.json({ imageUrls: imagePaths });
+  });
+};
 
 /**
  * Get a single product by its ID.

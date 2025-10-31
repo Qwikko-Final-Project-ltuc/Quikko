@@ -1,4 +1,3 @@
-// HomePage.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import ProductCard from "../components/ProductCard";
@@ -55,46 +54,58 @@ const HomePage = () => {
 
   // Fetch Recommendations (4 each time, no duplicates)
   const fetchRecommendations = async () => {
-    try {
-      setRecLoading(true);
+  try {
+    setRecLoading(true);
+    let recs = [];
 
-      const recs = await customerAPI.getRecommendations({
+    if (token) {
+      recs = await customerAPI.getRecommendations({
         excludeIds: Array.from(displayedIds.current),
       });
-
-      if (!recs.length) return;
-
-      const recSlice = recs.slice(0, 4);
-      recSlice.forEach((r) => displayedIds.current.add(r.id));
-
-      setRecommendedProducts((prev) => {
-        const combined = [...prev, ...recSlice];
-        const uniqueProducts = [];
-        const seenIds = new Set();
-
-        combined.forEach((p) => {
-          if (!seenIds.has(p.id)) {
-            seenIds.add(p.id);
-            uniqueProducts.push({
-              ...p,
-              images:
-                Array.isArray(p.images) && p.images.length > 0
-                  ? p.images
-                  : p.image_url
-                  ? [p.image_url]
-                  : [],
-            });
-          }
-        });
-
-        return uniqueProducts;
-      });
-    } catch (err) {
-      console.error("Failed to fetch recommendations:", err);
-    } finally {
-      setRecLoading(false);
     }
-  };
+
+    if (!token || !recs || recs.length === 0) {
+      console.log("⚠️ No token or empty recommendations — fetching top-rated products instead.");
+
+      const res = await fetch("http://localhost:3000/api/customers/top-rated");
+      const data = await res.json();
+      recs = Array.isArray(data) ? data.slice(0, 4) : [];
+    }
+
+    if (!recs.length) return;
+
+    const recSlice = recs.slice(0, 4);
+    recSlice.forEach((r) => displayedIds.current.add(r.id));
+
+    setRecommendedProducts((prev) => {
+      const combined = [...prev, ...recSlice];
+      const uniqueProducts = [];
+      const seenIds = new Set();
+
+      combined.forEach((p) => {
+        if (!seenIds.has(p.id)) {
+          seenIds.add(p.id);
+          uniqueProducts.push({
+            ...p,
+            images:
+              Array.isArray(p.images) && p.images.length > 0
+                ? p.images
+                : p.image_url
+                ? [p.image_url]
+                : [],
+          });
+        }
+      });
+
+      return uniqueProducts;
+    });
+  } catch (err) {
+    console.error("Failed to fetch recommendations:", err);
+  } finally {
+    setRecLoading(false);
+  }
+};
+
 
   useEffect(() => {
     fetchRecommendations();

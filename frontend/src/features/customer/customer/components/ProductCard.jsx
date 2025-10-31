@@ -2,19 +2,29 @@ import React, { useState } from "react";
 import "yet-another-react-lightbox/styles.css";
 import Lightbox from "yet-another-react-lightbox";
 import { ImHeart } from "react-icons/im";
-import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { AddWishlist, RemoveWishlist } from "../../wishlist/wishlistApi";
 import customerAPI from "../services/customerAPI";
+import { useNavigate } from "react-router-dom";
 
 const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedIn }) => {
   const [currentImage, setCurrentImage] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
-  const images = Array.isArray(product.images) ? product.images : [];
   const [wishlist, setWishlist] = useState(product.isInWishlist || false);
   const [wishlistId, setWishlistId] = useState(product.wishlist_id || null);
   const [loading, setLoading] = useState(false);
   const userId = useSelector((state) => state.cart.user?.id);
+  const navigate = useNavigate();
+
+  const images = Array.isArray(product.images)
+    ? product.images
+    : typeof product.images === "string"
+    ? JSON.parse(product.images)
+    : [];
+
+  const nextImage = () => setCurrentImage((prev) => (prev + 1) % images.length);
+  const prevImage = () => setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
+
 
   const nextImage = () => setCurrentImage((prev) => (prev + 1) % images.length);
   const prevImage = () => setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
@@ -36,6 +46,9 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
         const removed = await RemoveWishlist(wishlistId);
         setWishlist(false);
         setWishlistId(null);
+        onToggleWishlistFromPage?.(wishlistId, productId, false);
+        if (isLoggedIn && userId) await customerAPI.logInteraction(userId, productId, "unlike");
+
 
         onToggleWishlistFromPage && onToggleWishlistFromPage(productId, false, wishlistId);
 
@@ -43,10 +56,11 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
           await customerAPI.logInteraction(userId, productId, "unlike");
         }
       } else {
-        // إضافة المنتج للـ wishlist
         const added = await AddWishlist(productId);
         setWishlist(true);
         setWishlistId(added.id);
+        onToggleWishlistFromPage?.(productId, true, added.id);
+        if (isLoggedIn && userId) await customerAPI.logInteraction(userId, productId, "like");
 
         onToggleWishlistFromPage && onToggleWishlistFromPage(productId, true, added.id);
 
@@ -63,6 +77,20 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
   };
 
   return (
+    <div
+  className="p-4 border rounded shadow hover:shadow-lg transition flex flex-col justify-between cursor-pointer"
+  onClick={(e) => {
+    if (!["BUTTON", "svg", "path"].includes(e.target.tagName)) {
+      const productId = product.id || product.product_id; // هذا الجديد
+      if (productId) {
+        navigate(`/customer/product/${productId}`);
+      } else {
+        console.warn("No valid product ID found for navigation");
+      }
+    }
+  }}
+>
+
     <div className="p-4 border rounded shadow hover:shadow-lg transition flex flex-col justify-between">
       {/* صور المنتج */}
       <div className="h-48 w-full mb-2 overflow-hidden rounded relative cursor-pointer">
@@ -78,27 +106,41 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
               </div>
             </Link>
 
-            {images.length > 1 && (
-              <>
-                <button
-                  onClick={prevImage}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-gray-700 text-white px-2 py-1 rounded opacity-50 hover:opacity-100"
-                >
-                  ‹
-                </button>
-                <button
-                  onClick={nextImage}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-700 text-white px-2 py-1 rounded opacity-50 hover:opacity-100"
-                >
-                  ›
-                </button>
-              </>
-            )}
-          </>
+      <div className="h-48 w-full mb-2 overflow-hidden rounded relative flex items-center justify-center bg-gray-100">
+        {images.length > 0 ? (
+          <img
+            src={images[currentImage]}
+            alt={product.name}
+            className="max-h-full max-w-full object-contain"
+            onClick={openLightbox}
+          />
         ) : (
           <div className="w-full h-full bg-gray-200 flex items-center justify-center">
             No Image
           </div>
+        )}
+
+        {images.length > 1 && (
+          <>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                prevImage();
+              }}
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-gray-700 text-white px-2 py-1 rounded opacity-50 hover:opacity-100"
+            >
+              ‹
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                nextImage();
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-700 text-white px-2 py-1 rounded opacity-50 hover:opacity-100"
+            >
+              ›
+            </button>
+          </>
         )}
       </div>
 
@@ -112,7 +154,10 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
       {/* زر wishlist */}
       {isLoggedIn && (
         <button
-          onClick={onToggleWishlist}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleWishlist();
+          }}
           className="mt-2 text-2xl flex justify-end"
           style={{ color: wishlist ? "red" : "gray" }}
           disabled={loading}
@@ -124,12 +169,14 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
       {/* زر إضافة للسلة */}
       <button
         className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        onClick={() => onAddToCart && onAddToCart(product)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onAddToCart?.(product);
+        }}
       >
         Add to Cart
       </button>
 
-      {/* Lightbox */}
       {isOpen && (
         <Lightbox
           open={isOpen}

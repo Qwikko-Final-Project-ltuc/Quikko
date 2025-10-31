@@ -295,6 +295,34 @@ router.get("/newest", async (req, res) => {
   }
 });
 
+router.get("/top-rated", async (req, res) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT 
+        p.id,
+        p.name,
+        p.price,
+        p.description,
+        COALESCE(json_agg(pi.image_url) FILTER (WHERE pi.id IS NOT NULL), '[]') AS images,
+        ROUND(AVG(r.rating), 2) AS avg_rating,
+        COUNT(r.id) AS rating_count
+      FROM products p
+      LEFT JOIN product_reviews r ON r.product_id = p.id AND r.is_deleted = false
+      LEFT JOIN product_images pi ON pi.product_id = p.id
+      WHERE p.is_deleted = false
+      GROUP BY p.id
+      HAVING COUNT(r.id) > 0
+      ORDER BY avg_rating DESC, rating_count DESC
+      LIMIT 10
+    `);
+
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch top-rated products" });
+  }
+});
+
 
 module.exports = router;
 

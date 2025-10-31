@@ -1,4 +1,5 @@
 const pool = require("../../config/db");
+const { geocodeAddress } = require("../../utils/geocoding");
 /**
  * ===============================
  * Vendor Service
@@ -128,6 +129,19 @@ exports.getProfile = async (userId) => {
  * @throws {Error} If DB update fails
  */
 exports.updateProfile = async (userId, profileData) => {
+  // إذا يوجد عنوان جديد أو تحديث
+  if (profileData.address) {
+    const coords = await geocodeAddress(profileData.address);
+    if (coords) {
+      profileData.latitude = coords.latitude;
+      profileData.longitude = coords.longitude;
+    } else {
+      // ممكن تتركهم null أو ترمي خطأ إذا تريد التأكد من العنوان
+      profileData.latitude = null;
+      profileData.longitude = null;
+    }
+  }
+
   return await vendorModel.updateProfile(userId, profileData);
 };
 

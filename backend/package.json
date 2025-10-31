@@ -26,7 +26,10 @@
     "firebase": "^12.2.1",
     "firebase-admin": "^13.5.0",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
     "node-cron": "^4.2.1",
+
+    "node-fetch": "^3.3.2",
     "nodemailer": "^7.0.9",
     "openai": "^6.3.0",
     "paypal-rest-sdk": "^1.8.1",

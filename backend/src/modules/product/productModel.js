@@ -18,17 +18,29 @@ const db = require("../../config/db");
  */
 exports.getProductById = async (id) => {
   const result = await db.query(
-    `SELECT p.*, v.store_name, c.name AS category_name
+    `SELECT 
+       p.*, 
+       v.store_name AS vendor_name, 
+       c.name AS category_name,
+       COALESCE(
+         (
+           SELECT json_agg(pi.image_url::text ORDER BY pi.id)
+           FROM product_images pi
+           WHERE pi.product_id = p.id
+         )::jsonb,
+         '[]'::jsonb
+       ) AS images
      FROM products p
      LEFT JOIN vendors v ON p.vendor_id = v.id
      LEFT JOIN categories c ON p.category_id = c.id
      WHERE p.id = $1
        AND (p.is_deleted = FALSE OR p.is_deleted IS NULL)
-    `,
+  `,
     [id]
   );
   return result.rows[0] || null;
 };
+
 
 
 /**
