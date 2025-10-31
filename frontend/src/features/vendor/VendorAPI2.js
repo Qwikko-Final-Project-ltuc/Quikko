@@ -338,5 +338,64 @@ export const toggleCouponStatus = async (id, is_active) => {
   console.log("🔹 Coupon Status Toggled Response:", json);
   return json;
 };
+// ========== جديد: تجيب من /api/vendor/orders وتعيدها بصيغة items للواجهة ==========
+export const fetchOrderItemsWithCompany = async (status = "") => {
+  const query = status ? `?status=${encodeURIComponent(status)}` : "";
+  const res = await fetch(`http://localhost:3000/api/vendor/orders${query}`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    console.error("Failed to fetch vendor orders:", res.status, errText);
+    return [];
+  }
+
+  const json = await res.json();
+  const rows = json?.data || [];
+
+  // نحافظ على أسماء الحقول اللي متوقعتها صفحة OrderManagement
+  const mapped = rows.map((r) => ({
+    // 👇 مفاتيح الجدول الحالية
+    order_item_id: r.order_item_id ?? r.item_id ?? r.oi_id ?? null,
+    order_id: r.order_id ?? r.id ?? null,
+    product_name: r.product_name ?? r.name ?? "",
+    quantity: r.quantity ?? 0,
+    vendor_status: r.vendor_status ?? r.status ?? "",
+    price: r.price ?? null,
+
+    // 👇 معلومات شركة التوصيل (للعرض والشات)
+    delivery_company_name:
+      r.delivery_company_name ??
+      r.deliveryCompanyName ??
+      r.company_name ??
+      null,
+    delivery_company_user_id:
+      r.delivery_company_user_id ??
+      r.deliveryCompanyUserId ??
+      r.delivery_user_id ??
+      null,
+
+    // 👇 حقول إضافية لو احتجتيها لاحقًا
+    delivery_company_id: r.delivery_company_id ?? null,
+    total_amount: r.total_amount ?? null,
+    shipping_address: r.shipping_address ?? null,
+  }));
+
+  console.log("🔹 API Response (mapped vendor orders -> items):", mapped);
+  return mapped;
+};
+
+// (اختياري) دالة ترجع الـ raw من نفس الاندبوينت لو حابة تستخدميها لاحقًا
+export const fetchVendorOrdersRaw = async (status = "") => {
+  const query = status ? `?status=${encodeURIComponent(status)}` : "";
+  const res = await fetch(`http://localhost:3000/api/vendor/orders${query}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch vendor orders");
+  const json = await res.json();
+  return json?.data || [];
+};
+
 
 

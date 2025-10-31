@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
+import { useLocation } from "react-router-dom";
 import { chatApi, SOCKET_URL } from "./chatAPI";
 
 /* ===== Helpers ===== */
@@ -83,6 +84,20 @@ const VendorChatPage = () => {
     return null;
   }, []);
 
+  // 👇 نقرأ الـ receiverId / toName القادمين من navigate(...) في صفحة الأوردرات
+  const location = useLocation();
+  const preReceiverId = useMemo(
+    () =>
+      Number(location.state?.receiverId) ||
+      Number(location.state?.toUserId) ||
+      null,
+    [location.state]
+  );
+  const preReceiverName = useMemo(
+    () => location.state?.toName || null,
+    [location.state]
+  );
+
   const [initError, setInitError] = useState(null);
   const [authError, setAuthError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -153,7 +168,38 @@ const VendorChatPage = () => {
           setConversations(normalized);
           setLoading(false);
           normalized.forEach((c) => joinRoom(c.otherUserId));
-          if (normalized.length > 0) handleSelectConversation(normalized[0]);
+
+          // 👇 لو جايي من صفحة الأوردرات مع receiverId: افتح هذه المحادثة مباشرة
+          if (preReceiverId) {
+            const exists = normalized.some(
+              (c) => Number(c.otherUserId) === Number(preReceiverId)
+            );
+            if (!exists) {
+              const stub = {
+                otherUserId: Number(preReceiverId),
+                otherRole: "delivery",
+                otherUserName: preReceiverName || `User ${preReceiverId}`,
+                lastMessage: "",
+                unread: 0,
+                updatedAt: new Date().toISOString(),
+              };
+              setConversations((prev) => {
+                const next = [stub, ...prev];
+                next.sort(
+                  (a, b) =>
+                    new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)
+                );
+                return next;
+              });
+            }
+            joinRoom(preReceiverId);
+            handleSelectConversation({
+              otherUserId: Number(preReceiverId),
+              otherUserName: preReceiverName || `User ${preReceiverId}`,
+            });
+          } else if (normalized.length > 0) {
+            handleSelectConversation(normalized[0]);
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -172,7 +218,7 @@ const VendorChatPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [myUserId]);
+  }, [myUserId, preReceiverId, preReceiverName]);
 
   /* ===== Socket setup ===== */
   useEffect(() => {
@@ -351,13 +397,26 @@ const VendorChatPage = () => {
     joinedRoomsRef.current.add(key);
   };
 
+  /* ===== Wrapper: get messages regardless of signature ===== */
+  const fetchThread = async (meUserId, otherUserId) => {
+    try {
+      // شائع: getMessages(otherUserId, meUserId)
+      const r = await chatApi.getMessages(otherUserId, meUserId);
+      return r;
+    } catch {
+      // fallback: getMessages(otherUserId)
+      const r = await chatApi.getMessages(otherUserId);
+      return r;
+    }
+  };
+
   /* ===== Load messages for one conversation ===== */
   const loadMessages = async (otherUserId, otherName) => {
     const a = Number(myUserId);
     const b = Number(otherUserId);
     if (!Number.isFinite(a) || !Number.isFinite(b)) return;
     try {
-      const raw = await chatApi.getMessages(b, a);
+      const raw = await fetchThread(a, b);
       const rows = Array.isArray(raw) ? raw : raw?.data ?? raw?.messages ?? [];
       const normalized = rows.map((m) => ({
         id: m.id,
@@ -379,7 +438,11 @@ const VendorChatPage = () => {
       setActiveOtherName(otherName ?? `User ${otherUserId}`);
       joinRoom(otherUserId);
       try {
-        await chatApi.markRead({ vendorId: myUserId, customerId: otherUserId });
+        if (chatApi.markRead) {
+          await chatApi.markRead({ user1: myUserId, user2: otherUserId });
+        } else if (chatApi.markAsRead) {
+          await chatApi.markAsRead({ user1: myUserId, user2: otherUserId });
+        }
       } catch {}
       setConversations((prev) =>
         prev.map((c) =>
@@ -423,8 +486,8 @@ const VendorChatPage = () => {
     setMessage("");
     try {
       await chatApi.sendMessage({
-        sender_id: myUserId,
-        receiver_id: activeOtherId,
+        sender_id: myUserId, // ← الفندور من التوكن (sender)
+        receiver_id: activeOtherId, // ← الدليفري المقصود (receiver)
         message: msgText,
         client_id: clientId,
       });
@@ -468,9 +531,7 @@ const VendorChatPage = () => {
             <div className="p-4 text-sm text-gray-500 space-y-2">
               <p>No conversations yet.</p>
               <p className="text-xs">
-                تأكدي أن endpoint{" "}
                 <code>/api/chat/vendor/:vendorId/conversations</code> يرجّع
-                محادثات، وأن التوكن صالح.
               </p>
             </div>
           ) : (
@@ -527,11 +588,11 @@ const VendorChatPage = () => {
                         : "bg-blue-200 ml-auto text-right"
                     }`}
                   >
-                    {incoming && (
+                    {/* {incoming && (
                       <div className="text-[11px] font-semibold text-gray-500 mb-1">
                         {lineName}
                       </div>
-                    )}
+                    )} */}
                     {msg.message}
                     <div className="text-[10px] text-gray-500 mt-1">
                       {fmtLocal(msg.createdAt)}
