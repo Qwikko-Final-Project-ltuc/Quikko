@@ -138,7 +138,7 @@ exports.getOrderWithCompany = async function (orderId) {
   const order = orderRes.rows[0];
   if (!order) return null;
 
-  // جلب المنتجات المرتبطة بالطلب مع الصور وبيانات الفندور
+  // ✅ أضفنا u.id AS vendor_user_id
   const itemsRes = await pool.query(
     `SELECT
         oi.id AS order_item_id,
@@ -149,6 +149,7 @@ exports.getOrderWithCompany = async function (orderId) {
         oi.price AS item_price,
         oi.variant,
         v.id AS vendor_id,
+        u.id AS vendor_user_id,                    -- 👈 هذا هو المطلوب
         v.store_name AS vendor_name,
         u.email AS vendor_email,
         u.phone AS vendor_phone,
@@ -159,12 +160,11 @@ exports.getOrderWithCompany = async function (orderId) {
      JOIN users u ON v.user_id = u.id
      LEFT JOIN product_images pi ON pi.product_id = p.id
      WHERE oi.order_id = $1
-     GROUP BY oi.id, p.id, v.id, u.id`,
+     GROUP BY oi.id, p.id, v.id, u.id`,          
     [orderId]
   );
 
   order.items = itemsRes.rows;
-
   return order;
 };
 

@@ -1,37 +1,37 @@
-const express = require('express');
-const router = express.Router();
-const chatController = require('./chatController');
-const { protect } = require('../../middleware/authMiddleware');
+const express = require("express");
+const chatController = require("./chatController");
+const { protect } = require("../../middleware/authMiddleware");
 
-/**
- * @module ChatRoutes
- * @desc Routes for chat functionality including fetching and sending messages.
- *       All routes are protected and require a valid JWT token.
- */
+module.exports = (io) => {
+  const router = express.Router();
 
-/**
- * @route   GET /api/chat
- * @desc    Retrieve chat messages between two users
- * @access  Private (requires JWT token)
- * @query   {string} user1 - ID of the first user
- * @query   {string} user2 - ID of the second user
- * @returns {Array<Object>} List of chat messages
- */
-router.get('/', protect, chatController.getChatMessages);
+  // ✅ كل الراوتات محمية بـ protect
+  router.get(
+    "/vendor/:vendorId/conversations",
+    protect,
+    chatController.getVendorConversations
+  );
 
-/**
- * @route   POST /api/chat
- * @desc    Send a chat message from one user to another
- * @access  Private (requires JWT token)
- * @body    {string} sender_id - ID of the sender
- * @body    {string} receiver_id - ID of the receiver
- * @body    {string} message - The message content
- * @returns {Object} Created message
- */
-router.post('/', protect, chatController.postChatMessage);
-router.get('/conversations', protect, chatController.getConversations);
+  router.get(
+    "/customer/:customerId/conversations",
+    protect,
+    chatController.getCustomerConversations
+  );
 
-module.exports = router;
+  router.post("/mark-read", protect, chatController.markRead);
+
+  router.post("/", protect, chatController.postMessage(io));
+
+  router.get("/:customerId/:vendorId", protect, chatController.getMessages);
+
+  router.get(
+    "/delivery/:deliveryId/conversations",
+    protect,
+    chatController.getDeliveryConversations
+  );
+
+  return router;
+};
 
 /* ================= Swagger Documentation =================
 

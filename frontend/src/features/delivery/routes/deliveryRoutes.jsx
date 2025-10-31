@@ -10,6 +10,7 @@ import Orders from "../delivery/Orders";
 import TrackingOrders from "../delivery/Tracking";
 import Reports from "../delivery/ReportsPage";
 import Home from "../delivery/Home";
+import Chat from "../delivery/DeliveryChatPage";
 import NotFound from "../../notFound";
 export default function DeliveryRoutes() {
   return (
@@ -27,11 +28,11 @@ export default function DeliveryRoutes() {
         <Route path="tracking/:orderId" element={<TrackingOrders />} />
         <Route path="reports" element={<Reports />} />
         <Route path="edit" element={<EditProfile />} />
+        <Route path="chat" element={<Chat />} />
         <Route path="*" element={<NotFound />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />
-      
     </Routes>
   );
 }

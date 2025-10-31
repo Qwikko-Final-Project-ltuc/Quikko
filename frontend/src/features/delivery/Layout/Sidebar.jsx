@@ -6,6 +6,7 @@ import {
   FaCog,
   FaChartBar,
   FaHome,
+  FaComments,
 } from "react-icons/fa";
 import { FiLogOut, FiX,FiMenu } from "react-icons/fi"; // ✅ أضفنا أيقونة X للإغلاق
 import { useDispatch } from "react-redux";
@@ -52,8 +53,8 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
           isOpen ? "w-64" : "w-0"
         }`}
         style={{
-          backgroundColor: isDarkMode ? "#242625" : "#f0f2f1", 
-          color: isDarkMode ? "#ffffff" : "#242625", 
+          backgroundColor: isDarkMode ? "#242625" : "#f0f2f1",
+          color: isDarkMode ? "#ffffff" : "#242625",
         }}
       >
         <div
@@ -191,6 +192,37 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
                 }}
               >
                 Orders
+              </span>
+            </NavLink>
+            <NavLink
+              to="chat" // ✅ لازم تحدد المسار
+              className="flex items-center space-x-2 p-2 rounded transition font-semibold"
+              style={({ isActive }) => {
+                if (isActive) {
+                  return {
+                    backgroundColor: isDarkMode ? "#666666" : "#e5e7eb", // dark: غامق، light: فاتح
+                    color: isDarkMode ? "#ffffff" : "#242625", // النصوص
+                  };
+                } else {
+                  return {
+                    backgroundColor: "transparent",
+                    color: isDarkMode ? "#ffffff" : "#242625", // النصوص
+                  };
+                }
+              }}
+            >
+              <FaComments
+                className="text-lg"
+                style={{
+                  color: isDarkMode ? "#ffffff" : "#242625", // النصوص
+                }}
+              />
+              <span
+                style={{
+                  color: isDarkMode ? "#ffffff" : "#242625", // النصوص
+                }}
+              >
+                Chats
               </span>
             </NavLink>
 
