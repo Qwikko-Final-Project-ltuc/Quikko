@@ -6,8 +6,14 @@ import { useSelector } from "react-redux";
 import { AddWishlist, RemoveWishlist } from "../../wishlist/wishlistApi";
 import customerAPI from "../services/customerAPI";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
-const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedIn }) => {
+const ProductCard = ({
+  product,
+  onAddToCart,
+  onToggleWishlistFromPage,
+  isLoggedIn,
+}) => {
   const [currentImage, setCurrentImage] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [wishlist, setWishlist] = useState(product.isInWishlist || false);
@@ -16,6 +22,7 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
   const userId = useSelector((state) => state.cart.user?.id);
   const navigate = useNavigate();
 
+  // تحويل الصور إذا كانت نص JSON
   const images = Array.isArray(product.images)
     ? product.images
     : typeof product.images === "string"
@@ -23,14 +30,11 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
     : [];
 
   const nextImage = () => setCurrentImage((prev) => (prev + 1) % images.length);
-  const prevImage = () => setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
-
-
-  const nextImage = () => setCurrentImage((prev) => (prev + 1) % images.length);
-  const prevImage = () => setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
-
+  const prevImage = () =>
+    setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
   const openLightbox = () => setIsOpen(true);
 
+  // Toggle wishlist
   const onToggleWishlist = async () => {
     if (loading) return;
     setLoading(true);
@@ -40,33 +44,21 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
       if (!productId) throw new Error("Product ID not found");
 
       if (wishlist) {
-        // حذف المنتج من wishlist
-        if (!wishlistId) throw new Error("Cannot remove wishlist: wishlistId not found");
-
-        const removed = await RemoveWishlist(wishlistId);
+        if (!wishlistId)
+          throw new Error("Cannot remove wishlist: wishlistId not found");
+        await RemoveWishlist(wishlistId);
         setWishlist(false);
         setWishlistId(null);
-        onToggleWishlistFromPage?.(wishlistId, productId, false);
-        if (isLoggedIn && userId) await customerAPI.logInteraction(userId, productId, "unlike");
-
-
-        onToggleWishlistFromPage && onToggleWishlistFromPage(productId, false, wishlistId);
-
-        if (isLoggedIn && userId) {
+        onToggleWishlistFromPage?.(productId, false, wishlistId);
+        if (isLoggedIn && userId)
           await customerAPI.logInteraction(userId, productId, "unlike");
-        }
       } else {
         const added = await AddWishlist(productId);
         setWishlist(true);
         setWishlistId(added.id);
         onToggleWishlistFromPage?.(productId, true, added.id);
-        if (isLoggedIn && userId) await customerAPI.logInteraction(userId, productId, "like");
-
-        onToggleWishlistFromPage && onToggleWishlistFromPage(productId, true, added.id);
-
-        if (isLoggedIn && userId) {
+        if (isLoggedIn && userId)
           await customerAPI.logInteraction(userId, productId, "like");
-        }
       }
     } catch (err) {
       console.error("Wishlist toggle error:", err);
@@ -78,34 +70,15 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
 
   return (
     <div
-  className="p-4 border rounded shadow hover:shadow-lg transition flex flex-col justify-between cursor-pointer"
-  onClick={(e) => {
-    if (!["BUTTON", "svg", "path"].includes(e.target.tagName)) {
-      const productId = product.id || product.product_id; // هذا الجديد
-      if (productId) {
-        navigate(`/customer/product/${productId}`);
-      } else {
-        console.warn("No valid product ID found for navigation");
-      }
-    }
-  }}
->
-
-    <div className="p-4 border rounded shadow hover:shadow-lg transition flex flex-col justify-between">
+      className="p-4 border rounded shadow hover:shadow-lg transition flex flex-col justify-between cursor-pointer"
+      onClick={(e) => {
+        if (!["BUTTON", "svg", "path"].includes(e.target.tagName)) {
+          const productId = product.id || product.product_id;
+          if (productId) navigate(`/customer/product/${productId}`);
+        }
+      }}
+    >
       {/* صور المنتج */}
-      <div className="h-48 w-full mb-2 overflow-hidden rounded relative cursor-pointer">
-        {images.length > 0 ? (
-          <>
-            <Link to={`/customer/product/${product.id}`}>
-              <div className="h-48 w-full mb-2 overflow-hidden rounded relative flex items-center justify-center bg-gray-100">
-                <img
-                  src={images[currentImage]}
-                  alt={product.name}
-                  className="max-h-full max-w-full object-contain"
-                />
-              </div>
-            </Link>
-
       <div className="h-48 w-full mb-2 overflow-hidden rounded relative flex items-center justify-center bg-gray-100">
         {images.length > 0 ? (
           <img
@@ -177,6 +150,7 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
         Add to Cart
       </button>
 
+      {/* Lightbox */}
       {isOpen && (
         <Lightbox
           open={isOpen}

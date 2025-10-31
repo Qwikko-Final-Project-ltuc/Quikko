@@ -5,15 +5,21 @@ import {
   FaChartLine,
   FaUsers,
   FaDollarSign,
+  FaMoon,
+  FaSun,
 } from "react-icons/fa";
 import { fetchLandingCMS } from "./LandingAPI";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { toggleTheme, setTheme } from "./deliveryThemeSlice";
 
 export default function LandingPage() {
   const [cmsContent, setCmsContent] = useState(null);
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
-  const isDarkMode = useSelector((state) => state.deliveryTheme.darkMode);
+
+  // ✅ من الريدكس
+  const isDark = useSelector((state) => state.deliveryTheme.darkMode);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     async function loadCMS() {
@@ -36,35 +42,45 @@ export default function LandingPage() {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, []);
 
+  // ✅ عند أول تحميل، نقرأ الثيم من localStorage ونضبطه في الريدكس
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("deliveryTheme");
+    if (savedTheme === "dark") {
+      dispatch(setTheme(true));
+    } else {
+      dispatch(setTheme(false));
+    }
+  }, [dispatch]);
+
   return (
     <>
       <div
-        className="min-h-screen  flex flex-col items-center"
+        className="min-h-screen flex flex-col items-center"
         style={{
-          backgroundColor: isDarkMode ? "#242625" : "#f0f2f1",
-          color: isDarkMode ? "#ffffff" : "#242625",
+          backgroundColor: "var(--bg)",
+          color: "var(--text)",
         }}
       >
         <div
-          className="flex flex-col md:flex-row items-center justify-between w-full max-w-6xl p-10 mt-10 gap-12 rounded-2xl shadow-lg"
+          className="flex flex-col md:grid md:grid-cols-2 items-center gap-12 w-full max-w-6xl p-10 mt-12 rounded-2xl shadow-lg "
           style={{
-            backgroundColor: isDarkMode ? "#2d2d2d" : "#ffffff",
-            color: isDarkMode ? "#ffffff" : "#242625",
-            minHeight: "80vh", // 👈 يخليها أطول
+            backgroundColor: "var(--div)",
+            color: "var(--text)",
+            minHeight: "70vh",
           }}
         >
-          <div className="md:w-1/2 flex justify-center order-1 md:order-1">
+          <div className="order-2 md:order-1 flex items-center justify-center">
             {cmsContent?.image_url ? (
               <img
                 src={cmsContent.image_url}
                 alt="Landing visual"
-                className="w-full max-w-md object-contain rounded-lg shadow-xl"
+                className="w-full max-w-md object-contain rounded-xl shadow-md"
               />
             ) : (
               <div
-                className="w-full max-w-md h-80 bg-gray-200 flex items-center justify-center rounded-lg"
+                className="w-full max-w-md h-80 flex items-center justify-center rounded-xl"
                 style={{
-                  color: isDarkMode ? "#ffffff" : "#242625",
+                  backgroundColor: "var(--hover)",
                 }}
               >
                 Loading image...
@@ -72,188 +88,169 @@ export default function LandingPage() {
             )}
           </div>
 
-          <div className="md:w-1/2 text-center md:text-left flex flex-col items-center md:items-start order-2 md:order-2 space-y-4">
-            <h1
-              className="text-4xl md:text-5xl font-bold leading-tight"
-              style={{
-                color: isDarkMode ? "#ffffff" : "#242625",
-              }}
-            >
+          <div className="order-1 md:order-2 flex flex-col items-center md:items-start text-center md:text-left space-y-5">
+            <h1 className="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight">
               {title || "Welcome to Qwikko Delivery"}
             </h1>
 
             {subtitle && (
-              <p
-                className="text-lg mb-4 whitespace-pre-line leading-relaxed"
-                style={{
-                  color: isDarkMode ? "#dcdcdc" : "#333333",
-                }}
-              >
-                {subtitle}
-              </p>
+              <p className="text-base md:text-lg leading-relaxed">{subtitle}</p>
             )}
 
-            <Link
-              to="/delivery/login"
-              className="px-10 py-4 rounded-lg text-lg text-center shadow-md transition-all duration-300 transform hover:scale-105"
-              style={{
-                backgroundColor: isDarkMode ? "#307A59" : "#307A59",
-                color: "#ffffff",
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = "#2b6b4f"; // أغمق شوي عند الهوفر
-                e.target.style.boxShadow = "0 6px 15px rgba(48, 122, 89, 0.4)";
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = "#307A59";
-                e.target.style.boxShadow = "0 4px 10px rgba(48, 122, 89, 0.3)";
-              }}
-            >
-              Start Now
-            </Link>
+            <div className="flex items-center gap-4 pt-2">
+              <Link
+                to="/delivery/login"
+                className="inline-block px-10 py-4 rounded-lg text-lg font-semibold shadow-md transition-transform duration-300 hover:scale-[1.02] focus:outline-none"
+                style={{
+                  backgroundColor: "var(--button)",
+                  color: "#ffffff",
+                  boxShadow: "0 6px 15px rgba(0,0,0,0.15)",
+                }}
+              >
+                Start Now
+              </Link>
+            </div>
+
+            <div className="mt-6 grid grid-cols-3 gap-6 w-full max-w-md">
+              {[
+                { k: "100+", v: "Partners" },
+                { k: "50K+", v: "Orders" },
+                { k: "24/7", v: "Support" },
+              ].map((s, i) => (
+                <div
+                  key={i}
+                  className="rounded-xl border shadow-sm p-4"
+                  style={{
+                    borderColor: "var(--border)",
+                    backgroundColor: "var(--div)",
+                  }}
+                >
+                  <div className="text-2xl font-bold">{s.k}</div>
+                  <div
+                    className="text-sm mt-1"
+                    style={{ color: "var(--text)" }}
+                  >
+                    {s.v}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="w-full max-w-5xl p-10 mt-7 text-center">
-          <h2
-            className="text-4xl font-bold mb-16"
-            style={{
-              color: isDarkMode ? "#ffffff" : "#242625",
-            }}
-          >
-            How It Works
-          </h2>
+        {/* ===== How It Works ===== */}
+        <div className="w-full max-w-5xl p-10 mt-10 text-center">
+          <h2 className="text-4xl font-bold mb-12">How It Works</h2>
 
-          <div className="flex flex-col md:flex-row items-center justify-between relative">
+          <div className="relative">
             <div
-              className="hidden md:block absolute top-14 left-0 w-full h-1 z-0"
-              style={{
-                backgroundColor: isDarkMode ? "#666666" : "#ffffff",
-                color: isDarkMode ? "#ffffff" : "#242625",
-              }}
-            ></div>
+              className="hidden md:block absolute top-14 left-0 w-full h-px"
+              style={{ backgroundColor: "var(--border)" }}
+            />
+            <div
+              className="md:hidden absolute left-1/2 -translate-x-1/2 top-8 bottom-8 w-px"
+              style={{ backgroundColor: "var(--border)" }}
+            />
 
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 relative z-10">
+              {[
+                {
+                  step: "1",
+                  title: "Register your company",
+                  desc: "Sign up quickly and create your business account.",
+                },
+                {
+                  step: "2",
+                  title: "Set up your delivery zones",
+                  desc: "Define the areas where your company will operate and deliver.",
+                },
+                {
+                  step: "3",
+                  title: "Start receiving orders",
+                  desc: "Track and deliver orders smoothly and grow your business.",
+                },
+              ].map((item, i) => (
+                <div
+                  key={i}
+                  className="relative flex flex-col items-center text-center md:text-left md:items-start"
+                >
+                  <div
+                    className="w-14 h-14 flex items-center justify-center rounded-full text-xl font-bold shadow-md mb-4"
+                    style={{
+                      backgroundColor: "var(--div)",
+                      color: "var(--text)",
+                      border: `1px solid var(--border)`,
+                    }}
+                  >
+                    {item.step}
+                  </div>
+
+                  <div
+                    className="w-full md:w-72 rounded-2xl border shadow-sm p-5"
+                    style={{
+                      backgroundColor: "var(--div)",
+                      color: "var(--text)",
+                      borderColor: "var(--border)",
+                    }}
+                  >
+                    <p className="text-lg font-semibold">{item.title}</p>
+                    <p className="text-sm mt-2 leading-relaxed">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ===== Benefits ===== */}
+        <div className="w-full max-w-6xl p-6 mt-12 mb-24 text-center">
+          <h2 className="text-3xl font-bold mb-10">Benefits Section</h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
             {[
-              {
-                step: "1",
-                title: "Register your company",
-                desc: "Sign up quickly and create your business account.",
-              },
-              {
-                step: "2",
-                title: "Set up your delivery zones",
-                desc: "Define the areas where your company will operate and deliver.",
-              },
-              {
-                step: "3",
-                title: "Start receiving orders",
-                desc: "Track and deliver orders smoothly and grow your business.",
-              },
-            ].map((item, i) => (
+              { Icon: FaClipboardList, text: "Manage orders easily" },
+              { Icon: FaChartLine, text: "Accurate reports and statistics" },
+              { Icon: FaUsers, text: "Reach thousands of customers & stores" },
+              { Icon: FaDollarSign, text: "Guaranteed and fast payments" },
+            ].map(({ Icon, text }, i) => (
               <div
                 key={i}
-                className="relative z-10 flex flex-col items-center bg-white rounded-2xl shadow-md p-6 w-64"
+                className="flex flex-col items-center justify-between rounded-2xl border shadow-sm p-8 h-56"
                 style={{
-                  backgroundColor: isDarkMode ? "#666666" : "#ffffff",
-                  color: isDarkMode ? "#ffffff" : "#242625",
+                  backgroundColor: "var(--div)",
+                  color: "var(--text)",
+                  borderColor: "var(--border)",
                 }}
               >
                 <div
-                  className="w-16 h-16 flex items-center justify-center rounded-full text-2xl font-bold mb-4 shadow-md"
+                  className="w-16 h-16 rounded-full flex items-center justify-center mb-4 border shadow-sm"
                   style={{
-                    backgroundColor: isDarkMode ? "#666666" : "#ffffff",
-                    color: isDarkMode ? "#ffffff" : "#242625",
+                    borderColor: "var(--border)",
+                    backgroundColor: "var(--div)",
                   }}
                 >
-                  {item.step}
+                  <Icon className="text-4xl" />
                 </div>
-                <p
-                  className="text-lg font-semibold"
-                  style={{
-                    color: isDarkMode ? "#ffffff" : "#242625",
-                  }}
-                >
-                  {item.title}
-                </p>
-                <p
-                  className="text-sm mt-2"
-                  style={{
-                    color: isDarkMode ? "#dcdcdc" : "#333333",
-                  }}
-                >
-                  {item.desc}
-                </p>
+                <p className="text-base font-medium leading-relaxed">{text}</p>
               </div>
             ))}
           </div>
         </div>
-
-        <section className="w-full max-w-6xl p-6 mt-10 text-center">
-          <h2
-            className="text-3xl font-bold mb-10"
-            style={{
-              color: isDarkMode ? "#ffffff" : "#242625",
-            }}
-          >
-            Benefits Section
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10">
-            <div
-              className="flex flex-col items-center  rounded-2xl shadow-md p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 cursor-pointer"
-              style={{
-                backgroundColor: isDarkMode ? "#666666" : "#ffffff",
-                color: isDarkMode ? "#ffffff" : "#242625",
-              }}
-            >
-              <FaClipboardList className="text-6xl mb-4" />
-              <p
-                className="text-lg font-medium"
-                style={{
-                  color: isDarkMode ? "#ffffff" : "#242625",
-                }}
-              >
-                Manage orders easily
-              </p>
-            </div>
-            <div
-              className="flex flex-col items-center  rounded-2xl shadow-md p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 cursor-pointer"
-              style={{
-                backgroundColor: isDarkMode ? "#666666" : "#ffffff",
-                color: isDarkMode ? "#ffffff" : "#242625",
-              }}
-            >
-              <FaChartLine className="text-6xl mb-4 " />
-              <p className="text-lg font-medium">
-                Accurate reports and statistics
-              </p>
-            </div>
-            <div
-              className="flex flex-col items-center  rounded-2xl shadow-md p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 cursor-pointer"
-              style={{
-                backgroundColor: isDarkMode ? "#666666" : "#ffffff",
-                color: isDarkMode ? "#ffffff" : "#242625",
-              }}
-            >
-              <FaUsers className="text-6xl mb-4 " />
-              <p className="text-lg font-medium">
-                Reach thousands of customers & stores
-              </p>
-            </div>
-            <div
-              className="flex flex-col items-center  rounded-2xl shadow-md p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 cursor-pointer"
-              style={{
-                backgroundColor: isDarkMode ? "#666666" : "#ffffff",
-                color: isDarkMode ? "#ffffff" : "#242625",
-              }}
-            >
-              <FaDollarSign className="text-6xl mb-4 " />
-              <p className="text-lg font-medium">
-                Guaranteed and fast payments
-              </p>
-            </div>
-          </div>
-        </section>
       </div>
+
+      {/* ✅ زر التحكم بالثيم من الريدكس */}
+      <button
+        onClick={() => dispatch(toggleTheme())}
+        className="fixed bottom-6 right-6 p-4 rounded-full shadow-lg border transition-all duration-300 hover:scale-110"
+        style={{
+          backgroundColor: "var(--button)",
+          color: "#ffffff",
+          borderColor: "var(--border)",
+        }}
+        title="Toggle dark / light mode"
+      >
+        {isDark ? <FaSun size={20} /> : <FaMoon size={20} />}
+      </button>
     </>
   );
 }

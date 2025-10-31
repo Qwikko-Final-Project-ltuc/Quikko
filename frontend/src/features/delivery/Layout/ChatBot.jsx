@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 import { ArrowUpRight } from "lucide-react";
-import { useSelector } from "react-redux"; 
+import { useSelector } from "react-redux";
 import ReactMarkdown from "react-markdown";
 
 const ChatBot = ({ userId }) => {
@@ -13,7 +13,8 @@ const ChatBot = ({ userId }) => {
   const socketRef = useRef();
   const messagesEndRef = useRef();
 
-  const isDarkMode = useSelector((state) => state.deliveryTheme.darkMode); // ✅ إضافة
+  // موجود لو احتجتي تتفرعي لاحقًا
+  const isDarkMode = useSelector((state) => state.deliveryTheme.darkMode);
 
   useEffect(() => {
     socketRef.current = io("http://localhost:3000");
@@ -42,7 +43,7 @@ const ChatBot = ({ userId }) => {
       userId,
       role: "delivery",
       message: input,
-      token: localStorage.getItem("token"), 
+      token: localStorage.getItem("token"),
     });
 
     setInput("");
@@ -52,12 +53,16 @@ const ChatBot = ({ userId }) => {
     <div
       className="flex flex-col h-full rounded-xl shadow-xl overflow-hidden transition-colors duration-300"
       style={{
-        backgroundColor: isDarkMode ? "#242625" : "#ffffff",
-        color: isDarkMode ? "#ffffff" : "#242625",
+        backgroundColor: "var(--div)",
+        color: "var(--text)",
       }}
     >
+
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div
+        className="flex-1 overflow-y-auto p-4 space-y-3"
+        style={{ backgroundColor: "var(--div)" }}
+      >
         {messages.map((msg, index) => (
           <div
             key={index}
@@ -71,38 +76,69 @@ const ChatBot = ({ userId }) => {
               style={{
                 maxWidth: msg.sender === "user" ? "85%" : "65%",
                 backgroundColor:
-                  msg.sender === "user"
-                    ? "#307A59"
-                    : isDarkMode
-                    ? "#666666"
-                    : "#f9f9f9",
-                color:
-                  msg.sender === "user"
-                    ? "#ffffff"
-                    : isDarkMode
-                    ? "#ffffff"
-                    : "#242625",
+                  msg.sender === "user" ? "var(--button)" : "var(--hover)",
+                color: msg.sender === "user" ? "#ffffff" : "var(--text)",
                 borderRadius:
                   msg.sender === "user"
-                    ? "20px 20px 5px 20px"
-                    : "20px 20px 20px 5px",
+                    ? "18px 18px 6px 18px"
+                    : "18px 18px 18px 6px",
                 padding: msg.sender === "user" ? "12px 16px" : "10px 14px",
                 marginBottom: "8px",
-                marginRight: msg.sender === "user" ? "0" : "",
-                marginLeft: msg.sender === "bot" ? "0" : "",
+                border: "none",
               }}
             >
-            <ReactMarkdown>{msg.text}</ReactMarkdown>
+              <ReactMarkdown
+                components={{
+                  a: ({ node, ...props }) => (
+                    <a
+                      {...props}
+                      style={{
+                        color: "var(--primary)",
+                        textDecoration: "underline",
+                      }}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    />
+                  ),
+                  code: ({ inline, ...props }) =>
+                    inline ? (
+                      <code
+                        {...props}
+                        style={{
+                          background: "var(--hover)",
+                          padding: "2px 6px",
+                          borderRadius: "6px",
+                          fontFamily:
+                            "ui-monospace, SFMono-Regular, Menlo, monospace",
+                        }}
+                      />
+                    ) : (
+                      <pre
+                        style={{
+                          background: "var(--hover)",
+                          padding: "10px",
+                          borderRadius: "10px",
+                          overflowX: "auto",
+                        }}
+                      >
+                        <code {...props} />
+                      </pre>
+                    ),
+                }}
+              >
+                {msg.text}
+              </ReactMarkdown>
             </div>
           </div>
         ))}
 
         {isTyping && (
           <div
-            className="max-w-[60%] p-2 rounded-2xl animate-pulse self-start"
+            className="max-w-[60%] p-2 rounded-2xl animate-pulse self-start shadow-sm"
             style={{
-              backgroundColor: isDarkMode ? "#666666" : "#f9f9f9",
-              color: isDarkMode ? "#ffffff" : "#555555",
+              backgroundColor: "var(--hover)",
+              color: "var(--text)",
+              border: "none",
             }}
           >
             Thinking...
@@ -114,10 +150,11 @@ const ChatBot = ({ userId }) => {
 
       {/* Input */}
       <div
-        className="flex items-center gap-2 p-3 border-t transition-colors duration-300"
+        className="flex items-center gap-2 p-3"
         style={{
-          backgroundColor: isDarkMode ? "#666666" : "#f9f9f9",
-          borderColor: isDarkMode ? "#f9f9f9" : "#e5e7eb",
+          backgroundColor: "var(--div)",
+          borderTop: "none",
+          boxShadow: "0 -4px 10px rgba(0,0,0,0.04)",
         }}
       >
         <input
@@ -126,12 +163,10 @@ const ChatBot = ({ userId }) => {
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
           className="flex-1 rounded-full px-4 py-2 outline-none focus:ring-2 transition-all"
           style={{
-            backgroundColor: isDarkMode ? "#242625" : "#ffffff",
-            color: isDarkMode ? "#ffffff" : "#242625",
-            border: `1px solid ${isDarkMode ? "#f9f9f9" : "#ccc"}`,
-            boxShadow: isDarkMode
-              ? "0 0 0 1px #307A59 inset"
-              : "0 0 0 1px #ccc inset",
+            backgroundColor: "var(--textbox)",
+            color: "var(--text)",
+            border: "none",
+            boxShadow: "0 0 0 1px var(--border) inset",
           }}
           placeholder="Type your message..."
         />
@@ -141,11 +176,14 @@ const ChatBot = ({ userId }) => {
           disabled={!input.trim()}
           className="p-3 rounded-full flex items-center justify-center transition-all shadow-md"
           style={{
-            backgroundColor: "#307A59",
+            backgroundColor: "var(--button)",
             color: "#ffffff",
             opacity: !input.trim() ? 0.5 : 1,
             cursor: !input.trim() ? "not-allowed" : "pointer",
+            border: "none",
           }}
+          title="Send"
+          aria-label="Send message"
         >
           <ArrowUpRight size={20} />
         </button>
