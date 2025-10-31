@@ -63,4 +63,24 @@ function orderVendorsByNearest(startPoint, vendors) {
   return ordered;
 }
 
-module.exports = { calculateDistanceKm, calculateTotalRouteDistance, orderVendorsByNearest };
+function calculateTotalVendorsDistance(vendors) {
+  if (!vendors || vendors.length < 2) return 0;
+
+  let total = 0;
+  for (let i = 0; i < vendors.length - 1; i++) {
+    const v1 = vendors[i];
+    const v2 = vendors[i + 1];
+    const dist = calculateDistanceKm(
+      v1.latitude,
+      v1.longitude,
+      v2.latitude,
+      v2.longitude
+    );
+    if (dist !== null) total += dist;
+  }
+
+  return parseFloat(total.toFixed(2));
+}
+
+
+module.exports = { calculateDistanceKm, calculateTotalRouteDistance, orderVendorsByNearest , calculateTotalVendorsDistance };

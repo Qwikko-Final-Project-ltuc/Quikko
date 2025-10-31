@@ -3,6 +3,7 @@ const {
   calculateDistanceKm,
   calculateTotalRouteDistance,
   orderVendorsByNearest,
+  calculateTotalVendorsDistance,
 } = require("../../utils/distance");
 const axios = require("axios");
 require("dotenv").config();
@@ -190,7 +191,7 @@ exports.placeOrderFromCart = async function ({
 
     let closestCompany = deliveryResult.rows[0];
     let minDistance = null;
-    let delivery_fee = 1.0;
+    let delivery_fee = 0.5;
 
     // Calculate distance using Google Distance Matrix API
     if (
@@ -380,7 +381,7 @@ exports.placeOrderFromCart = async function ({
     }
 
     // استخدام totalDistanceKm لحساب delivery_fee
-    delivery_fee = parseFloat((1 + totalDistanceKm * 0.5).toFixed(2));
+    delivery_fee = parseFloat((totalDistanceKm * 0.5).toFixed(2));
 
     for (let item of cartItemsResult.rows) {
       await pool.query(
