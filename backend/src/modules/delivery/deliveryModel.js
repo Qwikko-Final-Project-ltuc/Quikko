@@ -172,7 +172,6 @@ exports.getOrderWithCompany = async function (orderId) {
     }
   }
 
-  
   // جلب المنتجات المرتبطة بالطلب مع الصور وبيانات الفندور
   const itemsRes = await pool.query(
     `SELECT
@@ -230,7 +229,6 @@ exports.getOrderWithCompany = async function (orderId) {
 
   return order;
 };
-
 
 /**
  * Update order status
@@ -625,7 +623,6 @@ exports.getWeeklyReport = async (deliveryCompanyId, days = 7) => {
     endTsExclusive,
   ]);
 
-
   // 7️⃣ الطلبات اليومية (للرسم البياني) - مع الأيام الفارغة
   const dailyOrdersQuery = `
   WITH days AS (
@@ -909,34 +906,35 @@ exports.getOptimizedOrderDistances = async function (
     throw new Error("No coverage locations found");
 
   const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
-  const axios = require("axios");
 
   // 🧩 1. نحضّر كل النقاط بالترتيب المبدئي
-  const startPoint = {
-    ...coverage[0],
-    name: coverage[0].company_name,
-  }; // نقطة انطلاق الشركة (أول تغطية)
+  const startPoint = await getCompanyByUserId(userId);
   const vendors = orderItems.filter((v) => v.latitude && v.longitude);
-  const customer = customerAddress;
 
   let points = [
     {
-      name: startPoint.company_name,
+      name: startPoint.company_name || "Delivery Company",
       lat: startPoint.latitude,
       lng: startPoint.longitude,
     },
     ...vendors.map((v, i) => ({
-      name: v.label || `Vendor ${i + 1}`,
+      name: v.label || v.store_name || `Vendor ${i + 1}`,
       lat: v.latitude,
       lng: v.longitude,
+      vendor_id: v.vendor_id,
     })),
-    { name: "Customer", lat: customer.latitude, lng: customer.longitude },
+    {
+      name: customerAddress.name || customerAddress.label || "Customer",
+      lat: customerAddress.latitude,
+      lng: customerAddress.longitude,
+    },
   ];
 
   // 🧭 2. بناء مسار فعلي (يبدأ من الشركة، ويمر على كل Vendor، وينتهي بالزبون)
   const route = [];
   let totalDistance = 0;
   let totalDuration = 0;
+  let totalDeliveryFee = 0;
 
   for (let i = 0; i < points.length - 1; i++) {
     const origin = `${points[i].lat},${points[i].lng}`;
@@ -949,15 +947,19 @@ exports.getOptimizedOrderDistances = async function (
     if (data.status === "OK") {
       const distanceKm = data.distance.value / 1000;
       const durationMin = data.duration.value / 60;
+      const deliveryFee = calculateDeliveryFee(points[i], points[i + 1]);
 
       totalDistance += distanceKm;
       totalDuration += durationMin;
+      totalDeliveryFee += deliveryFee || 0;
 
       route.push({
         from: points[i].name,
         to: points[i + 1].name,
         distance_km: distanceKm,
         duration_min: durationMin,
+        delivery_fee: deliveryFee || 0,
+        vendor_id: points[i + 1].vendor_id || null,
       });
     }
   }
@@ -966,5 +968,6 @@ exports.getOptimizedOrderDistances = async function (
     route,
     total_distance_km: totalDistance,
     total_duration_min: totalDuration,
+    total_delivery_fee: totalDeliveryFee,
   };
 };
