@@ -7,7 +7,7 @@ import { AddWishlist, RemoveWishlist } from "../../wishlist/wishlistApi";
 import customerAPI from "../services/customerAPI";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
- 
+
 const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedIn }) => {
   const [currentImage, setCurrentImage] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -16,8 +16,7 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
   const [loading, setLoading] = useState(false);
   const userId = useSelector((state) => state.cart.user?.id);
   const navigate = useNavigate();
- 
-  // تحويل الصور إذا كانت نص JSON
+
   const images = Array.isArray(product.images)
     ? product.images
     : typeof product.images === "string"
@@ -27,8 +26,7 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
   const nextImage = () => setCurrentImage((prev) => (prev + 1) % images.length);
   const prevImage = () => setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
   const openLightbox = () => setIsOpen(true);
- 
-  // Toggle wishlist
+
   const onToggleWishlist = async () => {
     if (loading) return;
     setLoading(true);
@@ -138,8 +136,7 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
       >
         Add to Cart
       </button>
- 
-      {/* Lightbox */}
+
       {isOpen && (
         <Lightbox
           open={isOpen}

@@ -1,4 +1,3 @@
-// AdminHome.js
 import { useSelector } from "react-redux";
 import TotalOrders from "./totalOrders";
 import ActiveDeliveryCompanies from "./activeDelivery";
@@ -16,13 +15,11 @@ export default function AdminHome() {
         isDark ? "bg-[#242625]" : "bg-[#f0f2f1]"
       }`}
     >
-      {/* العمود الكبير (2/3 من الشاشة) */}
       <div className="space-y-6">
         <TotalOrders />
         <TopCustomers />
       </div>
 
-      {/* العمود الأصغر (1/3 من الشاشة) */}
       <div className="space-y-6">
         <ActiveDeliveryCompanies />
         <ActiveVendors />

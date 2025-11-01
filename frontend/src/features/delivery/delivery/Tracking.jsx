@@ -336,7 +336,8 @@ export default function TrackingPage() {
                         {formatCurrency(item.item_price)}
                       </p>
                       <p className="font-semibold">
-                        Total: {formatCurrency(item.quantity * item.item_price)}
+                        Total:{" "}
+                        {formatCurrency(item.quantity * item.item_price)}
                       </p>
                     </div>
                   </div>
@@ -387,13 +388,43 @@ export default function TrackingPage() {
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {mergedItemsArray.map((item) => (
-                <div key={item.order_item_id} className="p-3 border rounded-lg">
-                  <p>{item.product_name}</p>
-                  <p>
-                    {item.quantity} × {formatCurrency(item.item_price)}
+                <div
+                  key={item.order_item_id}
+                  className="p-3 border rounded-lg  "
+                  style={{
+                    color: isDarkMode ? "#ffffff" : "#242625",
+                  }}
+                >
+                  <p
+                    style={{
+                      color: isDarkMode ? "#ffffff" : "#242625",
+                    }}
+                  >
+                    {item?.product_name} (
+                    {item?.variant
+                      ? typeof item.variant === "object"
+                        ? Object.entries(item.variant)
+                            .map(([key, value]) => `${key}: ${value}`)
+                            .join(", ")
+                        : item.variant
+                      : "No variant"}
+                    )
                   </p>
-                  <p className="font-semibold">
-                    Total: {formatCurrency(item.quantity * item.item_price)}
+
+                  <p
+                    style={{
+                      color: isDarkMode ? "#ffffff" : "#242625",
+                    }}
+                  >
+                    {item?.quantity} x {formatCurrency(item?.item_price)}
+                  </p>
+                  <p
+                    className="font-semibold "
+                    style={{
+                      color: isDarkMode ? "#ffffff" : "#242625",
+                    }}
+                  >
+                    Total: {formatCurrency(item?.quantity * item?.item_price)}
                   </p>
                 </div>
               ))}
@@ -401,8 +432,13 @@ export default function TrackingPage() {
 
             <div className="mt-6 text-right flex flex-col items-end gap-2 text-xl font-bold text-purple-700">
               <div className="flex items-center gap-2">
-                <FaCreditCard />
-                <span>Order Total: {formatCurrency(productsTotal)}</span>
+                <FaCreditCard
+                  className="text-2xl"
+                  style={{ color: isDarkMode ? "#ffffff" : "#242625" }}
+                />
+                <span style={{ color: isDarkMode ? "#ffffff" : "#242625" }}>
+                  Order Total: {formatCurrency(productsTotal)}
+                </span>
               </div>
 
               <div className="flex items-center gap-2">

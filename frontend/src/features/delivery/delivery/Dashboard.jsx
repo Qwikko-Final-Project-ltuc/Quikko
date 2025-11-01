@@ -9,6 +9,7 @@ import { setUserFromToken } from "../auth/authSlice";
 import { fetchDeliveryProfile } from "./DeliveryAPI";
 import { Bot, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { FaRobot, FaBrain, FaComments } from "react-icons/fa";
 
 export default function DashboardLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -57,33 +58,31 @@ export default function DashboardLayout() {
             user={user || { name: "Guest" }}
           />
 
+          {/* الخلفية من var(--bg) بدل قيم ثابتة */}
           <main
             className="flex-1 p-6 overflow-auto"
-            style={{
-              backgroundColor: isDarkMode ? "#242625" : "#f0f2f1",
-            }}
+            style={{ backgroundColor: "var(--bg)" }}
           >
             <Outlet />
           </main>
 
           <Footer />
 
-          {/* ✅ زر الشات بوت بدعم الوضع الداكن */}
           <button
             onClick={toggleChat}
-            className="fixed bottom-8 right-6 p-4 rounded-full shadow-lg transition flex items-center justify-center z-50"
+            className="fixed bottom-20 right-15 p-4 rounded-full shadow-lg transition flex items-center justify-center z-50"
             style={{
-              backgroundColor: isDarkMode ? "#307A59" : "#307A59",
-              color: isDarkMode ? "#ffffff" : "#ffffff",
-              boxShadow: isDarkMode
-                ? "0 4px 12px rgba(0,0,0,0.6)"
-                : "0 4px 12px rgba(0,0,0,0.2)",
+              backgroundColor: "var(--button)",
+              color:"#ffffff",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+              border: "none",
             }}
+            title="Open Qwikko Chatbot"
+            aria-label="Open Qwikko Chatbot"
           >
-            <Bot size={28} />
+            <FaRobot size={28} />
           </button>
 
-          {/* ✅ المودال يدعم الـ light/dark */}
           <AnimatePresence>
             {isChatOpen && (
               <motion.div
@@ -93,36 +92,40 @@ export default function DashboardLayout() {
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 style={{
-                  backgroundColor: isDarkMode ? "#666666" : "#ffffff",
-                  color: isDarkMode ? "#ffffff" : "#242625",
+                  backgroundColor: "var(--div)",
+                  color: "var(--text)",
                 }}
               >
                 <button
                   onClick={toggleChat}
                   className="absolute top-4 right-4 z-10"
-                  style={{
-                    color: isDarkMode ? "#f9f9f9" : "#555555",
-                  }}
+                  style={{ color: "var(--light-gray)" }}
+                  title="Close"
+                  aria-label="Close chatbot"
                 >
                   <X size={24} />
                 </button>
 
+                {/* العنوان: شلت border-b نهائيًا واستبدلته بظل خفيف */}
                 <h2
-                  className="text-xl font-semibold mb-4 flex items-center gap-2 p-4 border-b"
+                  className="text-base font-semibold flex items-center gap-2 px-4 py-3"
                   style={{
-                    borderColor: isDarkMode ? "#f9f9f9" : "#e5e7eb",
-                    backgroundColor: isDarkMode ? "#666666" : "#ffffff",
+                    backgroundColor: "var(--bg)",
+                    color: "var(--text)",
+                    boxShadow: "0 1px 8px rgba(0,0,0,0.06)", // ظل بدل الخط
                   }}
                 >
-                  <Bot size={20} className="text-blue-600" />
-                  AI Chatbot
+                  <FaRobot
+                    size={26}
+                    style={{ color: isDarkMode ? "#ffffff" : "#292e2c" }}
+                  />
+                  Qwikko Chatbot
                 </h2>
 
+                {/* جسم المحادثة: خلفية من --bg */}
                 <div
                   className="flex-grow overflow-auto p-2"
-                  style={{
-                    backgroundColor: isDarkMode ? "#242625" : "#f9f9f9",
-                  }}
+                  style={{ backgroundColor: "var(--bg)" }}
                 >
                   <ChatBot userId={currentUser?.id || "guest"} />
                 </div>

@@ -486,7 +486,7 @@ return (
 
 
       {profileOpen && (
-      <div className="absolute right-0 mt-2 w-48 bg-[var(--div)] border border-[var(--border)] rounded-lg shadow-lg overflow-hidden z-50">
+      <div className="absolute right-0 mt-2 w-48 bg-[var(--bg)] border border-[var(--border)] rounded-lg shadow-lg overflow-hidden z-50">
         <Link
           to="/customer/profile"
           className="flex items-center px-4 py-2 text-[var(--text)] transition-colors duration-200 hover:bg-[var(--hover)]"
@@ -501,7 +501,7 @@ return (
           className={`flex items-center w-full text-left px-4 py-2 transition-colors duration-200 ${
             themeMode === "dark"
               ? "bg-[var(--div)] text-[var(--text)] hover:bg-[var(--hover)]"
-              : "bg-[var(--div)] text-[var(--text)] hover:bg-[var(--hover)]"
+              : "bg-[var(--bg)] text-[var(--text)] hover:bg-[var(--hover)]"
           }`}
         >
           {themeMode === "dark" ? (
@@ -581,7 +581,7 @@ return (
               onClick={() => setNotificationsOpen(false)}
             >
               <div
-                className="bg-[var(--div)] rounded-xl shadow-2xl w-96 max-h-[70vh] overflow-hidden absolute top-20 right-4 ml-4 border border-[var(--border)] transform transition-transform duration-300 scale-100"
+                className="bg-[var(--bg)] rounded-xl shadow-2xl w-96 max-h-[70vh] overflow-hidden absolute top-20 right-4 ml-4 border border-[var(--border)] transform transition-transform duration-300 scale-100"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header */}
