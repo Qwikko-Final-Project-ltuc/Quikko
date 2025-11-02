@@ -495,6 +495,8 @@ exports.getDeliveryEstimate = async (req, res) => {
       vendorIds,
       useGoogleMaps
     );
+    console.log("Delivery estimate result:", result);
+
     res.status(200).json(result);
   } catch (err) {
     console.error("Error in getDeliveryEstimate:", err.message);

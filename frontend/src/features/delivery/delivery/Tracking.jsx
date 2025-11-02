@@ -47,6 +47,12 @@ export default function TrackingPage() {
             customerAddressId,
             vendorIds,
           });
+          est.route = est.route.map((r) => ({
+            ...r,
+            lat: r.latitude || r.lat,
+            lng: r.longitude || r.lng,
+          }));
+
           setEstimate(est);
           console.log("Delivery estimate:", est);
         }
@@ -93,24 +99,27 @@ export default function TrackingPage() {
   const vendorsInRoute =
     estimate?.route?.filter((r) => r.vendor_id !== null) || [];
 
-  const vendorsGrouped = vendorsInRoute.map((vr) => {
+  const vendorsGrouped = vendorsInRoute.map((r) => {
     const products = mergedItemsArray.filter(
-      (item) => item.vendor_id === vr.vendor_id
+      (item) => item.vendor_id === r.vendor_id
     );
 
     const vendorInfo = order.items.find(
-      (item) => item.vendor_id === vr.vendor_id
+      (item) => item.vendor_id === r.vendor_id
     );
 
     return {
       vendor: {
-        vendor_id: vr.vendor_id,
-        vendor_name: vendorInfo?.store_name || vr.to || "Unknown Vendor",
+        vendor_id: r.vendor_id,
+        vendor_name: vendorInfo?.store_name || r.to || `Vendor ${r.vendor_id}`,
         vendor_email: vendorInfo?.vendor_email || "N/A",
         vendor_phone: vendorInfo?.vendor_phone || "N/A",
-        distance_km: vr.distance_km,
-        delivery_fee: vr.delivery_fee,
-        duration_min: vr.duration_min,
+        latitude: vendorInfo?.latitude,
+        longitude: vendorInfo?.longitude,
+        distance_km: r.distance_km,
+        delivery_fee: r.delivery_fee,
+        duration_min: r.duration_min,
+        vendor_user_id: vendorInfo?.vendor_user_id || null,
       },
       products,
     };
@@ -121,26 +130,34 @@ export default function TrackingPage() {
       (a.vendor.distance_km ?? Infinity) - (b.vendor.distance_km ?? Infinity)
   );
 
-  const routePoints =
-    estimate?.route?.map((r) => ({
-      lat: r.latitude || r.lat,
-      lng: r.longitude || r.lng,
-      label: r.to,
-    })) || [];
+  const routePoints = [];
 
   if (estimate?.delivery_start) {
-    routePoints.unshift({
+    routePoints.push({
       lat: estimate.delivery_start.latitude,
       lng: estimate.delivery_start.longitude,
-      label: estimate.delivery_start.label,
+      label: estimate.delivery_start.company_name || "Delivery Company",
     });
   }
+
+  vendorsGrouped.forEach(({ vendor }) => {
+    const vendorItem = order.items.find(
+      (i) => i.vendor_id === vendor.vendor_id
+    );
+    if (vendorItem && vendorItem.latitude && vendorItem.longitude) {
+      routePoints.push({
+        lat: vendorItem.latitude,
+        lng: vendorItem.longitude,
+        label: vendor.vendor_name,
+      });
+    }
+  });
 
   if (estimate?.customer) {
     routePoints.push({
       lat: estimate.customer.latitude,
       lng: estimate.customer.longitude,
-      label: estimate.customer.label,
+      label: estimate.customer.name || "Customer",
     });
   }
 
@@ -243,7 +260,11 @@ export default function TrackingPage() {
       {routePoints.length >= 2 && (
         <section className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300">
           <h3 className="text-xl font-semibold mb-4">Delivery Route</h3>
-          <MapView routePoints={routePoints} drawPolyline={true} />
+          <MapView
+            routePoints={routePoints}
+            drawPolyline={true}
+            polyline={estimate.polyline}
+          />
         </section>
       )}
 
@@ -369,15 +390,41 @@ export default function TrackingPage() {
               {mergedItemsArray.map((item) => (
                 <div
                   key={item.order_item_id}
-                  className="p-3 border rounded-lg"
+                  className="p-3 border rounded-lg  "
+                  style={{
+                    color: isDarkMode ? "#ffffff" : "#242625",
+                  }}
                 >
-                  <p>{item.product_name}</p>
-                  <p>
-                    {item.quantity} × {formatCurrency(item.item_price)}
+                  <p
+                    style={{
+                      color: isDarkMode ? "#ffffff" : "#242625",
+                    }}
+                  >
+                    {item?.product_name} (
+                    {item?.variant
+                      ? typeof item.variant === "object"
+                        ? Object.entries(item.variant)
+                            .map(([key, value]) => `${key}: ${value}`)
+                            .join(", ")
+                        : item.variant
+                      : "No variant"}
+                    )
                   </p>
-                  <p className="font-semibold">
-                    Total:{" "}
-                    {formatCurrency(item.quantity * item.item_price)}
+
+                  <p
+                    style={{
+                      color: isDarkMode ? "#ffffff" : "#242625",
+                    }}
+                  >
+                    {item?.quantity} x {formatCurrency(item?.item_price)}
+                  </p>
+                  <p
+                    className="font-semibold "
+                    style={{
+                      color: isDarkMode ? "#ffffff" : "#242625",
+                    }}
+                  >
+                    Total: {formatCurrency(item?.quantity * item?.item_price)}
                   </p>
                 </div>
               ))}
@@ -385,8 +432,11 @@ export default function TrackingPage() {
 
             <div className="mt-6 text-right flex flex-col items-end gap-2 text-xl font-bold text-purple-700">
               <div className="flex items-center gap-2">
-                <FaCreditCard />
-                <span>
+                <FaCreditCard
+                  className="text-2xl"
+                  style={{ color: isDarkMode ? "#ffffff" : "#242625" }}
+                />
+                <span style={{ color: isDarkMode ? "#ffffff" : "#242625" }}>
                   Order Total: {formatCurrency(productsTotal)}
                 </span>
               </div>

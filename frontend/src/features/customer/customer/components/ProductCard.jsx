@@ -17,26 +17,24 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
   const userId = useSelector((state) => state.cart.user?.id);
   const navigate = useNavigate();
 
-  // تحويل الصور إذا كانت نص JSON
   const images = Array.isArray(product.images)
     ? product.images
     : typeof product.images === "string"
     ? JSON.parse(product.images)
     : [];
-
+ 
   const nextImage = () => setCurrentImage((prev) => (prev + 1) % images.length);
   const prevImage = () => setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
   const openLightbox = () => setIsOpen(true);
 
-  // Toggle wishlist
   const onToggleWishlist = async () => {
     if (loading) return;
     setLoading(true);
-
+ 
     try {
       const productId = product.id || product.product_id;
       if (!productId) throw new Error("Product ID not found");
-
+ 
       if (wishlist) {
         if (!wishlistId) throw new Error("Cannot remove wishlist: wishlistId not found");
         await RemoveWishlist(wishlistId);
@@ -58,7 +56,7 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
       setLoading(false);
     }
   };
-
+ 
   return (
     <div
       className="p-4 border rounded shadow hover:shadow-lg transition flex flex-col justify-between cursor-pointer"
@@ -81,7 +79,7 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
         ) : (
           <div className="w-full h-full bg-gray-200 flex items-center justify-center">No Image</div>
         )}
-
+ 
         {images.length > 1 && (
           <>
             <button
@@ -105,14 +103,14 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
           </>
         )}
       </div>
-
+ 
       {/* بيانات المنتج */}
       <div>
         <h3 className="text-lg font-bold">{product.name}</h3>
         <p className="text-gray-600">{product.description}</p>
         <p className="text-blue-600 font-semibold">${product.price}</p>
       </div>
-
+ 
       {/* زر wishlist */}
       {isLoggedIn && (
         <button
@@ -127,7 +125,7 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
           <ImHeart />
         </button>
       )}
-
+ 
       {/* زر إضافة للسلة */}
       <button
         className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
@@ -139,7 +137,6 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
         Add to Cart
       </button>
 
-      {/* Lightbox */}
       {isOpen && (
         <Lightbox
           open={isOpen}
@@ -152,5 +149,5 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
     </div>
   );
 };
-
+ 
 export default ProductCard;

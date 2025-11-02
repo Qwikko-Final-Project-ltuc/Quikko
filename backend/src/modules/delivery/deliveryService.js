@@ -1,6 +1,9 @@
-const DeliveryModel = require('./deliveryModel');
+const DeliveryModel = require("./deliveryModel");
 const axios = require("axios");
-const { calculateDistanceKm, calculateTotalRouteDistance } = require("../../utils/distance");
+const {
+  calculateDistanceKm,
+  calculateTotalRouteDistance,
+} = require("../../utils/distance");
 
 /**
  * @module DeliveryService
@@ -67,7 +70,6 @@ exports.addCoverageAreas = async (userId, newAreas) => {
   return await DeliveryModel.addCoverage(userId, mergedAreas);
 };
 
-
 /**
  * Update coverage area
  * @async
@@ -132,7 +134,6 @@ exports.getCompanyOrders = async (companyId) => {
   return orders;
 };
 
-
 /**
  * Get weekly report via service layer
  * @async
@@ -164,17 +165,15 @@ exports.updatePaymentStatus = async (orderId, paymentStatus) => {
   return await DeliveryModel.updatePaymentStatus(orderId, paymentStatus);
 };
 
-
 exports.getOrderById = async (orderId) => {
   return await DeliveryModel.getOrderById(orderId);
 };
-
 
 exports.getDistanceFromGoogle = async (fromLat, fromLng, toLat, toLng) => {
   try {
     const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
     const url = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${fromLat},${fromLng}&destinations=${toLat},${toLng}&key=${GOOGLE_MAPS_API_KEY}`;
-    
+
     const response = await axios.get(url);
     const element = response.data.rows[0].elements[0];
 
@@ -198,7 +197,13 @@ exports.calculateDeliveryFee = (distanceKm) => {
   return Math.round(fee * 100) / 100;
 };
 
-exports.getDistance = async (fromLat, fromLng, toLat, toLng, useGoogle = true) => {
+exports.getDistance = async (
+  fromLat,
+  fromLng,
+  toLat,
+  toLng,
+  useGoogle = true
+) => {
   if (useGoogle) {
     return await exports.getDistanceFromGoogle(fromLat, fromLng, toLat, toLng);
   } else {
@@ -208,20 +213,23 @@ exports.getDistance = async (fromLat, fromLng, toLat, toLng, useGoogle = true) =
   }
 };
 
-exports.calculateTotalDistanceAndFee = async (userId, customerAddressId, vendorIds, useGoogle = true) => {
+exports.calculateTotalDistanceAndFee = async (
+  userId,
+  customerAddressId,
+  vendorIds,
+  useGoogle = true
+) => {
   try {
-    console.log("🔹 Starting delivery calculation");
-
     // 1. جلب نقاط تغطية الشركة
     const coverage = await DeliveryModel.getCoverageById(userId);
-    console.log("Coverage points:", coverage);
 
     if (!coverage || !coverage.length)
       throw new Error("No delivery coverage found");
 
     // 2. جلب عنوان الكستمر
-    const customer = await DeliveryModel.getCustomerCoordinates(customerAddressId);
-    console.log("Customer coordinates:", customer);
+    const customer = await DeliveryModel.getCustomerCoordinates(
+      customerAddressId
+    );
 
     if (!customer?.latitude || !customer?.longitude) {
       throw new Error("Customer address coordinates missing");
@@ -231,7 +239,6 @@ exports.calculateTotalDistanceAndFee = async (userId, customerAddressId, vendorI
     const vendors = [];
     for (const vendorId of vendorIds) {
       const vendor = await DeliveryModel.getVendorCoordinates(vendorId);
-      console.log(`Vendor ${vendorId} coordinates:`, vendor);
 
       if (vendor?.latitude && vendor?.longitude) {
         vendors.push(vendor);
@@ -251,7 +258,6 @@ exports.calculateTotalDistanceAndFee = async (userId, customerAddressId, vendorI
         vendors[0].longitude,
         useGoogle
       );
-      console.log(`Distance from coverage ${cov.city} to first vendor: ${distanceKm} km`);
 
       if (distanceKm < minDistance) {
         minDistance = distanceKm;
@@ -261,8 +267,6 @@ exports.calculateTotalDistanceAndFee = async (userId, customerAddressId, vendorI
 
     if (!startingCoverage)
       throw new Error("No valid starting coverage point found");
-
-    console.log("Starting coverage point:", startingCoverage);
 
     let currentPoint = startingCoverage;
 
@@ -291,11 +295,13 @@ exports.calculateTotalDistanceAndFee = async (userId, customerAddressId, vendorI
 
       const fee = exports.calculateDeliveryFee(nearest.distanceKm);
 
-      console.log(`Route segment: ${currentPoint.city || currentPoint.label} -> ${nearest.vendor.store_name || nearest.vendor.label}, Distance: ${nearest.distanceKm}, Fee: ${fee}`);
-
       route.push({
-        from: currentPoint.label || currentPoint.city || "Delivery Start",
+        from: currentPoint.company_name || currentPoint.label || currentPoint.city || "Delivery Start",
+        from_lat: currentPoint.latitude,
+        from_lng: currentPoint.longitude,
         to: nearest.vendor.store_name || nearest.vendor.label,
+        to_lat: nearest.vendor.latitude,
+        to_lng: nearest.vendor.longitude,
         vendor_id: nearest.vendor.id,
         distance_km: parseFloat(nearest.distanceKm.toFixed(2)),
         duration_min: Math.round(nearest.durationMin),
@@ -306,9 +312,7 @@ exports.calculateTotalDistanceAndFee = async (userId, customerAddressId, vendorI
       currentPoint = nearest.vendor;
 
       // إزالة هذا المحل من القائمة
-      const idx = remainingVendors.findIndex(
-        (v) => v.id === nearest.vendor.id
-      );
+      const idx = remainingVendors.findIndex((v) => v.id === nearest.vendor.id);
       remainingVendors.splice(idx, 1);
     }
 
@@ -324,24 +328,21 @@ exports.calculateTotalDistanceAndFee = async (userId, customerAddressId, vendorI
 
     const backFee = exports.calculateDeliveryFee(backDistance);
 
-    console.log(`Last leg: ${currentPoint.store_name || currentPoint.label} -> Customer, Distance: ${backDistance}, Fee: ${backFee}`);
-
     route.push({
       from: currentPoint.store_name || currentPoint.label,
-      to: customer.label || "Customer",
+      from_lat: currentPoint.latitude,
+      from_lng: currentPoint.longitude,
+      to: customer.name || "Customer",
+      to_lat: customer.latitude,
+      to_lng: customer.longitude,
       vendor_id: null,
       distance_km: parseFloat(backDistance.toFixed(2)),
       duration_min: Math.round(backDuration),
       delivery_fee: backFee,
     });
 
-    // حساب المسافة الكلية باستخدام دالة calculateTotalRouteDistance
-    const points = [
-      { lat: startingCoverage.latitude, lng: startingCoverage.longitude },
-      ...vendors.map(v => ({ lat: v.latitude, lng: v.longitude })),
-      { lat: customer.latitude, lng: customer.longitude }
-    ];
-    const totalDistance = calculateTotalRouteDistance(points);
+    // 7️⃣ حساب المسافة الكلية والرسوم الكلية
+    const totalDistance = route.reduce((acc, r) => acc + r.distance_km, 0);
     const totalFee = route.reduce((acc, r) => acc + r.delivery_fee, 0);
 
     console.log("Total distance:", totalDistance);
@@ -356,12 +357,12 @@ exports.calculateTotalDistanceAndFee = async (userId, customerAddressId, vendorI
       },
       customer: {
         id: customer.id,
-        label: customer.address_line1 || customer.label,
+        label: customer.name || customer.label,
         latitude: customer.latitude,
         longitude: customer.longitude,
       },
       route,
-      total_distance_km: totalDistance,
+      total_distance_km: parseFloat(totalDistance.toFixed(2)),
       total_delivery_fee: Math.round(totalFee * 100) / 100,
     };
   } catch (err) {
@@ -374,4 +375,3 @@ exports.calculateTotalDistanceAndFee = async (userId, customerAddressId, vendorI
     };
   }
 };
-
