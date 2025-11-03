@@ -26,6 +26,47 @@ const toUtcISO = (v) => {
 const formatMessageTime = (iso) => {
   try {
     const date = new Date(iso);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffSeconds = Math.floor(diffMs / 1000);
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    const diffHours = Math.floor(diffMinutes / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffSeconds < 60) {
+      return "now";
+    } else if (diffMinutes < 60) {
+      return `${diffMinutes} min ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours} hours ago`;
+    } else if (diffDays === 1) {
+      return "1 day ago";
+    } else if (diffDays === 2) {
+      return "2 days ago";
+    } else if (diffDays === 3) {
+      return "3 days ago";
+    } else if (diffDays === 4) {
+      return "4 days ago";
+    } else if (diffDays === 5) {
+      return "5 days ago";
+    } else if (diffDays === 6) {
+      return "6 days ago";
+    } else if (diffDays === 7) {
+      return "1 week ago";
+    } else {
+      return new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "numeric",
+      }).format(date);
+    }
+  } catch {
+    return "";
+  }
+};
+
+const formatChatTime = (iso) => {
+  try {
+    const date = new Date(iso);
     return new Intl.DateTimeFormat("en-US", {
       hour: "2-digit",
       minute: "2-digit",
@@ -351,26 +392,24 @@ const CustomerChatPage = () => {
       {/* Scrollbar Styles */}
       <style>
         {`
-        /* في أعلى ملف Component أو في ملف CSS مستورد */
-.messages-scroll {
-  scrollbar-width: thin; /* Firefox */
-  scrollbar-color: var(--bg) var(--bg);
-}
+        .messages-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: var(--bg) var(--bg);
+        }
 
-.messages-scroll::-webkit-scrollbar {
-  width: 8px; /* Chrome, Edge, Safari */
-}
+        .messages-scroll::-webkit-scrollbar {
+          width: 8px;
+        }
 
-.messages-scroll::-webkit-scrollbar-track {
-  background: var(--bg);
-}
+        .messages-scroll::-webkit-scrollbar-track {
+          background: var(--bg);
+        }
 
-.messages-scroll::-webkit-scrollbar-thumb {
-  background-color: var(--bg);
-  border-radius: 4px;
-  border: 2px solid var(--bg);
-}
-
+        .messages-scroll::-webkit-scrollbar-thumb {
+          background-color: var(--bg);
+          border-radius: 4px;
+          border: 2px solid var(--bg);
+        }
         `}
       </style>
 
@@ -448,8 +487,18 @@ const CustomerChatPage = () => {
                   }`}
                 >
                   <h2 className="font-bold text-[var(--text)] text-lg mt-2">{headerTitle}</h2>
-                  <button onClick={closeChat} className="text-gray-400 hover:text-[var(--button)] text-2xl">
-                    ×
+                  <button 
+                    onClick={closeChat} 
+                    className={`
+                      w-8 h-8 flex items-center justify-center rounded-full 
+                      transition-all duration-200 hover:scale-110
+                      ${themeMode === "dark" 
+                        ? "text-gray-300 hover:text-white hover:bg-gray-600" 
+                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
+                      }
+                    `}
+                  >
+                    ✕
                   </button>
                 </div>
 
@@ -479,7 +528,7 @@ const CustomerChatPage = () => {
                               msg.sender === "customer" ? "text-right text-[var(--text)]" : "text-left text-[var(--text)]"
                             }`}
                           >
-                            {formatMessageTime(msg.createdAt)}
+                            {formatChatTime(msg.createdAt)}
                           </div>
                         </div>
                       </div>

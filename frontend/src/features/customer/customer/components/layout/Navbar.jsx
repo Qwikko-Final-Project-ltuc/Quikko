@@ -501,7 +501,7 @@ return (
           onClick={() => dispatch(toggleTheme())}
           className={`flex items-center w-full text-left px-4 py-2 transition-colors duration-200 ${
             themeMode === "dark"
-              ? "bg-[var(--div)] text-[var(--text)] hover:bg-[var(--hover)]"
+              ? "bg-[var(--mid-dark)] text-[var(--text)] hover:bg-[var(--hover)]"
               : "bg-[var(--bg)] text-[var(--text)] hover:bg-[var(--hover)]"
           }`}
         >
@@ -587,10 +587,10 @@ return (
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header */}
-                <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--bg)]">
+                <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--bg)] mt-3">
                   <div className="flex justify-between items-center">
                     <h3 className="text-xl font-bold text-[var(--text)] flex items-center">
-                      <FaBell className="mr-3 text-[var(--text)]" />
+                      <FaBell className="mr-3  text-[var(--text)]" />
                       Notifications
                       {unreadCount > 0 && (
                         <span className="ml-3 bg-[var(--primary)] text-white text-xs font-bold px-2 py-1 rounded-full min-w-6 h-6 flex items-center justify-center">

@@ -97,15 +97,17 @@ const OrdersPage = () => {
   };
 
   return (
-    <div className={`min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors duration-300`}>
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className={`min-h-screen bg-[var(--bg)]  text-[var(--text)] transition-colors duration-300`}>
+      <div className="max-w-7xl mx-auto px-4 py-8 ">
         {/* Header */}
-        <div className="mb-6 ml-4  mt-6">
+        <div className="p-4" >
           <h1 className={`text-3xl font-bold mb-4 ${
             themeMode === 'dark' 
               ? "text-[var(--textbox)]" 
               : "text-[var(--text)]"
-          }`}>
+          }`
+          }
+          >
             Your Orders
           </h1>
         </div>

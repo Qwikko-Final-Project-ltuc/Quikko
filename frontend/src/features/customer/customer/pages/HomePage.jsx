@@ -322,26 +322,27 @@ const HomePage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className={`py-20 mb-8 ${
-        themeMode === 'dark' 
-          ? "bg-gradient-to-r from-[var(--button)] to-gray-700  text-[var(--textbox)]" 
-          :  "bg-[var(--button)]  text-[var(--textbox)]" 
+<section className={`py-20 ${
+  themeMode === 'dark' 
+    ? "bg-gradient-to-r from-[var(--button)] to-gray-700 text-[var(--textbox)]" 
+    : "bg-[var(--button)] text-[var(--textbox)]" 
+}`}>
+  <div className="max-w-4xl mx-auto text-center px-6">
+    <h3 className="text-4xl font-bold mb-6">Ready to Explore More?</h3>
+    <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
+      Discover our complete collection and find exactly what you're looking for
+    </p>
+    <button className={`px-8 py-4 rounded-xl font-semibold 
+      hover:bg-opacity-90 transition-all duration-300 hover:scale-105 ${
+        themeMode === 'dark'
+          ? "bg-[var(--textbox)] text-[var(--button)]"
+          : "bg-white text-[var(--button)]"
       }`}>
-        <div className="max-w-4xl mx-auto text-center px-6">
-          <h3 className="text-4xl font-bold mb-6">Ready to Explore More?</h3>
-          <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
-            Discover our complete collection and find exactly what you're looking for
-          </p>
-          <button className={`px-8 py-4 rounded-xl font-semibold 
-            hover:bg-opacity-90 transition-all duration-300 hover:scale-105 ${
-              themeMode === 'dark'
-                ? "bg-[var(--textbox)] text-[var(--button)]"
-                : "bg-white text-[var(--button)]"
-            }`}>
-            Browse All Products
-          </button>
-        </div>
-      </section>
+      Browse All Products
+    </button>
+  </div>
+</section>
+<div className={`h-8 ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-[var(--bg)]'}`}></div>
     </div>
   );
 };

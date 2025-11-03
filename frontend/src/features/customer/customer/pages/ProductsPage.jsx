@@ -164,12 +164,16 @@ const ProductsPage = () => {
   return (
     <div className="min-h-screen pt-0 bg-[light:var(--textbox)] dark:bg-[var(--bg)]">
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         {/* Header Section */}
-        <div className="text-center mb-8 pt-4">
+        <div className="text-center mb-8 pt-4 " style={{ color: themeMode === 'dark' ? 'var(--text)' : 'var(--button)' ,
+
+            background: `linear-gradient(to bottom, 
+              rgba(2, 106, 75, 0.1) 0%, 
+              var(--bg) 100%)`
+          }}>
           <h1 
-            className="text-3xl font-bold mb-3 pt-8"
-            style={{ color: themeMode === 'dark' ? 'var(--text)' : 'var(--button)' }}
+            className="text-3xl font-bold mb-3 pt-8 "
           >
             Our Products {searchQuery && <span>(Results for "{searchQuery}")</span>}
           </h1>

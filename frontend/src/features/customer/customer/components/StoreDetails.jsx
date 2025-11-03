@@ -1,19 +1,47 @@
+// StoreDetails.jsx
 import React from "react";
+import { useSelector } from "react-redux";
 
 const StoreDetails = ({ store }) => {
+  const themeMode = useSelector((state) => state.customerTheme.mode);
+
   return (
-    <div className="max-w-5xl mx-auto p-6">
-    <img
-      src={store.store_logo || "/banner-placeholder.png"}
-      alt={store.store_name}
-      className="w-full h-64 object-cover rounded-lg"
-    />
-      <h1 className="text-3xl font-bold mt-4">{store.store_name}</h1>
-      <p className="text-gray-700 mt-2">{store.description}</p>
-      <div className="mt-4 space-y-2">
-        {store.address && <p><strong>Address:</strong> {store.address}</p>}
-        {store.phone && <p><strong>Phone:</strong> {store.phone}</p>}
-        {store.contact_email && <p><strong>Email:</strong> {store.contact_email}</p>}
+    <div className="space-y-4">
+      <p className="text-[var(--text)]/80 leading-relaxed">{store.description}</p>
+      
+      <div className="space-y-3">
+        {store.address && (
+          <div className="flex items-start gap-3">
+            <div className={`w-8 h-8 rounded-lg ${
+              themeMode === 'dark' ? 'bg-[var(--mid-dark)]' : 'bg-gray-100'
+            } flex items-center justify-center flex-shrink-0`}>
+              <span className="text-sm">📍</span>
+            </div>
+            <div>
+              <p className="font-semibold text-[var(--text)]">Address</p>
+              <p className="text-[var(--text)]/70">{store.address}</p>
+            </div>
+          </div>
+        )}
+        
+        {store.phone && (
+          <div className="flex items-start gap-3">
+
+            <div>
+              <p className="font-semibold text-[var(--text)]">Phone</p>
+              <p className="text-[var(--text)]/70">{store.phone}</p>
+            </div>
+          </div>
+        )}
+        
+        {store.contact_email && (
+          <div className="flex items-start gap-3">
+            <div>
+              <p className="font-semibold text-[var(--text)]">Email</p>
+              <p className="text-[var(--text)]/70">{store.contact_email}</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
