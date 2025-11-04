@@ -1,15 +1,15 @@
 import { NavLink } from "react-router-dom";
 import { AiOutlineDashboard } from "react-icons/ai";
-import { FaUserTie } from "react-icons/fa";
+import { FaUserTie, FaBoxOpen, FaUserShield } from "react-icons/fa";
 import { FaTruckFast } from "react-icons/fa6";
-import { FaBoxOpen } from "react-icons/fa";
-import { FaUserShield } from "react-icons/fa";
 import { FiLogOut } from "react-icons/fi";
 import { useSelector } from "react-redux";
+import { useEffect, useRef } from "react";
 
-export default function SideBar({ isOpen }) {
+export default function SideBar({ isOpen, onClose }) {
   const { mode } = useSelector((state) => state.theme);
   const isDark = mode === "dark";
+  const sidebarRef = useRef(null);
 
   const links = [
     { to: "/adminHome", icon: <AiOutlineDashboard />, label: "Dashboard" },
@@ -23,84 +23,83 @@ export default function SideBar({ isOpen }) {
     { to: "/adminCms", icon: <FaUserShield />, label: "CMS" },
   ];
 
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+        onClose();
+      }
+    }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen, onClose]);
+
   return (
     <aside
-      className={`flex flex-col transition-all duration-300 shadow-md h-screen
-        ${isOpen ? "w-64" : "w-16"} 
-        ${isDark ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-900"}`}
+      ref={sidebarRef}
+      className={`fixed top-0 left-0 h-full flex flex-col justify-between transition-all duration-300 ease-in-out z-50 shadow-lg
+        ${isOpen ? "translate-x-0" : "-translate-x-full"}
+        ${
+          isDark
+            ? "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+            : "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+        } w-65`}
     >
-      <div
-        className={`px-6 py-6 flex items-center justify-center border-b transition-colors
-        ${isDark ? "border-gray-700" : "border-gray-200"}`}
-      >
-        {isOpen ? (
+      {/* logo */}
+      <div>
+        <div
+          className={`px-6 py-6 flex items-center justify-center transition-colors`}
+        >
           <img
             src={isDark ? "/LogoDark.png" : "/logo.png"}
             alt="Qwikko Logo"
-            className="h-13 w-416"
+            className="h-12 w-auto"
           />
-        ) : (
-          <div className="w-10 flex items-center justify-center text-lg font-bold">
-            Q
-          </div>
-        )}
-      </div>
+        </div>
 
-      <nav className="flex flex-col space-y-2 px-4 py-4 flex-grow">
-        {links.map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            className={({ isActive }) =>
-              `relative group flex items-center p-2 rounded transition-colors duration-300
+        {/* nav links */}
+        <nav className="flex flex-col space-y-2 px-4 py-4">
+          {links.map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              onClick={onClose}
+              className={({ isActive }) =>
+                `relative group flex items-center p-2 rounded transition-colors duration-300
               ${
                 isActive
                   ? isDark
-                    ? "bg-gray-700 font-semibold"
-                    : "bg-gray-200 font-semibold"
+                    ? "bg-[var(--hover)] font-semibold"
+                    : "bg-[var(--hover)] font-semibold"
                   : isDark
-                  ? "hover:bg-gray-800"
-                  : "hover:bg-gray-300"
+                  ? "hover:bg-[var(--hover)]"
+                  : "hover:bg-[var(--hover)]"
               }`
-            }
-          >
-            <span className="text-xl">{link.icon}</span>
-            {isOpen && <span className="ml-3">{link.label}</span>}
+              }
+            >
+              <span className="text-xl">{link.icon}</span>
+              <span className="ml-3">{link.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+      </div>
 
-            {!isOpen && (
-              <span
-                className={`absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50
-                  text-xs rounded px-2 py-1 opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100
-                  transition-all duration-150 whitespace-nowrap
-                  ${isDark ? "bg-gray-100 text-gray-900" : "bg-gray-900 text-gray-100"}`}
-              >
-                {link.label}
-              </span>
-            )}
-          </NavLink>
-        ))}
-      </nav>
-
-      <div className="px-4 pb-4">
+      {/* logout */}
+      <div className="px-4 pb-4 mt-auto">
         <NavLink
           to="/adminLogin"
-          title={!isOpen ? "Log out" : undefined}
-          className={`relative group flex items-center p-2 rounded transition-colors duration-300
-            ${isDark ? "hover:bg-gray-800" : "hover:bg-gray-300"}`}
+          className="relative group flex items-center p-2 rounded transition-colors duration-300 hover:bg-[var(--hover)]"
         >
           <FiLogOut className="text-xl" />
-          {isOpen && <span className="ml-3">Log out</span>}
-
-          {!isOpen && (
-            <span
-              className={`absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50
-                text-xs rounded px-2 py-1 opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100
-                transition-all duration-150 whitespace-nowrap
-                ${isDark ? "bg-gray-100 text-gray-900" : "bg-gray-900 text-gray-100"}`}
-            >
-              Log out
-            </span>
-          )}
+          <span
+            className={`ml-3 
+              ${isDark ? "text-[var(--text)]" : "text-[var(--text)]"}`}
+          >
+            Log out
+          </span>
         </NavLink>
       </div>
     </aside>

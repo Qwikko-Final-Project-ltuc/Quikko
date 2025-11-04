@@ -10,20 +10,23 @@ export default function AdminHome() {
   const isDark = mode === "dark";
 
   return (
-    <div
-      className={`grid grid-cols-[2fr_1fr] gap-6 p-8 min-h-screen transition-colors duration-500 ${
-        isDark ? "bg-[#242625]" : "bg-[#f0f2f1]"
-      }`}
-    >
-      <div className="space-y-6">
-        <TotalOrders />
-        <TopCustomers />
-      </div>
+    <div className="w-full mx-auto  p-6  rounded-2xl">
+      <h1 className="text-3xl font-extrabold pb-3 opacity-90 ml-9">Dashboard</h1>
+      <div
+        className={`grid grid-cols-[2fr_1fr] gap-6 p-8 min-h-screen transition-colors duration-500 ${
+          isDark ? "bg-[var(--bg)]" : "bg-[var(--bg)]"
+        }`}
+      >
+        <div className="space-y-6">
+          <TotalOrders />
+          <TopCustomers />
+        </div>
 
-      <div className="space-y-6">
-        <ActiveDeliveryCompanies />
-        <ActiveVendors />
-        <TopCategories />
+        <div className="space-y-6">
+          <ActiveDeliveryCompanies />
+          <ActiveVendors />
+          <TopCategories />
+        </div>
       </div>
     </div>
   );

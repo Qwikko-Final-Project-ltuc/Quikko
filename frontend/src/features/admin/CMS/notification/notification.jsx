@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addNotification } from "./notificationSlice";
-import { colors } from "../../dark-lightMode/colors";
 
 export default function NotificationsForm() {
   const dispatch = useDispatch();
   const mode = useSelector((state) => state.theme.mode);
   const isDark = mode === "dark";
-  const c = colors[isDark ? "dark" : "light"];
 
   const [form, setForm] = useState({
     userId: "",
@@ -52,12 +50,18 @@ export default function NotificationsForm() {
 
   return (
     <div
-      style={{ backgroundColor: c.pageBg, color: c.text }}
-      className="min-h-screen p-6"
+      className={`p-6 ${
+        isDark
+          ? "bg-[var(--bg)] text-[var(--text)]"
+          : "bg-[var(--bg)] text-[var(--text)]"
+      }`}
     >
       <div
-        style={{ backgroundColor: c.cardBg, borderColor: c.line }}
-        className="p-6 rounded-2xl shadow-md max-w-lg mx-auto transition-colors"
+        className={`p-6 rounded-2xl shadow-md transition-colors duration-300 border ${
+          isDark
+            ? "bg-[var(--bg)] border-[var(--border)]"
+            : "bg-[var(--bg)] border-[var(--border)]"
+        }`}
       >
         <h2 className="text-xl font-bold mb-6">Send Notification</h2>
         <form onSubmit={handleAdd} className="space-y-4">
@@ -72,13 +76,10 @@ export default function NotificationsForm() {
               }
               value={form[field]}
               onChange={(e) => setForm({ ...form, [field]: e.target.value })}
-              style={{
-                backgroundColor: c.inputBg,
-                color: isDark ? "#514e4eff" : "#111",
-                borderColor: isDark ? "#666666" : "#ccc",
-              }}
-              className={`w-full p-3 rounded placeholder-opacity-50 ${
-                isDark ? "placeholder-gray-600" : "placeholder-gray-500"
+              className={`w-full p-3 rounded placeholder-opacity-50 border ${
+                isDark
+                  ? "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+                  : "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
               }`}
             />
           ))}
@@ -87,13 +88,11 @@ export default function NotificationsForm() {
             value={form.role}
             onChange={(e) => setForm({ ...form, role: e.target.value })}
             disabled={!!form.userId}
-            style={{
-              backgroundColor: c.inputBg,
-              color: form.role === "" ? (isDark ? "#5b5a5aff" : "#777") : c.text,
-              borderColor: isDark ? "#666666" : "#ccc",
-              appearance: "none",
-            }}
-            className="w-full p-3 rounded border focus:outline-none focus:ring-2 transition-colors duration-300"
+            className={`w-full p-3 rounded border focus:outline-none focus:ring-2 transition-colors duration-300 cursor-pointer ${
+              isDark
+                ? "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+                : "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+            }`}
           >
             <option value="" disabled hidden>
               Select Role
@@ -131,25 +130,25 @@ export default function NotificationsForm() {
             placeholder="Message"
             value={form.message}
             onChange={(e) => setForm({ ...form, message: e.target.value })}
-            style={{
-              backgroundColor: c.inputBg,
-              color: c.text,
-              borderColor: isDark ? "#666666" : "#ccc",
-            }}
-            className={`w-full p-3 rounded placeholder-opacity-50 ${
-              isDark ? "placeholder-gray-600" : "placeholder-gray-500"
+            className={`w-full p-3 rounded placeholder-opacity-50 border  ${
+              isDark
+                ? "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+                : "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
             }`}
             rows={4}
             required
           />
 
-          <button
-            type="submit"
-            style={{ backgroundColor: c.button }}
-            className="w-full py-3 text-white rounded hover:opacity-90 transition-colors"
-          >
-            Send Notification
-          </button>
+          <div className="flex justify-center">
+            <button
+              type="submit"
+              className={`flex justify-center items-center w-100 py-3 text-white rounded hover:opacity-90 transition-colors cursor-pointer ${
+                isDark ? "bg-[var(--button)]" : "bg-[var(--button)]"
+              }`}
+            >
+              Send Notification
+            </button>
+          </div>
 
           {successMsg && (
             <p

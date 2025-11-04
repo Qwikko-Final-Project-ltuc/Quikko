@@ -7,8 +7,8 @@ import { Orders } from "../orders/orderApi";
 
 export default function ActiveDeliveryCompanies() {
   const dispatch = useDispatch();
-  const  deliveries  = useSelector((state) => state.deliveries.deliveries);
-  const  orders  = useSelector((state) => state.ordersAdmin.orders);
+  const deliveries = useSelector((state) => state.deliveries.deliveries);
+  const orders = useSelector((state) => state.ordersAdmin.orders);
   const mode = useSelector((state) => state.theme.mode);
   const isDark = mode === "dark";
 
@@ -33,11 +33,11 @@ export default function ActiveDeliveryCompanies() {
   }, [dispatch]);
 
   const companiesWithOrders = (deliveries || []).map((delivery) => {
-  const deliveryOrders = (orders || []).filter(
-    (o) =>
-      o.delivery_company?.id === delivery.company_id ||
-      o.delivery_company_id === delivery.company_id
-  );
+    const deliveryOrders = (orders || []).filter(
+      (o) =>
+        o.delivery_company?.id === delivery.company_id ||
+        o.delivery_company_id === delivery.company_id
+    );
 
     const totalSales = deliveryOrders.reduce((sum, order) => {
       const orderTotal = (order.items || []).reduce(
@@ -60,41 +60,45 @@ export default function ActiveDeliveryCompanies() {
     .slice(0, 2);
 
   return (
-    <div
-      className={`rounded-2xl shadow-lg transition-all duration-500 ease-in-out p-6 ${
-        isDark
-          ? "bg-gradient-to-b from-[#555] to-[#242625] text-white"
-          : "bg-gradient-to-b from-[#ffffff] to-[#f3f3f3] text-[#242625]"
-      }`}
-    >
-      <h2 className="text-xl font-semibold mb-6 border-b pb-3 opacity-90">
-        Active Delivery Companies
-      </h2>
-
-      {topTwo.length === 0 ? (
-        <p>No active delivery companies</p>
-      ) : (
-        topTwo.map((delivery) => (
-          <div
-            key={delivery.company_id}
-            className={`p-5 border rounded-xl shadow-md mb-4 flex justify-between items-center hover:scale-[1.02] transition-all duration-300 ${
-              isDark ? "bg-[#242625]" : "bg-white"
-            }`}
-            style={{
-              borderColor: isDark ? "#f9f9f9" : "#e5e5e5",
-            }}
-          >
-            <div>
-              <h3 className="font-semibold">{delivery.company_name}</h3>
-              <p className="text-sm opacity-80">Coverage: {delivery.coverage}</p>
-              <p className="text-sm opacity-70">{delivery.totalOrders} Orders</p>
-            </div>
-            <span className="font-bold text-[#307A59]">
-              ${delivery.totalSales.toFixed(2)}
-            </span>
-          </div>
-        ))
-      )}
-    </div>
+    <>
+      <div>
+        <h2 className="text-xl font-semibold pb-3 opacity-90 ml-1">
+          Active Delivery Companies
+        </h2>
+        <div
+          className={`rounded-2xl shadow-lg transition-all duration-500 ease-in-out p-6 border ${
+            isDark
+              ? "bg-gradient-to-b from-[#474747] to-[#242625] text-[var(--text)] border-[var(--border)]"
+              : "bg-gradient-to-b from-[#FFFFFF] to-[#f3f3f3] text-[var(--text)] border-[var(--border)]"
+          }`}
+        >
+          {topTwo.length === 0 ? (
+            <p>No active delivery companies</p>
+          ) : (
+            topTwo.map((delivery) => (
+              <div
+                key={delivery.company_id}
+                className={`p-5 border rounded-xl shadow-md mb-4 flex justify-between items-center  transition-all duration-300 ${
+                  isDark ? "bg-[var(--bg)] border-[var(--border)]" : "bg-[var(--bg)] border-[var(--border)]"
+                }`}
+              >
+                <div>
+                  <h3 className="font-semibold">{delivery.company_name}</h3>
+                  <p className="text-sm opacity-80">
+                    Coverage: {delivery.coverage}
+                  </p>
+                  <p className="text-sm opacity-70">
+                    {delivery.totalOrders} Orders
+                  </p>
+                </div>
+                <span className="font-bold text-[var(--text)]">
+                  ${delivery.totalSales.toFixed(2)}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </>
   );
 }

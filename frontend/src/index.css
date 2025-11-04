@@ -4,14 +4,14 @@
 
  /* Light theme */
 :root {
-  --bg: #f5f6f5;       /* background */
-  --textbox: #ffffff;  /* textbox */
+  --bg: #ffffff;       /* background */
+  --textbox: #f5f6f5;  /* textbox */
   --button:#026a4b;;   /* button */
   --text: #292e2c;     /* text */
   --div: #cdcbcb;      /* div */
   --light-gray: #adadad;
   --mid-dark: #313131;
-
+ 
   /* Additional colors */
   --success: #22c55e;  /*  للنجاح */
   --error: #ef4444;    /*  للحذف */
@@ -21,17 +21,17 @@
   --hover:#d0d5d2 ;/*   للهوفر  */
 ;
 }
-
+ 
 /* Dark theme */
 .dark {
-  --bg: #373a3a;       /* background */
+  --bg: #323232;       /* background */
   --textbox: #eae8e8;  /* textbox */
   --button: #026a4b;   /* button */
   --text: #ffffff;     /* text */
-  --div: #3e3d3d;      /* dark div */
+  --div: #4f4f4f;      /* dark div */
   --mid-dark: #313131; /* between bg and div */
   --light-gray: #adadad;
-
+ 
   /* Additional colors */
   --success: #22c55e;  /*  للنجاح */
   --error: #ef4444;    /*  للحذف */
@@ -39,4 +39,9 @@
   --warning: #facc15;  /*     */
   --border: #575858;/*   للبوردرات  */
   --hover:#4f5452 ;/*   للهوفر  */
+}
+* {
+  transition-property: color, background-color, border-color, transform, box-shadow;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }

@@ -4,11 +4,12 @@ import { FiChevronDown, FiMenu, FiSun, FiMoon } from "react-icons/fi";
 import { useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { toggleTheme } from "../dark-lightMode/themeSlice";
+import { LuUserRound } from "react-icons/lu";
 
 import ChatBot from "./ChatBot";
 import { Bot, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
+import { FaRobot } from "react-icons/fa";
 
 export default function Layout() {
   const navigate = useNavigate();
@@ -17,7 +18,6 @@ export default function Layout() {
   const dropdownRef = useRef(null);
   const [user, setUser] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const toggleChat = () => setIsChatOpen(!isChatOpen);
@@ -45,185 +45,227 @@ export default function Layout() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const getTitle = () => {
-    switch (location.pathname) {
-      case "/adminHome":
-        return "Dashboard";
-      case "/adminVendors":
-        return "Vendors";
-      case "/adminDelivery":
-        return "Delivery Companies";
-      case "/adminOrders":
-        return "Order Monitoring";
-      case "/adminCms":
-        return "Content Management Page (CMS)";
-      case "/adminProfile":
-        return "Profile";
-      default:
-        return "Home";
-    }
-  };
-
   return (
     <div
       className={`flex h-screen w-full transition-colors duration-500 ease-in-out
       ${
         isDark
-          ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-100"
-          : "bg-gradient-to-br from-gray-100 via-gray-200 to-gray-100 text-gray-900"
+          ? "bg-[var(--bg)] text-[var(--text)]"
+          : "bg-[var(--bg)] text-[var(--text)]"
       }`}
     >
-      <SideBar isOpen={isSidebarOpen} isDark={isDark} />
+      <SideBar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} isDark={isDark} />
 
       <div className="flex-1 flex flex-col min-h-0">
         <header
           className={`sticky top-0 z-20 flex justify-between items-center shadow px-6 py-4 transition-colors duration-500 ease-in-out
-          ${isDark ? "bg-gray-800" : "bg-white"}`}
+    ${
+      isDark
+        ? "bg-[var(--div)]"
+        : "bg-gradient-to-br from-[var(--button)] to-gray-700"
+    }`}
         >
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-8">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className={`p-2 rounded-md transition-colors duration-500 ease-in-out
-                ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-200"}`}
+              className="p-2 rounded-md transition-colors duration-500 ease-in-out cursor-pointer"
             >
               <FiMenu
                 className={`w-6 h-6 ${
-                  isDark ? "text-gray-100" : "text-gray-900"
+                  isDark
+                    ? "hover:text-[var(--hover)] text-[var(--textbox)]"
+                    : "hover:text-[var(--hover)] text-[var(--textbox)]"
                 }`}
               />
             </button>
-            <h1
-              className={`text-xl font-bold transition-colors duration-500 ease-in-out ${
-                isDark ? "text-gray-100" : "text-gray-900"
-              }`}
-            >
-              {getTitle()}
-            </h1>
+
+            <div className="text-xl font-bold">
+              <img
+                src={isDark ? "/LogoDark.png" : "/LogoDark.png"}
+                alt="Qwikko Logo"
+                className="h-10 w-40"
+              />
+            </div>
           </div>
-          <div className=" flex items-center space-x-4">
+
+          <div className="flex items-center  relative" ref={dropdownRef}>
             <div
-              className="relative flex items-center space-x-2 cursor-pointer"
-              ref={dropdownRef}
+              className="flex items-center space-x-2 cursor-pointer"
+              onClick={() => setDropdownOpen(!dropdownOpen)}
             >
               <div
-                className="flex items-center space-x-2"
-                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold transition-colors duration-500 ease-in-out
+                ${isDark ? "text-[var(--textbox)]" : "text-[var(--textbox)]"}`}
               >
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center font-bold transition-colors duration-500 ease-in-out
-                  ${
-                    isDark
-                      ? "bg-green-900 text-gray-100 hover:shadow-lg"
-                      : "bg-green-700 text-white hover:shadow-md"
-                  }`}
-                >
-                  {user?.name
-                    ? user.name
-                        .split(" ")
-                        .map((n) => n[0].toUpperCase())
-                        .slice(0, 2)
-                        .join("")
-                    : "A"}
-                </div>
-                <span
-                  className={`transition-colors duration-500 ease-in-out ${
-                    isDark ? "text-gray-100" : "text-gray-900"
-                  }`}
-                >
-                  {user?.name || "Admin"}
-                </span>
-                <FiChevronDown
-                  className={`transition-colors duration-500 ease-in-out ${
-                    isDark ? "text-gray-100" : "text-gray-900"
-                  }`}
-                />
+                <LuUserRound size={25} />
               </div>
-
-              {dropdownOpen && (
-                <div
-                  className={`absolute right-1 mt-20 w-30 transition-colors duration-500 ease-in-out
-              ${
-                isDark
-                  ? "bg-gray-800 border-gray-700"
-                  : "bg-white border-gray-200"
-              } border shadow-lg rounded-md z-50 overflow-hidden`}
-                >
-                  <button
-                    className={`block w-full text-left px-4 py-2 transition-colors duration-500 ease-in-out
-              ${
-                isDark
-                  ? "text-gray-100 hover:bg-gray-700"
-                  : "text-gray-900 hover:bg-gray-200"
-              }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDropdownOpen(false);
-                      navigate("/adminProfile");
-                    }}
-                  >
-                    Profile
-                  </button>
-                </div>
-              )}
+              <span
+                className={`text-lg transition-colors duration-500 ease-in-out ${
+                  isDark ? "text-[var(--textbox)]" : "text-[var(--textbox)]"
+                }`}
+              >
+                {user?.name || "Admin"}
+              </span>
+              <FiChevronDown
+                className={`transition-colors duration-500 ease-in-out ${
+                  isDark ? "text-[var(--textbox)]" : "text-[var(--textbox)]"
+                }`}
+              />
             </div>
 
-            <button
-              onClick={() => dispatch(toggleTheme())}
-              className={`p-2 rounded-full transition-colors duration-500 ease-in-out
-                ${isDark ? "hover:bg-gray-700" : "hover:bg-gray-200"}`}
-              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            >
-              {isDark ? (
-                <FiSun className="w-5 h-5 text-yellow-400" />
-              ) : (
-                <FiMoon
-                  className={`w-5 h-5 ${
-                    isDark ? "text-gray-100" : "text-gray-700"
+            {dropdownOpen && (
+              <div
+                className={`absolute right-0 top-12 w-44 border shadow-lg rounded-md z-50 overflow-hidden transition-colors duration-500 ease-in-out
+          ${
+            isDark
+              ? "bg-[var(--bg)] border-[var(--border)]"
+              : "bg-[var(--bg)] border-[var(--border)]"
+          }`}
+              >
+                <button
+                  className={`flex items-center justify-center block w-full text-left px-4 py-2 transition-colors duration-500 ease-in-out cursor-pointer
+            ${
+              isDark
+                ? "text-[var(--text)] hover:bg-[var(--hover)]"
+                : "text-[var(--text)] hover:bg-[var(--hover)]"
+            }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDropdownOpen(false);
+                    navigate("/adminProfile");
+                  }}
+                >
+                  Profile
+                </button>
+
+                <div
+                  className={`h-px w-full ${
+                    isDark ? "bg-gray-700" : "bg-gray-300"
                   }`}
-                />
-              )}
-            </button>
+                ></div>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    dispatch(toggleTheme());
+                  }}
+                  className={`flex items-center justify-center gap-2 w-full px-4 py-2 transition-colors duration-500 ease-in-out cursor-pointer
+            ${
+              isDark
+                ? "text-[var(--text)] hover:bg-[var(--hover)]"
+                : "text-[var(--text)] hover:bg-[var(--hover)]"
+            }`}
+                >
+                  {isDark ? (
+                    <>
+                      <FiSun className="w-5 h-5 text-yellow-400" />
+                      <span>Light Mode</span>
+                    </>
+                  ) : (
+                    <>
+                      <FiMoon className="w-5 h-5 text-gray-600" />
+                      <span>Dark Mode</span>
+                    </>
+                  )}
+                </button>
+
+                <div
+                  className={`h-px w-full ${
+                    isDark ? "bg-gray-700" : "bg-gray-300"
+                  }`}
+                ></div>
+
+                <button
+                  className={`flex items-center justify-center block w-full text-left px-4 py-2 transition-colors duration-500 ease-in-out cursor-pointer
+            ${
+              isDark
+                ? "text-red-400 hover:bg-[var(--hover)]"
+                : "text-red-500 hover:bg-[var(--hover)]"
+            }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDropdownOpen(false);
+                    navigate("/adminLogin");
+                  }}
+                >
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         </header>
 
         <main
           className={`p-6 overflow-auto flex-1 transition-colors duration-500 ease-in-out
-          ${isDark ? "bg-gray-900" : "bg-gray-50"}`}
+          ${isDark ? "bg-[var(--bg)]" : "bg-[var(--bg)]"}`}
         >
           <Outlet />
         </main>
 
         <button
           onClick={toggleChat}
-          className="fixed bottom-8 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition flex items-center justify-center z-50"
+          style={{
+            boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+          }}
+          className={`fixed bottom-5 right-6 p-4 rounded-full shadow-lg transition flex items-center justify-center z-50 cursor-pointer
+          ${
+            isDark
+              ? "bg-[var(--button)] text-[var(--textbox)]"
+              : "bg-[var(--button)] text-[var(--textbox)]"
+          }`}
+          title="Open Qwikko Chatbot"
+          aria-label="Open Qwikko Chatbot"
         >
-          <Bot size={28} />
+          <FaRobot size={28} />
         </button>
 
         {/* المودال */}
         <AnimatePresence>
           {isChatOpen && (
             <motion.div
-              className="fixed top-4 right-4 sm:right-6 z-50 w-full sm:w-96 h-[90vh] sm:h-[90vh] bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden"
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className={`fixed bottom-22 right-4 sm:right-6 z-50 w-full sm:w-96 h-[70vh]  rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden
+          ${
+            isDark
+              ? "bg-[var(--bg)] text-[var(--text)]"
+              : "bg-[var(--bg)] text-[var(--text)]"
+          }`}
             >
               {/* زر الإغلاق كأيقونة */}
               <button
                 onClick={toggleChat}
-                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10"
+                className={`absolute top-4 right-4 z-10 cursor-pointer
+          ${isDark ? "text-[var(--light-gray)]" : "text-[var(--light-gray)]"}`}
+                title="Close"
+                aria-label="Close chatbot"
               >
                 <X size={24} />
               </button>
 
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 p-4 border-b">
-                <Bot size={20} className="text-blue-600" />
-                AI Chatbot
+              <h2
+                className="text-base font-semibold flex items-center gap-2 px-4 py-3"
+                style={{
+                  backgroundColor: "var(--bg)",
+                  color: "var(--text)",
+                  boxShadow: "0 1px 8px rgba(0,0,0,0.06)", // ظل بدل الخط
+                }}
+              >
+                <FaRobot
+                  size={20}
+                  style={{
+                    color: isDark ? "text-[var(--text)]" : "text-[var(--text)]",
+                  }}
+                />
+                Qwikko Chatbot
               </h2>
 
-              <div className="flex-grow overflow-auto p-2">
+              <div
+                className="flex-grow overflow-auto p-2"
+                style={{ backgroundColor: "var(--bg)" }}
+              >
                 <ChatBot userId={currentUser?.id || "guest"} />
               </div>
             </motion.div>
