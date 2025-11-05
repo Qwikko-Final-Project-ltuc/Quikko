@@ -323,6 +323,229 @@ router.get("/top-rated", async (req, res) => {
   }
 });
 
+const pool = require("../../config/db");
+
+// في routes/orders.js
+router.get('/delivery/requested-orders', protect, async (req, res) => {
+  try {
+    console.log('🔐 === START GET REQUESTED ORDERS ===');
+    console.log('👤 req.user id:', req.user.id);
+    
+    // البحث عن شركة التوصيل المرتبطة بهذا المستخدم
+    const companyResult = await pool.query(
+      'SELECT id FROM delivery_companies WHERE user_id = $1',
+      [req.user.id]
+    );
+    
+    console.log('🔍 Company search result:', companyResult.rows);
+    
+    if (companyResult.rows.length === 0) {
+      return res.status(403).json({
+        success: false,
+        message: 'User is not associated with any delivery company'
+      });
+    }
+    
+    const deliveryCompanyId = companyResult.rows[0].id;
+    console.log('🏢 Found delivery company ID:', deliveryCompanyId);
+
+    const orders = await customerModel.getRequestedOrdersForDelivery(deliveryCompanyId);
+    
+    console.log('📦 Orders found:', orders.length);
+    
+    res.json({
+      success: true,
+      data: orders
+    });
+
+  } catch (error) {
+    console.error('❌ Get requested orders error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// في customerRoutes.js أو deliveryRoutes.js
+router.post('/:orderId/accept', protect, async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    console.log('✅ Accept order request - Order ID:', orderId);
+    console.log('👤 req.user:', req.user);
+
+    // البحث عن شركة التوصيل المرتبطة بالمستخدم
+    const companyResult = await pool.query(
+      'SELECT id FROM delivery_companies WHERE user_id = $1',
+      [req.user.id]
+    );
+    
+    console.log('🔍 Company search result:', companyResult.rows);
+    
+    if (companyResult.rows.length === 0) {
+      return res.status(403).json({
+        success: false,
+        message: 'User is not associated with any delivery company'
+      });
+    }
+    
+    const deliveryCompanyId = companyResult.rows[0].id;
+    console.log('🏢 Using delivery company ID:', deliveryCompanyId);
+
+    // 1. تحديث حالة طلب التوصيل المقبول
+    const updateResult = await pool.query(
+      `UPDATE delivery_requests 
+       SET status = 'accepted', accepted_at = CURRENT_TIMESTAMP 
+       WHERE order_id = $1 AND delivery_company_id = $2 AND status = 'pending'`,
+      [orderId, deliveryCompanyId]
+    );
+
+    console.log('📝 Delivery request update result:', updateResult.rowCount);
+
+    if (updateResult.rowCount === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Delivery request not found or already processed'
+      });
+    }
+
+    // 2. رفض باقي طلبات التوصيل لهذا الطلب
+    const rejectResult = await pool.query(
+      `UPDATE delivery_requests 
+       SET status = 'rejected' 
+       WHERE order_id = $1 AND delivery_company_id != $2 AND status = 'pending'`,
+      [orderId, deliveryCompanyId]
+    );
+
+    console.log('❌ Rejected other requests:', rejectResult.rowCount);
+
+    // 3. تحديث حالة الطلب وتعيين شركة التوصيل
+    const orderUpdateResult = await pool.query(
+      `UPDATE orders 
+       SET assigned_delivery_company_id = $1, status = 'accepted' 
+       WHERE id = $2`,
+      [deliveryCompanyId, orderId]
+    );
+
+    console.log('📦 Order update result:', orderUpdateResult.rowCount);
+
+    res.json({
+      success: true,
+      message: 'Order accepted successfully'
+    });
+
+  } catch (error) {
+    console.error('❌ Accept order error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+
+// GET /api/orders/delivery/accepted-orders
+router.get('/delivery/accepted-orders', protect, async (req, res) => {
+  try {
+    console.log('🔐 Getting accepted orders...');
+    
+    // البحث عن شركة التوصيل
+    const companyResult = await pool.query(
+      'SELECT id FROM delivery_companies WHERE user_id = $1',
+      [req.user.id]
+    );
+    
+    if (companyResult.rows.length === 0) {
+      return res.json({
+        success: true,
+        data: []
+      });
+    }
+    
+    const deliveryCompanyId = companyResult.rows[0].id;
+
+    const orders = await pool.query(
+      `SELECT 
+        o.id,
+        o.status as order_status,
+        o.total_amount,
+        o.final_amount,
+        o.delivery_fee,
+        a.address_line1, 
+        a.city, 
+        a.state,
+        u.name as customer_name, 
+        u.phone as customer_phone,
+        COUNT(oi.id) as items_count,
+        SUM(oi.quantity) as total_quantity
+      FROM orders o
+      JOIN addresses a ON o.address_id = a.id
+      JOIN users u ON o.customer_id = u.id
+      LEFT JOIN order_items oi ON o.id = oi.order_id
+      WHERE o.assigned_delivery_company_id = $1 
+        AND o.status IN ('accepted', 'processing', 'out_for_delivery')
+      GROUP BY o.id, a.id, u.id
+      ORDER BY 
+        CASE o.status 
+          WHEN 'out_for_delivery' THEN 1
+          WHEN 'processing' THEN 2
+          WHEN 'accepted' THEN 3
+        END, o.created_at ASC`,
+      [deliveryCompanyId]
+    );
+
+    console.log('📦 Accepted orders found:', orders.rows.length);
+    
+    res.json({
+      success: true,
+      data: orders.rows
+    });
+
+  } catch (error) {
+    console.error('❌ Get accepted orders error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+router.patch('/:orderId/status',  async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { status } = req.body;
+    const deliveryCompanyId = req.user.delivery_company_id;
+
+    // التحقق من أن شركة التوصيل مسؤولة عن هذا الطلب
+    const orderCheck = await pool.query(
+      'SELECT id FROM orders WHERE id = $1 AND assigned_delivery_company_id = $2',
+      [orderId, deliveryCompanyId]
+    );
+
+    if (orderCheck.rows.length === 0) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to update this order'
+      });
+    }
+
+    const order = await orderService.updateOrderStatus(orderId, status);
+    
+    res.json({
+      success: true,
+      message: 'Order status updated successfully',
+      data: order
+    });
+  } catch (error) {
+    console.error('Update order status error:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
 
 module.exports = router;
 

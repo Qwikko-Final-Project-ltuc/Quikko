@@ -13,6 +13,8 @@ import Reports from "../delivery/ReportsPage";
 import Home from "../delivery/Home";
 import Chat from "../delivery/DeliveryChatPage";
 import NotFound from "../../notFound";
+import DeliveryRequestedOrders from "../delivery/DeliveryRequestedOrders";
+import DeliveryAcceptedOrders from "../delivery/DeliveryAcceptedOrders";
 
 export default function DeliveryRoutes() {
   return (
@@ -25,6 +27,9 @@ export default function DeliveryRoutes() {
       <Route path="delivery/dashboard" element={<Dashboard />}>
         <Route index element={<Home />} />
         <Route path="home" element={<Home />} />
+        <Route path="DeliveryRequestedOrders" element={<DeliveryRequestedOrders />} />
+        <Route path="DeliveryAcceptedOrders" element={<DeliveryAcceptedOrders/>} />
+
         <Route path="getProfile" element={<DeliveryProfile />} />
         <Route path="settings" element={<Settings />} />
         <Route path="orders" element={<Orders />} />

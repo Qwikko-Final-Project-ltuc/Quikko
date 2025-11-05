@@ -63,6 +63,8 @@ export default function Sidebar({ isOpen, toggleSidebar, logoSrc }) {
     },
     { to: "chat", icon: <FaComments className="text-lg" />, label: "Chats" },
     { to: "settings", icon: <FaCog className="text-lg" />, label: "Settings" },
+     { to: "DeliveryRequestedOrders", icon: <FaCog className="text-lg" />, label: "Delivery Requested Orders" },
+    
   ];
 
   // فعال لو المسار يبدأ به (لصفحات فرعية)
