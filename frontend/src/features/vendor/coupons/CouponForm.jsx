@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 export default function CouponForm({ initialData = {}, onSubmit, buttonStyle }) {
   const [formData, setFormData] = useState({
@@ -11,22 +11,29 @@ export default function CouponForm({ initialData = {}, onSubmit, buttonStyle }) 
     is_active: initialData.is_active !== undefined ? initialData.is_active : true,
   });
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
+
+  useEffect(() => {
+    const handleStorageChange = () =>
+      setIsDarkMode(localStorage.getItem("theme") === "dark");
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // ✅ التحقق من القيم الرقمية قبل الإرسال
-    if (!formData.discount_value || isNaN(formData.discount_value)) {
-      alert("يرجى إدخال قيمة خصم صحيحة");
+    if (
+      !formData.discount_value ||
+      isNaN(formData.discount_value) ||
+      formData.discount_value <= 0
+    ) {
+      alert("يرجى إدخال قيمة خصم صحيحة أكبر من 0");
       return;
     }
-
-    if (formData.discount_value <= 0) {
-      alert("قيمة الخصم يجب أن تكون أكبر من 0");
-      return;
-    }
-
     if (formData.discount_value > 100 && formData.discount_type === "percentage") {
       alert("قيمة الخصم بالنسبة المئوية لا يمكن أن تتجاوز 100%");
       return;
@@ -34,7 +41,6 @@ export default function CouponForm({ initialData = {}, onSubmit, buttonStyle }) 
 
     onSubmit(formData);
 
-    // إعادة تعيين الحقول
     setFormData({
       code: "",
       discount_type: "percentage",
@@ -46,47 +52,59 @@ export default function CouponForm({ initialData = {}, onSubmit, buttonStyle }) 
     });
   };
 
+  // تحديد لون خلفية الـ input حسب المود
+  const inputBg = isDarkMode ? "var(--mid-dark)" : "var(--textbox)";
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full p-0">
-      <div className="flex flex-col p-2 rounded-lg bg-white">
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-4 w-full p-0"
+      style={{ color: "var(--text)" }}
+    >
+      {/* 🧾 Code */}
+      <div className="flex flex-col p-2 rounded-lg">
         <label className="text-sm font-medium mb-1">Code</label>
         <input
           type="text"
           name="code"
           value={formData.code}
           onChange={handleChange}
-          className="border rounded-lg p-2"
+          className="border rounded-lg p-2 focus:ring-2 outline-none"
+          style={{
+            color: "var(--text)",
+            
+            borderColor: "var(--border)",
+          }}
           required
         />
       </div>
 
-      {/* ✅ تعديل الاسم إلى discount_value */}
-      <div className="flex flex-col p-2 rounded-lg bg-white">
+      {/* 💸 Discount */}
+      <div className="flex flex-col p-2 rounded-lg">
         <label className="text-sm font-medium mb-1">Discount (%)</label>
         <input
           type="number"
           name="discount_value"
           value={formData.discount_value}
           onChange={(e) => {
-            const value = Number(e.target.value);
+            let value = Number(e.target.value);
             if (formData.discount_type === "percentage") {
-              if (value > 100) {
-                setFormData({ ...formData, discount_value: 100 });
-              } else if (value < 0) {
-                setFormData({ ...formData, discount_value: 0 });
-              } else {
-                setFormData({ ...formData, discount_value: value });
-              }
-            } else {
-              setFormData({ ...formData, discount_value: value });
+              value = Math.min(Math.max(value, 0), 100);
             }
+            setFormData({ ...formData, discount_value: value });
           }}
-          className="border rounded-lg p-2"
+          className="border rounded-lg p-2 focus:ring-2 outline-none"
+          style={{
+            color: "var(--text)",
+            
+            borderColor: "var(--border)",
+          }}
           required
         />
       </div>
 
-      <div className="flex flex-col p-2 rounded-lg bg-white">
+      {/* 📅 Valid From */}
+      <div className="flex flex-col p-2 rounded-lg">
         <label className="text-sm font-medium mb-1">Valid From</label>
         <input
           type="date"
@@ -100,12 +118,18 @@ export default function CouponForm({ initialData = {}, onSubmit, buttonStyle }) 
             }
             setFormData({ ...formData, valid_from: e.target.value });
           }}
-          className="border rounded-lg p-2"
+          className="border rounded-lg p-2 focus:ring-2 outline-none"
+          style={{
+            color: "var(--text)",
+            
+            borderColor: "var(--border)",
+          }}
           required
         />
       </div>
 
-      <div className="flex flex-col p-2 rounded-lg bg-white">
+      {/* 📅 Valid To */}
+      <div className="flex flex-col p-2 rounded-lg">
         <label className="text-sm font-medium mb-1">Valid To</label>
         <input
           type="date"
@@ -118,24 +142,43 @@ export default function CouponForm({ initialData = {}, onSubmit, buttonStyle }) 
             }
             setFormData({ ...formData, valid_to: e.target.value });
           }}
-          className="border rounded-lg p-2"
+          className="border rounded-lg p-2 focus:ring-2 outline-none"
+          style={{
+            color: "var(--text)",
+           
+            borderColor: "var(--border)",
+          }}
           required
         />
       </div>
 
-      <div className="flex flex-col p-2 rounded-lg bg-white">
+      {/* 🔢 Usage Limit */}
+      <div className="flex flex-col p-2 rounded-lg">
         <label className="text-sm font-medium mb-1">Usage Limit</label>
         <input
           type="number"
           name="usage_limit"
           value={formData.usage_limit}
           onChange={handleChange}
-          className="border rounded-lg p-2"
+          className="border rounded-lg p-2 focus:ring-2 outline-none"
+          style={{
+            color: "var(--text)",
+           
+            borderColor: "var(--border)",
+          }}
           required
         />
       </div>
 
-      <button type="submit" className="px-4 py-2 rounded-lg" style={buttonStyle}>
+      {/* ✅ Button */}
+      <button
+        type="submit"
+        className="px-4 py-2 rounded-lg hover:opacity-90 transition font-medium"
+        style={{
+          backgroundColor: "var(--button)",
+          color: "#fff",
+        }}
+      >
         {initialData?.id ? "Update Coupon" : "Add Coupon"}
       </button>
     </form>

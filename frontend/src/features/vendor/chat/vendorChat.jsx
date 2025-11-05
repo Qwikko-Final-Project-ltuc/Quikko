@@ -67,15 +67,14 @@ const fmtLocal = (iso) => {
   }
 };
 
-/** اختر اسم العرض حسب الدور */
 const pickDisplayName = ({ role, userName, companyName, fallback }) => {
   if (role === "delivery") return companyName || fallback;
   if (role === "customer") return userName || fallback;
-  return fallback; // vendor أو غيره
+  return fallback;
 };
 
 /* ===== Component ===== */
-const VendorChatPage = () => {
+const VendorChatPage = ({ themeMode = "light" }) => {
   const myUserId = useMemo(() => {
     const fromToken = Number(getUserIdFromToken());
     if (Number.isFinite(fromToken) && fromToken > 0) return fromToken;
@@ -84,7 +83,6 @@ const VendorChatPage = () => {
     return null;
   }, []);
 
-  // 👇 نقرأ الـ receiverId / toName القادمين من navigate(...) في صفحة الأوردرات
   const location = useLocation();
   const preReceiverId = useMemo(
     () =>
@@ -93,10 +91,9 @@ const VendorChatPage = () => {
       null,
     [location.state]
   );
-  const preReceiverName = useMemo(
-    () => location.state?.toName || null,
-    [location.state]
-  );
+  const preReceiverName = useMemo(() => location.state?.toName || null, [
+    location.state,
+  ]);
 
   const [initError, setInitError] = useState(null);
   const [authError, setAuthError] = useState("");
@@ -117,7 +114,6 @@ const VendorChatPage = () => {
     activeOtherIdRef.current = activeOtherId;
   }, [activeOtherId]);
 
-  /* ===== Load vendor conversations ===== */
   useEffect(() => {
     if (!myUserId) {
       setInitError("User ID (vendor) not found from token/localStorage.");
@@ -134,12 +130,10 @@ const VendorChatPage = () => {
 
         const normalized = rows
           .map((c) => {
-            // Backend: other_user_id | other_role | other_user_name | last_message | unread_count | last_at
             const otherId = Number(
               c.other_user_id ?? c.otherUserId ?? c.customer_id ?? c.user_id
             );
             if (!Number.isFinite(otherId)) return null;
-
             const otherRole = c.other_role ?? c.otherRole ?? "customer";
             const otherUserName =
               c.other_user_name ??
@@ -149,7 +143,6 @@ const VendorChatPage = () => {
                 companyName: c.company_name,
                 fallback: `User ${otherId}`,
               });
-
             return {
               otherUserId: otherId,
               otherRole,
@@ -169,7 +162,6 @@ const VendorChatPage = () => {
           setLoading(false);
           normalized.forEach((c) => joinRoom(c.otherUserId));
 
-          // 👇 لو جايي من صفحة الأوردرات مع receiverId: افتح هذه المحادثة مباشرة
           if (preReceiverId) {
             const exists = normalized.some(
               (c) => Number(c.otherUserId) === Number(preReceiverId)
@@ -220,7 +212,6 @@ const VendorChatPage = () => {
     };
   }, [myUserId, preReceiverId, preReceiverName]);
 
-  /* ===== Socket setup ===== */
   useEffect(() => {
     if (!myUserId) return;
     if (socketInitRef.current) return;
@@ -246,16 +237,10 @@ const VendorChatPage = () => {
     s.on("reconnect", rejoinAll);
 
     s.on("connect_error", (err) => {
-      if (
-        String(err?.message || "")
-          .toLowerCase()
-          .includes("invalid")
-      ) {
+      if (String(err?.message || "").toLowerCase().includes("invalid")) {
         setAuthError("Socket auth failed. Please log in again.");
       }
     });
-
-    s.on("reconnect_error", () => {});
 
     const onReceive = (msg) => {
       const senderId = Number(msg.sender_id ?? msg.senderId);
@@ -264,7 +249,7 @@ const VendorChatPage = () => {
       if (![senderId, receiverId].includes(Number(myUserId))) return;
 
       const otherId = senderId === Number(myUserId) ? receiverId : senderId;
-      const senderRole = msg.sender_role; // 'customer' | 'delivery' | 'vendor'
+      const senderRole = msg.sender_role;
 
       const derivedName = pickDisplayName({
         role: senderRole,
@@ -362,26 +347,8 @@ const VendorChatPage = () => {
     s.off("receiveChat", onReceive);
     s.on("receiveChat", onReceive);
 
-    const onVisible = () => {
-      if (document.visibilityState === "visible") rejoinAll();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-
     return () => {
-      if (socketRef.current) {
-        for (const key of joinedRoomsRef.current) {
-          socketRef.current.emit("leaveChat", { room: key });
-        }
-      }
-      joinedRoomsRef.current.clear();
-      document.removeEventListener("visibilitychange", onVisible);
-      s.off("receiveChat", onReceive);
-      s.off("connect");
-      s.off("reconnect");
-      s.off("connect_error");
-      s.off("reconnect_error");
       s.disconnect();
-      socketRef.current = null;
       socketInitRef.current = false;
     };
   }, [myUserId]);
@@ -397,27 +364,25 @@ const VendorChatPage = () => {
     joinedRoomsRef.current.add(key);
   };
 
-  /* ===== Wrapper: get messages regardless of signature ===== */
   const fetchThread = async (meUserId, otherUserId) => {
     try {
-      // شائع: getMessages(otherUserId, meUserId)
       const r = await chatApi.getMessages(otherUserId, meUserId);
       return r;
     } catch {
-      // fallback: getMessages(otherUserId)
       const r = await chatApi.getMessages(otherUserId);
       return r;
     }
   };
 
-  /* ===== Load messages for one conversation ===== */
   const loadMessages = async (otherUserId, otherName) => {
     const a = Number(myUserId);
     const b = Number(otherUserId);
     if (!Number.isFinite(a) || !Number.isFinite(b)) return;
     try {
       const raw = await fetchThread(a, b);
-      const rows = Array.isArray(raw) ? raw : raw?.data ?? raw?.messages ?? [];
+      const rows = Array.isArray(raw)
+        ? raw
+        : raw?.data ?? raw?.messages ?? [];
       const normalized = rows.map((m) => ({
         id: m.id,
         clientId: m.client_id ?? m.clientId ?? null,
@@ -437,20 +402,6 @@ const VendorChatPage = () => {
       setActiveOtherId(otherUserId);
       setActiveOtherName(otherName ?? `User ${otherUserId}`);
       joinRoom(otherUserId);
-      try {
-        if (chatApi.markRead) {
-          await chatApi.markRead({ user1: myUserId, user2: otherUserId });
-        } else if (chatApi.markAsRead) {
-          await chatApi.markAsRead({ user1: myUserId, user2: otherUserId });
-        }
-      } catch {}
-      setConversations((prev) =>
-        prev.map((c) =>
-          Number(c.otherUserId) === Number(otherUserId)
-            ? { ...c, unread: 0, updatedAt: toUtcISO(new Date()) }
-            : c
-        )
-      );
     } catch {}
   };
 
@@ -458,7 +409,6 @@ const VendorChatPage = () => {
     loadMessages(c.otherUserId, c.otherUserName);
   };
 
-  /* ===== Send message ===== */
   const sendMessage = async () => {
     if (!message.trim() || !activeOtherId || !myUserId) return;
     const msgText = message.trim();
@@ -476,23 +426,15 @@ const VendorChatPage = () => {
       otherUserId: activeOtherId,
     };
     setChat((prev) => [...prev, optimistic]);
-    setConversations((prev) =>
-      prev.map((c) =>
-        Number(c.otherUserId) === Number(activeOtherId)
-          ? { ...c, lastMessage: msgText, updatedAt: toUtcISO(new Date()) }
-          : c
-      )
-    );
     setMessage("");
     try {
       await chatApi.sendMessage({
-        sender_id: myUserId, // ← الفندور من التوكن (sender)
-        receiver_id: activeOtherId, // ← الدليفري المقصود (receiver)
+        sender_id: myUserId,
+        receiver_id: activeOtherId,
         message: msgText,
         client_id: clientId,
       });
     } catch {
-      setChat((prev) => prev.filter((m) => m.clientId !== clientId));
       setMessage(msgText);
     }
   };
@@ -511,127 +453,147 @@ const VendorChatPage = () => {
     [activeOtherId, activeOtherName]
   );
 
+  /* ===== Return JSX with applied styles ===== */
   return (
-    <div className="h-screen flex bg-gray-100">
-      <aside className="w-80 border-r bg-white flex flex-col">
-        <div className="p-4 border-b">
-          <h2 className="text-lg font-semibold">Inbox</h2>
-          <p className="text-xs text-gray-500">My User ID: {myUserId || "—"}</p>
-          {authError && (
-            <p className="text-xs text-red-600 mt-1">Auth: {authError}</p>
-          )}
-          {initError && (
-            <p className="text-xs text-red-600 mt-1">Error: {initError}</p>
-          )}
+    <div className="h-screen flex bg-[var(--bg)] rounded-2xl overflow-hidden">
+
+      {/* Sidebar */}
+      <aside
+        className={`w-80 flex flex-col min-h-0 border-r-3 ${
+          themeMode === "dark" ? "border-[var(--mid-dark)]" : "border-[var(--textbox)]"
+        }`}
+      >
+        <div className="p-4 flex-shrink-0">
+          <input
+            type="text"
+            placeholder="Search Contact..."
+            className={`w-full px-4 py-2 rounded-full text-sm ${
+              themeMode === "dark"
+                ? "bg-[var(--div)] text-[var(--text)]"
+                : "bg-[var(--textbox)] text-[var(--text)]"
+            } placeholder-gray-400 focus:outline-none`}
+          />
         </div>
-        <div className="flex-1 overflow-y-auto">
-          {loading ? (
-            <p className="p-4 text-sm text-gray-500">Loading conversations…</p>
-          ) : conversations.length === 0 ? (
-            <div className="p-4 text-sm text-gray-500 space-y-2">
-              <p>No conversations yet.</p>
-              <p className="text-xs">
-                <code>/api/chat/vendor/:vendorId/conversations</code> يرجّع
-              </p>
-            </div>
-          ) : (
-            conversations.map((c) => (
-              <div
-                key={c.otherUserId}
-                onClick={() => handleSelectConversation(c)}
-                className={`cursor-pointer px-4 py-3 border-b hover:bg-gray-50 ${
-                  Number(activeOtherId) === Number(c.otherUserId)
-                    ? "bg-blue-50"
-                    : ""
-                }`}
-              >
-                <div className="flex justify-between">
-                  <div className="min-w-0">
-                    <p className="font-semibold truncate">{c.otherUserName}</p>
-                    <p className="text-sm text-gray-500 truncate">
-                      {c.lastMessage}
-                    </p>
-                  </div>
+        <div className="flex-1 overflow-y-auto min-h-0 px-2 pb-4 messages-scroll">
+          {conversations.map((c) => (
+            <div
+              key={c.otherUserId}
+              onClick={() => handleSelectConversation(c)}
+              className={`cursor-pointer mb-2 rounded-xl p-3 transition-all ${
+                Number(activeOtherId) === Number(c.otherUserId)
+                  ? themeMode === "dark"
+                    ? "bg-[var(--light-gray)] border-l-4 border-[var(--button)]"
+                    : "bg-gray-100 border-l-4 border-[var(--button)]"
+                  : Number(c.unread) > 0
+                  ? themeMode === "dark"
+                    ? "bg-[var(--div)]"
+                    : "bg-[var(--textbox)]"
+                  : themeMode === "dark"
+                  ? "bg-[var(--div)] hover:bg-[var(--hover)]"
+                  : "bg-[var(--textbox)] hover:bg-[var(--div)]"
+              }`}
+            >
+              <div className="flex justify-between items-start">
+                <div className="flex flex-col">
+                  <p className="font-semibold truncate text-[var(--text)] mb-1">{c.otherUserName}</p>
+                  <p className="text-sm truncate text-[var(--text)]">{c.lastMessage || "No messages yet"}</p>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="text-xs text-[var(--text)] mb-1">{fmtLocal(c.updatedAt)}</span>
                   {Number(c.unread) > 0 && (
-                    <span className="bg-blue-600 text-white text-xs px-2 rounded-full h-fit">
+                    <span className="bg-[var(--button)] text-white text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
                       {c.unread}
                     </span>
                   )}
                 </div>
               </div>
-            ))
-          )}
+            </div>
+          ))}
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col">
-        <div className="bg-blue-600 text-white p-4">
-          <h2 className="text-lg font-semibold">{headerTitle}</h2>
-        </div>
+      {/* Chat Area */}
+      <main
+        className={`flex-1 flex flex-col min-h-0 rounded-lg border-2 ${
+          themeMode === "dark" ? "border-[var(--div)]" : "border-[var(--textbox)]"
+        }`}
+      >
+        {activeOtherId ? (
+          <>
+            {/* Header */}
+            <div
+              className={`flex items-center justify-between px-6 py-4 flex-shrink-0 border-b-2 ${
+                themeMode === "dark" ? "border-[var(--div)]" : "border-[var(--textbox)]"
+              }`}
+            >
+              <h2 className="font-bold text-[var(--text)] text-lg mt-2">{headerTitle}</h2>
+              <button onClick={() => setActiveOtherId(null)} className="text-gray-400 hover:text-[var(--button)] text-2xl">
+                ×
+              </button>
+            </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {activeOtherId ? (
-            <>
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto min-h-0 px-6 py-4 space-y-3 messages-scroll">
               {chat.map((msg) => {
                 const incoming = msg.sender !== "vendor";
-                const lineName =
-                  msg.senderRole === "delivery"
-                    ? msg.senderCompanyName || activeOtherName
-                    : msg.senderUserName || activeOtherName;
-
                 return (
-                  <div
-                    key={msg.clientId || msg.id}
-                    className={`max-w-[70%] p-2 rounded-lg text-sm ${
-                      incoming
-                        ? "bg-white text-left"
-                        : "bg-blue-200 ml-auto text-right"
-                    }`}
-                  >
-                    {/* {incoming && (
-                      <div className="text-[11px] font-semibold text-gray-500 mb-1">
-                        {lineName}
+                  <div key={msg.clientId || msg.id} className={`flex ${incoming ? "justify-start" : "justify-end"}`}>
+                    <div className="max-w-[70%]">
+                      <div
+                        className={`p-3 rounded-lg text-sm ${
+                          incoming
+                            ? themeMode === "dark"
+                              ? "bg-[var(--div)] border-[var(--button)] text-[var(--text)]"
+                              : "bg-[var(--textbox)] border-[var(--button)] text-[var(--text)]"
+                            : "bg-[var(--button)] text-white"
+                        }`}
+                      >
+                        {msg.message}
                       </div>
-                    )} */}
-                    {msg.message}
-                    <div className="text-[10px] text-gray-500 mt-1">
-                      {fmtLocal(msg.createdAt)}
+                      <div className={`text-xs mt-1 ${incoming ? "text-left" : "text-right"} text-[var(--text)]`}>
+                        {fmtLocal(msg.createdAt)}
+                      </div>
                     </div>
                   </div>
                 );
               })}
               <div ref={messagesEndRef} />
-            </>
-          ) : (
-            <div className="p-4 text-sm text-gray-500">
-              {loading
-                ? "Loading messages…"
-                : "Select a conversation from the left."}
             </div>
-          )}
-        </div>
 
-        {activeOtherId && (
-          <div className="bg-white p-3 flex items-center gap-2 border-t">
-            <input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              placeholder="Type a message..."
-              className="flex-1 border rounded-full px-3 py-2 text-sm"
-            />
-            <button
-              onClick={sendMessage}
-              disabled={!message.trim()}
-              className={`rounded-full px-4 py-2 text-white ${
-                !message.trim()
-                  ? "bg-blue-300"
-                  : "bg-blue-600 hover:bg-blue-700"
+            {/* Input */}
+            <div
+              className={`px-6 py-4 flex items-center gap-3 flex-shrink-0 border-t-2 ${
+                themeMode === "dark" ? "border-[var(--div)]" : "border-[var(--textbox)]"
               }`}
             >
-              Send
-            </button>
+              <input
+                type="text"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                placeholder="Type a message here..."
+                className={`flex-1 px-4 py-2 rounded-full border-2 ${
+                  themeMode === "dark"
+                    ? "bg-[var(--bg)] border-[var(--div)] text-[var(--text)]"
+                    : "bg-white border-[var(--textbox)] text-[var(--text)]"
+                } placeholder-gray-500 focus:outline-none`}
+              />
+              <button
+                onClick={sendMessage}
+                disabled={!message.trim()}
+                className={`p-3 rounded-full ${
+                  message.trim()
+                    ? "bg-[var(--button)] text-white hover:scale-105 transition-transform"
+                    : "bg-gray-400 cursor-not-allowed text-white"
+                }`}
+              >
+                ➤
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-gray-500 min-h-0">
+            Select a conversation to start chatting
           </div>
         )}
       </main>

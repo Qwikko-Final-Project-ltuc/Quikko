@@ -1,8 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Outlet, useLocation, useNavigate, Link } from "react-router-dom";
-import { FaBars, FaBell, FaRegUserCircle, FaSignOutAlt } from "react-icons/fa";
+import { 
+  FaBars, FaBell, FaRegUserCircle, FaSignOutAlt, 
+  FaBoxOpen, FaClipboardList, FaTicketAlt, FaRegCommentDots, FaCog  ,FaUser
+} from "react-icons/fa";
+
 import { FiChevronDown } from "react-icons/fi";
-import { fetchNotifications, fetchUnreadCount } from "./VendorAPI2";
+import { fetchNotifications, fetchUnreadCount , fetchVendorProfile } from "./VendorAPI2";
 import ChatBot from "./ChatBot";
 import { Bot, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,17 +15,16 @@ export default function VendorLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const token =
-    localStorage.getItem("token") || sessionStorage.getItem("token");
+  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
   const isLoggedIn = !!token;
   const [isChatOpen, setIsChatOpen] = useState(false);
-
   const toggleChat = () => setIsChatOpen(!isChatOpen);
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const storedTheme = localStorage.getItem("theme");
     return storedTheme === "dark";
   });
+  const [profile, setProfile] = useState(null);
 
   useEffect(() => {
     const html = document.documentElement;
@@ -34,7 +37,6 @@ export default function VendorLayout() {
     }
   }, [isDarkMode]);
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const sidebarRef = useRef();
 
   const [notifications, setNotifications] = useState([]);
@@ -45,13 +47,25 @@ export default function VendorLayout() {
 
   useEffect(() => {
     if (isLoggedIn) {
-      const loadData = async () => {
+      const loadProfile = async () => {
+        try {
+          const data = await fetchVendorProfile();
+          if (data && data.success) {
+            setProfile(data.data); // <-- نخزن البيانات
+          }
+        } catch (err) {
+          console.error("Failed to fetch vendor profile:", err);
+        }
+      };
+      loadProfile();
+
+      const loadNotifications = async () => {
         const notifs = await fetchNotifications();
         setNotifications(notifs);
         const unread = await fetchUnreadCount();
         setUnreadCount(unread);
       };
-      loadData();
+      loadNotifications();
     }
   }, [isLoggedIn]);
 
@@ -63,20 +77,11 @@ export default function VendorLayout() {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (
-        sidebarRef.current &&
-        !sidebarRef.current.contains(e.target) &&
-        !e.target.closest(".sidebar-toggle-button")
-      ) {
-        setIsSidebarOpen(false);
+      if (sidebarRef.current && !sidebarRef.current.contains(e.target)) {
+        // Sidebar ثابت، لا نغير isSidebarOpen
       }
-      if (!e.target.closest(".dropdown")) {
-        setDropdownOpen(false);
-      }
-      if (
-        !e.target.closest(".notif-dropdown") &&
-        !e.target.closest(".notif-button")
-      ) {
+      if (!e.target.closest(".dropdown")) setDropdownOpen(false);
+      if (!e.target.closest(".notif-dropdown") && !e.target.closest(".notif-button")) {
         setNotificationsOpen(false);
       }
     };
@@ -94,13 +99,14 @@ export default function VendorLayout() {
     navigate("/vendor/profile");
   };
 
-  const hideSidebarRoutes = ["/vendor", "/vendor/login", "/vendor/register"];
-  const shouldShowSidebar =
-    isLoggedIn && !hideSidebarRoutes.includes(location.pathname);
+  const hideSidebarRoutes = ["/vendor", "/vendor/login", "/vendor/register", "/vendor/register","/vendor/forgot-password"];
+  const shouldShowSidebar = isLoggedIn && !hideSidebarRoutes.includes(location.pathname);
+
+  const hideNavbarFooterRoutes = ["/vendor", "/vendor/login", "/vendor/register","/vendor/forgot-password"];
+  const shouldShowNavbarFooter = !hideNavbarFooterRoutes.includes(location.pathname);
 
   const logoSrc = isDarkMode ? "/LogoDark 1.png" : "/logo.png";
 
-  // دالة لفك الـ JWT
   function parseJwt(token) {
     try {
       return JSON.parse(atob(token.split(".")[1]));
@@ -108,13 +114,12 @@ export default function VendorLayout() {
       return null;
     }
   }
-  let currentUser = { id: "guest" };
 
+  let currentUser = { id: "guest", store_name: "Vendor" };
   if (token) {
     const payload = parseJwt(token);
-    if (payload && payload.id) {
-      currentUser.id = payload.id;
-    }
+    if (payload && payload.id) currentUser.id = payload.id;
+    if (payload && payload.store_name) currentUser.store_name = payload.store_name;
   }
 
   return (
@@ -124,300 +129,320 @@ export default function VendorLayout() {
       }`}
     >
       {/* Navbar */}
-      <header
-        className={`sticky top-0 z-40 flex justify-between items-center px-6 py-4 shadow ${
-          isDarkMode ? "bg-[#242625]" : "bg-white"
-        }`}
-      >
-        <div className="flex items-center space-x-4">
-          {isLoggedIn && (
-            <button
-              onClick={() => setIsSidebarOpen((prev) => !prev)}
-              className="sidebar-toggle-button"
-            >
-              <FaBars
-                size={22}
-                className={isDarkMode ? "text-white" : "text-black"}
-              />
-            </button>
-          )}
-          <img src={logoSrc} alt="Qwikko" className="h-8" />
-        </div>
-
-        <div className="flex items-center space-x-6 relative">
-          {/* إشعارات */}
-          {isLoggedIn && (
-            <div className="relative">
-              <button
-                onClick={() => setNotificationsOpen((prev) => !prev)}
-                className="notif-button"
-              >
-                <FaBell
-                  size={22}
-                  className={isDarkMode ? "text-white" : "text-black"}
-                />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-
-              {notificationsOpen && (
-                <div
-                  className={`absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto rounded-lg shadow-lg z-50 notif-dropdown ${
-                    isDarkMode
-                      ? "bg-[#666666] text-white"
-                      : "bg-white text-black"
-                  }`}
-                >
-                  {notifications.length === 0 ? (
-                    <p className="p-4 text-center text-sm">No notifications</p>
-                  ) : (
-                    <>
-                      {notifications.map((notif, idx) => (
-                        <div
-                          key={idx}
-                          className="px-4 py-3 border-b last:border-b-0"
-                        >
-                          <p className="font-semibold">{notif.title}</p>
-                          <p className="text-sm text-gray-300">
-                            {notif.message}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-1">
-                            {new Date(notif.created_at).toLocaleString()}
-                          </p>
-                        </div>
-                      ))}
-                      {/* زر View All */}
-                      <button
-                        onClick={() => {
-                          setNotificationsOpen(false);
-                          navigate("/vendor/notifications");
-                        }}
-                        className={`w-full text-center py-2 font-semibold border-t ${
-                          isDarkMode
-                            ? "border-gray-700 hover:bg-[#555555]"
-                            : "border-gray-200 hover:bg-gray-100"
-                        } transition-colors`}
-                      >
-                        View All
-                      </button>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Profile Dropdown */}
-          <div className="relative dropdown">
-            {isLoggedIn ? (
-              <>
-                <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center space-x-2 cursor-pointer"
-                >
-                  <FaRegUserCircle
-                    className={`text-xl ${
-                      isDarkMode ? "text-white" : "text-black"
-                    }`}
-                  />
-                  <FiChevronDown
-                    className={isDarkMode ? "text-white" : "text-black"}
-                  />
-                </button>
-                {dropdownOpen && (
-                  <div
-                    className={`absolute right-0 top-10 border rounded-lg shadow-lg w-40 z-50 ${
-                      isDarkMode
-                        ? "bg-[#666666] border-gray-700"
-                        : "bg-white border-gray-200"
-                    }`}
-                  >
-                    <button
-                      onClick={handleProfileClick}
-                      className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                    >
-                      Profile
-                    </button>
-                    <button
-                      onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-red-600"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <button
-                onClick={() => navigate("/vendor/login")}
-                className="flex items-center space-x-2"
-              >
-                <FaRegUserCircle
-                  className={`text-xl ${
-                    isDarkMode ? "text-white" : "text-black"
-                  }`}
-                />
-                <span className={isDarkMode ? "text-white" : "text-black"}>
-                  Login
-                </span>
-              </button>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Sidebar */}
-      {shouldShowSidebar && (
-        <div
-          ref={sidebarRef}
-          className={`fixed top-0 left-0 h-full w-60 transform transition-transform duration-300 z-50 flex flex-col ${
-            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } ${isDarkMode ? "bg-[#242625]" : "bg-white"}`}
+      {shouldShowNavbarFooter && (
+        <header
+          className={`sticky top-0 z-50 flex justify-between items-center px-6 py-4  ${
+            isDarkMode ? "bg-[#313131]" : "bg-white"
+          }`}
         >
-          <div className="px-6 py-5 flex items-center">
-            <img src={logoSrc} alt="Qwikko" className="h-9" />
+          <div className="flex items-center space-x-4">
+            <img src={logoSrc} alt="Qwikko" className="h-8" />
           </div>
-          <nav className="flex-1 flex flex-col mt-4 space-y-1">
-            <Link
-              to="/vendor/dashboard"
-              className={`px-6 py-3 rounded-lg ${
-                isDarkMode
-                  ? "text-white hover:bg-[#666666]"
-                  : "text-gray-700 hover:bg-[#f0f2f1]"
-              }`}
-            >
-              Dashboard
-            </Link>
-            <Link
-              to="/vendor/products"
-              className={`px-6 py-3 rounded-lg ${
-                isDarkMode
-                  ? "text-white hover:bg-[#666666]"
-                  : "text-gray-700 hover:bg-[#f0f2f1]"
-              }`}
-            >
-              My Products
-            </Link>
-            <Link
-              to="/vendor/orders"
-              className={`px-6 py-3 rounded-lg ${
-                isDarkMode
-                  ? "text-white hover:bg-[#666666]"
-                  : "text-gray-700 hover:bg-[#f0f2f1]"
-              }`}
-            >
-              Orders
-            </Link>
-            <Link
-              to="/vendor/chat"
-              className={`px-6 py-3 rounded-lg ${
-                isDarkMode
-                  ? "text-white hover:bg-[#666666]"
-                  : "text-gray-700 hover:bg-[#f0f2f1]"
-              }`}
-            >
-              Chats
-            </Link>
-            <Link
-              to="/vendor/notifications"
-              className={`px-6 py-3 rounded-lg ${
-                isDarkMode
-                  ? "text-white hover:bg-[#666666]"
-                  : "text-gray-700 hover:bg-[#f0f2f1]"
-              }`}
-            >
-              Notifications
-            </Link>
-            <Link
-              to="/vendor/settings"
-              className={`px-6 py-3 rounded-lg ${
-                isDarkMode
-                  ? "text-white hover:bg-[#666666]"
-                  : "text-gray-700 hover:bg-[#f0f2f1]"
-              }`}
-            >
-              Settings
-            </Link>
 
-            <Link to="/vendor/dashboard" className={`px-6 py-3 rounded-lg ${isDarkMode ? "text-white hover:bg-[#666666]" : "text-gray-700 hover:bg-[#f0f2f1]"}`}>Dashboard</Link>
-            <Link to="/vendor/products" className={`px-6 py-3 rounded-lg ${isDarkMode ? "text-white hover:bg-[#666666]" : "text-gray-700 hover:bg-[#f0f2f1]"}`}>My Products</Link>
-            <Link to="/vendor/orders" className={`px-6 py-3 rounded-lg ${isDarkMode ? "text-white hover:bg-[#666666]" : "text-gray-700 hover:bg-[#f0f2f1]"}`}>Orders</Link>
-            <Link to="/vendor/Coupons" className={`px-6 py-3 rounded-lg ${isDarkMode ? "text-white hover:bg-[#666666]" : "text-gray-700 hover:bg-[#f0f2f1]"}`}>Coupons</Link>
-            <Link to="/vendor/chat" className={`px-6 py-3 rounded-lg ${isDarkMode ? "text-white hover:bg-[#666666]" : "text-gray-700 hover:bg-[#f0f2f1]"}`}>Chats</Link>
-            <Link to="/vendor/notifications" className={`px-6 py-3 rounded-lg ${isDarkMode ? "text-white hover:bg-[#666666]" : "text-gray-700 hover:bg-[#f0f2f1]"}`}>Notifications</Link>
-            <Link to="/vendor/settings" className={`px-6 py-3 rounded-lg ${isDarkMode ? "text-white hover:bg-[#666666]" : "text-gray-700 hover:bg-[#f0f2f1]"}`}>Settings</Link>
-          </nav>
-          <div className="mt-auto mb-6 flex flex-col px-6 space-y-2">
+         <div className="flex items-center ml-auto space-x-6 relative">
+  {/* Profile Dropdown */}
+  <div className="relative dropdown">
+    {isLoggedIn ? (
+      <>
+        <button
+          onClick={() => setDropdownOpen(!dropdownOpen)}
+          className="flex items-center space-x-2 cursor-pointer"
+        >
+          <FaUser
+            className={`text-xl ${isDarkMode ? "text-white" : "text-black "}`}
+          />
+          <span className={isDarkMode ? "text-white" : "text-black"}>
+            {profile?.store_name || "Vendor"}
+          </span>
+          <FiChevronDown className={isDarkMode ? "text-white" : "text-black"} />
+        </button>
+        {dropdownOpen && (
+          <div
+            className={`absolute right-0 top-10 border rounded-lg shadow-lg w-40 z-50 ${
+              isDarkMode ? "bg-[#313131] border-gray-700" : "bg-white border-gray-200"
+            }`}
+          >
+            <button
+              onClick={handleProfileClick}
+              className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+            >
+              Profile
+            </button>
             <button
               onClick={handleLogout}
-              className={`flex items-center rounded-lg px-4 py-2 ${
-                isDarkMode
-                  ? "text-white hover:bg-[#666666]"
-                  : "text-gray-700 hover:bg-red-50"
-              } transition-colors`}
+              className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-red-600"
             >
-              <FaSignOutAlt className="mr-3" /> Logout
+              Logout
             </button>
           </div>
+        )}
+      </>
+    ) : (
+      <button
+        onClick={() => navigate("/vendor/login")}
+        className="flex items-center space-x-2"
+      >
+        <FaRegUserCircle
+          className={`text-xl ${isDarkMode ? "text-white" : "text-black"}`}
+        />
+        <span className={isDarkMode ? "text-white" : "text-black"}>Login</span>
+      </button>
+    )}
+  </div>
+
+  {/* إشعارات */}
+{isLoggedIn && (
+  <div className="relative">
+    <button
+      onClick={() => setNotificationsOpen((prev) => !prev)}
+      className="notif-button relative"
+    >
+      <FaBell size={22} className={isDarkMode ? "text-white" : "text-black"} />
+      {unreadCount > 0 && (
+        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+          {unreadCount}
+        </span>
+      )}
+    </button>
+
+    {notificationsOpen && (
+      <div
+        className={`absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto rounded-lg shadow-lg z-50 notif-dropdown ${
+          isDarkMode ? "bg-[#666666] text-white" : "bg-white text-black"
+        }`}
+      >
+        <div className="max-h-96 overflow-y-auto">
+          {notifications.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+              <FaBell className="text-[var(--light-gray)] text-4xl mb-4 opacity-50" />
+              <p className="text-[var(--light-gray)] font-medium text-lg mb-2">No notifications</p>
+              <p className="text-[var(--light-gray)] text-sm">
+                We'll notify you when something arrives
+              </p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-[var(--border)]">
+              {notifications.map((n) => (
+                <li
+                  key={n.id}
+                  className={`p-6 transition-all duration-200 hover:bg-[var(--hover)] hover:bg-opacity-30 cursor-pointer group ${
+                    !n.read_status
+                      ? "bg-[var(--primary)] bg-opacity-5 border-l-4 border-l-[var(--primary)]"
+                      : "border-l-4 border-l-transparent"
+                  }`}
+                  onClick={() => {
+                    if (!n.read_status) {
+                      setNotifications(prev =>
+                        prev.map(notif =>
+                          notif.id === n.id ? { ...notif, read_status: true } : notif
+                        )
+                      );
+                      setUnreadCount(prev => Math.max(0, prev - 1));
+                    }
+                  }}
+                >
+                  <div className="flex items-start space-x-3">
+                    <div
+                      className={`flex-shrink-0 w-3 h-3 rounded-full mt-2 ${
+                        !n.read_status ? "bg-[var(--primary)] animate-pulse" : "bg-[var(--light-gray)]"
+                      }`}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4
+                          className={`font-semibold text-sm truncate ${
+                            !n.read_status ? "text-[var(--primary)]" : "text-[var(--text)]"
+                          }`}
+                        >
+                          {n.title}
+                        </h4>
+                        {!n.read_status && (
+                          <span className="flex-shrink-0 bg-[var(--primary)] text-white text-xs px-2 py-1 rounded-full ml-2">
+                            New
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[var(--text)] text-sm leading-relaxed mb-3 line-clamp-2">
+                        {n.message}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-[var(--light-gray)] font-medium">
+                          {new Date(n.created_at).toLocaleString()}
+                        </span>
+                        {!n.read_status && (
+                          <span className="text-xs text-[var(--primary)] font-medium group-hover:underline">
+                            Mark as read
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
+
+        <button
+          onClick={() => {
+            setNotificationsOpen(false);
+            navigate("/vendor/notifications");
+          }}
+          className={`w-full text-center py-2 font-semibold border-t ${
+            isDarkMode
+              ? "border-gray-700 hover:bg-[#555555]"
+              : "border-gray-200 hover:bg-gray-100"
+          } transition-colors`}
+        >
+          View All
+        </button>
+      </div>
+    )}
+  </div>
+)}
+
+  
+</div>
+
+        </header>
       )}
 
-      {/* Main Content */}
-      <main
-        className={`flex-1 p-6 transition-all duration-300 ${
-          isSidebarOpen ? "ml-60" : "ml-0"
-        }`}
+      {/* Sidebar ثابت للفندور */}
+{shouldShowSidebar && (
+  <div
+    ref={sidebarRef}
+    className={`fixed top-0 left-0 h-full w-60 flex flex-col z-40 ${
+      isDarkMode ? "bg-[#313131]" : "bg-white"
+    }`}
+  >
+    <div className="px-6 py-5 flex items-center">
+      <img src={logoSrc} alt="Vendor Logo" className="h-9" />
+    </div>
+
+    <nav className="flex-1 flex flex-col mt-4 space-y-1">
+      <Link
+        to="/vendor/dashboard"
+        className="flex font-medium items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200"
       >
-        <Outlet context={{ isDarkMode, setIsDarkMode }} />
-      </main>
+        <FaBars className="mr-3" /> Dashboard
+      </Link>
+
+      <Link
+        to="/vendor/products"
+        className="flex font-medium items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200"
+      >
+        <FaBoxOpen className="mr-3" /> My Products
+      </Link>
+
+      <Link
+        to="/vendor/orders"
+        className="flex font-medium items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200"
+      >
+        <FaClipboardList className="mr-3" /> Orders
+      </Link>
+
+      <Link
+        to="/vendor/coupons"
+        className="flex font-medium items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200"
+      >
+        <FaTicketAlt className="mr-3" /> Coupons
+      </Link>
+
+      <Link
+        to="/vendor/chat"
+        className="flex font-medium items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200"
+      >
+        <FaRegCommentDots className="mr-3" /> Chats
+      </Link>
+
+      <Link
+        to="/vendor/settings"
+        className="flex font-medium items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200"
+      >
+        <FaCog className="mr-3" /> Settings
+      </Link>
+    </nav>
+
+    <div className="mt-auto mb-6 flex flex-col px-6 space-y-2">
+      <button
+        onClick={handleLogout}
+        className="flex items-center rounded-lg px-4 py-2 text-[var(--text)] hover:bg-[var(--hover)] transition-colors"
+      >
+        <FaSignOutAlt className="mr-3" /> Logout
+      </button>
+    </div>
+  </div>
+)}
+
+
+      {/* Main Content مع مراعاة Sidebar ثابت */}
+  <main
+  className={`flex-1 transition-all duration-300 ${
+    shouldShowSidebar
+      ? "ml-60 p-4" // padding بسيط فقط لما يكون في Sidebar
+      : "ml-0 p-0"  // بدون أي مسافة لما ما يكون في Sidebar
+  }`}
+>
+  <Outlet context={{ isDarkMode, setIsDarkMode }} />
+</main>
+
+
 
       {/* Footer */}
-      <footer
-        className={`shadow px-6 py-4 text-center ${
-          isDarkMode ? "bg-[#242625] text-white" : "bg-white text-gray-700"
-        }`}
-      >
-        <p className="text-sm">
-          © {new Date().getFullYear()} Qwikko. All rights reserved.
-        </p>
-      </footer>
+      {shouldShowNavbarFooter && (
+        <footer className={`shadow px-6 py-4 text-center ${isDarkMode ? "bg-[#242625] text-white" : "bg-white text-gray-700"}`}>
+          <p className="text-sm">© {new Date().getFullYear()} Qwikko. All rights reserved.</p>
+        </footer>
+      )}
+
+  {/* ChatBot Toggle Button */}
+<button
+  onClick={toggleChat}
+  className="fixed bottom-8 right-6 text-white p-4 rounded-full shadow-lg transition flex items-center justify-center z-50"
+  style={{
+    backgroundColor: "#026a4b", // اللون الأخضر الخاص بالمشروع
+  }}
+  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#025438")}
+  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#026a4b")}
+>
+  <Bot size={28} />
+</button>
+
+<AnimatePresence>
+  {isChatOpen && (
+    <motion.div
+      className="fixed top-4 right-4 sm:right-6 z-50 w-full sm:w-96 h-[90vh] sm:h-[90vh] rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+      style={{ backgroundColor: "#ffffff", color: "#292e2c" }} // bg و text
+      initial={{ y: "100%" }}
+      animate={{ y: 0 }}
+      exit={{ y: "100%" }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+    >
       <button
         onClick={toggleChat}
-        className="fixed bottom-8 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition flex items-center justify-center z-50"
+        className="absolute top-4 right-4 z-10"
+        style={{ color: "#292e2c" }}
       >
-        <Bot size={28} />
+        <X size={24} />
       </button>
-      <AnimatePresence>
-        {isChatOpen && (
-          <motion.div
-            className="fixed top-4 right-4 sm:right-6 z-50 w-full sm:w-96 h-[90vh] sm:h-[90vh] bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          >
-            {/* زر الإغلاق كأيقونة */}
-            <button
-              onClick={toggleChat}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10"
-            >
-              <X size={24} />
-            </button>
 
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 p-4 border-b">
-              <Bot size={20} className="text-blue-600" />
-              AI Chatbot
-            </h2>
+      <h2
+        className="text-xl font-semibold mb-4 flex items-center gap-2 p-4 border-b"
+        style={{ borderColor: "#f5f6f5", color: "#292e2c" }}
+      >
+        <Bot size={20} style={{ color: "#026a4b" }} /> AI Chatbot
+      </h2>
 
-            <div className="flex-grow overflow-auto p-2">
-              <ChatBot userId={currentUser?.id || "guest"} />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div
+        className="flex-grow overflow-auto p-2"
+        style={{ backgroundColor: "#f5f6f5" }} // صندوق الرسائل
+      >
+        <ChatBot userId={currentUser?.id || "guest"} />
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
+
     </div>
   );
 }

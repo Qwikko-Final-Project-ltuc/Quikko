@@ -5,9 +5,9 @@ const ContactUs = () => {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
   const [status, setStatus] = useState({ success: null, message: "" });
 
-  const handleChange = e => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleChange = (e) => setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const handleSubmit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus({ success: null, message: "" });
 
@@ -21,74 +21,84 @@ const ContactUs = () => {
       setStatus({ success: true, message: "Message sent successfully!" });
       setForm({ name: "", email: "", subject: "", message: "" });
     } catch (error) {
-      setStatus({ success: false, message: error.response?.data?.message || "Failed to send message." });
+      setStatus({
+        success: false,
+        message: error.response?.data?.message || "Failed to send message.",
+      });
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-10 px-4">
-      <div className="max-w-3xl w-full bg-white shadow-lg rounded-xl p-8 md:p-12">
-        <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">Contact Us</h2>
+    <div className="min-h-screen flex flex-col md:flex-row items-start justify-center bg-[var(--bg)] py-20 px-30 gap-8 md:gap-12">
 
-        {status.message && (
-          <p
-            className={`mb-4 text-center font-medium ${
-              status.success ? "text-green-600" : "text-red-600"
-            }`}
-          >
-            {status.message}
-          </p>
-        )}
+      {/* القسم الأيسر: العنوان والجملة */}
+      <div className="md:w-1/2 flex flex-col justify-start md:justify-center md:pr-6">
+      <br/><br/><br/><br/>
+        <h1 className="text-4xl md:text-5xl font-bold text-[var(--text)] mb-4">Contact Us</h1>
+        <br/>
+        <p className="text-[var(--text)] text-lg md:text-xl font-semibold leading-relaxed">
+          We’d love to hear from you!<br/>
+          Send us your message and we’ll get back to you soon.
+        </p>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
+      {/* القسم الأيمن: الفورم */}
+      <div className="md:w-1/2 w-full">
+        <form
+          onSubmit={handleSubmit}
+          className="w-full space-y-4  rounded-2xl p-6 md:p-8"
+        >
+          {status.message && (
+            <p
+              className={`text-center font-medium ${
+                status.success ? "text-[var(--success)]" : "text-[var(--error)]"
+              }`}
+            >
+              {status.message}
+            </p>
+          )}
+
+          <div className="grid md:grid-cols-2 gap-4">
             <input
               type="text"
               name="name"
               value={form.name}
               onChange={handleChange}
               placeholder="Your Name"
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+              className="w-full bg-[var(--bg)] text-[var(--text)] border border-[var(--border)] rounded-xl px-4 py-3 focus:ring-2 focus:ring-[var(--button)] focus:border-[var(--button)] outline-none"
             />
-          </div>
-
-          <div>
             <input
               type="email"
               name="email"
               value={form.email}
               onChange={handleChange}
               placeholder="Your Email"
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+              className="w-full bg-[var(--bg)] text-[var(--text)] border border-[var(--border)] rounded-xl px-4 py-3 focus:ring-2 focus:ring-[var(--button)] focus:border-[var(--button)] outline-none"
             />
           </div>
 
-          <div>
-            <input
-              type="text"
-              name="subject"
-              value={form.subject}
-              onChange={handleChange}
-              placeholder="Subject"
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-            />
-          </div>
+          <input
+            type="text"
+            name="subject"
+            value={form.subject}
+            onChange={handleChange}
+            placeholder="Subject"
+            className="w-full bg-[var(--bg)] text-[var(--text)] border border-[var(--border)] rounded-xl px-4 py-3 focus:ring-2 focus:ring-[var(--button)] focus:border-[var(--button)] outline-none"
+          />
 
-          <div>
-            <textarea
-              name="message"
-              value={form.message}
-              onChange={handleChange}
-              placeholder="Your Message"
-              rows={6}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition resize-none"
-            />
-          </div>
+          <textarea
+            name="message"
+            value={form.message}
+            onChange={handleChange}
+            placeholder="Your Message"
+            rows={5}
+            className="w-full bg-[var(--bg)] text-[var(--text)] border border-[var(--border)] rounded-xl px-4 py-3 focus:ring-2 focus:ring-[var(--button)] focus:border-[var(--button)] outline-none resize-none"
+          />
 
-          <div className="text-center">
+          <div className="text-center mt-2">
             <button
               type="submit"
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-lg shadow-md transition transform hover:-translate-y-0.5"
+              className="px-6 py-3 rounded-xl font-semibold text-[var(--bg)] bg-[var(--button)] border border-[var(--button)] hover:bg-[var(--hover)] hover:text-[var(--text)] hover:border-[var(--hover)] transition-all duration-300"
             >
               Send Message
             </button>
