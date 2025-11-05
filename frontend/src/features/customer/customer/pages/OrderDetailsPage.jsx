@@ -6,6 +6,27 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchOrders } from "../ordersSlice";
 import { deleteCart, fetchCart, setCurrentCart } from "../cartSlice";
 
+// Importing icons
+import { 
+  FiShoppingCart, 
+  FiHome, 
+  FiFileText, 
+  FiTag, 
+  FiStar, 
+  FiCreditCard,
+  FiTruck,
+  FiCheckCircle,
+  FiAlertCircle,
+  FiArrowLeft,
+  FiPackage,
+  FiShield,
+  FiMapPin,
+  FiDollarSign,
+  FiPercent,
+  FiGift,
+  FiChevronDown
+} from "react-icons/fi";
+
 const OrderDetailsPage = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
@@ -15,6 +36,7 @@ const OrderDetailsPage = () => {
   const cartFromState = location.state?.cart;
   const { data: profile } = useSelector((state) => state.profile);
   const { currentCart, status, error } = useSelector((state) => state.cart);
+  const { mode: themeMode } = useSelector((state) => state.customerTheme);
 
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState(null);
@@ -156,18 +178,17 @@ const OrderDetailsPage = () => {
   const handleValidateCoupon = async () => {
     if (!profile?.id) return alert("User not logged in. Please login first.");
     if (!currentCart?.items?.length) return alert("Your cart is empty.");
-  const preparedItems = currentCart.items.map((item) => {
-  const productId = item.product_id || item.id; // product_id موجودة؟ استخدميها، وإلا استخدمي id
-  const vendorId = item.vendor_id || (item.vendor && item.vendor.id) || 0; // إذا عندك object vendor
+    const preparedItems = currentCart.items.map((item) => {
+      const productId = item.product_id || item.id;
+      const vendorId = item.vendor_id || (item.vendor && item.vendor.id) || 0;
 
-  return {
-    product_id: Number(productId),
-    quantity: Number(item.quantity),
-    price: Number(item.price),
-    vendor_id: Number(vendorId),
-  };
-});
-
+      return {
+        product_id: Number(productId),
+        quantity: Number(item.quantity),
+        price: Number(item.price),
+        vendor_id: Number(vendorId),
+      };
+    });
 
     try {
       const response = await validateCoupon(couponCode, profile.id, preparedItems);
@@ -333,246 +354,537 @@ const OrderDetailsPage = () => {
     }
   }, [paymentMethod, finalTotal, currentCart, dispatch]);
 
-  if (status === "loading") return <p>Loading cart details...</p>;
-  if (error) return <p>Error: {error}</p>;
-  if (!currentCart) return <p>Cart not found</p>;
+  // CSS classes based on theme using the provided color variables
+  const containerClass = themeMode === 'dark' 
+    ? 'bg-[var(--bg)] text-[var(--text)]' 
+    : 'bg-[var(--bg)] text-[var(--text)]';
+    
+  const cardClass = themeMode === 'dark' 
+    ? 'bg-[var(--div)] border-[var(--border)] backdrop-blur-sm bg-opacity-80' 
+    : 'bg-[var(--textbox)] border-[var(--border)] backdrop-blur-sm bg-opacity-80';
+    
+  const inputClass = themeMode === 'dark' 
+    ? 'bg-[var(--mid-dark)] border-[var(--border)] text-[var(--text)] placeholder-[var(--light-gray)] focus:border-[var(--button)] focus:ring-2 focus:ring-[var(--button)]/20 transition-all duration-300' 
+    : 'bg-white border-[var(--border)] text-[var(--text)] placeholder-[var(--light-gray)] focus:border-[var(--button)] focus:ring-2 focus:ring-[var(--button)]/20 transition-all duration-300';
+    
+  const buttonClass = "bg-[var(--button)] hover:bg-[#015c40] text-white font-semibold transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg relative overflow-hidden";
+  const secondaryButtonClass = themeMode === 'dark' 
+    ? 'border-[var(--border)] bg-[var(--mid-dark)] hover:bg-[var(--hover)] text-[var(--text)] transition-all duration-300' 
+    : 'border-[var(--border)] bg-white hover:bg-[var(--hover)] text-[var(--text)] transition-all duration-300';
+
+  const successClass = themeMode === 'dark' 
+    ? 'bg-green-900/30 border-green-500/50 text-green-300 backdrop-blur-sm' 
+    : 'bg-green-50 border-green-200 text-green-800 backdrop-blur-sm';
+    
+  const errorClass = themeMode === 'dark' 
+    ? 'bg-red-900/30 border-red-500/50 text-red-300 backdrop-blur-sm' 
+    : 'bg-red-50 border-red-200 text-red-800 backdrop-blur-sm';
+
+  if (status === "loading") return (
+    <div className={`min-h-screen flex items-center justify-center ${containerClass}`}>
+      <div className="text-center animate-fade-in">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[var(--button)] mx-auto mb-4 backdrop-blur-sm"></div>
+        <p className="text-lg text-[var(--light-gray)]">Loading your order details...</p>
+      </div>
+    </div>
+  );
+  
+  if (error) return (
+    <div className={`min-h-screen flex items-center justify-center ${containerClass}`}>
+      <div className={`text-center max-w-md p-8 rounded-2xl border-2 ${errorClass} animate-fade-in-up backdrop-blur-sm`}>
+        <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+          <FiAlertCircle className="text-2xl text-red-500" />
+        </div>
+        <h3 className="text-xl font-bold mb-2">Error Loading Order</h3>
+        <p className="mb-6 opacity-90">{error}</p>
+        <button 
+          onClick={() => navigate(-1)}
+          className={`${buttonClass} px-6 py-3 rounded-xl flex items-center justify-center mx-auto`}
+        >
+          <FiArrowLeft className="mr-2" />
+          Go Back
+        </button>
+      </div>
+    </div>
+  );
+  
+  if (!currentCart) return (
+    <div className={`min-h-screen flex items-center justify-center ${containerClass}`}>
+      <div className="text-center max-w-md p-8 animate-fade-in">
+        <div className="w-20 h-20 bg-[var(--div)] rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+          <FiShoppingCart className="text-2xl text-[var(--text)]" />
+        </div>
+        <h3 className="text-xl font-bold mb-4">Cart Not Found</h3>
+        <p className="text-[var(--light-gray)] mb-6">We couldn't find the cart you're looking for.</p>
+        <button 
+          onClick={() => navigate("/")}
+          className={`${buttonClass} px-6 py-3 rounded-xl`}
+        >
+          Continue Shopping
+        </button>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-2xl">
-      <h1 className="text-3xl font-bold mb-6">Cart / Order Details</h1>
-
-      {orderSuccess ? (
-        <div className="bg-green-100 p-4 rounded mb-6">
-          <h2 className="text-xl font-bold text-green-700 mb-2">
-            Order Placed Successfully!
-          </h2>
-          <p>
-            Payment Method: <strong>{orderSuccess.method}</strong>
+    <div className={`min-h-screen py-6 ${containerClass} transition-colors duration-300 font-sans`}>
+      <div className="container mx-auto px-4 max-w-6xl">
+        {/* Header - أكثر إحترافية وأقل طولاً */}
+        <div className="text-left mb-6 p-4 animate-fade-in-up">
+          <h1 className="text-3xl font-bold mb-3 text-[var(--text)] tracking-tight">
+            Complete Your Order
+          </h1>
+          <p className="text-base text-[var(--light-gray)] max-w-2xl leading-relaxed">
+            Review your items, apply discounts, and securely complete your purchase
           </p>
-          {orderSuccess.transactionId && (
-            <p>Transaction ID: {orderSuccess.transactionId}</p>
-          )}
-          <p>Order ID: {orderSuccess.order.order?.id}</p>
-          <button
-            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
-            onClick={() => navigate("/orders")}
-          >
-            View My Orders
-          </button>
         </div>
-      ) : (
-        <>
-          {currentCart?.items?.length === 0 ? (
-            <p>No items in this cart.</p>
-          ) : (
-            <div className="space-y-4 mb-6">
-              {currentCart.items.map((item) => (
-                <CartItem
-                  key={`${item.id}-${item.product_id || ""}`}
-                  item={{
-                    ...item,
-                    image:
-                      Array.isArray(item.images) && item.images.length
-                        ? item.images[0]
-                        : null,
-                  }}
-                />
-              ))}
+
+        {orderSuccess ? (
+          <div className="max-w-2xl mx-auto animate-fade-in">
+            <div className={`bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 border-2 ${successClass} rounded-3xl p-8 text-center shadow-2xl backdrop-blur-sm`}>
+              <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce backdrop-blur-sm">
+                <FiCheckCircle className="text-3xl text-green-500" />
+              </div>
+              <h2 className="text-2xl font-bold mb-4 text-green-600 dark:text-green-400 tracking-tight">
+                Order Confirmed!
+              </h2>
+              <div className={`space-y-3 text-left max-w-md mx-auto ${cardClass} rounded-2xl p-5 border shadow-lg backdrop-blur-sm`}>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-[var(--light-gray)] flex items-center text-sm">
+                    <FiPackage className="mr-2" />
+                    Order ID:
+                  </span>
+                  <span className="font-semibold text-[var(--text)] text-sm">#{orderSuccess.order.order?.id}</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-[var(--light-gray)] flex items-center text-sm">
+                    <FiCreditCard className="mr-2" />
+                    Payment Method:
+                  </span>
+                  <span className="font-semibold text-[var(--text)] text-sm">{orderSuccess.method}</span>
+                </div>
+                {orderSuccess.transactionId && (
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-[var(--light-gray)] text-sm">Transaction ID:</span>
+                    <span className="font-mono text-xs bg-[var(--bg)] px-2 py-1 rounded text-[var(--text)] backdrop-blur-sm">
+                      {orderSuccess.transactionId}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between text-lg font-bold mt-3 pt-3 border-t border-[var(--border)]">
+                  <span className="flex items-center text-[var(--text)]">
+                    <FiDollarSign className="mr-1" />
+                    Total Paid:
+                  </span>
+                  <span className="text-[var(--button)]">${finalTotal.toFixed(2)}</span>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
+                <button
+                  className={`${buttonClass} px-6 py-3 rounded-xl flex items-center justify-center text-base backdrop-blur-sm`}
+                  onClick={() => navigate("/customer/orders")}
+                >
+                  <FiPackage className="mr-2" />
+                  View My Orders
+                </button>
+                <button
+                  className={`${secondaryButtonClass} px-6 py-3 rounded-xl border-2 flex items-center justify-center text-base backdrop-blur-sm`}
+                  onClick={() => navigate("/")}
+                >
+                  <FiShoppingCart className="mr-2" />
+                  Continue Shopping
+                </button>
+              </div>
             </div>
-          )}
-
-          <p className="text-right text-xl font-bold mb-4">
-            Total: ${total.toFixed(2)}
-          </p>
-
-          {/* Address Section */}
-          <div className="border p-4 rounded mb-4">
-            <h2 className="font-semibold text-lg mb-2">Shipping Address</h2>
-            <input
-              className="border rounded w-full p-2 mb-2"
-              placeholder="Address Line 1 *"
-              value={address.address_line1}
-              onChange={(e) =>
-                setAddress({ ...address, address_line1: e.target.value })
-              }
-            />
-            <input
-              className="border rounded w-full p-2 mb-2"
-              placeholder="Address Line 2"
-              value={address.address_line2}
-              onChange={(e) =>
-                setAddress({ ...address, address_line2: e.target.value })
-              }
-            />
-            <input
-              className="border rounded w-full p-2 mb-2"
-              placeholder="City *"
-              value={address.city}
-              onChange={(e) => setAddress({ ...address, city: e.target.value })}
-            />
-            <input
-              className="border rounded w-full p-2 mb-2"
-              placeholder="State"
-              value={address.state}
-              onChange={(e) => setAddress({ ...address, state: e.target.value })}
-            />
-            <input
-              className="border rounded w-full p-2 mb-2"
-              placeholder="Postal Code"
-              value={address.postal_code}
-              onChange={(e) =>
-                setAddress({ ...address, postal_code: e.target.value })
-              }
-            />
-            <input
-              className="border rounded w-full p-2 mb-2"
-              placeholder="Country"
-              value={address.country}
-              onChange={(e) =>
-                setAddress({ ...address, country: e.target.value })
-              }
-            />
           </div>
-
-          {/* Coupon Section */}
-          <div className="border p-4 rounded mb-4">
-            <h2 className="font-semibold mb-2">Apply Coupon</h2>
-            <input
-              type="text"
-              placeholder="Enter coupon code"
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value)}
-              className="border rounded w-full p-2 mb-2"
-            />
-            <button
-              onClick={handleValidateCoupon}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-              Check Coupon
-            </button>
-            {couponResult && (
-              <div
-                className="coupon-summary mt-3 p-4 rounded-lg"
-                style={{
-                  backgroundColor: couponResult.discount > 0 ? "#e6ffed" : "#ffe6e6",
-                  border:
-                    couponResult.discount > 0
-                      ? "1px solid #22c55e"
-                      : "1px solid #ef4444",
-                }}
-              >
-                <p className="font-semibold mb-1">{couponResult.message}</p>
-                {couponResult.discount > 0 && (
-                  <>
-                    <p>
-                      Discount: <strong>${couponResult.discount}</strong>
-                    </p>
-                    <p>Total Before Discount: ${couponResult.total}</p>
-                    <p>
-                      Final Amount: <strong>${couponResult.final}</strong>
-                    </p>
-                  </>
+        ) : (
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            {/* Left Column - Order Items & Address */}
+            <div className="xl:col-span-2 space-y-6">
+              {/* Order Items Card - أقصر */}
+              <div className={`rounded-2xl border-2 ${cardClass} p-6 transition-all duration-300 hover:shadow-xl animate-fade-in-up shadow-lg backdrop-blur-sm`}>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold flex items-center text-[var(--text)] tracking-tight">
+                    <FiShoppingCart className={`mr-3 text-[var(--button)]`} />
+                    Order Items
+                    <span className="ml-2 text-xs bg-[var(--button)] text-white px-2 py-1 rounded-full backdrop-blur-sm">
+                      {currentCart?.items?.length || 0}
+                    </span>
+                  </h2>
+                  <span className="text-lg font-semibold text-[var(--button)] bg-[var(--button)]/10 px-3 py-1.5 rounded-xl backdrop-blur-sm">
+                    ${total.toFixed(2)}
+                  </span>
+                </div>
+                
+                {currentCart?.items?.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-[var(--div)] rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm">
+                      <FiShoppingCart className="text-2xl text-[var(--text)]" />
+                    </div>
+                    <h3 className="text-lg font-bold mb-2 text-[var(--text)] tracking-tight">Your cart is empty</h3>
+                    <p className="text-[var(--light-gray)] text-sm mb-4">Add some items to get started</p>
+                    <button 
+                      onClick={() => navigate("/")}
+                      className={`${buttonClass} px-6 py-3 rounded-xl text-base backdrop-blur-sm`}
+                    >
+                      Start Shopping
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {currentCart.items.map((item, index) => (
+                      <div 
+                        key={`${item.id}-${item.product_id || ""}`} 
+                        className="transform hover:scale-[1.005] transition-all duration-300 animate-fade-in-up backdrop-blur-sm"
+                        style={{ animationDelay: `${index * 100}ms` }}
+                      >
+                        <CartItem
+                          item={{
+                            ...item,
+                            image:
+                              Array.isArray(item.images) && item.images.length
+                                ? item.images[0]
+                                : null,
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
 
-          {/* Loyalty Points Section */}
-          <div className="border p-4 rounded mb-4">
-            <h2 className="font-semibold mb-2">Use Loyalty Points</h2>
-            <p>You have {loyaltyPoints} points available.</p>
-            <input
-              type="number"
-              value={userPointsToUse}
-              onChange={(e) => setUserPointsToUse(Number(e.target.value))}
-              className="border rounded w-full p-2 mb-2"
-              min="0"
-              max={profile?.loyalty_points || 0}
-            />
-            <label>
-              <input
-                type="checkbox"
-                checked={usePointsChecked}
-                onChange={() => handleUsePoints(loyaltyPoints)}
-              />{" "}
-              Apply points to order
-            </label>
-            {usePointsChecked && (
-              <p className="text-green-700">
-                Discount from points: ${pointsDiscount.toFixed(2)}
-              </p>
-            )}
-            {pointsError && <p className="text-red-600">{pointsError}</p>}
-          </div>
-
-          {/* Payment Section */}
-          <div className="border p-4 rounded mb-4">
-            <h2 className="font-semibold mb-2">Payment Method</h2>
-            <select
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-              className="border rounded w-full p-2 mb-2"
-            >
-              <option value="cod">Cash on Delivery</option>
-              <option value="card">Credit Card</option>
-              <option value="paypal">PayPal</option>
-            </select>
-
-            {paymentMethod === "card" && (
-              <div className="space-y-2">
-                <input
-                  placeholder="Card Number"
-                  value={card.number}
-                  onChange={(e) => setCard({ ...card, number: e.target.value })}
-                  className="border rounded w-full p-2"
-                />
-                <input
-                  placeholder="Expiry Month"
-                  value={card.expiryMonth}
-                  onChange={(e) => setCard({ ...card, expiryMonth: e.target.value })}
-                  className="border rounded w-full p-2"
-                />
-                <input
-                  placeholder="Expiry Year"
-                  value={card.expiryYear}
-                  onChange={(e) => setCard({ ...card, expiryYear: e.target.value })}
-                  className="border rounded w-full p-2"
-                />
-                <input
-                  placeholder="CVC"
-                  value={card.cvc}
-                  onChange={(e) => setCard({ ...card, cvc: e.target.value })}
-                  className="border rounded w-full p-2"
-                />
-                <input
-                  placeholder="Cardholder Name"
-                  value={card.name}
-                  onChange={(e) => setCard({ ...card, name: e.target.value })}
-                  className="border rounded w-full p-2"
-                />
-                {cardError && <p className="text-red-600">{cardError}</p>}
+              {/* Shipping Address Card - أقصر */}
+              <div className={`rounded-2xl border-2 ${cardClass} p-6 transition-all duration-300 hover:shadow-xl animate-fade-in-up shadow-lg backdrop-blur-sm`}>
+                <h2 className="text-xl font-bold mb-6 flex items-center text-[var(--text)] tracking-tight">
+                  <FiMapPin className={`mr-3 text-[var(--button)]`} />
+                  Shipping Address
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold mb-2 text-[var(--text)] tracking-tight">
+                      Street Address *
+                    </label>
+                    <input
+                      className={`w-full p-3 rounded-xl border-2 ${inputClass} transition-all duration-200 focus:shadow-lg backdrop-blur-sm text-sm`}
+                      placeholder="123 Main Street"
+                      value={address.address_line1}
+                      onChange={(e) =>
+                        setAddress({ ...address, address_line1: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold mb-2 text-[var(--text)] tracking-tight">
+                      Apartment, Suite, etc.
+                    </label>
+                    <input
+                      className={`w-full p-3 rounded-xl border-2 ${inputClass} transition-all duration-200 focus:shadow-lg backdrop-blur-sm text-sm`}
+                      placeholder="Apt 4B"
+                      value={address.address_line2}
+                      onChange={(e) =>
+                        setAddress({ ...address, address_line2: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-2 text-[var(--text)] tracking-tight">
+                      City *
+                    </label>
+                    <input
+                      className={`w-full p-3 rounded-xl border-2 ${inputClass} transition-all duration-200 focus:shadow-lg backdrop-blur-sm text-sm`}
+                      placeholder="New York"
+                      value={address.city}
+                      onChange={(e) => setAddress({ ...address, city: e.target.value })}
+                    />
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
 
-            {paymentMethod === "paypal" && <div id="paypal-button-container"></div>}
-          </div>
+            {/* Right Column - Order Summary & Payment */}
+            <div className="space-y-6 pb-6">
+              {/* Order Summary Card - أقصر */}
+              <div className={`rounded-2xl border-2 ${cardClass} p-6 sticky top-6 transition-all duration-300 hover:shadow-xl animate-fade-in-up shadow-xl backdrop-blur-sm`}>
+                <h2 className="text-xl font-bold mb-6 flex items-center text-[var(--text)] tracking-tight">
+                  <FiFileText className={`mr-3 text-[var(--button)]`} />
+                  Order Summary
+                </h2>
+                
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between items-center py-3 border-b border-[var(--border)]">
+                    <span className="text-[var(--light-gray)] text-sm">Subtotal</span>
+                    <span className="font-semibold text-[var(--text)] text-sm">${total.toFixed(2)}</span>
+                  </div>
+                  
+                  {appliedCoupon && (
+                    <div className="flex justify-between items-center py-3 border-b border-[var(--border)]">
+                      <span className="text-green-600 dark:text-green-400 flex items-center text-sm">
+                        <FiPercent className="mr-2" />
+                        Coupon Discount
+                      </span>
+                      <span className="font-semibold text-green-600 dark:text-green-400 text-sm">
+                        -${appliedCoupon.discount_amount.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {usePointsChecked && (
+                    <div className="flex justify-between items-center py-3 border-b border-[var(--border)]">
+                      <span className="text-green-600 dark:text-green-400 flex items-center text-sm">
+                        <FiStar className="mr-2" />
+                        Points Discount
+                      </span>
+                      <span className="font-semibold text-green-600 dark:text-green-400 text-sm">
+                        -${pointsDiscount.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-between items-center pt-4 border-t-2 border-[var(--border)]">
+                    <span className="text-lg font-bold text-[var(--text)] tracking-tight">Total</span>
+                    <span className="text-xl font-bold text-[var(--button)] bg-[var(--button)]/10 px-3 py-1.5 rounded-xl backdrop-blur-sm">
+                      ${finalTotal.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
 
-          <div className="text-right">
-            <button
-              onClick={handleCheckoutClickWithDiscount}
-              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-              disabled={checkoutLoading}
-            >
-              {checkoutLoading
-                ? "Processing..."
-                : `Checkout ($${finalTotal.toFixed(2)})`}
-            </button>
-            {checkoutError && (
-              <p className="text-red-600 mt-2">{checkoutError}</p>
-            )}
+                {/* Coupon Section */}
+                <div className="mb-6">
+                  <h3 className="font-semibold mb-3 flex items-center text-base text-[var(--text)] tracking-tight">
+                    <FiGift className={`mr-2 text-[var(--button)]`} />
+                    Apply Coupon
+                  </h3>
+                  <div className="flex flex-col sm:flex-row gap-2 mb-3">
+                    <input
+                      type="text"
+                      placeholder="Enter coupon code"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                      className={`flex-1 p-3 rounded-xl border-2 ${inputClass} focus:shadow-lg min-w-0 backdrop-blur-sm text-sm`}
+                    />
+                    <button
+                      onClick={handleValidateCoupon}
+                      className={`${buttonClass} px-4 py-3 rounded-xl whitespace-nowrap sm:w-auto w-full backdrop-blur-sm text-sm`}
+                    >
+                      Apply
+                    </button>
+                  </div>
+                  {couponResult && (
+                    <div className={`p-3 rounded-xl border-2 backdrop-blur-sm text-sm ${
+                      couponResult.discount > 0 ? successClass : errorClass
+                    } animate-fade-in`}>
+                      <p className="font-semibold tracking-tight">{couponResult.message}</p>
+                      {couponResult.discount > 0 && (
+                        <div className="mt-2 text-xs space-y-1">
+                          <p className="text-[var(--text)]">Discount: <strong>${couponResult.discount.toFixed(2)}</strong></p>
+                          <p className="text-[var(--text)]">New Total: <strong>${couponResult.final.toFixed(2)}</strong></p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Loyalty Points */}
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold flex items-center text-base text-[var(--text)] tracking-tight">
+                      <FiStar className={`mr-2 text-[var(--button)]`} />
+                      Loyalty Points
+                    </h3>
+                    <span className="text-xs text-[var(--light-gray)] bg-[var(--bg)] px-2 py-1 rounded-full backdrop-blur-sm">
+                      {loyaltyPoints} points
+                    </span>
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
+                    <label className="flex items-center cursor-pointer group">
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          checked={usePointsChecked}
+                          onChange={() => handleUsePoints(loyaltyPoints)}
+                          className="sr-only"
+                        />
+                        <div className={`w-10 h-5 rounded-full transition-all duration-300 backdrop-blur-sm ${
+                          usePointsChecked ? 'bg-[var(--button)]' : 'bg-[var(--border)]'
+                        } group-hover:shadow-md`}>
+                          <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-all duration-300 backdrop-blur-sm ${
+                            usePointsChecked ? 'transform translate-x-5' : ''
+                          } group-hover:scale-110`} />
+                        </div>
+                      </div>
+                      <span className="ml-2 font-medium text-[var(--text)] tracking-tight text-sm">Use points</span>
+                    </label>
+                    
+                    {usePointsChecked && (
+                      <div className="flex-1 sm:mt-0 mt-2">
+                        <input
+                          type="number"
+                          value={userPointsToUse}
+                          onChange={(e) => setUserPointsToUse(Number(e.target.value))}
+                          className={`w-full p-2 rounded-lg border-2 ${inputClass} text-xs focus:shadow-lg backdrop-blur-sm`}
+                          min="0"
+                          max={loyaltyPoints}
+                          placeholder="Points to use"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {usePointsChecked && (
+                    <div className="flex justify-between items-center text-xs bg-[var(--bg)] p-2 rounded-xl backdrop-blur-sm">
+                      <span className="text-green-600 dark:text-green-400 font-semibold">
+                        Save: ${pointsDiscount.toFixed(2)}
+                      </span>
+                      <span className="text-[var(--light-gray)]">
+                        Max: {loyaltyPoints} points
+                      </span>
+                    </div>
+                  )}
+                  
+                  {pointsError && (
+                    <p className={`text-red-500 text-xs mt-1 p-2 ${errorClass} rounded-xl backdrop-blur-sm`}>{pointsError}</p>
+                  )}
+                </div>
+
+                {/* Payment Method - Dropdown محسن */}
+                <div className="mb-6">
+                  <h3 className="font-semibold mb-3 flex items-center text-base text-[var(--text)] tracking-tight">
+                    <FiCreditCard className={`mr-2 text-[var(--button)]`} />
+                    Payment Method
+                  </h3>
+                  <div className="relative">
+                    <select
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className={`w-full p-3 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm appearance-none cursor-pointer`}
+                      style={{ 
+                        backgroundColor: themeMode === 'dark' ? 'var(--bg)' : 'white'
+                      }}
+                    >
+                      <option value="cod" className="flex items-center py-2">
+                        <FiTruck className="inline mr-2" />
+                        Cash on Delivery
+                      </option>
+                      <option value="card" className="flex items-center py-2">
+                        <FiCreditCard className="inline mr-2" />
+                        Credit/Debit Card
+                      </option>
+                      <option value="paypal" className="flex items-center py-2">
+                        <FiCreditCard className="inline mr-2" />
+                        PayPal
+                      </option>
+                    </select>
+                    <FiChevronDown 
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[var(--light-gray)] pointer-events-none" 
+                      size={16}
+                    />
+                  </div>
+
+                  {paymentMethod === "card" && (
+                    <div className={`space-y-3 ${cardClass} rounded-xl p-4 border-2 animate-fade-in backdrop-blur-sm mt-3`}>
+                      <div>
+                        <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Card Number</label>
+                        <input
+                          placeholder="1234 5678 9012 3456"
+                          value={card.number}
+                          onChange={(e) => setCard({ ...card, number: e.target.value })}
+                          className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Expiry Month</label>
+                          <input
+                            placeholder="MM"
+                            value={card.expiryMonth}
+                            onChange={(e) => setCard({ ...card, expiryMonth: e.target.value })}
+                            className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Expiry Year</label>
+                          <input
+                            placeholder="YYYY"
+                            value={card.expiryYear}
+                            onChange={(e) => setCard({ ...card, expiryYear: e.target.value })}
+                            className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">CVC</label>
+                          <input
+                            placeholder="123"
+                            value={card.cvc}
+                            onChange={(e) => setCard({ ...card, cvc: e.target.value })}
+                            className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Cardholder Name</label>
+                          <input
+                            placeholder="John Doe"
+                            value={card.name}
+                            onChange={(e) => setCard({ ...card, name: e.target.value })}
+                            className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
+                          />
+                        </div>
+                      </div>
+                      {cardError && (
+                        <p className={`p-2.5 ${errorClass} rounded-xl font-medium tracking-tight text-xs backdrop-blur-sm`}>
+                          {cardError}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {paymentMethod === "paypal" && (
+                    <div className={`${cardClass} rounded-xl p-4 border-2 animate-fade-in backdrop-blur-sm mt-3`}>
+                      <div id="paypal-button-container" className="min-h-[40px]"></div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Checkout Button */}
+                <button
+                  onClick={handleCheckoutClickWithDiscount}
+                  disabled={checkoutLoading || currentCart?.items?.length === 0}
+                  className={`w-full ${buttonClass} py-4 rounded-2xl font-bold text-base flex items-center justify-center transition-all duration-300 backdrop-blur-sm ${
+                    checkoutLoading || currentCart?.items?.length === 0
+                      ? 'opacity-50 cursor-not-allowed hover:scale-100'
+                      : 'hover:shadow-xl'
+                  }`}
+                >
+                  {checkoutLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      Processing Your Order...
+                    </>
+                  ) : (
+                    <>
+                      <FiCreditCard className="mr-2 text-lg" />
+                      Complete Order - ${finalTotal.toFixed(2)}
+                    </>
+                  )}
+                </button>
+
+                {checkoutError && (
+                  <div className={`mt-4 p-3 border-2 ${errorClass} rounded-xl animate-fade-in backdrop-blur-sm`}>
+                    <p className="font-medium tracking-tight text-sm">{checkoutError}</p>
+                  </div>
+                )}
+
+                <p className="text-xs text-center mt-4 text-[var(--light-gray)] flex items-center justify-center bg-[var(--bg)] p-3 rounded-xl backdrop-blur-sm">
+                  <FiShield className="mr-2 text-[var(--button)]" />
+                  Your payment information is secure and encrypted
+                </p>
+              </div>
+            </div>
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 };

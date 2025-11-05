@@ -22,12 +22,61 @@ export const loginCustomer = createAsyncThunk(
   "auth/loginCustomer",
   async (credentials, { rejectWithValue, dispatch }) => {
     try {
+      console.log("🔐 Login attempt with:", credentials);
       const response = await CustomerAuthAPI.login(credentials);
+      console.log("📨 Full login response:", response);
+      
       localStorage.setItem("token", response.token); 
-      const profile = await customerAPI.getProfile();
-      await dispatch(assignGuestCartAfterLogin(profile.id));
-      return { token: response.token, user: profile };
+      
+      // محاولة استخراج بيانات المستخدم بطرق مختلفة
+      let userData = null;
+      
+      if (response.user) {
+        userData = response.user;
+        console.log("✅ User data from response.user:", userData);
+      } else if (response.data && response.data.user) {
+        userData = response.data.user;
+        console.log("✅ User data from response.data.user:", userData);
+      } else if (response.id || response.userId) {
+        // إذا كان الـ response نفسه يحتوي على id
+        userData = {
+          id: response.id || response.userId,
+          email: credentials.email,
+          role: response.role || 'customer'
+        };
+        console.log("✅ User data constructed from response:", userData);
+      } else {
+        console.log("❌ No user data found in response structure");
+        console.log("Available keys:", Object.keys(response));
+      }
+      
+      if (!userData || !userData.id) {
+        // إذا ما فيش user data، جرب نستخدم الـ token لاحقاً
+        console.log("⚠️ No user ID found, will try to proceed with token only");
+        userData = {
+          id: 'temp_id', // مؤقت
+          email: credentials.email,
+          role: 'customer'
+        };
+      }
+      
+      // حاول ننفذ assignGuestCartAfterLogin إذا في user id
+      if (userData.id && userData.id !== 'temp_id') {
+        try {
+          await dispatch(assignGuestCartAfterLogin(userData.id));
+          console.log("✅ Guest cart assigned successfully");
+        } catch (cartError) {
+          console.log("⚠️ Cart assignment failed:", cartError);
+          // استمري حتى لو فشل الـ cart assignment
+        }
+      }
+      
+      return { 
+        token: response.token, 
+        user: userData
+      };
     } catch (err) {
+      console.log("❌ Login error:", err.response?.data || err.message);
       return rejectWithValue(err.response?.data?.error || "Login failed");
     }
   }
@@ -94,6 +143,12 @@ const authSlice = createSlice({
       localStorage.removeItem("guest_token");
       localStorage.removeItem("customerId");
     },
+    clearError: (state) => {
+      state.error = null;
+    },
+    setUser: (state, action) => {
+      state.user = action.payload;
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -146,6 +201,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout } = authSlice.actions;
+export const { logout, clearError, setUser } = authSlice.actions;
 
 export default authSlice.reducer;

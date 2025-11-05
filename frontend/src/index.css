@@ -11,7 +11,7 @@
   --div: #cdcbcb;      /* div */
   --light-gray: #adadad;
   --mid-dark: #313131;
- 
+
   /* Additional colors */
   --success: #22c55e;  /*  للنجاح */
   --error: #ef4444;    /*  للحذف */
@@ -21,17 +21,17 @@
   --hover:#d0d5d2 ;/*   للهوفر  */
 ;
 }
- 
+
 /* Dark theme */
 .dark {
   --bg: #323232;       /* background */
   --textbox: #eae8e8;  /* textbox */
   --button: #026a4b;   /* button */
   --text: #ffffff;     /* text */
-  --div: #4f4f4f;      /* dark div */
-  --mid-dark: #313131; /* between bg and div */
+  --div: #424242;      /* dark div */
+  --mid-dark: #393939; /* between bg and div */
   --light-gray: #adadad;
- 
+
   /* Additional colors */
   --success: #22c55e;  /*  للنجاح */
   --error: #ef4444;    /*  للحذف */

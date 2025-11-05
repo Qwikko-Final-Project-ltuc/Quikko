@@ -643,7 +643,7 @@ exports.trackOrder = async function (orderId, customerId) {
 
     let vendors = itemsRes.rows.map((v) => ({ ...v }));
 
-    // 4️⃣ عبي الإحداثيات الناقصة لكل vendor
+    // 4️⃣  الإحداثيات الناقصة لكل vendor
     for (let v of vendors) {
       if (!v.latitude || !v.longitude) {
         const geo = await geocodeAddress(v.vendor_address || v.vendor_name);
@@ -1185,7 +1185,7 @@ exports.getAllProducts = async ({
   search,
   categoryId,
   page = 1,
-  limit = 10,
+  limit = 15,
 }) => {
   try {
     const values = [];
@@ -1398,7 +1398,7 @@ exports.Order = {
 exports.fetchProductsWithSorting = async (
   sortBy = "id ASC",
   page = 1,
-  limit = 12
+  limit = 15
 ) => {
   let orderClause = "id ASC";
 

@@ -1,0 +1,27 @@
+/* fix-spacing.css */
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+main {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.sticky {
+  top: 0 !important;
+}
+
+/* إزالة أي مسافات زائدة */
+div[class*="py-"]:first-child,
+div[class*="pt-"]:first-child {
+  padding-top: 0 !important;
+}
+
+/* للتأكد من أن الصفحة تبدأ من أعلى */
+.min-h-screen {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}

@@ -93,10 +93,21 @@ const customerAPI = {
 
   // Products
   getProducts: async (params = {}) => {
-    const res = await api.get("/products", { params,paramsSerializer: params => qs.stringify(params, { arrayFormat: 'repeat' })});
-    return res.data; 
-  },
-  getProductsWithSorting: async ({ sort, limit = 12, page = 1, categoryId, search } = {}) => {
+  // ⚠️ تأكد إن الـ limit بتكون 15 إذا ما اتحددت
+  const finalParams = {
+    limit: 15,
+    ...params
+  };
+  
+  const res = await api.get("/products", { 
+    params: finalParams,
+    paramsSerializer: params => qs.stringify(params, { arrayFormat: 'repeat' })
+  });
+  
+  console.log('🔄 Frontend requesting with limit:', finalParams.limit); // للديباج
+  return res.data; 
+},
+  getProductsWithSorting: async ({ sort, limit = 15, page = 1, categoryId, search } = {}) => {
     const res = await api.get("/sorted", { params: { sort, limit, page, categoryId, search } });
     const products = res.data.items.map(p => ({ ...p, quantity: p.stock_quantity || 0 }));
     return {

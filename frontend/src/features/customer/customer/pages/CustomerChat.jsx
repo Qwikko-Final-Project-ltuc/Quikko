@@ -1,84 +1,113 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { io } from "socket.io-client";
 import { useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { chatApi, SOCKET_URL } from "./chatAPI";
+import { setUnreadCount } from '../components/chatUnreadSlice';
+import { 
+  FaTimes,
+} from "react-icons/fa";
 
-const roomKeyOf = (a, b) =>
-  [Number(a), Number(b)].sort((x, y) => x - y).join(":");
-
-const safeText = (v) => {
-  if (v === null || v === undefined) return "";
-  if (typeof v === "string") return v;
-  try {
-    return JSON.stringify(v);
-  } catch {
-    return String(v);
-  }
-};
+const roomKeyOf = (a, b) => [Number(a), Number(b)].sort((x, y) => x - y).join(":");
+const safeText = (v) => (v == null ? "" : typeof v === "string" ? v : JSON.stringify(v));
 
 const toUtcISO = (v) => {
   if (!v) return new Date().toISOString();
   if (v instanceof Date) return new Date(v.getTime()).toISOString();
-  if (typeof v === "number") {
-    const ms = v < 2e12 ? v * 1000 : v;
-    return new Date(ms).toISOString();
-  }
-  if (typeof v === "string") {
-    const s = v.trim();
-    if (/^\d+$/.test(s)) {
-      const num = Number(s);
-      const ms = num < 2e12 ? num * 1000 : num;
-      return new Date(ms).toISOString();
-    }
-    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(s)) {
-      return new Date(s.replace(" ", "T") + "Z").toISOString();
-    }
-    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?$/.test(s)) {
-      return new Date(s + "Z").toISOString();
-    }
-    return new Date(s).toISOString();
-  }
-  return new Date(v).toISOString();
+  const num =
+    typeof v === "number"
+      ? v < 2e12
+        ? v * 1000
+        : v
+      : /^\d+$/.test(v)
+      ? Number(v) < 2e12
+        ? Number(v) * 1000
+        : Number(v)
+      : null;
+  return num ? new Date(num).toISOString() : new Date(v).toISOString();
 };
 
-const fmtLocal = (iso) => {
+const formatMessageTime = (iso) => {
   try {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return "";
-    return new Intl.DateTimeFormat(undefined, {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(d);
+    const date = new Date(iso);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffSeconds = Math.floor(diffMs / 1000);
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    const diffHours = Math.floor(diffMinutes / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffSeconds < 60) {
+      return "now";
+    } else if (diffMinutes < 60) {
+      return `${diffMinutes} min ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours} hours ago`;
+    } else if (diffDays === 1) {
+      return "1 day ago";
+    } else if (diffDays === 2) {
+      return "2 days ago";
+    } else if (diffDays === 3) {
+      return "3 days ago";
+    } else if (diffDays === 4) {
+      return "4 days ago";
+    } else if (diffDays === 5) {
+      return "5 days ago";
+    } else if (diffDays === 6) {
+      return "6 days ago";
+    } else if (diffDays === 7) {
+      return "1 week ago";
+    } else {
+      return new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "numeric",
+      }).format(date);
+    }
   } catch {
     return "";
   }
 };
 
+const formatChatTime = (iso) => {
+  try {
+    const date = new Date(iso);
+    return new Intl.DateTimeFormat("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(date);
+  } catch {
+    return "";
+  }
+};
+
+const formatDate = (iso) => {
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+};
+
 const CustomerChatPage = () => {
   const auth = useSelector((s) => s.customerAuth);
+  const themeMode = useSelector((s) => s.customerTheme.mode);
+  const location = useLocation();
+  const dispatch = useDispatch();
+
   const customerId = useMemo(() => {
-    const v1 = Number(auth.user?.id);
-    if (Number.isFinite(v1) && v1 > 0) return v1;
-    const v2 = Number(localStorage.getItem("customerId"));
-    return Number.isFinite(v2) && v2 > 0 ? v2 : null;
+    const id1 = Number(auth.user?.id);
+    if (Number.isFinite(id1) && id1 > 0) return id1;
+    const id2 = Number(localStorage.getItem("customerId"));
+    return Number.isFinite(id2) && id2 > 0 ? id2 : null;
   }, [auth.user?.id]);
 
-  const location = useLocation();
   const initialVendorFromState = Number(location.state?.vendorId);
-  const validInitialVendor =
-    Number.isFinite(initialVendorFromState) && initialVendorFromState > 0
-      ? initialVendorFromState
-      : null;
+  const validInitialVendor = Number.isFinite(initialVendorFromState) && initialVendorFromState > 0 ? initialVendorFromState : null;
 
   const [conversations, setConversations] = useState([]);
   const [activeVendorId, setActiveVendorId] = useState(null);
   const [activeVendorName, setActiveVendorName] = useState("");
   const [chat, setChat] = useState([]);
   const [message, setMessage] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [authError, setAuthError] = useState("");
 
   const socketRef = useRef(null);
@@ -91,41 +120,40 @@ const CustomerChatPage = () => {
     activeVendorIdRef.current = activeVendorId;
   }, [activeVendorId]);
 
+  // احسب العدد الإجمالي للرسائل غير المقروءة من جميع المحادثات
+  const totalUnreadCount = useMemo(() => {
+    return conversations.reduce((total, conversation) => {
+      return total + (conversation.unread || 0);
+    }, 0);
+  }, [conversations]);
+
+  // تحديث Redux عند تغيير العدد
+  useEffect(() => {
+    dispatch(setUnreadCount(totalUnreadCount));
+  }, [totalUnreadCount, dispatch]);
+
   const upsertConversation = (list, item) => {
     const key = Number(item.vendorId);
     const i = list.findIndex((c) => Number(c.vendorId) === key);
-    if (i === -1) {
-      const next = [item, ...list];
-      next.sort(
-        (a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)
-      );
-      return next;
-    }
+    if (i === -1) return [item, ...list].sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
     const merged = { ...list[i], ...item };
     const next = [merged, ...list.slice(0, i), ...list.slice(i + 1)];
-    next.sort(
-      (a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)
-    );
-    return next;
+    return next.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
   };
 
   useEffect(() => {
-    const target = validInitialVendor;
-    if (target == null || customerId == null) return;
+    if (validInitialVendor == null || customerId == null) return;
     const draft = {
-      vendorId: Number(target),
-      vendorName: safeText(location.state?.vendorName) || `Vendor #${target}`,
+      vendorId: Number(validInitialVendor),
+      vendorName: safeText(location.state?.vendorName) || `Vendor #${validInitialVendor}`,
       lastMessage: "",
       unread: 0,
       updatedAt: null,
     };
     setConversations((prev) => upsertConversation(prev, draft));
-    setActiveVendorId(Number(target));
-    setActiveVendorName(
-      safeText(location.state?.vendorName) || `Vendor #${target}`
-    );
-    loadMessages(Number(target));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setActiveVendorId(Number(validInitialVendor));
+    setActiveVendorName(safeText(location.state?.vendorName) || `Vendor #${validInitialVendor}`);
+    loadMessages(Number(validInitialVendor));
   }, [validInitialVendor, customerId]);
 
   useEffect(() => {
@@ -137,31 +165,24 @@ const CustomerChatPage = () => {
         const rows = Array.isArray(data) ? data : data?.conversations || [];
         const mapped = rows
           .map((r) => {
-            const id = Number(
-              r.vendor_user_id ?? r.user_id ?? r.vendor_id ?? r.vendorId ?? r.id
-            );
+            const id = Number(r.vendor_user_id ?? r.user_id ?? r.vendor_id ?? r.vendorId ?? r.id);
             if (!Number.isFinite(id) || id <= 0) return null;
             return {
               vendorId: id,
-              vendorName:
-                safeText(r.vendor_name ?? r.vendorName) || `Vendor #${id}`,
+              vendorName: safeText(r.vendor_name ?? r.vendorName) || `Vendor #${id}`,
               lastMessage: safeText(r.last_message ?? r.lastMessage ?? ""),
-              unread: Number(r.unread_count ?? r.unread ?? 0) || 0,
+              unread: Number(r.unread_count ?? r.unread ?? 0),
               updatedAt: r.last_at ?? r.updatedAt ?? r.updated_at ?? null,
             };
           })
           .filter(Boolean)
-          .sort(
-            (a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)
-          );
+          .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
         if (!cancelled) {
           setConversations(mapped);
           mapped.forEach((c) => joinRoom(c.vendorId));
         }
       } catch (e) {
-        const status = e?.response?.status;
-        if (status === 401 || status === 403)
-          setAuthError("Unauthorized. Please log in again.");
+        if ([401, 403].includes(e?.response?.status)) setAuthError("Unauthorized. Please log in again.");
       }
     })();
     return () => {
@@ -170,15 +191,10 @@ const CustomerChatPage = () => {
   }, [customerId]);
 
   useEffect(() => {
-    if (customerId == null) return;
-    if (socketInitRef.current) return;
+    if (customerId == null || socketInitRef.current) return;
     socketInitRef.current = true;
-
     const token = localStorage.getItem("token") || "";
-    const s = io(SOCKET_URL, {
-      transports: ["websocket"],
-      auth: { token },
-    });
+    const s = io(SOCKET_URL, { transports: ["websocket"], auth: { token } });
     socketRef.current = s;
 
     const rejoinAll = () => {
@@ -189,20 +205,11 @@ const CustomerChatPage = () => {
         socketRef.current.emit("joinChat", { room: key, user1: u1, user2: u2 });
       }
     };
-
     s.on("connect", rejoinAll);
     s.on("reconnect", rejoinAll);
-
     s.on("connect_error", (err) => {
-      if (
-        String(err?.message || "")
-          .toLowerCase()
-          .includes("invalid")
-      ) {
-        setAuthError("Socket auth failed. Please log in again.");
-      }
+      if (String(err?.message || "").toLowerCase().includes("invalid")) setAuthError("Socket auth failed. Please log in again.");
     });
-
     s.on("reconnect_error", () => {});
 
     const onReceive = (msgRaw) => {
@@ -216,36 +223,30 @@ const CustomerChatPage = () => {
       if (Number(activeVendorIdRef.current) !== Number(vId)) {
         setConversations((prevC) => {
           const i = prevC.findIndex((c) => Number(c.vendorId) === Number(vId));
-          const isIncomingFromVendor =
-            senderId === Number(vId) && receiverId === Number(customerId);
+          const isIncomingFromVendor = senderId === Number(vId) && receiverId === Number(customerId);
           const unreadInc = isIncomingFromVendor ? 1 : 0;
-          if (i === -1) {
-            const base = {
+          if (i === -1)
+            return upsertConversation(prevC, {
               vendorId: Number(vId),
               vendorName: `Vendor #${Number(vId)}`,
               lastMessage: msg.message,
               unread: unreadInc,
               updatedAt: toUtcISO(msg.createdAt) || new Date().toISOString(),
-            };
-            return upsertConversation(prevC, base);
-          }
+            });
           const existing = prevC[i];
-          const merged = {
+          return upsertConversation(prevC, {
             ...existing,
             lastMessage: msg.message,
             unread: Number(existing.unread || 0) + unreadInc,
             updatedAt: toUtcISO(msg.createdAt) || new Date().toISOString(),
-          };
-          return upsertConversation(prevC, merged);
+          });
         });
         return;
       }
 
       setChat((prev) => {
         const exists = prev.some(
-          (m) =>
-            (msg.clientId && m.clientId === msg.clientId) ||
-            (msg.id && m.id === msg.id)
+          (m) => (msg.clientId && m.clientId === msg.clientId) || (msg.id && m.id === msg.id)
         );
         if (exists) return prev;
         return [
@@ -265,11 +266,7 @@ const CustomerChatPage = () => {
       setConversations((prevC) =>
         prevC.map((c) =>
           Number(c.vendorId) === Number(vId)
-            ? {
-                ...c,
-                lastMessage: msg.message,
-                updatedAt: toUtcISO(msg.createdAt) || new Date().toISOString(),
-              }
+            ? { ...c, lastMessage: msg.message, updatedAt: toUtcISO(msg.createdAt) || new Date().toISOString() }
             : c
         )
       );
@@ -277,18 +274,14 @@ const CustomerChatPage = () => {
 
     s.off("receiveChat", onReceive);
     s.on("receiveChat", onReceive);
-
     const onVisible = () => {
       if (document.visibilityState === "visible") rejoinAll();
     };
     document.addEventListener("visibilitychange", onVisible);
 
     return () => {
-      if (socketRef.current) {
-        for (const key of joinedRoomsRef.current) {
-          socketRef.current.emit("leaveChat", { room: key });
-        }
-      }
+      if (socketRef.current)
+        for (const key of joinedRoomsRef.current) socketRef.current.emit("leaveChat", { room: key });
       joinedRoomsRef.current.clear();
       document.removeEventListener("visibilitychange", onVisible);
       s.off("receiveChat", onReceive);
@@ -304,38 +297,30 @@ const CustomerChatPage = () => {
 
   const joinRoom = (vendorId) => {
     if (!socketRef.current || vendorId == null || customerId == null) return;
-    const a = Number(customerId);
-    const b = Number(vendorId);
-    if (!Number.isFinite(a) || !Number.isFinite(b)) return;
-    const key = roomKeyOf(a, b);
+    const key = roomKeyOf(customerId, vendorId);
     if (joinedRoomsRef.current.has(key)) return;
-    socketRef.current.emit("joinChat", { room: key, user1: a, user2: b });
+    socketRef.current.emit("joinChat", { room: key, user1: Number(customerId), user2: Number(vendorId) });
     joinedRoomsRef.current.add(key);
   };
 
   const loadMessages = async (vendorId) => {
     if (customerId == null || vendorId == null) return;
-    const vid = Number(vendorId);
-    if (!Number.isFinite(vid) || vid <= 0) return;
     try {
-      const data = await chatApi.getMessages(Number(customerId), vid);
+      const data = await chatApi.getMessages(Number(customerId), vendorId);
       const rows = Array.isArray(data?.messages) ? data.messages : [];
       const normalized = rows.map((m) => ({
         id: m.id,
         clientId: m.client_id || null,
         message: safeText(m.message),
-        sender: Number(m.sender_id) === vid ? "vendor" : "customer",
+        sender: Number(m.sender_id) === vendorId ? "vendor" : "customer",
         createdAt: toUtcISO(m.created_at ?? m.createdAt),
         customerId: Number(customerId),
-        vendorId: vid,
+        vendorId,
       }));
       setChat(normalized);
-      joinRoom(vid);
+      joinRoom(vendorId);
       try {
-        await chatApi.markRead({
-          vendorId: vid,
-          customerId: Number(customerId),
-        });
+        await chatApi.markRead({ vendorId, customerId: Number(customerId) });
       } catch {}
     } catch {}
   };
@@ -343,22 +328,21 @@ const CustomerChatPage = () => {
   const handleSelectConversation = (v) => {
     const vid = Number(v.vendorId);
     setActiveVendorId(Number.isFinite(vid) ? vid : null);
-    setActiveVendorName(
-      safeText(v.vendorName) || (Number.isFinite(vid) ? `Vendor #${vid}` : "")
-    );
+    setActiveVendorName(safeText(v.vendorName) || (Number.isFinite(vid) ? `Vendor #${vid}` : ""));
     loadMessages(vid);
-    setConversations((prev) =>
-      prev.map((c) => (Number(c.vendorId) === vid ? { ...c, unread: 0 } : c))
-    );
+    setConversations((prev) => prev.map((c) => (Number(c.vendorId) === vid ? { ...c, unread: 0 } : c)));
+  };
+
+  const closeChat = () => {
+    setActiveVendorId(null);
+    setActiveVendorName("");
+    setChat([]);
   };
 
   const sendMessage = async () => {
     if (!message.trim() || activeVendorId == null || customerId == null) return;
     const msgText = message.trim();
-    const clientId =
-      typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : String(Date.now());
+    const clientId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
     const optimistic = {
       id: Date.now(),
       clientId,
@@ -373,11 +357,7 @@ const CustomerChatPage = () => {
     setConversations((prev) =>
       prev.map((c) =>
         Number(c.vendorId) === Number(activeVendorId)
-          ? {
-              ...c,
-              lastMessage: safeText(msgText),
-              updatedAt: toUtcISO(new Date()),
-            }
+          ? { ...c, lastMessage: safeText(msgText), updatedAt: toUtcISO(new Date()) }
           : c
       )
     );
@@ -396,114 +376,220 @@ const CustomerChatPage = () => {
   }, [chat]);
 
   const headerTitle = useMemo(
-    () =>
-      activeVendorName ||
-      (activeVendorId != null
-        ? `Vendor #${activeVendorId}`
-        : "Select a conversation"),
+    () => activeVendorName || (activeVendorId != null ? `Vendor #${activeVendorId}` : "Select a conversation"),
     [activeVendorName, activeVendorId]
   );
 
-  if (customerId == null) {
-    return <p className="text-center mt-10">Loading your session…</p>;
-  }
+  const filteredConversations = useMemo(() => {
+    if (!searchTerm.trim()) return conversations;
+    const term = searchTerm.trim().toLowerCase();
+    return conversations.filter((c) => c.vendorName.toLowerCase().includes(term));
+  }, [searchTerm, conversations]);
+
+  const groupedMessages = useMemo(() => {
+    const groups = [];
+    let lastDate = null;
+    chat.forEach((msg) => {
+      const msgDate = formatDate(msg.createdAt);
+      if (msgDate !== lastDate) {
+        groups.push({ type: "date", date: msgDate, id: msgDate });
+        lastDate = msgDate;
+      }
+      groups.push({ ...msg, type: "message" });
+    });
+    return groups;
+  }, [chat]);
+
+  if (customerId == null)
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
+        <p className="text-[var(--text)]">Loading your session…</p>
+      </div>
+    );
 
   return (
-    <div className="h-screen flex bg-gray-100 overflow-x-hidden">
-      <aside className="w-80 border-r bg-white flex flex-col">
-        <div className="p-4 border-b">
-          <h2 className="text-lg font-semibold">Inbox</h2>
-          {authError && (
-            <p className="text-xs text-red-600 mt-1">{authError}</p>
-          )}
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          {conversations.map((v) => (
-            <div
-              key={v.vendorId}
-              onClick={() => handleSelectConversation(v)}
-              className={`cursor-pointer px-4 py-3 border-b hover:bg-gray-50 ${
-                Number(activeVendorId) === Number(v.vendorId)
-                  ? "bg-blue-50"
-                  : ""
-              }`}
-            >
-              <div className="flex justify-between">
-                <div className="min-w-0">
-                  <p className="font-semibold truncate">
-                    {safeText(v.vendorName) || `Vendor #${v.vendorId}`}
-                  </p>
-                  <p className="text-sm text-gray-500 truncate">
-                    {safeText(v.lastMessage)}
-                  </p>
-                </div>
-                {Number(v.unread) > 0 && (
-                  <span className="bg-blue-600 text-white text-xs px-2 rounded-full h-fit">
-                    {v.unread}
-                  </span>
-                )}
-              </div>
+    <div className="flex flex-col bg-[var(--bg)]" style={{ height: "calc(100vh - 243px)" }}>
+      <style>
+        {`
+        .messages-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: var(--bg) var(--bg);
+        }
+        .messages-scroll::-webkit-scrollbar {
+          width: 8px;
+        }
+        .messages-scroll::-webkit-scrollbar-track {
+          background: var(--bg);
+        }
+        .messages-scroll::-webkit-scrollbar-thumb {
+          background-color: var(--bg);
+          border-radius: 4px;
+          border: 2px solid var(--bg);
+        }
+        `}
+      </style>
+
+      <div className="flex-1 flex max-w-7xl mx-auto w-full min-h-0 gap-2">
+        <div className="flex w-full h-full bg-[var(--bg)] min-h-0">
+          {/* Sidebar */}
+          <aside
+            className={`w-80 flex flex-col min-h-0 border-r-3 ${
+              themeMode === "dark" ? "border-[var(--mid-dark)]" : "border-[var(--textbox)]"
+            }`}
+          >
+            <div className="p-4 flex-shrink-0">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search Contact..."
+                className={`w-full px-4 py-2 rounded-full text-sm ${
+                  themeMode === "dark"
+                    ? "bg-[var(--div)] text-[var(--text)]"
+                    : "bg-[var(--textbox)] text-[var(--text)]"
+                } placeholder-gray-400 focus:outline-none`}
+              />
             </div>
-          ))}
-        </div>
-      </aside>
-
-      <main className="flex-1 flex flex-col">
-        <div className="bg-blue-600 text-white p-4">
-          <h2 className="text-lg font-semibold">{headerTitle}</h2>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {activeVendorId != null ? (
-            <>
-              {chat.map((msg) => (
+            <div className="flex-1 overflow-y-auto min-h-0 px-2 pb-4 messages-scroll">
+              {filteredConversations.map((v) => (
                 <div
-                  key={msg.clientId || msg.id}
-                  className={`max-w-[70%] p-2 rounded-lg text-sm ${
-                    msg.sender === "customer"
-                      ? "bg-blue-200 ml-auto text-right"
-                      : "bg-white text-left"
+                  key={v.vendorId}
+                  onClick={() => handleSelectConversation(v)}
+                  className={`cursor-pointer mb-2 rounded-xl p-3 transition-all ${
+                    Number(activeVendorId) === Number(v.vendorId)
+                      ? themeMode === "dark"
+                        ? "bg-[var(--hover)] border-r-4 border-[var(--button)]"
+                        : "bg-gray-200 border-l-4 border-[var(--button)]"
+                      : Number(v.unread) > 0
+                      ? themeMode === "dark"
+                        ? "bg-[var(--div)]"
+                        : "bg-[var(--textbox)]"
+                      : themeMode === "dark"
+                      ? "bg-[var(--div)] hover:bg-[var(--hover)]"
+                      : "bg-[var(--textbox)] hover:bg-[var(--div)]"
                   }`}
                 >
-                  {safeText(msg.message)}
-                  <div className="text-[10px] text-gray-500 mt-1">
-                    {fmtLocal(msg.createdAt)}
+                  <div className="flex justify-between items-start">
+                    <div className="flex flex-col">
+                      <p className="font-semibold truncate text-[var(--text)] mb-1">{v.vendorName}</p>
+                      <p className="text-sm truncate text-[var(--text)]">{v.lastMessage || "No messages yet"}</p>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className="text-xs text-[var(--text)] mb-1">{formatMessageTime(v.updatedAt)}</span>
+                      {Number(v.unread) > 0 && (
+                        <span className="bg-[var(--button)] text-white text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
+                          {v.unread}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
-              <div ref={messagesEndRef} />
-            </>
-          ) : (
-            <p className="text-center text-gray-500 mt-10">
-              Select a conversation from the left.
-            </p>
-          )}
-        </div>
+            </div>
+          </aside>
 
-        {activeVendorId != null && (
-          <div className="bg-white p-3 flex items-center gap-2 border-t">
-            <input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              placeholder="Type a message..."
-              className="flex-1 border rounded-full px-3 py-2 text-sm"
-            />
-            <button
-              onClick={sendMessage}
-              disabled={!message.trim()}
-              className={`rounded-full px-4 py-2 text-white ${
-                !message.trim()
-                  ? "bg-blue-300"
-                  : "bg-blue-600 hover:bg-blue-700"
-              }`}
-            >
-              Send
-            </button>
-          </div>
-        )}
-      </main>
+          {/* Chat Area */}
+          <main
+            className={`flex-1 flex flex-col min-h-0 ${
+              themeMode === "dark" ? "border-[var(--div)]" : "border-[var(--textbox)]"
+            } rounded-lg`}
+          >
+            {activeVendorId ? (
+              <>
+                {/* Header */}
+                <div
+                  className={`flex items-center justify-between px-6 py-4 flex-shrink-0 border-b-2 ${
+                    themeMode === "dark" ? "border-[var(--div)]" : "border-[var(--textbox)]"
+                  }`}
+                >
+                  <h2 className="font-bold text-[var(--text)] text-lg mt-2">{headerTitle}</h2>
+                  <button 
+                    onClick={closeChat} 
+                    className={`
+                      w-8 h-8 flex items-center justify-center rounded-full 
+                      transition-all duration-200 hover:scale-110
+                      ${themeMode === "dark" 
+                        ? "text-gray-300 hover:text-white hover:bg-gray-600" 
+                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
+                      }
+                    `}
+                  >
+                    <FaTimes className="mt-1 flex-shrink-0" />
+                  </button>
+                </div>
+
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto min-h-0 px-6 py-4 space-y-3 messages-scroll">
+                  {groupedMessages.map((msg) =>
+                    msg.type === "date" ? (
+                      <div key={msg.id} className="text-center text-xs text-gray-400 my-2">
+                        {msg.date}
+                      </div>
+                    ) : (
+                      <div key={msg.clientId || msg.id} className={`flex ${msg.sender === "customer" ? "justify-end" : "justify-start"}`}>
+                        <div className="max-w-[70%]">
+                          <div
+                            className={`p-3 rounded-lg text-sm ${
+                              msg.sender === "customer"
+                                ? "bg-[var(--button)] text-white"
+                                : `${
+                                    themeMode === "dark" ? "bg-[var(--div)] border-[var(--button)]" : "bg-[var(--textbox)] border-[var(--button)]"
+                                  } text-[var(--text)]`
+                            }`}
+                          >
+                            {msg.message}
+                          </div>
+                          <div
+                            className={`text-xs mt-1 ${
+                              msg.sender === "customer" ? "text-right text-[var(--text)]" : "text-left text-[var(--text)]"
+                            }`}
+                          >
+                            {formatChatTime(msg.createdAt)}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Input */}
+                <div
+                  className={`px-6 py-4 flex items-center gap-3 flex-shrink-0 border-t-2 ${
+                    themeMode === "dark" ? "border-[var(--div)]" : "border-[var(--textbox)]"
+                  }`}
+                >
+                  <input
+                    type="text"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                    placeholder="Type a message here..."
+                    className={`flex-1 px-4 py-2 rounded-full  border-2 ${
+                      themeMode === "dark" ? "bg-[var(--bg)] border-[var(--div)] text-[var(--text)]" : "bg-white text-[var(--text)] border-[var(--textbox)]"
+                    } placeholder-gray-500 focus:outline-none`}
+                  />
+                  <button
+                    onClick={sendMessage}
+                    disabled={!message.trim()}
+                    className={`p-3 rounded-full ${
+                      message.trim()
+                        ? "bg-[var(--button)] text-white hover:scale-105 transition-transform"
+                        : "bg-gray-400 cursor-not-allowed text-white"
+                    }`}
+                  >
+                    ➤
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-gray-500 min-h-0">
+                Select a conversation to start chatting
+              </div>
+            )}
+          </main>
+        </div>
+      </div>
     </div>
   );
 };

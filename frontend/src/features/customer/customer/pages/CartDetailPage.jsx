@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchCart,setTempCartId } from "../cartSlice";
+import { fetchCart, setTempCartId } from "../cartSlice";
 import CartItem from "../components/CartItem";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -11,9 +11,9 @@ const CartDetailPage = () => {
 
   const { id: cartId } = useParams();
   const { currentCart } = useSelector((state) => state.cart);
+  const themeMode = useSelector((state) => state.customerTheme.mode);
   const [groupedItems, setGroupedItems] = useState({});
   const token = localStorage.getItem("token");
-
 
   // Fetch cart from server
   useEffect(() => {
@@ -24,13 +24,15 @@ const CartDetailPage = () => {
 
   // Group items by vendor whenever currentCart changes
   useEffect(() => {
-      // console.log("currentCart updated:", currentCart);
-
     if (currentCart?.items?.length) {
       const grouped = currentCart.items.reduce((acc, item) => {
         const vendor = item.vendor_name || "Unknown Vendor";
-        if (!acc[vendor]) acc[vendor] = [];
-        acc[vendor].push(item);
+        if (!acc[vendor]) {
+          acc[vendor] = {
+            items: []
+          };
+        }
+        acc[vendor].items.push(item);
         return acc;
       }, {});
       setGroupedItems(grouped);
@@ -39,74 +41,235 @@ const CartDetailPage = () => {
     }
   }, [currentCart]);
 
-
   const handleAddProduct = () => {
-    dispatch(setTempCartId(currentCart.id));
-
-    navigate("/customer/products", { state: { cartId: currentCart.id } });
+    if (currentCart?.id) {
+      dispatch(setTempCartId(currentCart.id));
+      navigate("/customer/products", { state: { cartId: currentCart.id } });
+    }
   };
 
-
   const total = currentCart?.items?.reduce(
-  (sum, item) => sum + Number(item.price) * item.quantity,
-  0
-) || 0;
+    (sum, item) => sum + Number(item.price || 0) * (item.quantity || 0),
+    0
+  ) || 0;
 
-    const handleCheckout = async () => {
+  const totalItemsCount = currentCart?.items?.reduce(
+    (sum, item) => sum + (item.quantity || 0),
+    0
+  ) || 0;
+
+  const handleCheckout = async () => {
     try {
-        if (!token) {
-          alert("Please log in to proceed to checkout.");
-          return navigate("/customer/login");
-        }
-        if (!currentCart?.id) return alert("Cart not loaded yet");
-        navigate(`/customer/order-details/${currentCart.id}`, { state: { cartId: currentCart.id } });
-
+      if (!token) {
+        alert("Please log in to proceed to checkout.");
+        return navigate("/customer/login");
+      }
+      if (!currentCart?.id) return alert("Cart not loaded yet");
+      navigate(`/customer/order-details/${currentCart.id}`, { state: { cartId: currentCart.id } });
     } catch (err) {
-        console.error("Checkout failed", err);
+      console.error("Checkout failed", err);
     }
-    };
-
-//     console.log("currentCart:", currentCart);
-// console.log("items:", currentCart?.items);
+  };
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <h1 className="text-3xl font-bold mb-6">Your Cart</h1>
-      <button
-        onClick={handleAddProduct}
-        className="mb-6 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+    <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-white'} transition-colors duration-300`}>
+      {/* Header Section with Gradient */}
+      <div 
+        className="w-full text-left pt-4" 
+        style={{ 
+          background: themeMode === 'dark' 
+            ? `linear-gradient(to bottom, 
+                rgba(0, 0, 0, 0.21) 0%, 
+                var(--bg) 100%)`
+            : `linear-gradient(to bottom, 
+                rgba(113, 117, 116, 0.12) 0%, 
+                var(--bg) 100%)`
+        }}
       >
-        Add Product
-      </button>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h1 className={`text-4xl font-bold mb-3 pt-8 ${themeMode === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+            Shopping Cart
+          </h1>
+          <p className={`${themeMode === 'dark' ? 'text-gray-300' : 'text-gray-600'} max-w-2xl text-lg`}>
+            Review your items and proceed to checkout
+          </p>
+        </div>
+      </div>
 
-      {Object.keys(groupedItems).length === 0 ? (
-        <p>Your cart is empty.</p>
-      ) : (
-        Object.entries(groupedItems).map(([vendor, items]) => (
-          <div key={vendor} className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">{vendor}</h2>
-            <div className="space-y-4">
-              {items.map((item) => (
-                <CartItem key={item.id} item={item} />
-              ))}
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header Actions */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+          <div className="flex items-center gap-4">
+            {/* Cart Stats Badge */}
+            {currentCart?.items?.length > 0 && (
+              <div className={`px-4 py-2 rounded-2xl ${themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-gray-100'} shadow-lg border ${themeMode === 'dark' ? 'border-[var(--border)]' : 'border-gray-200'}`}>
+                <span className={`font-semibold ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}`}>
+                  {totalItemsCount} {totalItemsCount === 1 ? 'item' : 'items'} • ${total.toFixed(2)}
+                </span>
+              </div>
+            )}
+          </div>
+          
+          <button
+            onClick={handleAddProduct}
+            className="bg-[var(--button)] text-white px-6 py-3 rounded-xl hover:bg-[#015c40] transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 font-semibold"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add More Products
+          </button>
+        </div>
+
+        {/* Compact Cart Stats */}
+        {currentCart?.items?.length > 0 && (
+          <div className={`mb-8 p-3 rounded-xl ${themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-gray-50'} border ${themeMode === 'dark' ? 'border-[var(--border)]' : 'border-gray-200'}`}>
+            <div className="flex items-center justify-center gap-6 text-sm">
+              <div className="flex items-center gap-2">
+                <span className={`font-semibold ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-gray-800'}`}>
+                  {currentCart.items.length}
+                </span>
+                <span className={`${themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Products</span>
+              </div>
+              
+              <div className="w-px h-4 bg-gray-400/30"></div>
+              
+              <div className="flex items-center gap-2">
+                <span className={`font-semibold ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-gray-800'}`}>
+                  {totalItemsCount}
+                </span>
+                <span className={`${themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Items</span>
+              </div>
+              
+              <div className="w-px h-4 bg-gray-400/30"></div>
+              
+              <div className="flex items-center gap-2">
+                <span className={`font-semibold ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-gray-800'}`}>
+                  {Object.keys(groupedItems).length}
+                </span>
+                <span className={`${themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Vendors</span>
+              </div>
             </div>
           </div>
-        ))
-      )}
-      <p className="text-right text-xl font-bold mt-4">
-        Total: ${total.toFixed(2)}
-      </p>
+        )}
 
-      {currentCart?.items?.length > 0 && (
-        
-        <button
-          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 relative z-10"
-          onClick={handleCheckout}
-        >
-          Proceed to Checkout
-        </button>
-      )} 
+        {/* Empty State */}
+        {Object.keys(groupedItems).length === 0 ? (
+          <div className={`text-center py-20 rounded-3xl ${themeMode === 'dark' ? 'bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)]' : 'bg-gray-50'} shadow-2xl border-2 ${themeMode === 'dark' ? 'border-[var(--border)]' : 'border-gray-200'}`}>
+            <div className="max-w-md mx-auto">
+              <div className={`w-24 h-24 ${themeMode === 'dark' ? 'bg-[var(--button)]/10' : 'bg-[var(--button)]/5'} rounded-full flex items-center justify-center mx-auto mb-6`}>
+                <svg className={`w-12 h-12 ${themeMode === 'dark' ? 'text-[var(--button)]' : 'text-[var(--button)]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <h3 className={`text-2xl font-bold mb-4 ${themeMode === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                Your Cart is Empty
+              </h3>
+              <p className={`text-lg mb-8 ${themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                Start adding products to your cart to see them here
+              </p>
+              <button
+                onClick={handleAddProduct}
+                className="bg-[var(--button)] text-white px-8 py-4 rounded-xl hover:bg-[#015c40] transition-all duration-300 inline-flex items-center gap-3 font-semibold hover:scale-105 hover:shadow-2xl"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Browse Products
+              </button>
+            </div>
           </div>
+        ) : (
+          /* Enhanced Cart Content */
+          <div className="space-y-6">
+            {/* Vendors Sections */}
+            {Object.entries(groupedItems).map(([vendor, vendorData]) => (
+              <div 
+                key={vendor} 
+                className={`rounded-2xl p-6 shadow-lg border-2 transition-all duration-300 ${
+                  themeMode === 'dark' 
+                    ? 'bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)] hover:border-[var(--button)]/50' 
+                    : 'bg-[var(--textbox)] border-gray-200 hover:border-[var(--button)]/30 hover:shadow-xl'
+                }`}
+              >
+                {/* Vendor Header */}
+                <div className="flex items-center gap-4 mb-6 pb-4 border-b border-[var(--border)]">
+                  <div className={`p-3 rounded-xl ${
+                    themeMode === 'dark' 
+                      ? 'bg-[var(--button)]/10 text-[var(--button)]' 
+                      : 'bg-[var(--button)]/5 text-[var(--button)]'
+                  }`}>
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h2 className={`text-xl font-bold ${themeMode === 'dark' ? 'text-white' : 'text-gray-900'}`}>{vendor}</h2>
+                    <p className={`text-sm ${themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {vendorData.items.length} product{vendorData.items.length !== 1 ? 's' : ''} • {vendorData.items.reduce((sum, item) => sum + (item.quantity || 0), 0)} items
+                    </p>
+                  </div>
+                </div>
+
+                {/* Items List */}
+                <div className="space-y-4 text-[var(--text)]">
+                  {vendorData.items.map((item) => (
+                    <CartItem key={item.id} item={item} />
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {/* Enhanced Checkout Section */}
+            <div className={`rounded-2xl p-6 shadow-2xl border-2 sticky bottom-6 ${
+              themeMode === 'dark' 
+                ? 'bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)]' 
+                : 'bg-[var(--textbox)] border-gray-200'
+            }`}>
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                {/* Total Price */}
+                <div className="text-center lg:text-left">
+                  <p className={`text-3xl font-bold ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}`}>
+                    ${total.toFixed(2)}
+                  </p>
+                  <p className={`text-sm ${themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                    Total for {totalItemsCount} item{totalItemsCount !== 1 ? 's' : ''}
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-end">
+                  <button
+                    onClick={handleAddProduct}
+                    className={`px-8 py-3 rounded-xl border-2 transition-all duration-300 font-semibold ${
+                      themeMode === 'dark' 
+                        ? 'border-[var(--border)] text-[var(--text)] hover:bg-[var(--hover)] hover:border-[var(--button)]' 
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-[var(--button)]'
+                    } hover:scale-105 flex items-center gap-3`}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add More Items
+                  </button>
+                  
+                  <button
+                    onClick={handleCheckout}
+                    className="bg-[var(--button)] text-white px-8 py-3 rounded-xl hover:bg-[#015c40] transition-all duration-300 font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Proceed to Checkout
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

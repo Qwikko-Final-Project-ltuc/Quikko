@@ -1,0 +1,58 @@
+/* Landing Page Specific Animations */
+.landingTextReveal {
+  animation: landingTextReveal 0.8s ease-out forwards;
+}
+
+.landingFadeUp {
+  animation: landingFadeInUp 0.8s ease-out forwards;
+}
+
+.landingTypewriterCursor {
+  animation: landingBlink 1s infinite;
+}
+
+.landingHoverLift {
+  transition: all 0.3s ease;
+}
+
+.landingHoverLift:hover {
+  transform: translateY(-8px);
+}
+
+/* Landing Page Keyframes */
+@keyframes landingTextReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landingFadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landingBlink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+/* Utility classes for landing page */
+.landingHidden {
+  opacity: 0;
+  transform: translateY(4px);
+}

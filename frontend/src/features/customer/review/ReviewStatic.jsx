@@ -9,8 +9,8 @@ const ReviewStatic = ({ averageRating = 0, totalReviews = 0 }) => {
       <div className="flex">
         <FaStar className="text-yellow-400" />
       </div>
-      <span className="text-gray-600 text-sm">
-        {rating.toFixed(1)} ⭐ ({totalReviews || 0})
+      <span className="text-[var(--text)] text-sm">
+        {rating.toFixed(1)}  ({totalReviews || 0})
       </span>
     </div>
   );
