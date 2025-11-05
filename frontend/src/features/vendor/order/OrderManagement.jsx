@@ -65,7 +65,7 @@ export default function OrderManagement() {
 
   // 🎨 نفس ألوانك الأصلية (بدون تعديل على الديزاين)
   const pageBg = isDarkMode ? "#242625" : "#f0f2f1";
-  const innerBg = isDarkMode ? "#666666" : "#ffffff";
+  const innerBg = isDarkMode ? "#313131" : "#ffffff";
   const textColor = isDarkMode ? "#ffffff" : "#242625";
   const borderColor = isDarkMode ? "#f9f9f9" : "#ccc";
   const inputBg = isDarkMode ? "#666666" : "#ffffff";
@@ -119,10 +119,10 @@ export default function OrderManagement() {
       className="p-6 space-y-6"
       style={{ backgroundColor: pageBg, color: textColor }}
     >
-      <h1 className="text-2xl font-bold mb-6 text-center">Order Management</h1>
+      <h1 className="text-2xl font-bold mb-6 ">Order Management</h1>
 
       {/* Filter Buttons */}
-      <div className="mb-6 flex flex-wrap gap-3 justify-center">
+      <div className="mb-6 flex flex-wrap gap-3 ">
         {Object.keys(STATUS_LABELS).map((key) => (
           <button
             key={key}

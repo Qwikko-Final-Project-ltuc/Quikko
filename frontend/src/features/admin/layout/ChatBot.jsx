@@ -13,7 +13,8 @@ const ChatBotAdmin = ({ userId }) => {
   const socketRef = useRef();
   const messagesEndRef = useRef();
 
-  const isDarkMode = useSelector((state) => state.adminTheme?.darkMode); // إذا عندك dark mode خاص بالـ admin
+  const { mode } = useSelector((state) => state.theme);
+  const isDark = mode === "dark";
 
   useEffect(() => {
     socketRef.current = io("http://localhost:3000");
@@ -50,13 +51,17 @@ const ChatBotAdmin = ({ userId }) => {
 
   return (
     <div
-      className="flex flex-col h-full rounded-xl shadow-xl overflow-hidden transition-colors duration-300"
-      style={{
-        backgroundColor: isDarkMode ? "#242625" : "#ffffff",
-        color: isDarkMode ? "#ffffff" : "#242625",
-      }}
+      className={`flex flex-col h-full rounded-xl shadow-xl overflow-hidden transition-colors duration-300
+        ${
+          isDark
+            ? "bg-[var(--div)] text-[var(--text)]"
+            : "bg-[var(--div)] text-[var(--text)]"
+        }`}
     >
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div
+        className="flex-1 overflow-y-auto p-4 space-y-3"
+        style={{ backgroundColor: "var(--div)" }}
+      >
         {messages.map((msg, index) => (
           <div
             key={index}
@@ -70,17 +75,8 @@ const ChatBotAdmin = ({ userId }) => {
               style={{
                 maxWidth: msg.sender === "user" ? "85%" : "65%",
                 backgroundColor:
-                  msg.sender === "user"
-                    ? "#307A59"
-                    : isDarkMode
-                    ? "#666666"
-                    : "#f9f9f9",
-                color:
-                  msg.sender === "user"
-                    ? "#ffffff"
-                    : isDarkMode
-                    ? "#ffffff"
-                    : "#242625",
+                  msg.sender === "user" ? "var(--button)" : "var(--hover)",
+                color: msg.sender === "user" ? "#ffffff" : "var(--text)",
                 borderRadius:
                   msg.sender === "user"
                     ? "20px 20px 5px 20px"
@@ -89,18 +85,59 @@ const ChatBotAdmin = ({ userId }) => {
                 marginBottom: "8px",
               }}
             >
-              <ReactMarkdown>{msg.text}</ReactMarkdown>
+              <ReactMarkdown
+                components={{
+                  a: ({ node, ...props }) => (
+                    <a
+                      {...props}
+                      style={{
+                        color: "var(--primary)",
+                        textDecoration: "underline",
+                      }}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    />
+                  ),
+                  code: ({ inline, ...props }) =>
+                    inline ? (
+                      <code
+                        {...props}
+                        style={{
+                          background: "var(--hover)",
+                          padding: "2px 6px",
+                          borderRadius: "6px",
+                          fontFamily:
+                            "ui-monospace, SFMono-Regular, Menlo, monospace",
+                        }}
+                      />
+                    ) : (
+                      <pre
+                        style={{
+                          background: "var(--hover)",
+                          padding: "10px",
+                          borderRadius: "10px",
+                          overflowX: "auto",
+                        }}
+                      >
+                        <code {...props} />
+                      </pre>
+                    ),
+                }}
+              >
+                {msg.text}
+              </ReactMarkdown>
             </div>
           </div>
         ))}
 
         {isTyping && (
           <div
-            className="max-w-[60%] p-2 rounded-2xl animate-pulse self-start"
-            style={{
-              backgroundColor: isDarkMode ? "#666666" : "#f9f9f9",
-              color: isDarkMode ? "#ffffff" : "#555555",
-            }}
+            className={`max-w-[60%] p-2 rounded-2xl animate-pulse self-start shadow-sm
+        ${
+          isDark
+            ? "bg-[var(--hover)] text-[var(--text)]"
+            : "bg-[var(--hover)] text-[var(--text)]"
+        }`}
           >
             Thinking...
           </div>
@@ -110,24 +147,29 @@ const ChatBotAdmin = ({ userId }) => {
       </div>
 
       <div
-        className="flex items-center gap-2 p-3 border-t transition-colors duration-300"
+        className={`flex items-center gap-2 p-3
+        ${
+          isDark
+            ? "bg-[var(--div)] border-[var(--border)]"
+            : "bg-[var(--div)] border-[var(--border)]"
+        }`}
         style={{
-          backgroundColor: isDarkMode ? "#666666" : "#f9f9f9",
-          borderColor: isDarkMode ? "#f9f9f9" : "#e5e7eb",
+          borderTop: "none",
+          boxShadow: "0 -4px 10px rgba(0,0,0,0.04)",
         }}
       >
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          className="flex-1 rounded-full px-4 py-2 outline-none focus:ring-2 transition-all"
+          className={`flex-1 rounded-full px-4 py-2 outline-none focus:ring-2 transition-all
+        ${
+          isDark
+            ? "bg-[var(--textbox)] text-[var(--text)]"
+            : "bg-[var(--textbox)] text-[var(--text)]"
+        }`}
           style={{
-            backgroundColor: isDarkMode ? "#242625" : "#ffffff",
-            color: isDarkMode ? "#ffffff" : "#242625",
-            border: `1px solid ${isDarkMode ? "#f9f9f9" : "#ccc"}`,
-            boxShadow: isDarkMode
-              ? "0 0 0 1px #307A59 inset"
-              : "0 0 0 1px #ccc inset",
+            boxShadow: "0 0 0 1px var(--border) inset",
           }}
           placeholder="Type your message..."
         />
@@ -135,10 +177,13 @@ const ChatBotAdmin = ({ userId }) => {
         <button
           onClick={handleSend}
           disabled={!input.trim()}
-          className="p-3 rounded-full flex items-center justify-center transition-all shadow-md"
+          className={`p-3 rounded-full flex items-center justify-center transition-all shadow-md
+        ${
+          isDark
+            ? "bg-[var(--button)] text-[var(--text)]"
+            : "bg-[var(--button)] text-[var(--text)]"
+        }`}
           style={{
-            backgroundColor: "#307A59",
-            color: "#ffffff",
             opacity: !input.trim() ? 0.5 : 1,
             cursor: !input.trim() ? "not-allowed" : "pointer",
           }}

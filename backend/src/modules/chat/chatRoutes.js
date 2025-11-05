@@ -1,6 +1,7 @@
 const express = require("express");
 const chatController = require("./chatController");
 const { protect } = require("../../middleware/authMiddleware");
+const pool = require("../../config/db");
 
 module.exports = (io) => {
   const router = express.Router();
@@ -29,6 +30,59 @@ module.exports = (io) => {
     protect,
     chatController.getDeliveryConversations
   );
+
+
+
+
+const getCustomerUnreadCount = async (customerId) => {
+  try {
+    const query = `
+      SELECT COUNT(*) AS unread_count
+      FROM chat_messages
+      WHERE receiver_id = $1
+        AND read_status = false
+    `;
+
+    const result = await pool.query(query, [customerId]); // نفّذ الكويري هنا
+    console.log("DB result:", result.rows); // للتأكد
+    return parseInt(result.rows[0].unread_count, 10);
+  } catch (error) {
+    console.error("Error in getCustomerUnreadCount:", error);
+    return 0;
+  }
+};
+
+
+router.get("/unread-count", protect, async (req, res) => {
+  try {
+    const customerId = req.user.id; // خليها من التوكن بدل الرقم الثابت
+
+    if (req.user.role !== "customer") {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Customers only.",
+      });
+    }
+
+    const unreadCount = await getCustomerUnreadCount(customerId);
+    console.log("User from token:", req.user);
+    res.json({
+      success: true,
+      count: unreadCount,
+      message: "Unread messages count retrieved successfully",
+    });
+  } catch (error) {
+    console.error("Error in getCustomerUnreadCount route:", error);
+    res.status(500).json({
+      success: false,
+      count: 0,
+      message: error.message,
+    });
+  }
+});
+
+
+
 
   return router;
 };

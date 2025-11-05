@@ -31,6 +31,8 @@ exports.getAllVendors = async () => {
       v.id AS vendor_id,
       v.user_id,
       v.store_name,
+      v.store_logo,
+      v.store_banner,
       v.status,
       v.commission_rate,
       v.contact_email,

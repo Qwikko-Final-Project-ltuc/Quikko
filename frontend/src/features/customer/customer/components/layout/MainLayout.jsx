@@ -29,7 +29,7 @@ const MainLayout = () => {
 
       <button
         onClick={toggleChat}
-        className="fixed bottom-8 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition flex items-center justify-center z-50"
+        className="fixed bottom-8 right-6 bg-[var(--button)] text-white p-4 rounded-full shadow-lg hover:bg-green-900 transition flex items-center justify-center z-50"
       >
         <Bot size={28} />
       </button>
@@ -38,7 +38,7 @@ const MainLayout = () => {
       <AnimatePresence>
         {isChatOpen && (
           <motion.div
-            className="fixed top-4 right-4 sm:right-6 z-50 w-full sm:w-96 h-[90vh] sm:h-[90vh] bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            className="fixed top-4 right-4 sm:right-6 z-50 w-full sm:w-96 h-[90vh] sm:h-[90vh]  rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
@@ -52,10 +52,6 @@ const MainLayout = () => {
               <X size={24} />
             </button>
 
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 p-4 border-b">
-              <Bot size={20} className="text-blue-600" />
-              AI Chatbot
-            </h2>
 
             <div className="flex-grow overflow-auto p-2">
               <ChatBot userId={currentUser?.id || "guest"} />

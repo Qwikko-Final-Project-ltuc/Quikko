@@ -113,9 +113,9 @@ export default function ProductForm({ initialData, categories, onSubmit }) {
     }
   };
 
-  const bgColor = isDarkMode ? "#666666" : "#ffffff";
+  const bgColor = isDarkMode ? "#313131" : "#ffffff";
   const textColor = isDarkMode ? "#f5f5f5" : "#242625";
-  const inputBg = isDarkMode ? "#555555" : "#ffffff";
+  const inputBg = isDarkMode ? "#313131" : "#ffffff";
   const inputBorder = isDarkMode ? "#777777" : "#ccc";
 
   return (

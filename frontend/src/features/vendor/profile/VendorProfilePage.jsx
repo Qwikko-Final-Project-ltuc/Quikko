@@ -61,14 +61,14 @@ const VendorProfilePage = () => {
 
   // ألوان الداكن واللايت
   const pageBg = isDarkMode ? "#242625" : "#f0f2f1";
-  const cardBg = isDarkMode ? "#666666" : "#ffffff";
+  const cardBg = isDarkMode ? "#313131" : "#ffffff";
   const textColor = isDarkMode ? "#ffffff" : "#242625";
-  const inputBg = isDarkMode ? "#666666" : "#ffffff";
+  const inputBg = isDarkMode ? "#313131" : "#ffffff";
   const borderColor = isDarkMode ? "#444" : "#d1d5db";
 
   return (
     <div className="min-h-screen w-full p-6" style={{ backgroundColor: pageBg }}>
-      <h1 className="text-2xl font-bold mb-6 text-center" style={{ color: textColor }}>
+      <h1 className="text-2xl font-bold mb-6 " style={{ color: textColor }}>
         Vendor Profile
       </h1>
 
@@ -78,17 +78,38 @@ const VendorProfilePage = () => {
       >
         {!editing ? (
           <>
-            {/* صورة واسم المتجر */}
-            <div className="flex flex-col items-center space-y-4 text-center">
-              <img
-                src={profile.store_logo || "/placeholder.png"}
-                alt="Store"
-                className="w-32 h-32 rounded-full object-cover border"
-              />
-              <h2 className="text-xl font-semibold" style={{ color: textColor }}>
-                {profile.store_name}
-              </h2>
-            </div>
+            {/* صورة واسم المتجر / Avatar Text */}
+<div className="flex flex-col items-center space-y-4 text-center">
+  {profile.store_logo ? (
+    <img
+      src={profile.store_logo}
+      alt="Store"
+      className="w-32 h-32 rounded-full object-cover"
+    />
+  ) : (
+    <div
+      className="w-32 h-32 rounded-full flex items-center justify-center text-3xl font-extrabold "
+      style={{
+        backgroundColor: isDarkMode ? "#5f6e68ff" : "#d1d5db",
+        color: isDarkMode ? "#ffffff" : "#242625",
+      }}
+    >
+      {profile.store_name
+        ? profile.store_name
+            .split(" ")
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((word) => word[0].toUpperCase())
+            .join("")
+        : "??"}
+    </div>
+  )}
+
+  <h2 className="text-xl font-semibold" style={{ color: textColor }}>
+    {profile.store_name}
+  </h2>
+</div>
+
 
             {/* Address */}
             <div className="flex flex-col items-center text-center space-y-1">
@@ -129,17 +150,19 @@ const VendorProfilePage = () => {
             {/* فورم التعديل */}
             <div className="flex flex-col items-center space-y-4 text-center">
               <img
-                src={tempProfile.store_logo || "/placeholder.png"}
-                alt="Store"
-                className="w-32 h-32 rounded-full object-cover border"
-              />
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="text-center"
-                style={{ backgroundColor: inputBg, color: textColor }}
-              />
+    src={tempProfile.store_logo || "/placeholder.png"}
+    alt="Store"
+    className="w-32 h-32 rounded-full object-cover "
+  />
+  <input
+    type="text"
+    name="store_logo"
+    value={tempProfile.store_logo || ""}
+    onChange={handleChange}
+    placeholder="Enter image URL"
+    className="p-2 rounded-lg border text-center w-64"
+    style={{ backgroundColor: inputBg, color: textColor, borderColor: borderColor }}
+  />
             </div>
 
             <div className="flex flex-col gap-4">

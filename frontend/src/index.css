@@ -28,8 +28,8 @@
   --textbox: #eae8e8;  /* textbox */
   --button: #026a4b;   /* button */
   --text: #ffffff;     /* text */
-  --div: #4f4f4f;      /* dark div */
-  --mid-dark: #313131; /* between bg and div */
+  --div: #424242;      /* dark div */
+  --mid-dark: #393939; /* between bg and div */
   --light-gray: #adadad;
 
   /* Additional colors */
@@ -39,8 +39,6 @@
   --warning: #facc15;  /*     */
   --border: #575858;/*   للبوردرات  */
   --hover:#4f5452 ;/*   للهوفر  */
-  --orange: #f97316; /*  للـ Out for Delivery */
-
 }
 * {
   transition-property: color, background-color, border-color, transform, box-shadow;

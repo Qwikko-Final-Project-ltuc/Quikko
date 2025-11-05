@@ -61,15 +61,26 @@ export default function LoginForm() {
   };
 
   return (
-    <div className={`flex min-h-screen transition-colors duration-500
-      ${isDark ? "bg-[#242625] text-white" : "bg-[#f0f2f1] text-[#242625]"}`}>
-      
+    <div
+      className={`flex min-h-screen transition-colors duration-500
+      ${
+        isDark
+          ? "bg-[var(--bg)] text-[var(--text)]"
+          : "bg-[var(--bg)] text-[var(--text)]"
+      }`}
+    >
       {/* Left Section */}
-      <div className={`w-1/2 flex flex-col justify-center items-center p-12 rounded-lg transition-colors duration-500
-        ${isDark ? "bg-[#242625]" : "bg-white"}`}>
-        <h2 className={`text-3xl font-bold mb-6 transition-colors duration-500 ${
-            isDark ? "text-white" : "text-[#242625]"
-          }`}>Login</h2>
+      <div
+        className={`w-1/2 flex flex-col justify-center items-center p-12 rounded-lg transition-colors duration-500
+        ${isDark ? "bg-[var(--div)]" : "bg-[var(--bg)]"}`}
+      >
+        <h2
+          className={`text-3xl font-bold mb-6 transition-colors duration-500 ${
+            isDark ? "text-[var(--text)]" : "text-[var(--text)]"
+          }`}
+        >
+          Admin Login
+        </h2>
 
         <form className="w-full max-w-md space-y-6">
           <div className="flex flex-col w-full relative">
@@ -83,19 +94,31 @@ export default function LoginForm() {
                 className={`w-full border p-3 pr-12 rounded-lg focus:outline-none transition-all duration-300
                   ${
                     isDark
-                      ? "bg-[#666666] border-gray-600 text-white focus:ring-2 focus:ring-[#307A59]"
-                      : "bg-white border-gray-300 text-[#242625] focus:ring-2 focus:ring-[#307A59]"
+                      ? "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]"
+                      : "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]"
                   }`}
                 required
               />
               <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                <MdEmail className={`text-xl transition-colors duration-500 ${
-                    isDark ? "text-gray-300" : "text-gray-500"
-                  }`} />
+                <MdEmail
+                  className={`text-xl transition-colors duration-500 ${
+                    isDark
+                      ? "text-[var(--mid-dark)]"
+                      : "text-[var(--light-gray)]"
+                  }`}
+                />
               </span>
             </div>
             <div className="h-5">
-              {emailError && <p className="text-red-600 text-sm mt-1">{emailError}</p>}
+              {emailError && (
+                <p
+                  className={`text-sm mt-1 transition-colors duration-300 ${
+                    isDark ? "text-[var(--error)]" : "text-[var(--error)]"
+                  }`}
+                >
+                  {emailError}
+                </p>
+              )}
             </div>
           </div>
 
@@ -110,19 +133,31 @@ export default function LoginForm() {
                 className={`w-full border p-3 pr-12 rounded-lg focus:outline-none transition-all duration-300
                   ${
                     isDark
-                      ? "bg-[#666666] border-gray-600 text-white focus:ring-2 focus:ring-[#307A59]"
-                      : "bg-white border-gray-300 text-[#242625] focus:ring-2 focus:ring-[#307A59]"
+                      ? "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]"
+                      : "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]"
                   }`}
                 required
               />
               <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                <FaLock className={`text-xl transition-colors duration-500 ${
-                    isDark ? "text-gray-300" : "text-gray-500"
-                  }`} />
+                <FaLock
+                  className={`text-xl transition-colors duration-500 ${
+                    isDark
+                      ? "text-[var(--mid-dark)]"
+                      : "text-[var(--light-gray)]"
+                  }`}
+                />
               </span>
             </div>
             <div className="h-5">
-              {passwordError && <p className="text-red-600 text-sm mt-1">{passwordError}</p>}
+              {passwordError && (
+                <p
+                  className={`text-sm mt-1 transition-colors duration-300 ${
+                    isDark ? "text-[var(--error)]" : "text-[var(--error)]"
+                  }`}
+                >
+                  {passwordError}
+                </p>
+              )}
             </div>
           </div>
 
@@ -130,24 +165,42 @@ export default function LoginForm() {
             type="submit"
             onClick={handleLogin}
             className={`w-full p-3 rounded-lg font-semibold transition-all duration-300
-              ${
-                isDark
-                  ? "bg-[#307A59] text-white hover:bg-[#265e46]"
-                  : "bg-[#307A59] text-white hover:bg-green-700"
-              }
-              hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]`}
+            bg-[var(--button)] text-white 
+            hover:bg-[var(--button)] hover:text-white 
+            hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] 
+            disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed`}
           >
             Login
           </button>
+
+          {/* Forgot Password */}
+          <p className="text-center">
+            <span
+              className={`cursor-pointer transition-colors duration-300 ${
+                isDark
+                  ? "text-[var(--primary)] hover:text-[var(--primary)]"
+                  : "text-[var(--primary)] hover:text-[var(--primary)]"
+              } hover:underline`}
+              onClick={() => navigate("/customer/forgot-password")}
+            >
+              Forgot Password?
+            </span>
+          </p>
         </form>
       </div>
 
-      {/* Right Section */}
-      <div className={`w-1/2 flex flex-col justify-center items-center p-12 transition-colors duration-500
-        ${isDark ? "bg-[#181a1b] text-white" : "bg-[#f0f2f1] text-[#242625]"}`}>
-        <img src={isDark ? "/LogoDark.png" : "/logo.png"} alt="Qwikko Logo" className="h-25 w-80 mb-6 transition-all duration-500" />
-        <p className="text-xl max-w-md text-center">
-          Welcome Admin! Please log in to access the Qwikko dashboard and manage
+      {/* Right Section - Welcome */}
+      <div
+        className={`w-1/2 flex flex-col justify-center items-center p-12 transition-colors duration-500
+        ${isDark ? "bg-[var(--textbox)] text-[var(--text)]" : "bg-[var(--textbox)] text-[var(--text)]"}`}
+      >
+        <img
+          src={isDark ? "/LogoDark.png" : "/logo.png"}
+          alt="Qwikko Logo"
+          className="h-30 w-100 mb-6 transition-all duration-500"
+        />
+        <p className="text-xl max-w-md text-center leading-relaxed">
+          Welcome to Qwikko! Please log in to access the Qwikko dashboard and manage
           the platform.
         </p>
       </div>

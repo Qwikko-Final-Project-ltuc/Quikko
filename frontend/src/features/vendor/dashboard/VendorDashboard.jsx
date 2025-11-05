@@ -75,7 +75,7 @@ const Dashboard = () => {
   }, []);
 
   const pageBg = isDarkMode ? "#242625" : "#f0f2f1";
-  const innerBg = isDarkMode ? "#666666" : "#ffffff";
+  const innerBg = isDarkMode ? "#313131" : "#ffffff";
   const textColor = isDarkMode ? "#ffffff" : "#242625";
   const tableLineColor = isDarkMode ? "#f9f9f9" : "#ccc";
   const inputBg = isDarkMode ? "#f9f9f9" : "#f9f9f9";
@@ -93,7 +93,7 @@ const Dashboard = () => {
           style={{ backgroundColor: innerBg }}
         >
           <div>
-            <p style={{ color: textColor }}>Total Sales</p>
+            <p  style={{ color: textColor }}>Total Sales</p>
             <h2 style={{ color: textColor }} className="text-2xl font-bold">
               ${report?.total_sales || 0}
             </h2>

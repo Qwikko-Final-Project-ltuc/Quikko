@@ -1,4 +1,4 @@
-// ProtectedRoute.jsx
+// src/features/vendor/ProtectedRoute.jsx
 import React from "react";
 import { Navigate } from "react-router-dom";
 
@@ -6,11 +6,26 @@ export default function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token") || sessionStorage.getItem("token");
 
   if (!token) {
-    // إذا ما في توكين، حول للصفحة الرئيسية مع رسالة
-    alert("يجب تسجيل الدخول أولاً"); // رسالة بسيطة
-    return <Navigate to="/vendor" replace />;
+    alert("يجب تسجيل الدخول أولاً");
+    return <Navigate to="/vendor/login" replace />;
   }
 
-  // إذا موجود التوكين، خلي الوصول للصفحة
+  try {
+    // نفك التوكن لنقرأ الدور (role)
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const role = payload.role;
+
+    // تحقق من الدور
+    if (role !== "vendor") {
+      alert("🚫 هذا القسم مخصص للفيندور فقط.");
+      return <Navigate to="/" replace />;
+    }
+  } catch (error) {
+    console.error("Token decoding failed:", error);
+    alert("رمز الدخول غير صالح. يرجى تسجيل الدخول مجددًا.");
+    return <Navigate to="/vendor/login" replace />;
+  }
+
+  // إذا كل شيء تمام، اسمح بالوصول
   return children;
 }

@@ -3,7 +3,7 @@ import customerAPI from "./services/customerAPI";
 
 export const fetchProducts = createAsyncThunk(
   "products/fetchProducts",
-  async ({ categoryId, page = 1, limit = 12, search } = {}) => {
+  async ({ categoryId, page = 1, limit = 15, search } = {}) => {
     const params = { categoryId, page, limit, search };
     const products = await customerAPI.getProducts(params);
     return products; 
@@ -12,7 +12,7 @@ export const fetchProducts = createAsyncThunk(
 
 export const fetchProductsWithSorting = createAsyncThunk(
   "products/fetchProductsWithSorting",
-  async ({ sort, page = 1, limit = 12, categoryId, search } = {}) => {
+  async ({ sort, page = 1, limit = 15, categoryId, search } = {}) => {
     const params = { sort, page, limit, categoryId, search };
     const products = await customerAPI.getProductsWithSorting(params);
     return products;

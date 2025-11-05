@@ -45,71 +45,92 @@ export default function OrdersPage() {
   const visibleOrders = filteredOrders.slice(0, visibleCount);
 
   return (
-    <div className={`min-h-screen p-6 transition-colors duration-500 ${
-      isDark ? "bg-[#242625] text-white" : "bg-[#f0f2f1] text-[#242625]"
-    }`}>
-      {/* Search & Filters */}
-      <div className={`p-4 rounded-xl shadow-md mb-6 transition-colors duration-500 ${
-        isDark ? "bg-[#333]" : "bg-white"
-      }`}>
-        <div className="flex flex-col sm:flex-row items-center mb-4 sm:space-x-4 space-y-4 sm:space-y-0">
-          <div className="relative flex-1">
-            <IoIosSearch className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${
-              isDark ? "text-gray-400" : "text-gray-500"
-            }`} />
-            <input
-              type="text"
-              placeholder="Search orders..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className={`w-full pl-10 pr-4 py-2 rounded-lg border transition-colors duration-300 focus:outline-none focus:ring-2 ${
-                isDark
-                  ? "bg-[#444] border-gray-600 text-white focus:ring-[#307A59]"
-                  : "bg-white border-gray-300 text-[#242625] focus:ring-[#307A59]"
-              }`}
-            />
+    <div className="w-full mx-auto  p-6  rounded-2xl">
+      <h1 className="text-3xl font-extrabold pb-3 opacity-90 ml-7">Orders Tracking</h1>
+      <div
+        className={`min-h-screen p-6 transition-colors duration-500 ${
+          isDark
+            ? "bg-[var(--bg)] text-[var(--text)]"
+            : "bg-[var(--bg)] text-[var(--text)]"
+        }`}
+      >
+        {/* Search & Filters */}
+        <div
+          className={`p-6 rounded-xl shadow-md mb-6 transition-colors duration-500 border ${
+            isDark ? "bg-[var(--bg)] border-[var(--border)]" : "bg-[var(--bg)] border-[var(--border)]"
+          }`}
+        >
+          <div className="flex flex-col sm:flex-row items-center mb-4 sm:space-x-4 space-y-4 sm:space-y-0">
+            <div className="relative flex-1">
+              <IoIosSearch
+                className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${
+                  isDark ? "text-[var(--text)]" : "text-[var(--text)]"
+                }`}
+              />
+              <input
+                type="text"
+                placeholder="Search orders..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={`w-full p-3 pl-10 rounded-lg border transition-colors duration-300 focus:outline-none focus:ring-2 ${
+                  isDark
+                    ? "bg-[var(--div)] border-[var(--border)] text-[var(--text)] focus:ring-[#307A59]"
+                    : "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-[#307A59]"
+                }`}
+              />
+            </div>
+          </div>
+
+          {/* Status Filters */}
+          <div className="flex flex-wrap gap-3 text-sm font-medium">
+            {[
+              "all",
+              "pending",
+              "accepted",
+              "processing",
+              "out_for_delivery",
+              "delivered",
+            ].map((filter) => (
+              <button
+                key={filter}
+                onClick={() => setActiveFilter(filter)}
+                className={`px-3 py-1 rounded-full transition-colors duration-200 cursor-pointer ${
+                  activeFilter === filter
+                    ? "bg-[#307A59] text-white"
+                    : isDark
+                    ? "hover:bg-[var(--hover)] text-white"
+                    : "hover:bg-[var(--hover)] text-gray-800"
+                }`}
+              >
+                {filter
+                  .split("_")
+                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(" ")}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Status Filters */}
-        <div className="flex flex-wrap gap-3 text-sm font-medium">
-          {["all", "pending", "preparing", "shipped", "delivered"].map((filter) => (
+        {/* Orders Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.isArray(visibleOrders) &&
+            visibleOrders.map((order, index) => (
+              <OrdersCard key={order.order_id || index} order={order} />
+            ))}
+        </div>
+
+        {/* Load More */}
+        {visibleCount < filteredOrders.length && (
+          <div className="flex justify-center mt-6">
             <button
-              key={filter}
-              onClick={() => setActiveFilter(filter)}
-              className={`px-3 py-1 rounded-full transition-colors duration-200 ${
-                activeFilter === filter
-                  ? "bg-[#307A59] text-white"
-                  : isDark ? "bg-[#555] text-white hover:bg-[#666]" : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-              }`}
+              onClick={() => setVisibleCount(visibleCount + increment)}
+              className="px-6 py-2 rounded-full bg-[var(--button)] text-white font-medium hover:bg-[#2b7556] transition-all duration-300 cursor-pointer"
             >
-              {filter.charAt(0).toUpperCase() + filter.slice(1)}
+              Load More
             </button>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
-
-      {/* Orders Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {Array.isArray(visibleOrders) &&
-          visibleOrders.map((order, index) => (
-            <OrdersCard key={order.order_id || index} order={order} />
-          ))}
-      </div>
-
-      {/* Load More */}
-      {visibleCount < filteredOrders.length && (
-        <div className="flex justify-center mt-6">
-          <button
-            onClick={() => setVisibleCount(visibleCount + increment)}
-            className={`px-6 py-2 rounded-full font-medium transition-colors duration-300 ${
-              isDark ? "bg-[#307A59] hover:bg-[#265e46] text-white" : "bg-blue-500 hover:bg-blue-600 text-white"
-            }`}
-          >
-            Load More
-          </button>
-        </div>
-      )}
     </div>
   );
 }

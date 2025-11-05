@@ -8,7 +8,6 @@ import {
 } from "./categorySlice";
 import { IoIosSearch } from "react-icons/io";
 import { FaPlus } from "react-icons/fa";
-import { colors } from "../../dark-lightMode/colors";
 
 export default function CategoryForm() {
   const dispatch = useDispatch();
@@ -17,7 +16,6 @@ export default function CategoryForm() {
   );
   const mode = useSelector((state) => state.theme.mode);
   const isDark = mode === "dark";
-  const c = colors[isDark ? "dark" : "light"];
 
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -82,42 +80,56 @@ export default function CategoryForm() {
     }
   };
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--button)] mx-auto mb-4"></div>
+          <p className="text-[var(--text)] text-lg">Loading Categories...</p>
+        </div>
+      </div>
+    );
+  }
   if (error) return <p style={{ color: "red" }}>{error}</p>;
 
   return (
     <div
-      style={{ backgroundColor: c.pageBg, color: c.text }}
-      className="min-h-screen p-6 transition-colors duration-300"
+      className={`p-6 ${
+        isDark
+          ? "bg-[var(--bg)] text-[var(--text)]"
+          : "bg-[var(--bg)] text-[var(--text)]"
+      }`}
     >
       <div
-        style={{ backgroundColor: c.cardBg }}
-        className="p-4 rounded-2xl shadow-md mb-6 max-w-3xl mx-auto transition-colors duration-300"
+        className={`p-6 rounded-2xl shadow-md transition-colors duration-300 border ${
+          isDark
+            ? "bg-[var(--bg)] border-[var(--border)]"
+            : "bg-[var(--bg)] border-[var(--border)]"
+        }`}
       >
         {/* Filter + Add */}
         <div className="flex items-center space-x-4">
           <div className="relative flex-1">
             <IoIosSearch
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5"
-              style={{ color: isDark ? "#6f6c6cff" : "#999" }}
+              className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${
+                isDark ? "text-[var(--text)]" : "text-[var(--text)]"
+              }`}
             />
             <input
               type="text"
               placeholder="Search by ID or Name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                backgroundColor: c.inputBg,
-                color: isDark ? "#514e4eff" : "#111",
-                borderColor: isDark ? "#666666" : "#ccc",
-              }}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 placeholder:text-gray-500 dark:placeholder:text-gray-300"
+              className={`w-full p-3 pl-10 rounded-lg border transition-colors duration-300 focus:outline-none focus:ring-2 ${
+                isDark
+                  ? "bg-[var(--div)] border-[var(--border)] text-[var(--text)] focus:ring-[#307A59]"
+                  : "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-[#307A59]"
+              }`}
             />
           </div>
           <button
             onClick={() => setShowAddModal(true)}
-            style={{ backgroundColor: c.button, color: "#fff" }}
-            className="flex items-center space-x-2 px-4 py-2 rounded hover:opacity-90 transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 rounded hover:opacity-90 transition-colors bg-[var(--button)] text-white hover:bg-[#265e46] cursor-pointer"
           >
             <FaPlus /> <span>Add Category</span>
           </button>
@@ -131,11 +143,11 @@ export default function CategoryForm() {
             filteredCategories.map((cat) => (
               <li
                 key={cat.id}
-                style={{
-                  backgroundColor: c.cardBg,
-                  borderColor: c.line,
-                }}
-                className="flex justify-between items-center border p-3 rounded transition-colors"
+                className={`flex justify-between items-center border p-3 rounded transition-colors ${
+                  isDark
+                    ? "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+                    : "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+                }`}
               >
                 <div>
                   <h3 className="font-semibold">
@@ -159,15 +171,14 @@ export default function CategoryForm() {
                 <div className="space-x-2">
                   <button
                     onClick={() => startEdit(cat)}
-                    style={{ backgroundColor: c.button, color: "#fff" }}
-                    className="px-3 py-1 rounded hover:opacity-90"
+                    className="px-3 py-1 rounded hover:opacity-90 bg-[var(--button)] text-white hover:bg-[#265e46] cursor-pointer"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDelete(cat.id)}
                     style={{ backgroundColor: "#e53e3e", color: "#fff" }}
-                    className="px-3 py-1 rounded hover:opacity-90"
+                    className="px-3 py-1 rounded hover:opacity-90 cursor-pointer"
                   >
                     Delete
                   </button>
@@ -187,8 +198,11 @@ export default function CategoryForm() {
               }
             `}</style>
             <div
-              style={{ backgroundColor: c.cardBg, color: c.text }}
-              className="rounded-lg shadow-lg p-6 w-full max-w-md transition-colors duration-300"
+              className={`rounded-lg shadow-lg p-6 w-full max-w-md transition-colors duration-300 ${
+                isDark
+                  ? "bg-[var(--bg)] text-[var(--text)]"
+                  : "bg-[var(--bg)] text-[var(--text)]"
+              }`}
             >
               <h2 className="text-xl font-semibold mb-4">Add Category</h2>
               <form onSubmit={handleAdd} className="space-y-4">
@@ -197,12 +211,11 @@ export default function CategoryForm() {
                   placeholder="Category Name"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  style={{
-                    backgroundColor: c.inputBg,
-                    color: isDark ? "#514e4eff" : "#111",
-                    borderColor: isDark ? "#666666" : "#ccc",
-                  }}
-                  className="add-placeholder w-full p-3 rounded border focus:outline-none focus:ring-2"
+                  className={`add-placeholder w-full p-3 rounded border focus:outline-none focus:ring-2 ${
+                    isDark
+                      ? "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+                      : "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+                  }`}
                   required
                 />
                 <input
@@ -212,12 +225,11 @@ export default function CategoryForm() {
                   onChange={(e) =>
                     setForm({ ...form, parent_id: e.target.value })
                   }
-                  style={{
-                    backgroundColor: c.inputBg,
-                    color: isDark ? "#514e4eff" : "#111",
-                    borderColor: isDark ? "#666666" : "#ccc",
-                  }}
-                  className="add-placeholder w-full p-3 rounded border focus:outline-none focus:ring-2"
+                  className={`add-placeholder w-full p-3 rounded border focus:outline-none focus:ring-2 ${
+                    isDark
+                      ? "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+                      : "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+                  }`}
                 />
                 <div className="flex justify-end space-x-2">
                   <button
@@ -227,14 +239,13 @@ export default function CategoryForm() {
                       backgroundColor: isDark ? "#555" : "#aaa",
                       color: "#fff",
                     }}
-                    className="px-4 py-2 rounded hover:opacity-90"
+                    className="px-4 py-2 rounded hover:opacity-90 cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    style={{ backgroundColor: c.button, color: "#fff" }}
-                    className="px-4 py-2 rounded hover:opacity-90"
+                    className="px-4 py-2 rounded hover:opacity-90 bg-[var(--button)] text-white hover:bg-[#265e46] cursor-pointer"
                   >
                     Save
                   </button>
@@ -254,8 +265,11 @@ export default function CategoryForm() {
               }
             `}</style>
             <div
-              style={{ backgroundColor: c.cardBg, color: c.text }}
-              className="rounded-lg shadow-lg p-6 w-full max-w-md transition-colors duration-300"
+              className={`rounded-lg shadow-lg p-6 w-full max-w-md transition-colors duration-300 ${
+                isDark
+                  ? "bg-[var(--bg)] text-[var(--text)]"
+                  : "bg-[var(--bg)] text-[var(--text)]"
+              }`}
             >
               <h2 className="text-xl font-semibold mb-4">Edit Category</h2>
               <form onSubmit={handleEdit} className="space-y-4">
@@ -264,12 +278,11 @@ export default function CategoryForm() {
                   placeholder="Category Name"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  style={{
-                    backgroundColor: c.inputBg,
-                    color: isDark ? "#514e4eff" : "#111",
-                    borderColor: isDark ? "#666666" : "#ccc",
-                  }}
-                  className="edit-placeholder w-full p-3 rounded border focus:outline-none focus:ring-2"
+                  className={`edit-placeholder w-full p-3 rounded border focus:outline-none focus:ring-2 ${
+                    isDark
+                      ? "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+                      : "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+                  }`}
                   required
                 />
                 <div className="flex justify-end space-x-2">
@@ -280,14 +293,13 @@ export default function CategoryForm() {
                       backgroundColor: isDark ? "#555" : "#aaa",
                       color: "#fff",
                     }}
-                    className="px-4 py-2 rounded hover:opacity-90"
+                    className="px-4 py-2 rounded hover:opacity-90 cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    style={{ backgroundColor: c.button, color: "#fff" }}
-                    className="px-4 py-2 rounded hover:opacity-90"
+                    className="px-4 py-2 rounded hover:opacity-90 bg-[var(--button)] text-white hover:bg-[#265e46] cursor-pointer"
                   >
                     Save
                   </button>

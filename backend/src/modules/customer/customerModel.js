@@ -97,7 +97,6 @@ exports.getStoreById = async function (storeId) {
  * @param {Object} addressData - Address details {address_line1, address_line2, city, state, postal_code, country}
  * @returns {Promise<Object>} Created order object
  */
-
 exports.placeOrderFromCart = async function ({
   userId,
   cartId,
@@ -106,19 +105,18 @@ exports.placeOrderFromCart = async function ({
   paymentMethod,
   paymentData,
   coupon_code,
-  use_loyalty_points = false,
+  use_loyalty_points = false
 }) {
   const client = await pool.connect();
 
   try {
-    await client.query("BEGIN");
+    await client.query('BEGIN');
 
-    // 1️⃣ Fetch cart items
+    // 1️⃣ جلب عناصر السلة
     const cartItemsResult = await client.query(
-      `SELECT ci.product_id, ci.quantity, ci.variant, p.price, p.vendor_id, v.latitude AS vendor_lat, v.longitude AS vendor_lng, v.store_name
+      `SELECT ci.product_id, ci.quantity, ci.variant, p.price, p.vendor_id
        FROM cart_items ci
        JOIN products p ON ci.product_id = p.id
-       JOIN vendors v ON p.vendor_id = v.id
        JOIN carts c ON ci.cart_id = c.id
        WHERE ci.cart_id = $1 AND c.user_id = $2`,
       [cartId, userId]
@@ -128,7 +126,7 @@ exports.placeOrderFromCart = async function ({
       throw new Error("Cart is empty or not found");
     }
 
-    // 2️⃣ Get or Insert address
+    // 2️⃣ الحصول على العنوان أو إدراجه (نفس الكود السابق)
     let savedAddress;
     if (addressId) {
       const existingAddress = await client.query(
@@ -141,6 +139,7 @@ exports.placeOrderFromCart = async function ({
       savedAddress = existingAddress.rows[0];
     } else {
       if (!address.latitude || !address.longitude) {
+        console.log("📍 Using geocodeAddress for:", address.address_line1);
         const geo = await geocodeAddress(
           `${address.address_line1}, ${address.city}`
         );
@@ -168,268 +167,289 @@ exports.placeOrderFromCart = async function ({
       savedAddress = addressResult.rows[0];
     }
 
-    // 3️⃣ Find delivery company
-    const deliveryResult = await client.query(
-      `SELECT id, company_name FROM delivery_companies WHERE status='approved' LIMIT 1`
+    // 3️⃣ إيجاد جميع شركات التوصيل التي تغطي المنطقة
+    const deliveryCompaniesResult = await client.query(
+      `SELECT id, latitude, longitude, company_name, response_time
+       FROM delivery_companies
+       WHERE EXISTS (
+         SELECT 1 FROM unnest(coverage_areas) AS area WHERE LOWER(area) = LOWER($1)
+       ) AND status = 'approved'`,
+      [savedAddress.city]
     );
 
-    if (!deliveryResult.rows.length) throw new Error("No delivery companies");
-    const closestCompany = deliveryResult.rows[0];
+    let deliveryCompanies = deliveryCompaniesResult.rows;
 
-    // 3️⃣a Get coverage locations for the company
-    const coverageResult = await client.query(
-      `SELECT * FROM delivery_coverage_locations WHERE delivery_company_id = $1`,
-      [closestCompany.id]
-    );
-
-    if (!coverageResult.rows.length) {
-      throw new Error("No coverage locations for delivery company");
+    // إذا لم توجد شركات تغطي المنطقة، نستخدم الشركة الافتراضية
+    if (deliveryCompanies.length === 0) {
+      const fallback = await client.query(
+        `SELECT id, latitude, longitude, company_name, response_time 
+         FROM delivery_companies WHERE status='approved' LIMIT 1`
+      );
+      if (fallback.rows.length === 0)
+        throw new Error("No delivery companies available");
+      deliveryCompanies = fallback.rows;
     }
 
-    // 3️⃣b اختر أقرب coverage location للعميل
-    const customerLat = address.latitude;
-    const customerLng = address.longitude;
+    // 4️⃣ حساب رسوم التوصيل
+    let delivery_fee = 0.5;
+    let minDistance = null;
 
-    let originLocation = coverageResult.rows[0]; // default
-    if (coverageResult.rows.length > 1) {
-      originLocation = coverageResult.rows.reduce((closest, loc) => {
-        const d1 = calculateDistanceKm(
-          customerLat,
-          customerLng,
-          loc.latitude,
-          loc.longitude
+    if (savedAddress.latitude && savedAddress.longitude &&
+        deliveryCompanies[0].latitude && deliveryCompanies[0].longitude) {
+      try {
+        const distanceUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${deliveryCompanies[0].latitude},${deliveryCompanies[0].longitude}&destinations=${savedAddress.latitude},${savedAddress.longitude}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+        const distanceResponse = await axios.get(distanceUrl);
+        const element = distanceResponse.data.rows[0].elements[0];
+
+        if (element.status === "OK") {
+          minDistance = element.distance.value / 1000; // km
+          delivery_fee += minDistance * 0.5;
+        } else {
+          minDistance = calculateDistanceKm(
+            savedAddress.latitude,
+            savedAddress.longitude,
+            deliveryCompanies[0].latitude,
+            deliveryCompanies[0].longitude
+          );
+        }
+      } catch {
+        minDistance = calculateDistanceKm(
+          savedAddress.latitude,
+          savedAddress.longitude,
+          deliveryCompanies[0].latitude,
+          deliveryCompanies[0].longitude
         );
-        const d2 = calculateDistanceKm(
-          customerLat,
-          customerLng,
-          closest.latitude,
-          closest.longitude
-        );
-        return d1 < d2 ? loc : closest;
-      });
+      }
     }
 
-    closestCompany.latitude = originLocation.latitude;
-    closestCompany.longitude = originLocation.longitude;
+    delivery_fee = parseFloat(delivery_fee.toFixed(2));
 
-    // 4️⃣ Calculate totals
+    // 5️⃣ حساب المجموع الكلي
     let total_amount = 0;
     for (let item of cartItemsResult.rows) {
       total_amount += item.price * item.quantity;
     }
 
+    let total_with_shipping = total_amount + delivery_fee;
     let discount_amount = 0;
     let final_amount = total_amount;
 
-    // 4a. Apply coupon
+    // 5a. تطبيق الكوبون
     if (coupon_code) {
-      const {
-        valid,
-        discount_amount: disc,
-        final_amount: final,
-      } = await validateCoupon(coupon_code, userId, cartItemsResult.rows);
+      const { valid, discount_amount: disc, final_amount: final } =
+        await validateCoupon(coupon_code, userId, cartItemsResult.rows);
       if (!valid) throw new Error("Invalid coupon");
 
       discount_amount = disc;
       final_amount = final;
     }
 
-    // 4b. Apply loyalty points
+    // 5b. تطبيق نقاط الولاء
     let points_used = 0;
     let discount_from_points = 0;
     if (use_loyalty_points) {
       const loyaltyData = await exports.getPointsByUser(userId);
       if (loyaltyData.points_balance >= 100) {
-        const discountPercent = Math.min(
-          Math.floor(loyaltyData.points_balance / 100) * 10,
-          50
-        );
+        const discountPercent = Math.min(Math.floor(loyaltyData.points_balance / 100) * 10, 50);
         discount_from_points = (total_amount * discountPercent) / 100;
         final_amount -= discount_from_points;
         points_used = (discountPercent / 10) * 100;
-        await exports.redeemPoints(
-          userId,
-          points_used,
-          `Used for ${discountPercent}% discount`
-        );
+        await exports.redeemPoints(userId, points_used, `Used for ${discountPercent}% discount`);
       }
     }
 
-    // 5️⃣ Prepare route points: Delivery Company → Vendors → Customer
-    const vendors = cartItemsResult.rows.map((item) => ({
-      id: item.vendor_id,
-      latitude: item.vendor_lat || 0,
-      longitude: item.vendor_lng || 0,
-      store_name: item.store_name || "Vendor",
-    }));
-
-    const validVendors = vendors.filter((v) => v.latitude && v.longitude);
-    const orderedVendors = orderVendorsByNearest(
-      { lat: closestCompany.latitude, lng: closestCompany.longitude },
-      validVendors
-    );
-
-    const routePoints = [
-      {
-        lat: closestCompany.latitude,
-        lng: closestCompany.longitude,
-        label: closestCompany.company_name,
-      },
-      ...orderedVendors.map((v) => ({
-        lat: v.latitude,
-        lng: v.longitude,
-        label: v.store_name,
-      })),
-      {
-        lat: savedAddress.latitude,
-        lng: savedAddress.longitude,
-        label: "Customer",
-      },
-    ];
-
-    // 6️⃣ Calculate total route distance using Google Directions API
-    let distance_km = 0;
-
-    try {
-      const origin = routePoints[0];
-      const destination = routePoints[routePoints.length - 1];
-      const waypoints = routePoints
-        .slice(1, -1)
-        .map((p) => `${p.lat},${p.lng}`)
-        .join("|");
-
-      const directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${
-        origin.lat
-      },${origin.lng}&destination=${destination.lat},${destination.lng}${
-        waypoints ? `&waypoints=${encodeURIComponent(waypoints)}` : ""
-      }&key=${process.env.GOOGLE_MAPS_API_KEY}`;
-
-      const directionsRes = await axios.get(directionsUrl);
-
-      if (
-        directionsRes.data.routes &&
-        directionsRes.data.routes.length > 0 &&
-        directionsRes.data.routes[0].legs
-      ) {
-        // اجمع مسافة كل leg بشكل دقيق
-        distance_km = directionsRes.data.routes[0].legs.reduce(
-          (sum, leg) => sum + leg.distance.value / 1000,
-          0
-        );
-        distance_km = parseFloat(distance_km.toFixed(2));
-      }
-    } catch (err) {
-      console.error(
-        "Directions API error, fallback to straight distance:",
-        err.message
-      );
-    }
-
-    // إذا ما اشتغلت Directions API صح، استخدم حساب المسافة المستقيمة ك fallback
-    if (!distance_km || distance_km === 0) {
-      distance_km = parseFloat(
-        calculateTotalRouteDistance(routePoints).toFixed(2)
-      );
-    }
-
-    console.log("🚚 Total route distance (all legs combined):", distance_km);
-
-    // 7️⃣ Calculate delivery_fee and total_with_shipping
-    const delivery_fee = parseFloat((distance_km * 0.5).toFixed(2)); // $0.5 per km
-    const total_with_shipping = parseFloat(
-      (final_amount + delivery_fee).toFixed(2)
-    );
-
-    console.log("🧾 Expected delivery fee (km * 0.5):", delivery_fee);
-
-    // 8️⃣ Insert order
+    // 6️⃣ إنشاء الطلب مع الحالة "requested"
     const payment_status = paymentMethod === "cod" ? "pending" : "paid";
     const orderResult = await client.query(
       `INSERT INTO orders (
         customer_id, delivery_company_id, address_id, status, shipping_address,
-        total_amount, discount_amount, final_amount, coupon_code, delivery_fee, total_with_shipping, payment_status, distance_km, created_at, updated_at
-      ) VALUES ($1,$2,$3,'pending',$4,$5,$6,$7,$8,$9,$10,$11,$12,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+        total_amount, discount_amount, final_amount, coupon_code, delivery_fee, 
+        total_with_shipping, payment_status, distance_km, created_at, updated_at,
+        assigned_delivery_company_id
+      ) VALUES ($1,$2,$3,'requested',$4,$5,$6,$7,$8,$9,$10,$11,$12,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,$13)
       RETURNING *`,
       [
-        userId,
-        closestCompany.id,
+        userId, 
+        deliveryCompanies[0].id, // delivery_company_id (للتوافق مع النظام القديم)
         savedAddress.id,
-        JSON.stringify(savedAddress),
-        total_amount,
+        JSON.stringify(savedAddress), 
+        total_amount, 
         discount_amount + discount_from_points,
-        final_amount,
-        coupon_code || null,
-        delivery_fee,
-        total_with_shipping,
-        payment_status,
-        distance_km || 0,
+        final_amount, 
+        coupon_code || null, 
+        delivery_fee, 
+        total_with_shipping, 
+        payment_status, 
+        minDistance || null,
+        null // assigned_delivery_company_id (سيتم تعيينه لاحقاً)
       ]
     );
 
     const order = orderResult.rows[0];
 
-    // 9️⃣ Update order with real fees and distance
-    await client.query(
-      `UPDATE orders
-       SET delivery_fee = $1, total_with_shipping = $2, distance_km = $3, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $4`,
-      [delivery_fee, total_with_shipping, distance_km, order.id]
-    );
-
-    // 🔟 Insert order_items
+    // 7️⃣ إدراج عناصر الطلب
     for (let item of cartItemsResult.rows) {
       await client.query(
         `INSERT INTO order_items (order_id, product_id, vendor_id, quantity, price, variant, distance_km)
          VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-        [
-          order.id,
-          item.product_id,
-          item.vendor_id,
-          item.quantity,
-          item.price,
-          JSON.stringify(item.variant || {}),
-          distance_km,
-        ]
+        [order.id, item.product_id, item.vendor_id, item.quantity, item.price, JSON.stringify(item.variant || {}), minDistance || 0]
       );
     }
 
-    // 1️⃣1️⃣ Record payment if not COD
+    // 8️⃣ إنشاء طلبات التوصيل لجميع الشركات التي تغطي المنطقة
+    for (let company of deliveryCompanies) {
+      await client.query(
+        `INSERT INTO delivery_requests (order_id, delivery_company_id, status)
+         VALUES ($1, $2, 'pending')`,
+        [order.id, company.id]
+      );
+    }
+
+    // 9️⃣ تسجيل الدفع إذا لم يكن COD
     if (paymentMethod !== "cod" && paymentData) {
       await client.query(
         `INSERT INTO payments (order_id, user_id, payment_method, status, transaction_id, card_last4, card_brand, expiry_month, expiry_year, amount, created_at)
          VALUES ($1,$2,$3,'paid',$4,$5,$6,$7,$8,$9,CURRENT_TIMESTAMP)`,
         [
-          order.id,
-          userId,
-          paymentMethod,
+          order.id, userId, paymentMethod,
           paymentData.transactionId || null,
           paymentData.card_last4 || null,
           paymentData.card_brand || null,
           paymentData.expiry_month || null,
           paymentData.expiry_year || null,
-          total_with_shipping,
+          final_amount
         ]
       );
     }
 
-    // 1️⃣2️⃣ Commit transaction
-    await client.query("COMMIT");
+    // 🔟 Commit transaction
+    await client.query('COMMIT');
 
-    return {
-      ...order,
-      delivery_fee,
-      total_with_shipping,
-      distance_km,
-      routePoints,
-    };
+    return order;
+
   } catch (err) {
-    await client.query("ROLLBACK");
+    await client.query('ROLLBACK');
     console.error("placeOrderFromCart error:", err);
+    throw err;
+  } finally {
+    client.release(); 
+  }
+};
+
+
+exports.acceptOrderByDeliveryCompany = async function (orderId, deliveryCompanyId) {
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
+
+    // 1. تحديث حالة طلب التوصيل المقبول
+    const updateResult = await client.query(
+      `UPDATE delivery_requests 
+       SET status = 'accepted', accepted_at = CURRENT_TIMESTAMP 
+       WHERE order_id = $1 AND delivery_company_id = $2 AND status = 'pending'`,
+      [orderId, deliveryCompanyId]
+    );
+
+    if (updateResult.rowCount === 0) {
+      throw new Error("Delivery request not found or already processed");
+    }
+
+    // 2. رفض باقي طلبات التوصيل
+    await client.query(
+      `UPDATE delivery_requests 
+       SET status = 'rejected' 
+       WHERE order_id = $1 AND delivery_company_id != $2 AND status = 'pending'`,
+      [orderId, deliveryCompanyId]
+    );
+
+    // 3. تحديث حالة الطلب إلى "accepted" وتعيين شركة التوصيل
+    await client.query(
+      `UPDATE orders 
+       SET assigned_delivery_company_id = $1, status = 'accepted' 
+       WHERE id = $2`,
+      [deliveryCompanyId, orderId]
+    );
+
+    await client.query('COMMIT');
+    return { success: true };
+
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error("acceptOrderByDeliveryCompany error:", err);
     throw err;
   } finally {
     client.release();
   }
 };
+
+
+
+exports.updateOrderStatus = async function (orderId, status) {
+  const validStatuses = ['requested', 'accepted', 'processing', 'out_for_delivery', 'delivered'];
+  
+  if (!validStatuses.includes(status)) {
+    throw new Error(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+  }
+
+  const result = await pool.query(
+    `UPDATE orders SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *`,
+    [status, orderId]
+  );
+
+  if (result.rows.length === 0) {
+    throw new Error("Order not found");
+  }
+
+  return result.rows[0];
+};
+
+
+
+// تأكد من أن الدالة تعمل بشكل صحيح
+exports.getRequestedOrdersForDelivery = async function (deliveryCompanyId) {
+  console.log('🔍 Executing getRequestedOrdersForDelivery with company ID:', deliveryCompanyId);
+  
+  try {
+    const result = await pool.query(
+      `SELECT 
+        o.id,
+        o.status as order_status,
+        o.total_amount,
+        o.final_amount,
+        o.delivery_fee,
+        a.address_line1, 
+        a.city, 
+        a.state,
+        u.name as customer_name, 
+        u.phone as customer_phone,
+        COUNT(oi.id) as items_count,
+        SUM(oi.quantity) as total_quantity,
+        dr.status as delivery_request_status
+      FROM orders o
+      JOIN delivery_requests dr ON o.id = dr.order_id
+      JOIN addresses a ON o.address_id = a.id
+      JOIN users u ON o.customer_id = u.id
+      LEFT JOIN order_items oi ON o.id = oi.order_id
+      WHERE dr.delivery_company_id = $1 
+        AND dr.status = 'pending'
+        AND o.status = 'requested'
+      GROUP BY o.id, a.id, u.id, dr.status
+      ORDER BY o.created_at DESC`,
+      [deliveryCompanyId]
+    );
+
+    console.log('📊 SQL query result rows:', result.rows.length);
+    console.log('📋 Result sample:', result.rows.slice(0, 2));
+    
+    return result.rows;
+  } catch (error) {
+    console.error('❌ Error in getRequestedOrdersForDelivery:', error);
+    throw error;
+  }
+};
+
+
 
 /**
  * Get order details for a specific customer
@@ -643,7 +663,7 @@ exports.trackOrder = async function (orderId, customerId) {
 
     let vendors = itemsRes.rows.map((v) => ({ ...v }));
 
-    // 4️⃣ عبي الإحداثيات الناقصة لكل vendor
+    // 4️⃣  الإحداثيات الناقصة لكل vendor
     for (let v of vendors) {
       if (!v.latitude || !v.longitude) {
         const geo = await geocodeAddress(v.vendor_address || v.vendor_name);
@@ -1185,7 +1205,7 @@ exports.getAllProducts = async ({
   search,
   categoryId,
   page = 1,
-  limit = 10,
+  limit = 15,
 }) => {
   try {
     const values = [];
@@ -1398,7 +1418,7 @@ exports.Order = {
 exports.fetchProductsWithSorting = async (
   sortBy = "id ASC",
   page = 1,
-  limit = 12
+  limit = 15
 ) => {
   let orderClause = "id ASC";
 

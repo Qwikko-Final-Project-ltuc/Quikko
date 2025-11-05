@@ -49,17 +49,17 @@ export default function DeliveryCard({ delivery }) {
   };
 
   return (
-    <div className={`rounded-xl shadow-md p-6 max-w-sm w-full transition-transform transform hover:scale-105 ${
-      isDark ? "bg-[#333] text-white border border-gray-600" : "bg-white text-gray-800 border border-gray-300"
+    <div className={`relative rounded-xl shadow-md p-6 transition-transform duration-300 h-[300px] ${
+      isDark ? "bg-[var(--bg)] text-[var(--text)] border border-[var(--border)]" : "bg-[var(--bg)] text-[var(--text)] border border-[var(--border)]"
     }`}>
       {/* Header */}
-      <div className="flex items-center mb-4">
-        <FaTruck className={`w-10 h-10 mr-4 ${isDark ? "text-white" : "text-gray-700"}`} />
-        <h3 className={`text-2xl font-bold ${isDark ? "text-white" : "text-gray-800"}`}>{company_name}</h3>
+      <div className="flex items-center mb-4 space-x-4">
+        <FaTruck className={`w-12 h-12 ${isDark ? "text-[var(--text)]" : "text-[var(--text)]"}`} />
+        <h3 className={`text-2xl font-bold ${isDark ? "text-[var(--text)]" : "text-[var(--text)]"}`}>{company_name}</h3>
       </div>
 
       {/* Info */}
-      <div className={`space-y-2 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
+      <div className={`space-y-2 text-lg ${isDark ? "text-[var(--text)]" : "text-[var(--text)]"}`}>
         <div className="flex items-center gap-2">
           <FaTruckLoading className="w-5 h-5" />
           <span>Company ID: {company_id}</span>
@@ -70,23 +70,23 @@ export default function DeliveryCard({ delivery }) {
         </div>
         <div className="flex items-center gap-2">
           {getStatusIcon(status)}
-          <span className="capitalize ml-1">Status: {status}</span>
+          <span className="capitalize">Status: {status}</span>
         </div>
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2 mt-4 flex-wrap">
+      <div className="absolute bottom-4 right-4 flex gap-2">
         {status === "pending" && (
           <>
             <button
               onClick={() => handleApprove(company_id)}
-              className="px-3 py-1 rounded-md bg-[#307A59] text-white hover:bg-[#265e46] transition-colors"
+              className="px-3 py-1 rounded-md bg-[var(--button)] text-white hover:bg-[#265e46] transition-colors cursor-pointer"
             >
               Approve
             </button>
             <button
               onClick={() => handleReject(company_id)}
-              className="px-3 py-1 rounded-md bg-red-500 text-white hover:bg-red-600 transition-colors"
+              className="px-3 py-1 rounded-md bg-red-500 text-white hover:bg-red-600 transition-colors cursor-pointer"
             >
               Reject
             </button>
@@ -95,7 +95,7 @@ export default function DeliveryCard({ delivery }) {
         {status === "approved" && (
           <button
             onClick={() => handleReject(company_id)}
-            className="px-3 py-1 rounded-md bg-red-500 text-white hover:bg-red-600 transition-colors"
+            className="px-3 py-1 rounded-md bg-red-500 text-white hover:bg-red-600 transition-colors cursor-pointer"
           >
             Reject
           </button>
@@ -103,7 +103,7 @@ export default function DeliveryCard({ delivery }) {
         {status === "rejected" && (
           <button
             onClick={() => handleApprove(company_id)}
-            className="px-3 py-1 rounded-md bg-[#307A59] text-white hover:bg-[#265e46] transition-colors"
+            className="px-3 py-1 rounded-md bg-[var(--button)] text-white hover:bg-[#265e46] transition-colors cursor-pointer"
           >
             Approve
           </button>

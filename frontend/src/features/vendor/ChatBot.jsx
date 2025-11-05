@@ -8,7 +8,7 @@ const ChatBot = ({ userId }) => {
     { sender: "bot", text: " How can I help you today?" },
   ]);
   const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false); // ✨ جديد
+  const [isTyping, setIsTyping] = useState(false);
   const socketRef = useRef();
   const messagesEndRef = useRef();
 
@@ -19,7 +19,7 @@ const ChatBot = ({ userId }) => {
 
     socketRef.current.on("receiveMessage", ({ response }) => {
       setMessages((prev) => [...prev, { sender: "bot", text: response }]);
-      setIsTyping(false); // لما يوصل الرد، نخفي المؤشر
+      setIsTyping(false);
     });
 
     return () => socketRef.current.disconnect();
@@ -33,7 +33,7 @@ const ChatBot = ({ userId }) => {
     if (!input.trim()) return;
 
     setMessages((prev) => [...prev, { sender: "user", text: input }]);
-    setIsTyping(true); // ✨ بدأ AI يفكر
+    setIsTyping(true);
 
     socketRef.current.emit("sendMessage", {
       userId,
@@ -46,17 +46,23 @@ const ChatBot = ({ userId }) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-xl shadow-xl overflow-hidden">
+    <div
+      className="flex flex-col h-full rounded-xl shadow-xl overflow-hidden"
+      style={{ backgroundColor: "#ffffff", color: "#292e2c" }}
+    >
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.map((msg, index) => (
           <div
             key={index}
-            className={`max-w-[75%] p-3 rounded-2xl shadow-sm break-words ${
-              msg.sender === "user"
-                ? "bg-black text-white self-end ml-auto rounded-br-none"
-                : "bg-gray-200 text-gray-800 self-start rounded-bl-none"
-            }`}
+            className="max-w-[75%] p-3 rounded-2xl shadow-sm break-words"
+            style={{
+              backgroundColor: msg.sender === "user" ? "#026a4b" : "#f5f6f5",
+              color: msg.sender === "user" ? "#ffffff" : "#292e2c",
+              alignSelf: msg.sender === "user" ? "flex-end" : "flex-start",
+              borderBottomRightRadius: msg.sender === "user" ? 0 : "1rem",
+              borderBottomLeftRadius: msg.sender === "bot" ? 0 : "1rem",
+            }}
           >
             <ReactMarkdown>{msg.text}</ReactMarkdown>
           </div>
@@ -64,7 +70,14 @@ const ChatBot = ({ userId }) => {
 
         {/* typing indicator */}
         {isTyping && (
-          <div className="max-w-[60%] p-2 bg-gray-100 text-gray-600 rounded-2xl animate-pulse self-start">
+          <div
+            className="max-w-[60%] p-2 rounded-2xl animate-pulse"
+            style={{
+              backgroundColor: "#f5f6f5",
+              color: "#292e2c",
+              alignSelf: "flex-start",
+            }}
+          >
             Thinking...
           </div>
         )}
@@ -73,20 +86,34 @@ const ChatBot = ({ userId }) => {
       </div>
 
       {/* Input */}
-      <div className="flex items-center gap-2 p-3 border-t bg-gray-50">
+      <div
+        className="flex items-center gap-2 p-3 border-t"
+        style={{ backgroundColor: "#f5f6f5", borderColor: "#e0e0e0" }}
+      >
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          className="flex-1 border border-gray-300 rounded-full px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="flex-1 rounded-full px-4 py-2 outline-none"
+          style={{
+            border: "1px solid #ccc",
+            backgroundColor: "#ffffff",
+            color: "#292e2c",
+          }}
           placeholder="Type your message..."
         />
         <button
           onClick={handleSend}
-          className={`bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full flex items-center justify-center transition-shadow shadow-md ${
-            !input.trim() ? "opacity-50 cursor-not-allowed" : ""
-          }`}
           disabled={!input.trim()}
+          className="p-3 rounded-full flex items-center justify-center transition-shadow shadow-md"
+          style={{
+            backgroundColor: "#026a4b",
+            color: "#ffffff",
+            opacity: !input.trim() ? 0.5 : 1,
+            cursor: !input.trim() ? "not-allowed" : "pointer",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#025438")}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#026a4b")}
         >
           <ArrowUpRight size={20} />
         </button>
@@ -96,3 +123,4 @@ const ChatBot = ({ userId }) => {
 };
 
 export default ChatBot;
+

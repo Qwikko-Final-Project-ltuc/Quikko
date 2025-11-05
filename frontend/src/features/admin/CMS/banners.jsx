@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { allCMSForAdmin, editCMS, deleteCMS } from "./cmsSlice";
-import { colors } from "../dark-lightMode/colors";
+import { FaPlus } from "react-icons/fa";
+import PagesForm from "../CMS/pages";
+import { LiaWindowCloseSolid } from "react-icons/lia";
 
 export default function BannersForm() {
   const dispatch = useDispatch();
   const { cmsList, loading, error } = useSelector((state) => state.cms);
   const mode = useSelector((state) => state.theme.mode);
   const isDark = mode === "dark";
-  const c = colors[isDark ? "dark" : "light"];
 
   const [editingId, setEditingId] = useState(null);
+  const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     title: "",
     content: "",
@@ -52,40 +54,71 @@ export default function BannersForm() {
     }
   };
 
-  if (loading) return <p>Loading CMS items...</p>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--button)] mx-auto mb-4"></div>
+          <p className="text-[var(--text)] text-lg">Loading CMS items...</p>
+        </div>
+      </div>
+    );
+  }
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
     <div
-      style={{ backgroundColor: c.cardBg, color: c.text }}
-      className="p-6 rounded-2xl shadow-md transition-colors duration-300"
+      className={`p-6 rounded-2xl shadow-md transition-colors duration-300 border ${
+        isDark ? "border-[var(--border)]" : "border-[var(--border)]"
+      }`}
     >
-      <h2 className="text-2xl font-bold mb-6">Edit Pages</h2>
-
       {/* Filter Buttons */}
-      <div className="flex space-x-3 text-sm font-medium mb-6">
-        {["all", "customer", "vendor", "delivery", "user"].map((filter) => (
-          <button
-            key={filter}
-            onClick={() => setActiveFilter(filter)}
-            style={{
-              backgroundColor:
+      <div className="flex justify-between items-center mb-6 text-sm font-medium">
+        <div className="flex flex-wrap gap-3 text-sm font-medium">
+          {["all", "customer", "vendor", "delivery", "user"].map((filter) => (
+            <button
+              key={filter}
+              onClick={() => setActiveFilter(filter)}
+              className={`px-3 py-1 rounded-full transition-colors duration-200 cursor-pointer ${
                 activeFilter === filter
-                  ? c.button
+                  ? "bg-[#307A59] text-white"
                   : isDark
-                  ? "#333333"
-                  : "#f5f5f5",
+                  ? "hover:bg-[var(--hover)] text-white"
+                  : "hover:bg-[var(--hover)] text-gray-800"
+              }`}
+            >
+              {filter.charAt(0).toUpperCase() + filter.slice(1)}
+            </button>
+          ))}
+        </div>
 
-              color: activeFilter === filter ? "#ffffff" : c.text,
-              border: `1px solid ${
-                activeFilter === filter ? c.button : isDark ? "#666666" : "#ccc"
-              }`,
-            }}
-            className="px-4 py-1.5 rounded-full transition-all duration-300 hover:opacity-90 shadow-sm"
-          >
-            {filter.charAt(0).toUpperCase() + filter.slice(1)}
-          </button>
-        ))}
+        <button
+          onClick={() => setShowForm(true)}
+          className="flex items-center space-x-2 px-4 py-2 rounded hover:opacity-90 transition-colors bg-[var(--button)] text-white hover:bg-[#265e46] cursor-pointer"
+        >
+          <FaPlus /> <span>Add Pages</span>
+        </button>
+
+        {showForm && (
+          <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
+            <div
+              className={` rounded-lg p-6 shadow-lg w-[500px] relative ${
+                isDark
+                  ? "bg-[var(--bg)] text-[var(--text)]"
+                  : "bg-[var(--bg)] text-[var(--text)]"
+              }`}
+            >
+              <button
+                onClick={() => setShowForm(false)}
+                className="absolute top-4 right-4 text-[var(--text)] hover:text-red-500 transition-colors cursor-pointer"
+              >
+                <LiaWindowCloseSolid size={22} />
+              </button>
+
+              <PagesForm />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* CMS List */}
@@ -98,12 +131,11 @@ export default function BannersForm() {
             cms && (
               <div
                 key={cms.id}
-                style={{
-                  backgroundColor: c.pageBg,
-                  borderColor: c.line,
-                  color: c.text,
-                }}
-                className="border rounded-2xl p-4 shadow transition-colors duration-300"
+                className={`border rounded-2xl p-4 shadow transition-colors duration-300 ${
+                  isDark
+                    ? "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+                    : "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+                }`}
               >
                 {editingId === cms.id ? (
                   <form onSubmit={handleSave} className="space-y-3">
@@ -115,14 +147,10 @@ export default function BannersForm() {
                       }
                       placeholder="Title"
                       required
-                      style={{
-                        backgroundColor: c.inputBg,
-                        color: isDark ? "#514e4eff" : "#111",
-                        borderColor: c.line,
-                        "::placeholder": { color: isDark ? "#aaa" : "#777" },
-                      }}
-                      className={`w-full p-2 rounded border placeholder-${
-                        isDark ? "gray-400" : "gray-600"
+                      className={`w-full p-2 rounded border placeholder- ${
+                        isDark
+                          ? "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+                          : "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
                       }`}
                     />
                     <textarea
@@ -133,13 +161,10 @@ export default function BannersForm() {
                       placeholder="Content"
                       rows="3"
                       required
-                      style={{
-                        backgroundColor: c.inputBg,
-                        color: isDark ? "#514e4eff" : "#111",
-                        borderColor: c.line,
-                      }}
-                      className={`w-full p-2 rounded border placeholder-${
-                        isDark ? "gray-400" : "gray-600"
+                      className={`w-full p-2 rounded border placeholder- ${
+                        isDark
+                          ? "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+                          : "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
                       }`}
                     />
                     <select
@@ -147,26 +172,51 @@ export default function BannersForm() {
                       onChange={(e) =>
                         setForm({ ...form, type: e.target.value })
                       }
-                      style={{
-                        backgroundColor: c.inputBg,
-                        color: isDark ? "#514e4eff" : "#111",
-                        borderColor: c.line,
-                      }}
-                      className={`w-full p-2 rounded border ${
-                        form.type === ""
-                          ? isDark
-                            ? "text-gray-400"
-                            : "text-gray-600"
-                          : "text-current"
+                      className={`w-full p-2 rounded border cursor-pointer placeholder- ${
+                        isDark
+                          ? "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+                          : "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
                       }`}
                     >
                       <option value="" disabled hidden>
                         Select type
                       </option>
-                      <option value="customer">Customer</option>
-                      <option value="vendor">Vendor</option>
-                      <option value="delivery">Delivery</option>
-                      <option value="user">User</option>
+                      <option
+                        style={{
+                          backgroundColor: isDark ? "#2d2d2d" : "#fff",
+                          color: isDark ? "#f1f1f1" : "#222",
+                        }}
+                        value="customer"
+                      >
+                        Customer
+                      </option>
+                      <option
+                        style={{
+                          backgroundColor: isDark ? "#2d2d2d" : "#fff",
+                          color: isDark ? "#f1f1f1" : "#222",
+                        }}
+                        value="vendor"
+                      >
+                        Vendor
+                      </option>
+                      <option
+                        style={{
+                          backgroundColor: isDark ? "#2d2d2d" : "#fff",
+                          color: isDark ? "#f1f1f1" : "#222",
+                        }}
+                        value="delivery"
+                      >
+                        Delivery
+                      </option>
+                      <option
+                        style={{
+                          backgroundColor: isDark ? "#2d2d2d" : "#fff",
+                          color: isDark ? "#f1f1f1" : "#222",
+                        }}
+                        value="user"
+                      >
+                        User
+                      </option>
                     </select>
                     <input
                       type="text"
@@ -175,13 +225,10 @@ export default function BannersForm() {
                       onChange={(e) =>
                         setForm({ ...form, image_url: e.target.value })
                       }
-                      style={{
-                        backgroundColor: c.inputBg,
-                        color: isDark ? "#514e4eff" : "#111",
-                        borderColor: c.line,
-                      }}
-                      className={`w-full p-2 rounded border placeholder-gray-400 ${
-                        isDark ? "placeholder-gray-400" : "placeholder-gray-600"
+                      className={`w-full p-2 rounded border placeholder- ${
+                        isDark
+                          ? "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+                          : "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
                       }`}
                     />
                     <select
@@ -189,12 +236,11 @@ export default function BannersForm() {
                       onChange={(e) =>
                         setForm({ ...form, status: e.target.value })
                       }
-                      style={{
-                        backgroundColor: c.inputBg,
-                        color: isDark ? "#514e4eff" : "#111",
-                        borderColor: c.line,
-                      }}
-                      className={`w-full p-2 rounded border text-current`}
+                      className={`w-full p-2 rounded border cursor-pointer placeholder- ${
+                        isDark
+                          ? "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+                          : "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
+                      }`}
                     >
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
@@ -203,11 +249,7 @@ export default function BannersForm() {
                     <div className="flex space-x-2">
                       <button
                         type="submit"
-                        style={{
-                          backgroundColor: c.button,
-                          color: "#fff",
-                        }}
-                        className="flex-1 py-1 rounded hover:opacity-90"
+                        className="flex-1 py-1 rounded hover:opacity-90 bg-[var(--button)] text-white hover:bg-[#265e46] cursor-pointer"
                       >
                         Save
                       </button>
@@ -218,7 +260,7 @@ export default function BannersForm() {
                           backgroundColor: isDark ? "#555" : "#aaa",
                           color: "#fff",
                         }}
-                        className="flex-1 py-1 rounded hover:opacity-90"
+                        className="flex-1 py-1 rounded hover:opacity-90 cursor-pointer"
                       >
                         Cancel
                       </button>
@@ -235,18 +277,16 @@ export default function BannersForm() {
                     )}
                     <h3 className="font-semibold text-lg mb-1">{cms.title}</h3>
                     <p
-                      className="text-sm mb-2 line-clamp-2"
-                      style={{
-                        color: isDark ? "#e5e5e5b3" : "#555",
-                      }}
+                      className={`text-sm mb-2 line-clamp-2 ${
+                        isDark ? "text-[var(--text)]" : "text-[var(--text)]"
+                      }`}
                     >
                       {cms.content}
                     </p>
                     <div
-                      className="flex justify-between text-xs mb-3"
-                      style={{
-                        color: isDark ? "#cccccc8e" : "#666",
-                      }}
+                      className={`flex justify-between text-xs mb-3 ${
+                        isDark ? "text-[var(--text)]" : "text-[var(--text)]"
+                      }`}
                     >
                       <span>Type: {cms.type}</span>
                       <span>Status: {cms.status}</span>
@@ -254,15 +294,14 @@ export default function BannersForm() {
                     <div className="flex space-x-2">
                       <button
                         onClick={() => startEdit(cms)}
-                        style={{ backgroundColor: c.button, color: "#fff" }}
-                        className="flex-1 py-1 rounded hover:opacity-90"
+                        className="flex-1 py-1 rounded hover:opacity-90 bg-[var(--button)] text-white hover:bg-[#265e46] cursor-pointer"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(cms.id)}
                         style={{ backgroundColor: "#e53e3e", color: "#fff" }}
-                        className="flex-1 py-1 rounded hover:opacity-90"
+                        className="flex-1 py-1 rounded hover:opacity-90 cursor-pointer"
                       >
                         Delete
                       </button>

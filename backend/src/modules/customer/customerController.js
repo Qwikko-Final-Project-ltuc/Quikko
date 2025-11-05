@@ -604,7 +604,7 @@ exports.updatePaymentStatus = async (req, res) => {
 
 exports.getProductsWithSorting = async (req, res) => {
   try {
-    const { sort, page = 1, limit = 12 } = req.query;
+    const { sort, page = 1, limit = 15 } = req.query;
 
     const productsData = await customerService.getProductsWithSorting({
       sort,

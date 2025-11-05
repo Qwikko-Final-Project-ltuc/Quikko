@@ -15,6 +15,8 @@ export default function VendorCard({ vendor }) {
 
   const {
     vendor_id,
+    store_logo,
+    store_banner,
     store_name,
     status,
     commission_rate,
@@ -56,22 +58,43 @@ export default function VendorCard({ vendor }) {
 
   return (
     <div
-      className={`p-6 rounded-xl shadow-md transition-transform duration-300 hover:scale-105 ${
+      className={`relative p-6 rounded-xl shadow-md transition-transform duration-300 h-[525px] ${
         isDark
-          ? "bg-[#333] text-white border border-gray-600"
-          : "bg-white text-gray-900 border border-gray-200"
+          ? "bg-[var(--bg)] text-[var(--text)] border border-[var(--border)]"
+          : "bg-[var(--bg)] text-[var(--text)] border border-[var(--border)]"
       }`}
     >
       {/* Header */}
       <div className="flex items-center mb-4 space-x-4">
-        <IoStorefront
-          className={`w-12 h-12 ${isDark ? "text-white" : "text-gray-800"}`}
-        />
-        <h3 className="text-2xl font-bold">{store_name}</h3>
+        {store_logo ? (
+          <img
+            src={store_logo}
+            alt={`${store_name} logo`}
+            className="w-12 h-12 rounded-full object-cover border border-[var(--border)]"
+          />
+        ) : (
+          <IoStorefront
+            className={`w-12 h-12 ${
+              isDark ? "text-[var(--text)]" : "text-[var(--text)]"
+            }`}
+          />
+        )}
+
+        <h3
+          className={`text-2xl font-bold ${
+            isDark ? "text-[var(--text)]" : "text-[var(--text)]"
+          }`}
+        >
+          {store_name}
+        </h3>
       </div>
 
       {/* Vendor Info */}
-      <div className="space-y-2 text-sm">
+      <div
+        className={`space-y-2 text-lg ${
+          isDark ? "text-[var(--text)]" : "text-[var(--text)]"
+        }`}
+      >
         <div className="flex items-center gap-2">
           <FaUserTie />
           <span>Vendor ID: {vendor_id}</span>
@@ -86,11 +109,11 @@ export default function VendorCard({ vendor }) {
         </div>
         <div className="flex items-center gap-2">
           <MdEmail />
-          <span>{contact_email}</span>
+          <span>{contact_email || "No Email"}</span>
         </div>
         <div className="flex items-center gap-2">
           <FaPhoneAlt />
-          <span>{phone}</span>
+          <span>{phone || "No Phone"}</span>
         </div>
       </div>
 
@@ -98,18 +121,34 @@ export default function VendorCard({ vendor }) {
       {products?.length > 0 && (
         <div
           className={`mt-4 pt-4 border-t ${
-            isDark ? "border-gray-600" : "border-gray-300"
+            isDark ? "border-[var(--border)]" : "border-[var(--border)]"
           }  `}
         >
-          <h4 className="flex items-center font-semibold mb-2 gap-2">
+          <h4 className="flex items-center font-semibold mb-2 gap-2 text-lg">
             <AiFillProduct />
             Products
           </h4>
-          <ul className="text-sm space-y-1">
+          <ul className="space-y-3 max-h-64 overflow-y-auto pr-2 h-30">
             {products.map((product) => (
-              <li key={product.product_id}>
-                {product.name} - ${product.price} (Stock:{" "}
-                {product.stock_quantity})
+              <li
+                key={product.product_id}
+                className={`p-3 rounded-lg border ${
+                  isDark
+                    ? "border-[var(--border)] bg-[var(--bg)] text-[var(--text)]"
+                    : "border-[var(--border)] bg-[var(--bg)] text-[var(--text)]"
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">{product.name}</span>
+                  <span>${product.price}</span>
+                </div>
+                <div
+                  className={`text-sm mt-1 ${
+                    isDark ? "text-[var(--text)]" : "text-[var(--text)]"
+                  }`}
+                >
+                  (Stock: {product.stock_quantity})
+                </div>
               </li>
             ))}
           </ul>
@@ -117,18 +156,18 @@ export default function VendorCard({ vendor }) {
       )}
 
       {/* Actions */}
-      <div className="flex gap-2 mt-4 flex-wrap">
+      <div className="absolute bottom-4 right-4 flex gap-2">
         {status === "pending" && (
           <>
             <button
               onClick={() => handleApprove(vendor_id)}
-              className="px-3 py-1 rounded-md bg-[#307A59] text-white hover:bg-[#265e46] transition-colors"
+              className="px-3 py-1 rounded-md bg-[var(--button)] text-white hover:bg-[#265e46] transition-colors cursor-pointer"
             >
               Approve
             </button>
             <button
               onClick={() => handleReject(vendor_id)}
-              className="px-3 py-1 rounded-md bg-red-500 text-white hover:bg-red-600 transition-colors"
+              className="px-3 py-1 rounded-md bg-red-500 text-white hover:bg-red-600 transition-colors cursor-pointer"
             >
               Reject
             </button>
@@ -137,7 +176,7 @@ export default function VendorCard({ vendor }) {
         {status === "approved" && (
           <button
             onClick={() => handleReject(vendor_id)}
-            className="px-3 py-1 rounded-md bg-red-500 text-white hover:bg-red-600 transition-colors"
+            className="px-3 py-1 rounded-md bg-red-500 text-white hover:bg-red-600 transition-colors cursor-pointer"
           >
             Reject
           </button>
@@ -145,7 +184,7 @@ export default function VendorCard({ vendor }) {
         {status === "rejected" && (
           <button
             onClick={() => handleApprove(vendor_id)}
-            className="px-3 py-1 rounded-md bg-[#307A59] text-white hover:bg-[#265e46] transition-colors"
+            className="px-3 py-1 rounded-md bg-[var(--button)] text-white hover:bg-[#265e46] transition-colors cursor-pointer"
           >
             Approve
           </button>

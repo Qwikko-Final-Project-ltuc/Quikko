@@ -10,7 +10,7 @@ import GenralRoutes from "./features/genral/Routes";
 import VendorRoutes from "./features/vendor/vendorroutes";
 import { getToken, onMessage  } from "firebase/messaging";
 import { messaging } from "./app/firebase-messaging";
-
+import './fix-spacing.css';
 
 const RouteSelector = () => {
   const location = useLocation();

@@ -20,16 +20,130 @@ const OrdersPage = () => {
     paymentFilter,
   } = useSelector((state) => state.orders);
 
+  const themeMode = useSelector((state) => state.customerTheme.mode);
   const [searchTx, setSearchTx] = useState("");
+  const [productImages, setProductImages] = useState({});
+  const [imagesLoading, setImagesLoading] = useState(false);
+
+  // دالة لجلب صور المنتجات من الـ API الحقيقي
+  const fetchProductImages = async (productIds) => {
+    setImagesLoading(true);
+    try {
+      const imagesMap = {};
+      
+      console.log('🔄 Starting to fetch images for products:', productIds);
+      
+      // استخدام Promise.all لجلب جميع الصور في نفس الوقت
+      const imagePromises = productIds.map(async (productId) => {
+        try {
+          console.log(`🔍 Fetching image for product ${productId}...`);
+          
+          const response = await fetch(`http://localhost:3000/api/products/${productId}`);
+          console.log(`📡 Response status for product ${productId}:`, response.status);
+          
+          if (response.ok) {
+            const productData = await response.json();
+            console.log(`✅ Product ${productId} data:`, productData);
+            
+            // أخذ أول صورة من مصفوفة images
+            const firstImage = productData.images?.[0] || null;
+            console.log(`🖼️ First image for product ${productId}:`, firstImage);
+            
+            return {
+              productId,
+              image: firstImage
+            };
+          } else {
+            console.error(`❌ Failed to fetch product ${productId}:`, response.status);
+            return { productId, image: null };
+          }
+        } catch (error) {
+          console.error(`❌ Error fetching product ${productId}:`, error);
+          return { productId, image: null };
+        }
+      });
+      
+      const results = await Promise.all(imagePromises);
+      console.log('📊 All image results:', results);
+      
+      // تحويل النتائج إلى object
+      results.forEach(({ productId, image }) => {
+        imagesMap[productId] = image;
+      });
+      
+      console.log('🎯 Final images map:', imagesMap);
+      return imagesMap;
+    } catch (error) {
+      console.error('💥 Error fetching product images:', error);
+      return {};
+    } finally {
+      setImagesLoading(false);
+    }
+  };
 
   useEffect(() => {
     dispatch(fetchOrders());
   }, [dispatch]);
 
+  // جلب الصور عندما تتغير الطلبات
+  useEffect(() => {
+    if (items.length > 0) {
+      console.log('📦 Orders loaded:', items);
+      const loadProductImages = async () => {
+        // استخراج جميع product_ids من الطلبات
+        const allProductIds = items.flatMap(order => 
+          (order.items || []).map(item => {
+            console.log('📋 Order item:', item);
+            return item.product_id;
+          })
+        ).filter(id => id != null); // إزالة القيم null
+        
+        // إزالة التكرار
+        const uniqueProductIds = [...new Set(allProductIds)];
+        
+        console.log('🆔 Loading images for unique product IDs:', uniqueProductIds);
+        
+        if (uniqueProductIds.length > 0) {
+          const images = await fetchProductImages(uniqueProductIds);
+          console.log('✅ Setting product images state:', images);
+          setProductImages(images);
+        } else {
+          console.log('⚠️ No product IDs found to load images');
+        }
+      };
+      
+      loadProductImages();
+    }
+  }, [items]);
+
   if (loading)
-    return <p className="text-center mt-10 text-gray-500">Loading orders...</p>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)] py-16">
+        <div className="text-center animate-fade-in">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[var(--button)] mx-auto mb-4"></div>
+          <p className="text-[var(--text)] text-lg">Loading your orders...</p>
+        </div>
+      </div>
+    );
+
   if (error)
-    return <p className="text-center mt-10 text-red-500">Error: {error}</p>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)] py-16">
+        <div className="text-center animate-fade-in">
+          <div className="w-20 h-20 bg-[var(--error)]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-[var(--error)] text-3xl">!</span>
+          </div>
+          <h3 className="text-xl font-bold text-[var(--error)] mb-2">Failed to Load Orders</h3>
+          <p className="text-[var(--text)] mb-6 max-w-md mx-auto">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-[var(--button)] hover:bg-[#015c40] text-white font-semibold px-8 py-3 rounded-xl transition-all duration-300 transform hover:scale-105"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
 
   const filteredItems = (items || []).filter((order) => {
     const payments = order.payments || [];
@@ -57,7 +171,7 @@ const OrdersPage = () => {
     return true;
   });
 
-  //  Pagination
+  // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentOrders = filteredItems.slice(indexOfFirstItem, indexOfLastItem);
@@ -69,275 +183,414 @@ const OrdersPage = () => {
 
   const handleFilterClick = (filter) => {
     dispatch(setPaymentFilter(filter));
-    dispatch(setCurrentPage(1)); // reset to first page on filter change
+    dispatch(setCurrentPage(1));
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <h1 className="text-3xl font-bold mb-4">Your Orders</h1>
-
-      <div className="mb-6">
-        <input
-          type="text"
-          placeholder="Search by Transaction ID..."
-          value={searchTx}
-          onChange={(e) => setSearchTx(e.target.value)}
-          className="border rounded px-3 py-2 w-full md:w-1/2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
+    <div className={`min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors duration-300`}>
+      {/* Header Section - Full Width Gradient */}
+      <div 
+        className="w-full text-left pt-4" 
+        style={{ 
+          color: themeMode === 'dark' ? 'var(--text)' : 'var(--text)',
+          background: themeMode === 'dark' 
+            ? `linear-gradient(to bottom, 
+                rgba(0, 0, 0, 0.21) 0%, 
+                var(--bg) 100%)`
+            : `linear-gradient(to bottom, 
+                rgba(113, 117, 116, 0.12) 0%, 
+                var(--bg) 100%)`
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h1 className="text-3xl font-bold mb-3 pt-8">
+            Your Orders
+          </h1>
+          <p className="text-[var(--light-gray)] max-w-2xl">
+            Track, manage, and reorder your purchases with ease
+          </p>
+        </div>
       </div>
 
-      <div className="mb-4 flex space-x-2">
-        {["all", "paid", "pending"].map((filter) => (
-          <button
-            key={filter}
-            className={`px-4 py-2 rounded ${
-              paymentFilter === filter
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200"
-            }`}
-            onClick={() => handleFilterClick(filter)}
-          >
-            {filter === "all" ? "All" : filter === "paid" ? "Paid" : "Unpaid"}
-          </button>
-        ))}
-      </div>
-
-      {filteredItems.length === 0 ? (
-        <p className="text-gray-500">No orders found</p>
-      ) : (
-        <div className="space-y-6">
-          {currentOrders.map((order) => {
-            const shippingAddress = order.shipping_address
-              ? JSON.parse(order.shipping_address)
-              : null;
-
-            return (
-              <div
-                key={order.id}
-                className="border p-4 rounded shadow hover:shadow-lg transition"
-              >
-                <h2 className="text-xl font-semibold mb-2">
-                  Order #{order.id} - {order.status}
-                </h2>
-                <p className="text-gray-600 mb-2">
-                  Payment: {order.payment_status}
-                </p>
-
-                <p className="text-gray-600 mb-2">
-                  Shipping Address:{" "}
-                  {shippingAddress ? (
-                    <>
-                      {shippingAddress.address_line1}
-                      {shippingAddress.address_line2 &&
-                        `, ${shippingAddress.address_line2}`}
-                      {shippingAddress.city && `, ${shippingAddress.city}`}
-                    </>
-                  ) : (
-                    "N/A"
-                  )}
-                </p>
-
-                <p className="text-gray-600 mb-2">
-                  Delivery Fee: ${order?.delivery_fee}
-                </p>
-
-                <p className="text-gray-600 mb-2">
-                  Total: ${order.total_amount}
-                </p>
-
-                <div className="border-t pt-2">
-                  {order.items.map((item) => (
-                    <div
-                      key={item.product_id}
-                      className="flex justify-between mb-1"
-                    >
-                      <span>
-                        {item.name} x {item.quantity}
-                      </span>
-                      <span>${(item.price * item.quantity).toFixed(2)}</span>
-                    </div>
-                  ))}
-
-                  <div className="flex justify-between mt-2 font-semibold">
-                    <span>Total:</span>
-                    <span>
-                      $
-                      {order.items
-                        .reduce(
-                          (sum, item) => sum + item.price * item.quantity,
-                          0
-                        )
-                        .toFixed(2)}
-                    </span>
-                  </div>
-
-                  {/* Total with shipping */}
-                  <div className="flex justify-between mt-2 font-semibold border-t pt-2">
-                    <span>Total with shipping:</span>
-                    <span>
-                      $
-                      {(
-                        order.items.reduce(
-                          (sum, item) => sum + item.price * item.quantity,
-                          0
-                        ) + Number(order.delivery_fee)
-                      ).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-
-                {order.payments && order.payments.length > 0 && (
-                  <div className="mt-2 border-t pt-2">
-                    <h3 className="font-semibold mb-1">Payment Details:</h3>
-                    {order.payments.map((payment) => (
-                      <div key={payment.id} className="text-gray-700 mb-1">
-                        Method: {payment.payment_method} | Amount: $
-                        {payment.amount} | Status: {payment.status}
-                        {payment.card_last4 &&
-                          ` | Card: **** **** **** ${payment.card_last4} (${payment.card_brand})`}
-                        {payment.transaction_id &&
-                          ` | Transaction: ${payment.transaction_id}`}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <button
-                  className="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                  onClick={() => navigate(`/customer/track-order/${order.id}`)}
-                >
-                  Track Order
-                </button>
-                <button
-                  className="ml-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-                  onClick={async () => {
-                    try {
-                      const action = await dispatch(
-                        reorderOrder(order.id)
-                      ).unwrap();
-                      navigate(`/customer/order-details/${action.id}`, {
-                        state: { reorder: true },
-                      });
-                    } catch (err) {
-                      alert("Failed to reorder: " + err.message);
-                    }
-                  }}
-                >
-                  Reorder
-                </button>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Search and Filters */}
+        <div className={`mb-12 p-6 rounded-2xl border-2 ${
+          themeMode === 'dark' 
+            ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)]" 
+            : "bg-gradient-to-br from-white to-[var(--textbox)] border-gray-200"
+        } shadow-xl transition-all duration-300 hover:shadow-2xl animate-fade-in-up`}>
+          <div className="flex flex-col lg:flex-row gap-6 items-center">
+            {/* Search Input */}
+            <div className="flex-1 w-full">
+              <div className="relative">
+                <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--light-gray)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search by Transaction ID..."
+                  value={searchTx}
+                  onChange={(e) => setSearchTx(e.target.value)}
+                  className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 focus:outline-none focus:ring-2 transition-all duration-200 ${
+                    themeMode === 'dark'
+                      ? "bg-[var(--bg)] border-[var(--border)] text-[var(--text)] focus:border-[var(--button)] focus:ring-[var(--button)]/20 placeholder-gray-400"
+                      : "bg-white border-gray-300 text-gray-800 focus:border-[var(--button)] focus:ring-[var(--button)]/20 placeholder-gray-500"
+                  }`}
+                />
               </div>
-            );
-          })}
-
-          {/* {currentOrders.map((order) => (
-            <div
-              key={order.id}
-              className="border p-4 rounded shadow hover:shadow-lg transition"
-            >
-              <h2 className="text-xl font-semibold mb-2">
-                Order #{order.id} - {order.status}
-              </h2>
-              <p className="text-gray-600 mb-2">
-                Payment: {order.payment_status} | Total: ${(order.final_amount ?? order.total_amount)}
-              </p>
-
-              <p className="text-gray-600 mb-2">
-                Shipping: {order.shipping_address}
-              </p>
-              <p className="text-gray-600 mb-2">
-                Delivery Fee: ${order.delivery_fee?.toFixed(2) || 0}
-              </p>
-              <p className="text-gray-600 mb-2">
-                Distance:{" "}
-                {order.distance_km
-                  ? `${order.distance_km.toFixed(2)} km`
-                  : "N/A"}
-              </p>
-              <p className="text-gray-600 mb-2">
-                Total (with shipping): $
-                {order.total_with_shipping?.toFixed(2) || order.total_amount}
-              </p>
-              <div className="border-t pt-2">
-                {order.items.map((item) => (
-                  <div
-                    key={item.product_id}
-                    className="flex justify-between mb-1"
-                  >
-                    <span>
-                      {item.name} x {item.quantity}
-                    </span>
-                    <span>${(item.price * item.quantity).toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-
-              {order.payments && order.payments.length > 0 && (
-                <div className="mt-2 border-t pt-2">
-                  <h3 className="font-semibold mb-1">Payment Details:</h3>
-                  {order.payments.map((payment) => (
-                    <div key={payment.id} className="text-gray-700 mb-1">
-                      Method: {payment.payment_method} | Amount: $
-                      {payment.amount} | Status: {payment.status}
-                      {payment.card_last4 &&
-                        ` | Card: **** **** **** ${payment.card_last4} (${payment.card_brand})`}
-                      {payment.transaction_id &&
-                        ` | Transaction: ${payment.transaction_id}`}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <button
-                className="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                onClick={() => navigate(`/customer/track-order/${order.id}`)}
-              >
-                Track Order
-              </button>
-              <button
-                className="ml-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-                onClick={async () => {
-                  try {
-                    const action = await dispatch(
-                      reorderOrder(order.id)
-                    ).unwrap();
-                    navigate(`/customer/order-details/${action.id}`, {
-                      state: { reorder: true },
-                    });
-                  } catch (err) {
-                    alert("Failed to reorder: " + err.message);
-                  }
-                }}
-              >
-                Reorder
-              </button>
             </div>
-          ))} */}
 
-          <button
-            onClick={() => navigate("/customer/products")}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition duration-300"
-          >
-            Continue Shopping
-          </button>
-
-          {/* Pagination */}
-          <div className="flex justify-center mt-6 space-x-2">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => handlePageChange(page)}
-                className={`px-3 py-1 rounded ${
-                  currentPage === page
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200"
-                }`}
-              >
-                {page}
-              </button>
-            ))}
+            {/* Filter Buttons */}
+            <div className="flex gap-3">
+              {["all", "paid", "pending"].map((filter) => (
+                <button
+                  key={filter}
+                  className={`px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${
+                    paymentFilter === filter
+                      ? "bg-[var(--button)] text-white shadow-lg"
+                      : `${
+                          themeMode === 'dark' 
+                            ? "bg-[var(--bg)] text-[var(--text)] hover:bg-[var(--hover)]" 
+                            : "bg-white text-gray-700 hover:bg-gray-100"
+                        } border-2 border-[var(--border)] hover:border-[var(--button)]`
+                  }`}
+                  onClick={() => handleFilterClick(filter)}
+                >
+                  {filter === "all" ? "All Orders" : filter === "paid" ? "Paid" : "Pending"}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      )}
+
+        {/* Orders List */}
+        {filteredItems.length === 0 ? (
+          <div className={`text-center py-20 rounded-2xl border-2 ${
+            themeMode === 'dark' 
+              ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)]" 
+              : "bg-gradient-to-br from-white to-[var(--textbox)] border-gray-200"
+          } shadow-xl animate-fade-in mb-16`}>
+            <div className="w-24 h-24 bg-[var(--button)]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <span className="text-4xl">📦</span>
+            </div>
+            <h3 className={`text-2xl font-bold mb-3 ${
+              themeMode === 'dark' ? "text-[var(--textbox)]" : "text-gray-800"
+            }`}>
+              No orders found
+            </h3>
+            <p className={`text-lg mb-8 max-w-md mx-auto ${
+              themeMode === 'dark' ? "text-gray-400" : "text-gray-600"
+            }`}>
+              {searchTx || paymentFilter !== "all" 
+                ? "Try adjusting your search criteria or filters" 
+                : "Start shopping to see your orders here"
+              }
+            </p>
+            <button
+              onClick={() => navigate("/customer/product")}
+              className="bg-[var(--button)] hover:bg-[#015c40] text-white font-semibold px-8 py-4 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
+            >
+              Start Shopping
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-8 animate-fade-in-up">
+            {currentOrders.map((order, index) => {
+              const shippingAddress = order.shipping_address
+                ? JSON.parse(order.shipping_address)
+                : null;
+
+              console.log(`🛒 Rendering order ${order.id} with items:`, order.items);
+
+              return (
+                <div
+                  key={order.id}
+                  className={`border-2 border-[var(--border)] rounded-2xl p-8 transition-all duration-300 hover:shadow-2xl hover:border-[var(--button)]/50 ${
+                    themeMode === 'dark' 
+                      ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)]" 
+                      : "bg-gradient-to-br from-white to-[var(--textbox)]"
+                  }`}
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  {/* Order Header */}
+                  <div className="grid grid-cols-1 lg:grid-cols-7 gap-6 mb-8 items-center">
+                    {/* Order ID */}
+                    <div className="text-center">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-[var(--light-gray)] mb-2">Order ID</div>
+                      <div className="text-lg font-bold bg-gradient-to-r from-[var(--text)] to-[var(--button)] bg-clip-text text-transparent">
+                        #{order.id}
+                      </div>
+                    </div>
+
+                    {/* Order Date */}
+                    <div className="text-center">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-[var(--light-gray)] mb-2">Order Date</div>
+                      <div className="text-[var(--text)] font-semibold">
+                        {new Date(order.created_at).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Total Amount */}
+                    <div className="text-center">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-[var(--light-gray)] mb-2">Total Amount</div>
+                      <div className="text-xl font-bold text-[var(--button)]">
+                        ${parseFloat(order.total_amount).toFixed(2)}
+                      </div>
+                    </div>
+
+                    {/* Ship To */}
+                    <div className="text-center">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-[var(--light-gray)] mb-2">Ship To</div>
+                      <div className="text-[var(--text)] font-semibold">
+                        {shippingAddress ? 
+                          `${shippingAddress.city}` 
+                          : 'N/A'
+                        }
+                      </div>
+                    </div>
+
+                    {/* Order Status */}
+                    <div className="text-center">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-[var(--light-gray)] mb-2">Order Status</div>
+                      <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide ${
+                        order.status === 'completed' 
+                          ? 'bg-green-500/20 text-green-600 border border-green-500/30'
+                          : order.status === 'pending'
+                          ? 'bg-yellow-500/20 text-yellow-600 border border-yellow-500/30'
+                          : 'bg-blue-500/20 text-blue-600 border border-blue-500/30'
+                      }`}>
+                        {order.status}
+                      </span>
+                    </div>
+
+                    {/* Payment Status */}
+                    <div className="text-center">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-[var(--light-gray)] mb-2">Payment</div>
+                      <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide ${
+                        order.payment_status === 'paid' 
+                          ? 'bg-green-500/20 text-green-600 border border-green-500/30'
+                          : 'bg-red-500/20 text-red-500 border border-red-500/30'
+                      }`}>
+                        {order.payment_status}
+                      </span>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="text-center">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-[var(--light-gray)] mb-3">Actions</div>
+                      <div className="flex flex-col sm:flex-row justify-center gap-2 min-w-[120px]">
+                        <button
+                          className="bg-[var(--button)] hover:bg-[#015c40] text-white font-semibold px-3 py-2 rounded-lg text-xs transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center gap-1 justify-center w-full sm:w-auto"
+                          onClick={() => navigate(`/customer/track-order/${order.id}`)}
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                          </svg>
+                          Track
+                        </button>
+                        <button
+                          className={`font-semibold px-3 py-2 rounded-lg text-xs transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center gap-1 justify-center w-full sm:w-auto ${
+                            themeMode === 'dark'
+                              ? "bg-[var(--textbox)] text-[var(--button)] hover:bg-[var(--button)] hover:text-white"
+                              : "bg-white text-[var(--button)] border border-[var(--button)] hover:bg-[var(--button)] hover:text-white"
+                          }`}
+                          onClick={async () => {
+                            try {
+                              const action = await dispatch(
+                                reorderOrder(order.id)
+                              ).unwrap();
+                              navigate(`/customer/order-details/${action.id}`, {
+                                state: { reorder: true },
+                              });
+                            } catch (err) {
+                              alert("Failed to reorder: " + err.message);
+                            }
+                          }}
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          Reorder
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Order Items with Images */}
+                  <div className="border-t border-[var(--border)] pt-6">
+                    <h3 className={`font-bold text-lg mb-4 flex items-center gap-2 ${
+                      themeMode === 'dark' ? "text-[var(--textbox)]" : "text-gray-800"
+                    }`}>
+                      <svg className="w-5 h-5 text-[var(--button)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                      </svg>
+                      Order Items
+                      {imagesLoading && (
+                        <span className="text-sm text-[var(--light-gray)] ml-2">
+                          (Loading images...)
+                        </span>
+                      )}
+                    </h3>
+                    <div className="space-y-4">
+                      {order.items.map((item) => {
+                        const imageUrl = productImages[item.product_id];
+                        console.log(`🖼️ Item ${item.product_id} image URL:`, imageUrl);
+                        
+                        return (
+                          <div
+                            key={item.product_id}
+                            className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] hover:border-[var(--button)]/50 transition-all duration-200 cursor-pointer"
+                            onClick={() => navigate(`/customer/product/${item.product_id}`)}
+                          >
+                            {/* Product Image */}
+                            <div className="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 border-[var(--border)]">
+                              {imageUrl ? (
+                                <img 
+                                  src={imageUrl} 
+                                  alt={item.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    console.error(`❌ Failed to load image: ${imageUrl}`);
+                                    e.target.style.display = 'none';
+                                  }}
+                                  onLoad={() => console.log(`✅ Image loaded successfully: ${imageUrl}`)}
+                                />
+                              ) : null}
+                              <div className={`w-full h-full flex items-center justify-center rounded-xl ${
+                                imageUrl ? 'hidden' : 'flex'
+                              } ${themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-gray-100'}`}>
+                                {imagesLoading ? (
+                                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--button)]"></div>
+                                ) : (
+                                  <span className="text-[var(--light-gray)] text-xs">No Image</span>
+                                )}
+                              </div>
+                            </div>
+                            
+                            {/* Product Details */}
+                            <div className="flex-1 flex justify-between items-center">
+                              <div>
+                                <span className={`font-bold text-lg block mb-1 ${
+                                  themeMode === 'dark' ? "text-[var(--text)]" : "text-gray-800"
+                                }`}>
+                                  {item.name}
+                                </span>
+                                <span className={`text-sm ${
+                                  themeMode === 'dark' ? "text-gray-400" : "text-gray-500"
+                                }`}>
+                                  Quantity: {item.quantity} × ${parseFloat(item.price).toFixed(2)}
+                                </span>
+                              </div>
+                              <span className={`font-bold text-lg ${
+                                themeMode === 'dark' ? "text-[var(--textbox)]" : "text-gray-700"
+                              }`}>
+                                ${(parseFloat(item.price) * item.quantity).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Payment Details */}
+                  {order.payments && order.payments.length > 0 && (
+                    <div className="border-t border-[var(--border)] pt-6 mt-6">
+                      <h3 className={`font-bold text-lg mb-4 flex items-center gap-2 ${
+                        themeMode === 'dark' ? "text-[var(--textbox)]" : "text-gray-800"
+                      }`}>
+                        <svg className="w-5 h-5 text-[var(--button)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        Payment Details
+                      </h3>
+                      {order.payments.map((payment) => (
+                        <div key={payment.id} className={`p-4 rounded-xl border border-[var(--border)] ${
+                          themeMode === 'dark' ? "bg-[var(--bg)]" : "bg-gray-50"
+                        }`}>
+                          <div className="flex flex-wrap items-center gap-4 text-sm">
+                            <span className={`font-semibold ${
+                              themeMode === 'dark' ? "text-[var(--textbox)]" : "text-gray-700"
+                            }`}>
+                              💳 {payment.payment_method}
+                            </span>
+                            <span className="text-[var(--button)] font-bold">
+                              ${parseFloat(payment.amount).toFixed(2)}
+                            </span>
+                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                              payment.status === 'completed' 
+                                ? 'bg-green-500/20 text-green-600'
+                                : 'bg-yellow-500/20 text-yellow-600'
+                            }`}>
+                              {payment.status}
+                            </span>
+                            {payment.card_last4 && (
+                              <span className="text-[var(--light-gray)]">
+                                Card: ****{payment.card_last4}
+                              </span>
+                            )}
+                            {payment.transaction_id && (
+                              <span className="text-[var(--light-gray)] font-mono">
+                                TX: {payment.transaction_id}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Pagination and Continue Shopping */}
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-6 mt-16 pt-8 border-t border-[var(--border)]">
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex-1 flex justify-center lg:justify-start">
+                  <div className="flex gap-2">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${
+                          currentPage === page
+                            ? "bg-[var(--button)] text-white shadow-lg"
+                            : `${
+                                themeMode === 'dark' 
+                                  ? "bg-[var(--bg)] text-[var(--text)] hover:bg-[var(--hover)]" 
+                                  : "bg-white text-gray-700 hover:bg-gray-100"
+                              } border-2 border-[var(--border)] hover:border-[var(--button)]`
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Continue Shopping Button */}
+              <div className="flex justify-center lg:justify-end">
+                <button
+                  onClick={() => navigate("/customer/products")}
+                  className="bg-[var(--button)] hover:bg-[#015c40] text-white font-semibold px-8 py-4 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl flex items-center gap-3"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                  </svg>
+                  Continue Shopping
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
