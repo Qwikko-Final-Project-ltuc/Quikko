@@ -7,7 +7,7 @@ import { useSelector } from "react-redux";
 import { AddWishlist, RemoveWishlist } from "../../wishlist/wishlistApi";
 import customerAPI from "../services/customerAPI";
 import { useNavigate } from "react-router-dom";
-import Toast from "../components/Toast"; // تأكد من المسار الصحيح
+import Toast from "../components/Toast";
 
 const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedIn }) => {
   const [currentImage, setCurrentImage] = useState(0);
@@ -30,113 +30,140 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
     ? JSON.parse(product.images)
     : [];
 
-  const nextImage = () => setCurrentImage((prev) => (prev + 1) % images.length);
-  const prevImage = () => setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
-  const openLightbox = () => setIsOpen(true);
-
+  // تحديد عدد النقاط المرئية (بحد أقصى 5)
+  const MAX_DOTS = 5;
+  const totalImages = images.length;
   
+  // حساب النقاط المرئية فقط
+  const getVisibleDots = () => {
+    if (totalImages <= MAX_DOTS) {
+      return Array.from({ length: totalImages }, (_, i) => i);
+    }
+    
+    // إذا كان هناك أكثر من 5 صور، نعرض نقاط ذكية
+    const dots = [];
+    const halfMax = Math.floor(MAX_DOTS / 2);
+    
+    if (currentImage <= halfMax) {
+      // في البداية
+      for (let i = 0; i < MAX_DOTS - 1; i++) {
+        dots.push(i);
+      }
+      dots.push(totalImages - 1); // النقطة الأخيرة
+    } else if (currentImage >= totalImages - 1 - halfMax) {
+      // في النهاية
+      dots.push(0); // النقطة الأولى
+      for (let i = totalImages - MAX_DOTS + 1; i < totalImages; i++) {
+        dots.push(i);
+      }
+    } else {
+      // في المنتصف
+      dots.push(0); // النقطة الأولى
+      for (let i = currentImage - 1; i <= currentImage + 1; i++) {
+        if (i > 0 && i < totalImages - 1) {
+          dots.push(i);
+        }
+      }
+      dots.push(totalImages - 1); // النقطة الأخيرة
+    }
+    
+    return dots;
+  };
+
+  const nextImage = () => setCurrentImage((prev) => (prev + 1) % totalImages);
+  const prevImage = () => setCurrentImage((prev) => (prev - 1 + totalImages) % totalImages);
+  const openLightbox = () => setIsOpen(true);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
   };
 
-const handleAddToCart = (e) => {
-  e.stopPropagation();
-  
-  if (isAnimating) return;
-  
-  setIsAnimating(true);
-  
-  const buttonRect = e.target.getBoundingClientRect();
-  const animationElement = document.createElement('div');
-  
-  // 🔽 البحث المتقدم عن زر السلة
-  const findCartButton = () => {
-    // المحاولة 1: البحث عن data attribute
-    const byDataAttr = document.querySelector('[data-cart-icon]');
-    if (byDataAttr) return byDataAttr;
+  const handleAddToCart = (e) => {
+    e.stopPropagation();
     
-    // المحاولة 2: البحث عن class محدد
-    const byClass = document.querySelector('.cart-icon-button');
-    if (byClass) return byClass;
+    if (isAnimating) return;
     
-    // المحاولة 3: البحث في الـ nav عن زر يحتوي على أيقونة
-    const navButtons = document.querySelectorAll('nav button, nav .relative button');
-    for (let btn of navButtons) {
-      if (btn.innerHTML.includes('fa-shopping-cart') || 
-          btn.innerHTML.includes('FaShoppingCart') ||
-          btn.querySelector('svg')) {
-        return btn;
-      }
-    }
+    setIsAnimating(true);
     
-    // المحاولة 4: البحث في جميع الأزرار
-    const allButtons = document.querySelectorAll('button');
-    for (let btn of allButtons) {
-      const btnText = btn.textContent?.toLowerCase() || '';
-      const btnHTML = btn.innerHTML?.toLowerCase() || '';
-      const onClick = btn.onclick?.toString() || '';
+    const buttonRect = e.target.getBoundingClientRect();
+    const animationElement = document.createElement('div');
+    
+    const findCartButton = () => {
+      const byDataAttr = document.querySelector('[data-cart-icon]');
+      if (byDataAttr) return byDataAttr;
       
-      if (btnText.includes('cart') || 
-          btnHTML.includes('shopping-cart') ||
-          onClick.includes('Cart') ||
-          onClick.includes('cart')) {
-        return btn;
+      const byClass = document.querySelector('.cart-icon-button');
+      if (byClass) return byClass;
+      
+      const navButtons = document.querySelectorAll('nav button, nav .relative button');
+      for (let btn of navButtons) {
+        if (btn.innerHTML.includes('fa-shopping-cart') || 
+            btn.innerHTML.includes('FaShoppingCart') ||
+            btn.querySelector('svg')) {
+          return btn;
+        }
       }
+      
+      const allButtons = document.querySelectorAll('button');
+      for (let btn of allButtons) {
+        const btnText = btn.textContent?.toLowerCase() || '';
+        const btnHTML = btn.innerHTML?.toLowerCase() || '';
+        const onClick = btn.onclick?.toString() || '';
+        
+        if (btnText.includes('cart') || 
+            btnHTML.includes('shopping-cart') ||
+            onClick.includes('Cart') ||
+            onClick.includes('cart')) {
+          return btn;
+        }
+      }
+      
+      return null;
+    };
+    
+    const cartButton = findCartButton();
+    let finalLeft = '10%';
+    let finalTop = '25px';
+    
+    if (cartButton) {
+      const cartRect = cartButton.getBoundingClientRect();
+      finalLeft = `${cartRect.left + cartRect.width / 2- 20}px`;
+      finalTop = `${cartRect.top + cartRect.height / 2}px`;
     }
     
-    return null;
+    animationElement.style.position = 'fixed';
+    animationElement.style.left = `${buttonRect.left + buttonRect.width / 2}px`;
+    animationElement.style.top = `${buttonRect.top + buttonRect.height / 2}px`;
+    animationElement.style.width = '50px';
+    animationElement.style.height = '50px';
+    animationElement.style.backgroundImage = `url(${images[0] || ''})`;
+    animationElement.style.backgroundSize = 'cover';
+    animationElement.style.backgroundPosition = 'center';
+    animationElement.style.borderRadius = '10px';
+    animationElement.style.zIndex = '10000';
+    animationElement.style.pointerEvents = 'none';
+    animationElement.style.transition = 'all 0.7s linear';
+    animationElement.style.boxShadow = '0 6px 20px rgba(0,0,0,0.4)';
+    animationElement.style.border = '2px solid white';
+    
+    document.body.appendChild(animationElement);
+    
+    setTimeout(() => {
+      animationElement.style.left = finalLeft;
+      animationElement.style.top = finalTop;
+      animationElement.style.transform = 'scale(0.15)';
+      animationElement.style.opacity = '0.6';
+    }, 10);
+    
+    setTimeout(() => {
+      if (document.body.contains(animationElement)) {
+        document.body.removeChild(animationElement);
+      }
+      setIsAnimating(false);
+      onAddToCart?.(product);
+      showToast(`${product.name} added to cart!`, 'success');
+    }, 720);
   };
-  
-  const cartButton = findCartButton();
-  let finalLeft = '10%';
-  let finalTop = '25px';
-  
-  if (cartButton) {
-    const cartRect = cartButton.getBoundingClientRect();
-    finalLeft = `${cartRect.left + cartRect.width / 2- 20}px`;
-    finalTop = `${cartRect.top + cartRect.height / 2}px`;
-    console.log('Found cart button at:', finalLeft, finalTop);
-  } else {
-    console.log(' Cart button not found, using default position');
-  }
-  
-  // إعداد عنصر الأنيميشن
-  animationElement.style.position = 'fixed';
-  animationElement.style.left = `${buttonRect.left + buttonRect.width / 2}px`;
-  animationElement.style.top = `${buttonRect.top + buttonRect.height / 2}px`;
-  animationElement.style.width = '50px';
-  animationElement.style.height = '50px';
-  animationElement.style.backgroundImage = `url(${images[0] || ''})`;
-  animationElement.style.backgroundSize = 'cover';
-  animationElement.style.backgroundPosition = 'center';
-  animationElement.style.borderRadius = '10px';
-  animationElement.style.zIndex = '10000';
-  animationElement.style.pointerEvents = 'none';
-  animationElement.style.transition = 'all 0.7s linear';
-  animationElement.style.boxShadow = '0 6px 20px rgba(0,0,0,0.4)';
-  animationElement.style.border = '2px solid white';
-  
-  document.body.appendChild(animationElement);
-  
-  // بدء الأنيميشن
-  setTimeout(() => {
-    animationElement.style.left = finalLeft;
-    animationElement.style.top = finalTop;
-    animationElement.style.transform = 'scale(0.15)';
-    animationElement.style.opacity = '0.6';
-  }, 10);
-  
-  // التنظيف بعد الأنيميشن
-  setTimeout(() => {
-    if (document.body.contains(animationElement)) {
-      document.body.removeChild(animationElement);
-    }
-    setIsAnimating(false);
-    onAddToCart?.(product);
-    showToast(`${product.name} added to cart!`, 'success');
-  }, 720);
-};
 
   // Toggle wishlist
   const onToggleWishlist = async () => {
@@ -177,6 +204,13 @@ const handleAddToCart = (e) => {
     setImageLoading(false);
   };
 
+  // تحديد إذا كانت النقطة تمثل مجموعة
+  const isDotGroup = (dotIndex) => {
+    return totalImages > MAX_DOTS && 
+           dotIndex === MAX_DOTS - 1 && 
+           currentImage < totalImages - 2;
+  };
+
   return (
     <>
       <div
@@ -214,7 +248,7 @@ const handleAddToCart = (e) => {
             </div>
           )}
 
-          {/* أزرار التنقل بين الصور */}
+          {/* أزرار التنقل بين الصور - دائماً ظاهرة عندما يوجد أكثر من صورة */}
           {images.length > 1 && (
             <>
               <button
@@ -222,7 +256,7 @@ const handleAddToCart = (e) => {
                   e.stopPropagation();
                   prevImage();
                 }}
-                className="absolute left-2 top-1/2 -translate-y-1/2 bg-[var(--mid-dark)]/70 text-white w-8 h-8 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-[var(--mid-dark)] backdrop-blur-sm flex items-center justify-center"
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 text-white w-8 h-8 rounded-full opacity-80 hover:opacity-100 transition-all duration-300 backdrop-blur-sm flex items-center justify-center hover:bg-black/80 shadow-lg"
               >
                 ‹
               </button>
@@ -231,26 +265,40 @@ const handleAddToCart = (e) => {
                   e.stopPropagation();
                   nextImage();
                 }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-[var(--mid-dark)]/70 text-white w-8 h-8 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-[var(--mid-dark)] backdrop-blur-sm flex items-center justify-center"
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 text-white w-8 h-8 rounded-full opacity-80 hover:opacity-100 transition-all duration-300 backdrop-blur-sm flex items-center justify-center hover:bg-black/80 shadow-lg"
               >
                 ›
               </button>
             </>
           )}
 
-          {/* مؤشر الصور */}
+          {/* مؤشر الصور الذكي */}
           {images.length > 1 && (
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex space-x-1">
-              {images.map((_, index) => (
-                <div
-                  key={index}
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex space-x-1 bg-black/40 backdrop-blur-sm rounded-full px-2 py-1">
+              {getVisibleDots().map((dotIndex) => (
+                <button
+                  key={dotIndex}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentImage(dotIndex);
+                  }}
                   className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                    index === currentImage 
-                      ? "bg-[var(--button)]" 
-                      : "bg-[var(--light-gray)]/50"
+                    dotIndex === currentImage 
+                      ? "bg-[var(--button)] scale-125" 
+                      : "bg-white/60 hover:bg-white/80"
+                  } ${
+                    isDotGroup(dotIndex) ? "w-3 rounded-sm" : ""
                   }`}
+                  title={isDotGroup(dotIndex) ? `More images...` : `Image ${dotIndex + 1}`}
                 />
               ))}
+              
+              {/* عرض العدد الإجمالي إذا كان هناك أكثر من 5 صور */}
+              {totalImages > MAX_DOTS && (
+                <span className="text-white text-xs ml-1 px-1 bg-black/40 rounded">
+                  {currentImage + 1}/{totalImages}
+                </span>
+              )}
             </div>
           )}
         </div>

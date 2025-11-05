@@ -19,7 +19,12 @@ import {
   FiAlertCircle,
   FiArrowLeft,
   FiPackage,
-  FiShield
+  FiShield,
+  FiMapPin,
+  FiDollarSign,
+  FiPercent,
+  FiGift,
+  FiChevronDown
 } from "react-icons/fi";
 
 const OrderDetailsPage = () => {
@@ -355,53 +360,46 @@ const OrderDetailsPage = () => {
     : 'bg-[var(--bg)] text-[var(--text)]';
     
   const cardClass = themeMode === 'dark' 
-    ? 'bg-[var(--bg)] border-[var(--border)]' 
-    : 'bg-[var(--textbox)] border-[var(--border)]';
+    ? 'bg-[var(--div)] border-[var(--border)] backdrop-blur-sm bg-opacity-80' 
+    : 'bg-[var(--textbox)] border-[var(--border)] backdrop-blur-sm bg-opacity-80';
     
   const inputClass = themeMode === 'dark' 
-    ? 'bg-[var(--bg)] border-[var(--border)] text-[var(--text)] placeholder-[var(--light-gray)] focus:border-[var(--button)] focus:ring-[var(--button)]' 
-    : 'bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] placeholder-[var(--light-gray)] focus:border-[var(--button)] focus:ring-[var(--button)]';
+    ? 'bg-[var(--mid-dark)] border-[var(--border)] text-[var(--text)] placeholder-[var(--light-gray)] focus:border-[var(--button)] focus:ring-2 focus:ring-[var(--button)]/20 transition-all duration-300' 
+    : 'bg-white border-[var(--border)] text-[var(--text)] placeholder-[var(--light-gray)] focus:border-[var(--button)] focus:ring-2 focus:ring-[var(--button)]/20 transition-all duration-300';
     
-  const buttonClass = "bg-[var(--button)] hover:bg-[#015c40] text-white font-medium transition-all duration-200 transform hover:scale-[1.02]";
+  const buttonClass = "bg-[var(--button)] hover:bg-[#015c40] text-white font-semibold transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg relative overflow-hidden";
   const secondaryButtonClass = themeMode === 'dark' 
-    ? 'border-[var(--border)] bg-[var(--div)] hover:bg-[var(--hover)] text-[var(--text)]' 
-    : 'border-[var(--border)] bg-[var(--textbox)] hover:bg-[var(--hover)] text-[var(--text)]';
+    ? 'border-[var(--border)] bg-[var(--mid-dark)] hover:bg-[var(--hover)] text-[var(--text)] transition-all duration-300' 
+    : 'border-[var(--border)] bg-white hover:bg-[var(--hover)] text-[var(--text)] transition-all duration-300';
 
   const successClass = themeMode === 'dark' 
-    ? 'bg-[#1e3a2a] border-[var(--success)] text-[var(--success)]' 
-    : 'bg-[#e6ffed] border-[var(--success)] text-[#166534]';
+    ? 'bg-green-900/30 border-green-500/50 text-green-300 backdrop-blur-sm' 
+    : 'bg-green-50 border-green-200 text-green-800 backdrop-blur-sm';
     
   const errorClass = themeMode === 'dark' 
-    ? 'bg-[#3a1e1e] border-[var(--error)] text-[var(--error)]' 
-    : 'bg-[#ffe6e6] border-[var(--error)] text-[#991b1b]';
-
-  const warningClass = themeMode === 'dark'
-    ? 'bg-[#3a2e1e] border-[var(--warning)] text-[var(--warning)]'
-    : 'bg-[#fefce8] border-[var(--warning)] text-[#854d0e]';
-
-  // Icon style - same color as text
-  const iconStyle = "text-[var(--text)]";
+    ? 'bg-red-900/30 border-red-500/50 text-red-300 backdrop-blur-sm' 
+    : 'bg-red-50 border-red-200 text-red-800 backdrop-blur-sm';
 
   if (status === "loading") return (
     <div className={`min-h-screen flex items-center justify-center ${containerClass}`}>
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--button)] mx-auto mb-4"></div>
-        <p className="text-lg">Loading your order details...</p>
+      <div className="text-center animate-fade-in">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[var(--button)] mx-auto mb-4 backdrop-blur-sm"></div>
+        <p className="text-lg text-[var(--light-gray)]">Loading your order details...</p>
       </div>
     </div>
   );
   
   if (error) return (
     <div className={`min-h-screen flex items-center justify-center ${containerClass}`}>
-      <div className={`text-center max-w-md p-8 rounded-2xl border ${errorClass}`}>
-        <div className="w-16 h-16 bg-[var(--error)]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-          <FiAlertCircle className={`text-2xl ${iconStyle}`} />
+      <div className={`text-center max-w-md p-8 rounded-2xl border-2 ${errorClass} animate-fade-in-up backdrop-blur-sm`}>
+        <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+          <FiAlertCircle className="text-2xl text-red-500" />
         </div>
         <h3 className="text-xl font-bold mb-2">Error Loading Order</h3>
-        <p className="mb-6">{error}</p>
+        <p className="mb-6 opacity-90">{error}</p>
         <button 
           onClick={() => navigate(-1)}
-          className={`${buttonClass} px-6 py-3 rounded-lg flex items-center justify-center mx-auto`}
+          className={`${buttonClass} px-6 py-3 rounded-xl flex items-center justify-center mx-auto`}
         >
           <FiArrowLeft className="mr-2" />
           Go Back
@@ -412,15 +410,15 @@ const OrderDetailsPage = () => {
   
   if (!currentCart) return (
     <div className={`min-h-screen flex items-center justify-center ${containerClass}`}>
-      <div className="text-center max-w-md p-8">
-        <div className="w-20 h-20 bg-[var(--div)] rounded-full flex items-center justify-center mx-auto mb-4">
-          <FiShoppingCart className={`text-2xl ${iconStyle}`} />
+      <div className="text-center max-w-md p-8 animate-fade-in">
+        <div className="w-20 h-20 bg-[var(--div)] rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+          <FiShoppingCart className="text-2xl text-[var(--text)]" />
         </div>
         <h3 className="text-xl font-bold mb-4">Cart Not Found</h3>
         <p className="text-[var(--light-gray)] mb-6">We couldn't find the cart you're looking for.</p>
         <button 
           onClick={() => navigate("/")}
-          className={`${buttonClass} px-6 py-3 rounded-lg`}
+          className={`${buttonClass} px-6 py-3 rounded-xl`}
         >
           Continue Shopping
         </button>
@@ -429,57 +427,68 @@ const OrderDetailsPage = () => {
   );
 
   return (
-    <div className={`min-h-screen py-8 ${containerClass} transition-colors duration-300`}>
+    <div className={`min-h-screen py-6 ${containerClass} transition-colors duration-300 font-sans`}>
       <div className="container mx-auto px-4 max-w-6xl">
-        {/* Header */}
-        <div className="text-center mb-12 p-6">
-          <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-[var(--button)] to-[#02966a] bg-clip-text text-transparent">
+        {/* Header - أكثر إحترافية وأقل طولاً */}
+        <div className="text-left mb-6 p-4 animate-fade-in-up">
+          <h1 className="text-3xl font-bold mb-3 text-[var(--text)] tracking-tight">
             Complete Your Order
           </h1>
-          <p className="text-lg text-[var(--light-gray)] max-w-2xl mx-auto">
+          <p className="text-base text-[var(--light-gray)] max-w-2xl leading-relaxed">
             Review your items, apply discounts, and securely complete your purchase
           </p>
         </div>
 
         {orderSuccess ? (
-          <div className="max-w-2xl mx-auto">
-            <div className={`bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 border ${successClass} rounded-2xl p-8 text-center`}>
-              <div className="w-20 h-20 bg-[var(--success)]/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <FiCheckCircle className={`text-3xl ${iconStyle}`} />
+          <div className="max-w-2xl mx-auto animate-fade-in">
+            <div className={`bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 border-2 ${successClass} rounded-3xl p-8 text-center shadow-2xl backdrop-blur-sm`}>
+              <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce backdrop-blur-sm">
+                <FiCheckCircle className="text-3xl text-green-500" />
               </div>
-              <h2 className="text-2xl font-bold mb-4">
+              <h2 className="text-2xl font-bold mb-4 text-green-600 dark:text-green-400 tracking-tight">
                 Order Confirmed!
               </h2>
-              <div className={`space-y-3 text-left max-w-md mx-auto ${cardClass} rounded-lg p-6 border`}>
-                <div className="flex justify-between">
-                  <span className="text-[var(--light-gray)]">Order ID:</span>
-                  <span className="font-semibold">#{orderSuccess.order.order?.id}</span>
+              <div className={`space-y-3 text-left max-w-md mx-auto ${cardClass} rounded-2xl p-5 border shadow-lg backdrop-blur-sm`}>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-[var(--light-gray)] flex items-center text-sm">
+                    <FiPackage className="mr-2" />
+                    Order ID:
+                  </span>
+                  <span className="font-semibold text-[var(--text)] text-sm">#{orderSuccess.order.order?.id}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-[var(--light-gray)]">Payment Method:</span>
-                  <span className="font-semibold">{orderSuccess.method}</span>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-[var(--light-gray)] flex items-center text-sm">
+                    <FiCreditCard className="mr-2" />
+                    Payment Method:
+                  </span>
+                  <span className="font-semibold text-[var(--text)] text-sm">{orderSuccess.method}</span>
                 </div>
                 {orderSuccess.transactionId && (
-                  <div className="flex justify-between">
-                    <span className="text-[var(--light-gray)]">Transaction ID:</span>
-                    <span className="font-mono text-sm">{orderSuccess.transactionId}</span>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-[var(--light-gray)] text-sm">Transaction ID:</span>
+                    <span className="font-mono text-xs bg-[var(--bg)] px-2 py-1 rounded text-[var(--text)] backdrop-blur-sm">
+                      {orderSuccess.transactionId}
+                    </span>
                   </div>
                 )}
-                <div className="flex justify-between text-lg font-bold mt-4 pt-4 border-t border-[var(--border)]">
-                  <span>Total Paid:</span>
+                <div className="flex justify-between text-lg font-bold mt-3 pt-3 border-t border-[var(--border)]">
+                  <span className="flex items-center text-[var(--text)]">
+                    <FiDollarSign className="mr-1" />
+                    Total Paid:
+                  </span>
                   <span className="text-[var(--button)]">${finalTotal.toFixed(2)}</span>
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
                 <button
-                  className={`${buttonClass} px-8 py-3 rounded-lg flex items-center justify-center`}
+                  className={`${buttonClass} px-6 py-3 rounded-xl flex items-center justify-center text-base backdrop-blur-sm`}
                   onClick={() => navigate("/customer/orders")}
                 >
                   <FiPackage className="mr-2" />
                   View My Orders
                 </button>
                 <button
-                  className={`${secondaryButtonClass} px-8 py-3 rounded-lg border flex items-center justify-center`}
+                  className={`${secondaryButtonClass} px-6 py-3 rounded-xl border-2 flex items-center justify-center text-base backdrop-blur-sm`}
                   onClick={() => navigate("/")}
                 >
                   <FiShoppingCart className="mr-2" />
@@ -489,42 +498,46 @@ const OrderDetailsPage = () => {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             {/* Left Column - Order Items & Address */}
-            <div className="xl:col-span-2 space-y-8">
-              {/* Order Items Card */}
-              <div className={`rounded-2xl border ${cardClass} p-8 transition-all duration-300 hover:shadow-lg`}>
+            <div className="xl:col-span-2 space-y-6">
+              {/* Order Items Card - أقصر */}
+              <div className={`rounded-2xl border-2 ${cardClass} p-6 transition-all duration-300 hover:shadow-xl animate-fade-in-up shadow-lg backdrop-blur-sm`}>
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold flex items-center">
-                    <FiShoppingCart className={`mr-3 ${iconStyle}`} />
+                  <h2 className="text-xl font-bold flex items-center text-[var(--text)] tracking-tight">
+                    <FiShoppingCart className={`mr-3 text-[var(--button)]`} />
                     Order Items
-                    <span className="ml-3 text-sm bg-[var(--button)] text-white px-2 py-1 rounded-full">
+                    <span className="ml-2 text-xs bg-[var(--button)] text-white px-2 py-1 rounded-full backdrop-blur-sm">
                       {currentCart?.items?.length || 0}
                     </span>
                   </h2>
-                  <span className="text-lg font-semibold text-[var(--button)]">
+                  <span className="text-lg font-semibold text-[var(--button)] bg-[var(--button)]/10 px-3 py-1.5 rounded-xl backdrop-blur-sm">
                     ${total.toFixed(2)}
                   </span>
                 </div>
                 
                 {currentCart?.items?.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="w-24 h-24 bg-[var(--div)] rounded-full flex items-center justify-center mx-auto mb-4">
-                      <FiShoppingCart className={`text-3xl ${iconStyle}`} />
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-[var(--div)] rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm">
+                      <FiShoppingCart className="text-2xl text-[var(--text)]" />
                     </div>
-                    <h3 className="text-xl font-bold mb-2">Your cart is empty</h3>
-                    <p className="text-[var(--light-gray)] mb-6">Add some items to get started</p>
+                    <h3 className="text-lg font-bold mb-2 text-[var(--text)] tracking-tight">Your cart is empty</h3>
+                    <p className="text-[var(--light-gray)] text-sm mb-4">Add some items to get started</p>
                     <button 
                       onClick={() => navigate("/")}
-                      className={`${buttonClass} px-6 py-3 rounded-lg`}
+                      className={`${buttonClass} px-6 py-3 rounded-xl text-base backdrop-blur-sm`}
                     >
                       Start Shopping
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {currentCart.items.map((item) => (
-                      <div key={`${item.id}-${item.product_id || ""}`} className="transform hover:scale-[1.01] transition-transform duration-200">
+                  <div className="space-y-3">
+                    {currentCart.items.map((item, index) => (
+                      <div 
+                        key={`${item.id}-${item.product_id || ""}`} 
+                        className="transform hover:scale-[1.005] transition-all duration-300 animate-fade-in-up backdrop-blur-sm"
+                        style={{ animationDelay: `${index * 100}ms` }}
+                      >
                         <CartItem
                           item={{
                             ...item,
@@ -540,19 +553,19 @@ const OrderDetailsPage = () => {
                 )}
               </div>
 
-              {/* Shipping Address Card */}
-              <div className={`rounded-2xl border ${cardClass} p-8 transition-all duration-300 hover:shadow-lg`}>
-                <h2 className="text-2xl font-bold mb-6 flex items-center">
-                  <FiHome className={`mr-3 ${iconStyle}`} />
+              {/* Shipping Address Card - أقصر */}
+              <div className={`rounded-2xl border-2 ${cardClass} p-6 transition-all duration-300 hover:shadow-xl animate-fade-in-up shadow-lg backdrop-blur-sm`}>
+                <h2 className="text-xl font-bold mb-6 flex items-center text-[var(--text)] tracking-tight">
+                  <FiMapPin className={`mr-3 text-[var(--button)]`} />
                   Shipping Address
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-semibold mb-2">
+                    <label className="block text-sm font-semibold mb-2 text-[var(--text)] tracking-tight">
                       Street Address *
                     </label>
                     <input
-                      className={`w-full p-4 rounded-xl border ${inputClass} transition-colors duration-200`}
+                      className={`w-full p-3 rounded-xl border-2 ${inputClass} transition-all duration-200 focus:shadow-lg backdrop-blur-sm text-sm`}
                       placeholder="123 Main Street"
                       value={address.address_line1}
                       onChange={(e) =>
@@ -561,11 +574,11 @@ const OrderDetailsPage = () => {
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-semibold mb-2">
+                    <label className="block text-sm font-semibold mb-2 text-[var(--text)] tracking-tight">
                       Apartment, Suite, etc.
                     </label>
                     <input
-                      className={`w-full p-4 rounded-xl border ${inputClass} transition-colors duration-200`}
+                      className={`w-full p-3 rounded-xl border-2 ${inputClass} transition-all duration-200 focus:shadow-lg backdrop-blur-sm text-sm`}
                       placeholder="Apt 4B"
                       value={address.address_line2}
                       onChange={(e) =>
@@ -574,51 +587,14 @@ const OrderDetailsPage = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold mb-2">
+                    <label className="block text-sm font-semibold mb-2 text-[var(--text)] tracking-tight">
                       City *
                     </label>
                     <input
-                      className={`w-full p-4 rounded-xl border ${inputClass} transition-colors duration-200`}
+                      className={`w-full p-3 rounded-xl border-2 ${inputClass} transition-all duration-200 focus:shadow-lg backdrop-blur-sm text-sm`}
                       placeholder="New York"
                       value={address.city}
                       onChange={(e) => setAddress({ ...address, city: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold mb-2">
-                      State
-                    </label>
-                    <input
-                      className={`w-full p-4 rounded-xl border ${inputClass} transition-colors duration-200`}
-                      placeholder="NY"
-                      value={address.state}
-                      onChange={(e) => setAddress({ ...address, state: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold mb-2">
-                      ZIP Code
-                    </label>
-                    <input
-                      className={`w-full p-4 rounded-xl border ${inputClass} transition-colors duration-200`}
-                      placeholder="10001"
-                      value={address.postal_code}
-                      onChange={(e) =>
-                        setAddress({ ...address, postal_code: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold mb-2">
-                      Country
-                    </label>
-                    <input
-                      className={`w-full p-4 rounded-xl border ${inputClass} transition-colors duration-200`}
-                      placeholder="United States"
-                      value={address.country}
-                      onChange={(e) =>
-                        setAddress({ ...address, country: e.target.value })
-                      }
                     />
                   </div>
                 </div>
@@ -626,24 +602,27 @@ const OrderDetailsPage = () => {
             </div>
 
             {/* Right Column - Order Summary & Payment */}
-            <div className="space-y-8 pb-6">
-              {/* Order Summary Card */}
-              <div className={`rounded-2xl border ${cardClass} p-8 sticky top-8 transition-all duration-300 hover:shadow-lg`}>
-                <h2 className="text-2xl font-bold mb-6 flex items-center">
-                  <FiFileText className={`mr-3 ${iconStyle}`} />
+            <div className="space-y-6 pb-6">
+              {/* Order Summary Card - أقصر */}
+              <div className={`rounded-2xl border-2 ${cardClass} p-6 sticky top-6 transition-all duration-300 hover:shadow-xl animate-fade-in-up shadow-xl backdrop-blur-sm`}>
+                <h2 className="text-xl font-bold mb-6 flex items-center text-[var(--text)] tracking-tight">
+                  <FiFileText className={`mr-3 text-[var(--button)]`} />
                   Order Summary
                 </h2>
                 
-                <div className="space-y-4 mb-6">
+                <div className="space-y-3 mb-6">
                   <div className="flex justify-between items-center py-3 border-b border-[var(--border)]">
-                    <span className="text-[var(--light-gray)]">Subtotal</span>
-                    <span className="font-semibold">${total.toFixed(2)}</span>
+                    <span className="text-[var(--light-gray)] text-sm">Subtotal</span>
+                    <span className="font-semibold text-[var(--text)] text-sm">${total.toFixed(2)}</span>
                   </div>
                   
                   {appliedCoupon && (
                     <div className="flex justify-between items-center py-3 border-b border-[var(--border)]">
-                      <span className="text-[var(--success)]">Coupon Discount</span>
-                      <span className="font-semibold text-[var(--success)]">
+                      <span className="text-green-600 dark:text-green-400 flex items-center text-sm">
+                        <FiPercent className="mr-2" />
+                        Coupon Discount
+                      </span>
+                      <span className="font-semibold text-green-600 dark:text-green-400 text-sm">
                         -${appliedCoupon.discount_amount.toFixed(2)}
                       </span>
                     </div>
@@ -651,16 +630,19 @@ const OrderDetailsPage = () => {
                   
                   {usePointsChecked && (
                     <div className="flex justify-between items-center py-3 border-b border-[var(--border)]">
-                      <span className="text-[var(--success)]">Points Discount</span>
-                      <span className="font-semibold text-[var(--success)]">
+                      <span className="text-green-600 dark:text-green-400 flex items-center text-sm">
+                        <FiStar className="mr-2" />
+                        Points Discount
+                      </span>
+                      <span className="font-semibold text-green-600 dark:text-green-400 text-sm">
                         -${pointsDiscount.toFixed(2)}
                       </span>
                     </div>
                   )}
                   
                   <div className="flex justify-between items-center pt-4 border-t-2 border-[var(--border)]">
-                    <span className="text-xl font-bold">Total</span>
-                    <span className="text-2xl font-bold text-[var(--button)]">
+                    <span className="text-lg font-bold text-[var(--text)] tracking-tight">Total</span>
+                    <span className="text-xl font-bold text-[var(--button)] bg-[var(--button)]/10 px-3 py-1.5 rounded-xl backdrop-blur-sm">
                       ${finalTotal.toFixed(2)}
                     </span>
                   </div>
@@ -668,54 +650,54 @@ const OrderDetailsPage = () => {
 
                 {/* Coupon Section */}
                 <div className="mb-6">
-                  <h3 className="font-semibold mb-3 flex items-center">
-                    <FiTag className={`mr-2 ${iconStyle}`} />
+                  <h3 className="font-semibold mb-3 flex items-center text-base text-[var(--text)] tracking-tight">
+                    <FiGift className={`mr-2 text-[var(--button)]`} />
                     Apply Coupon
                   </h3>
-                  <div className="flex gap-2 mb-3">
+                  <div className="flex flex-col sm:flex-row gap-2 mb-3">
                     <input
                       type="text"
                       placeholder="Enter coupon code"
                       value={couponCode}
                       onChange={(e) => setCouponCode(e.target.value)}
-                      className={`flex-1 p-3 rounded-lg border ${inputClass}`}
+                      className={`flex-1 p-3 rounded-xl border-2 ${inputClass} focus:shadow-lg min-w-0 backdrop-blur-sm text-sm`}
                     />
                     <button
                       onClick={handleValidateCoupon}
-                      className={`${buttonClass} px-4 py-3 rounded-lg whitespace-nowrap min-w-[80px]`}
+                      className={`${buttonClass} px-4 py-3 rounded-xl whitespace-nowrap sm:w-auto w-full backdrop-blur-sm text-sm`}
                     >
                       Apply
                     </button>
                   </div>
                   {couponResult && (
-                    <div className={`p-4 rounded-lg border ${
+                    <div className={`p-3 rounded-xl border-2 backdrop-blur-sm text-sm ${
                       couponResult.discount > 0 ? successClass : errorClass
-                    }`}>
-                      <p className="font-semibold">{couponResult.message}</p>
+                    } animate-fade-in`}>
+                      <p className="font-semibold tracking-tight">{couponResult.message}</p>
                       {couponResult.discount > 0 && (
-                        <div className="mt-2 text-sm">
-                          <p>Discount: <strong>${couponResult.discount.toFixed(2)}</strong></p>
-                          <p>New Total: <strong>${couponResult.final.toFixed(2)}</strong></p>
+                        <div className="mt-2 text-xs space-y-1">
+                          <p className="text-[var(--text)]">Discount: <strong>${couponResult.discount.toFixed(2)}</strong></p>
+                          <p className="text-[var(--text)]">New Total: <strong>${couponResult.final.toFixed(2)}</strong></p>
                         </div>
                       )}
                     </div>
                   )}
                 </div>
 
-                {/* Loyalty Points - Compact Version */}
+                {/* Loyalty Points */}
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-semibold flex items-center">
-                      <FiStar className={`mr-2 ${iconStyle}`} />
+                    <h3 className="font-semibold flex items-center text-base text-[var(--text)] tracking-tight">
+                      <FiStar className={`mr-2 text-[var(--button)]`} />
                       Loyalty Points
                     </h3>
-                    <span className="text-sm text-[var(--light-gray)]">
-                      {loyaltyPoints} points available
+                    <span className="text-xs text-[var(--light-gray)] bg-[var(--bg)] px-2 py-1 rounded-full backdrop-blur-sm">
+                      {loyaltyPoints} points
                     </span>
                   </div>
                   
-                  <div className="flex items-center gap-3">
-                    <label className="flex items-center cursor-pointer">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
+                    <label className="flex items-center cursor-pointer group">
                       <div className="relative">
                         <input
                           type="checkbox"
@@ -723,24 +705,24 @@ const OrderDetailsPage = () => {
                           onChange={() => handleUsePoints(loyaltyPoints)}
                           className="sr-only"
                         />
-                        <div className={`w-10 h-6 rounded-full transition-colors duration-200 ${
+                        <div className={`w-10 h-5 rounded-full transition-all duration-300 backdrop-blur-sm ${
                           usePointsChecked ? 'bg-[var(--button)]' : 'bg-[var(--border)]'
-                        }`}>
-                          <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform duration-200 ${
-                            usePointsChecked ? 'transform translate-x-4' : ''
-                          }`} />
+                        } group-hover:shadow-md`}>
+                          <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-all duration-300 backdrop-blur-sm ${
+                            usePointsChecked ? 'transform translate-x-5' : ''
+                          } group-hover:scale-110`} />
                         </div>
                       </div>
-                      <span className="ml-2 text-sm">Use points</span>
+                      <span className="ml-2 font-medium text-[var(--text)] tracking-tight text-sm">Use points</span>
                     </label>
                     
                     {usePointsChecked && (
-                      <div className="flex-1">
+                      <div className="flex-1 sm:mt-0 mt-2">
                         <input
                           type="number"
                           value={userPointsToUse}
                           onChange={(e) => setUserPointsToUse(Number(e.target.value))}
-                          className={`w-full p-2 rounded-lg border ${inputClass} text-sm`}
+                          className={`w-full p-2 rounded-lg border-2 ${inputClass} text-xs focus:shadow-lg backdrop-blur-sm`}
                           min="0"
                           max={loyaltyPoints}
                           placeholder="Points to use"
@@ -750,8 +732,8 @@ const OrderDetailsPage = () => {
                   </div>
                   
                   {usePointsChecked && (
-                    <div className="mt-2 flex justify-between items-center text-sm">
-                      <span className="text-[var(--success)]">
+                    <div className="flex justify-between items-center text-xs bg-[var(--bg)] p-2 rounded-xl backdrop-blur-sm">
+                      <span className="text-green-600 dark:text-green-400 font-semibold">
                         Save: ${pointsDiscount.toFixed(2)}
                       </span>
                       <span className="text-[var(--light-gray)]">
@@ -761,88 +743,97 @@ const OrderDetailsPage = () => {
                   )}
                   
                   {pointsError && (
-                    <p className="text-[var(--error)] text-sm mt-2">{pointsError}</p>
+                    <p className={`text-red-500 text-xs mt-1 p-2 ${errorClass} rounded-xl backdrop-blur-sm`}>{pointsError}</p>
                   )}
                 </div>
 
-                {/* Payment Method */}
+                {/* Payment Method - Dropdown محسن */}
                 <div className="mb-6">
-                  <h3 className="font-semibold mb-3 flex items-center">
-                    <FiCreditCard className={`mr-2 ${iconStyle}`} />
+                  <h3 className="font-semibold mb-3 flex items-center text-base text-[var(--text)] tracking-tight">
+                    <FiCreditCard className={`mr-2 text-[var(--button)]`} />
                     Payment Method
                   </h3>
-                  <select
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className={`w-full p-4 rounded-xl border ${inputClass} mb-4`}
-                  >
-                    <option value="cod">
-                      <FiTruck className="inline mr-2" />
-                      Cash on Delivery
-                    </option>
-                    <option value="card">
-                      <FiCreditCard className="inline mr-2" />
-                      Credit/Debit Card
-                    </option>
-                    <option value="paypal">
-                      <FiCreditCard className="inline mr-2" />
-                      PayPal
-                    </option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className={`w-full p-3 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm appearance-none cursor-pointer`}
+                      style={{ 
+                        backgroundColor: themeMode === 'dark' ? 'var(--bg)' : 'white'
+                      }}
+                    >
+                      <option value="cod" className="flex items-center py-2">
+                        <FiTruck className="inline mr-2" />
+                        Cash on Delivery
+                      </option>
+                      <option value="card" className="flex items-center py-2">
+                        <FiCreditCard className="inline mr-2" />
+                        Credit/Debit Card
+                      </option>
+                      <option value="paypal" className="flex items-center py-2">
+                        <FiCreditCard className="inline mr-2" />
+                        PayPal
+                      </option>
+                    </select>
+                    <FiChevronDown 
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[var(--light-gray)] pointer-events-none" 
+                      size={16}
+                    />
+                  </div>
 
                   {paymentMethod === "card" && (
-                    <div className={`space-y-4 ${cardClass} rounded-xl p-4 border`}>
+                    <div className={`space-y-3 ${cardClass} rounded-xl p-4 border-2 animate-fade-in backdrop-blur-sm mt-3`}>
                       <div>
-                        <label className="block text-sm font-medium mb-2">Card Number</label>
+                        <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Card Number</label>
                         <input
                           placeholder="1234 5678 9012 3456"
                           value={card.number}
                           onChange={(e) => setCard({ ...card, number: e.target.value })}
-                          className={`w-full p-3 rounded-lg border ${inputClass}`}
+                          className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-sm font-medium mb-2">Expiry Month</label>
+                          <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Expiry Month</label>
                           <input
                             placeholder="MM"
                             value={card.expiryMonth}
                             onChange={(e) => setCard({ ...card, expiryMonth: e.target.value })}
-                            className={`w-full p-3 rounded-lg border ${inputClass}`}
+                            className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium mb-2">Expiry Year</label>
+                          <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Expiry Year</label>
                           <input
                             placeholder="YYYY"
                             value={card.expiryYear}
                             onChange={(e) => setCard({ ...card, expiryYear: e.target.value })}
-                            className={`w-full p-3 rounded-lg border ${inputClass}`}
+                            className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
                           />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-sm font-medium mb-2">CVC</label>
+                          <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">CVC</label>
                           <input
                             placeholder="123"
                             value={card.cvc}
                             onChange={(e) => setCard({ ...card, cvc: e.target.value })}
-                            className={`w-full p-3 rounded-lg border ${inputClass}`}
+                            className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium mb-2">Cardholder Name</label>
+                          <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Cardholder Name</label>
                           <input
                             placeholder="John Doe"
                             value={card.name}
                             onChange={(e) => setCard({ ...card, name: e.target.value })}
-                            className={`w-full p-3 rounded-lg border ${inputClass}`}
+                            className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
                           />
                         </div>
                       </div>
                       {cardError && (
-                        <p className={`text-[var(--error)] text-sm p-3 ${errorClass} rounded-lg`}>
+                        <p className={`p-2.5 ${errorClass} rounded-xl font-medium tracking-tight text-xs backdrop-blur-sm`}>
                           {cardError}
                         </p>
                       )}
@@ -850,8 +841,8 @@ const OrderDetailsPage = () => {
                   )}
 
                   {paymentMethod === "paypal" && (
-                    <div className={`${cardClass} rounded-xl p-4 border`}>
-                      <div id="paypal-button-container" className="min-h-[50px]"></div>
+                    <div className={`${cardClass} rounded-xl p-4 border-2 animate-fade-in backdrop-blur-sm mt-3`}>
+                      <div id="paypal-button-container" className="min-h-[40px]"></div>
                     </div>
                   )}
                 </div>
@@ -860,33 +851,33 @@ const OrderDetailsPage = () => {
                 <button
                   onClick={handleCheckoutClickWithDiscount}
                   disabled={checkoutLoading || currentCart?.items?.length === 0}
-                  className={`w-full ${buttonClass} py-4 rounded-xl font-semibold text-lg flex items-center justify-center transition-all duration-200 ${
+                  className={`w-full ${buttonClass} py-4 rounded-2xl font-bold text-base flex items-center justify-center transition-all duration-300 backdrop-blur-sm ${
                     checkoutLoading || currentCart?.items?.length === 0
-                      ? 'opacity-50 cursor-not-allowed'
-                      : 'hover:shadow-lg'
+                      ? 'opacity-50 cursor-not-allowed hover:scale-100'
+                      : 'hover:shadow-xl'
                   }`}
                 >
                   {checkoutLoading ? (
                     <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                       Processing Your Order...
                     </>
                   ) : (
                     <>
-                      <FiCreditCard className="mr-2" />
+                      <FiCreditCard className="mr-2 text-lg" />
                       Complete Order - ${finalTotal.toFixed(2)}
                     </>
                   )}
                 </button>
 
                 {checkoutError && (
-                  <div className={`mt-4 p-4 border ${errorClass} rounded-xl`}>
-                    <p className="text-sm">{checkoutError}</p>
+                  <div className={`mt-4 p-3 border-2 ${errorClass} rounded-xl animate-fade-in backdrop-blur-sm`}>
+                    <p className="font-medium tracking-tight text-sm">{checkoutError}</p>
                   </div>
                 )}
 
-                <p className="text-xs text-center mt-4 text-[var(--light-gray)] flex items-center justify-center">
-                  <FiShield className="mr-1" />
+                <p className="text-xs text-center mt-4 text-[var(--light-gray)] flex items-center justify-center bg-[var(--bg)] p-3 rounded-xl backdrop-blur-sm">
+                  <FiShield className="mr-2 text-[var(--button)]" />
                   Your payment information is secure and encrypted
                 </p>
               </div>

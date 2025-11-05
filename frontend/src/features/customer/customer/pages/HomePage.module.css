@@ -1,0 +1,88 @@
+/* Home Page Specific Animations */
+.homeTextReveal {
+  animation: homeTextReveal 0.8s ease-out forwards;
+}
+
+.homeFadeUp {
+  animation: homeFadeInUp 0.8s ease-out forwards;
+}
+
+.homeHoverLift {
+  transition: all 0.3s ease;
+}
+
+.homeHoverLift:hover {
+  transform: translateY(-5px);
+}
+
+/* Home Page Keyframes */
+@keyframes homeTextReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes homeFadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Utility classes for home page */
+.homeHidden {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+/* Ensure elements are visible */
+.homeVisible {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Additional hover effects */
+.product-card-container {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.product-card-container:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Scroll progress animation */
+@keyframes progressGrow {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+/* Loading animations */
+@keyframes skeletonPulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-pulse {
+  animation: skeletonPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

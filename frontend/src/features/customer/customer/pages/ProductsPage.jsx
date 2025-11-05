@@ -163,25 +163,30 @@ const ProductsPage = () => {
   //  UI
   return (
     <div className="min-h-screen pt-0 bg-[light:var(--textbox)] dark:bg-[var(--bg)]">
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        {/* Header Section */}
-        <div className="text-center mb-8 pt-4 " style={{ color: themeMode === 'dark' ? 'var(--text)' : 'var(--button)' ,
-
-            background: `linear-gradient(to bottom, 
-              rgba(2, 106, 75, 0.1) 0%, 
-              var(--bg) 100%)`
-          }}>
-          <h1 
-            className="text-3xl font-bold mb-3 pt-8 "
-          >
+      {/* Header Section - Full Width */}
+      <div 
+        className="w-full text-center mb-8 pt-4" 
+        style={{ 
+          color: themeMode === 'dark' ? 'var(--text)' : 'var(--text)',
+          background:themeMode === 'dark' ? `linear-gradient(to bottom, 
+            rgba(0, 0, 0, 0.21) 0%, 
+            var(--bg) 100%)`:`linear-gradient(to bottom, 
+            rgba(113, 117, 116, 0.12) 0%, 
+            var(--bg) 100%)`
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h1 className="text-3xl font-bold mb-3 pt-8">
             Our Products {searchQuery && <span>(Results for "{searchQuery}")</span>}
           </h1>
           <p className="text-[var(--light-gray)] max-w-2xl mx-auto">
             Discover our amazing collection of products tailored just for you
           </p>
         </div>
+      </div>
 
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         {/* Compact Controls Section */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
           {/* Categories - Left Side */}
@@ -224,7 +229,9 @@ const ProductsPage = () => {
           </div>
         ) : (
           <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 mb-8">              {displayedProducts.map((product) => {
+            {/* Products Grid with increased spacing */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6 md:gap-8 mb-8">             
+              {displayedProducts.map((product) => {
                 const wishlistItem = wishlist.find((w) => w.product_id === product.id);
                 return (
                   <ProductCard

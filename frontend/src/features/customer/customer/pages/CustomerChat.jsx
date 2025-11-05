@@ -1,8 +1,12 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { io } from "socket.io-client";
 import { useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { chatApi, SOCKET_URL } from "./chatAPI";
+import { setUnreadCount } from '../components/chatUnreadSlice';
+import { 
+  FaTimes,
+} from "react-icons/fa";
 
 const roomKeyOf = (a, b) => [Number(a), Number(b)].sort((x, y) => x - y).join(":");
 const safeText = (v) => (v == null ? "" : typeof v === "string" ? v : JSON.stringify(v));
@@ -86,6 +90,8 @@ const CustomerChatPage = () => {
   const auth = useSelector((s) => s.customerAuth);
   const themeMode = useSelector((s) => s.customerTheme.mode);
   const location = useLocation();
+  const dispatch = useDispatch();
+
   const customerId = useMemo(() => {
     const id1 = Number(auth.user?.id);
     if (Number.isFinite(id1) && id1 > 0) return id1;
@@ -113,6 +119,18 @@ const CustomerChatPage = () => {
   useEffect(() => {
     activeVendorIdRef.current = activeVendorId;
   }, [activeVendorId]);
+
+  // احسب العدد الإجمالي للرسائل غير المقروءة من جميع المحادثات
+  const totalUnreadCount = useMemo(() => {
+    return conversations.reduce((total, conversation) => {
+      return total + (conversation.unread || 0);
+    }, 0);
+  }, [conversations]);
+
+  // تحديث Redux عند تغيير العدد
+  useEffect(() => {
+    dispatch(setUnreadCount(totalUnreadCount));
+  }, [totalUnreadCount, dispatch]);
 
   const upsertConversation = (list, item) => {
     const key = Number(item.vendorId);
@@ -314,11 +332,13 @@ const CustomerChatPage = () => {
     loadMessages(vid);
     setConversations((prev) => prev.map((c) => (Number(c.vendorId) === vid ? { ...c, unread: 0 } : c)));
   };
+
   const closeChat = () => {
     setActiveVendorId(null);
     setActiveVendorName("");
     setChat([]);
   };
+
   const sendMessage = async () => {
     if (!message.trim() || activeVendorId == null || customerId == null) return;
     const msgText = message.trim();
@@ -389,22 +409,18 @@ const CustomerChatPage = () => {
 
   return (
     <div className="flex flex-col bg-[var(--bg)]" style={{ height: "calc(100vh - 243px)" }}>
-      {/* Scrollbar Styles */}
       <style>
         {`
         .messages-scroll {
           scrollbar-width: thin;
           scrollbar-color: var(--bg) var(--bg);
         }
-
         .messages-scroll::-webkit-scrollbar {
           width: 8px;
         }
-
         .messages-scroll::-webkit-scrollbar-track {
           background: var(--bg);
         }
-
         .messages-scroll::-webkit-scrollbar-thumb {
           background-color: var(--bg);
           border-radius: 4px;
@@ -442,8 +458,8 @@ const CustomerChatPage = () => {
                   className={`cursor-pointer mb-2 rounded-xl p-3 transition-all ${
                     Number(activeVendorId) === Number(v.vendorId)
                       ? themeMode === "dark"
-                        ? "bg-[var(--light-gray)] border-l-4 border-[var(--button)]"
-                        : "bg-gray-100 border-l-4 border-[var(--button)]"
+                        ? "bg-[var(--hover)] border-r-4 border-[var(--button)]"
+                        : "bg-gray-200 border-l-4 border-[var(--button)]"
                       : Number(v.unread) > 0
                       ? themeMode === "dark"
                         ? "bg-[var(--div)]"
@@ -498,7 +514,7 @@ const CustomerChatPage = () => {
                       }
                     `}
                   >
-                    ✕
+                    <FaTimes className="mt-1 flex-shrink-0" />
                   </button>
                 </div>
 

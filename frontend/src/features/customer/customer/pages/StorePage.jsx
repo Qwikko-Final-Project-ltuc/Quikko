@@ -7,7 +7,6 @@ import {
   fetchStoreProducts,
   setProductPage,
 } from "../storesSlice";
-import StoreDetails from "../components/StoreDetails";
 import ProductCard from "../components/ProductCard";
 import { fetchCart, setCurrentCart } from "../cartSlice";
 import ReviewSection from "../../review/ReviewSection";
@@ -18,7 +17,7 @@ import {
   fetchUserRatingThunk,
 } from "../../review/reviewSlice";
 import customerAPI from "../services/customerAPI";
-import { MessageCircle, ArrowLeft, Star, MapPin } from "lucide-react";
+import { MessageCircle, Star, ShoppingBag, Package, Phone, Mail } from "lucide-react";
 
 const StorePage = () => {
   const { id } = useParams();
@@ -128,56 +127,19 @@ const StorePage = () => {
 
   if (loading) {
     return (
-      <div
-        className={`min-h-screen ${
-          themeMode === "dark" ? "bg-[var(--bg)]" : "bg-gray-50"
-        }`}
-      >
+      <div className={`min-h-screen ${themeMode === "dark" ? "bg-[var(--bg)]" : "bg-gray-50"}`}>
         <div className="animate-pulse">
-          <div
-            className={`${
-              themeMode === "dark" ? "bg-[var(--div)]" : "bg-white"
-            } h-64`}
-          ></div>
-          <div className="container mx-auto px-4 max-w-7xl py-8">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
               {[...Array(10)].map((_, i) => (
                 <div
                   key={i}
-                  className={`rounded-xl ${
-                    themeMode === "dark"
-                      ? "bg-[var(--div)]"
-                      : "bg-white"
-                  } p-3 shadow-sm`}
+                  className={`rounded-2xl ${themeMode === "dark" ? "bg-[var(--div)]" : "bg-white"} p-4 shadow-lg border-2 ${themeMode === "dark" ? "border-[var(--border)]" : "border-gray-200"}`}
                 >
-                  <div
-                    className={`h-40 rounded-lg ${
-                      themeMode === "dark"
-                        ? "bg-[var(--mid-dark)]"
-                        : "bg-gray-300"
-                    } mb-3`}
-                  ></div>
-                  <div
-                    className={`h-4 rounded ${
-                      themeMode === "dark"
-                        ? "bg-[var(--mid-dark)]"
-                        : "bg-gray-300"
-                    } mb-2`}
-                  ></div>
-                  <div
-                    className={`h-4 rounded ${
-                      themeMode === "dark"
-                        ? "bg-[var(--mid-dark)]"
-                        : "bg-gray-300"
-                    } w-3/4 mb-3`}
-                  ></div>
-                  <div
-                    className={`h-8 rounded ${
-                      themeMode === "dark"
-                        ? "bg-[var(--mid-dark)]"
-                        : "bg-gray-300"
-                    }`}
-                  ></div>
+                  <div className={`h-48 rounded-xl ${themeMode === "dark" ? "bg-[var(--mid-dark)]" : "bg-gray-300"} mb-4`}></div>
+                  <div className={`h-4 rounded ${themeMode === "dark" ? "bg-[var(--mid-dark)]" : "bg-gray-300"} mb-3`}></div>
+                  <div className={`h-4 rounded ${themeMode === "dark" ? "bg-[var(--mid-dark)]" : "bg-gray-300"} w-3/4 mb-4`}></div>
+                  <div className={`h-10 rounded-lg ${themeMode === "dark" ? "bg-[var(--mid-dark)]" : "bg-gray-300"}`}></div>
                 </div>
               ))}
             </div>
@@ -189,32 +151,33 @@ const StorePage = () => {
 
   if (error) {
     return (
-      <div
-        className={`min-h-screen ${
-          themeMode === "dark" ? "bg-[var(--bg)]" : "bg-gray-50"
-        } flex items-center justify-center`}
-      >
-        <div className="text-center">
-          <div
-            className={`w-16 h-16 mx-auto mb-4 rounded-full ${
-              themeMode === "dark"
-                ? "bg-[var(--error)]/20"
-                : "bg-red-100"
-            } flex items-center justify-center`}
-          >
-            <span className="text-2xl">⚠️</span>
+      <div className={`min-h-screen ${themeMode === "dark" ? "bg-[var(--bg)]" : "bg-gray-50"} flex items-center justify-center px-4 py-16`}>
+        <div className="text-center max-w-md">
+          <div className={`w-20 h-20 ${themeMode === "dark" ? "bg-[var(--error)]/20" : "bg-red-100"} rounded-full flex items-center justify-center mx-auto mb-4`}>
+            <svg className={`w-10 h-10 ${themeMode === "dark" ? "text-[var(--error)]" : "text-red-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
           </div>
-          <h3 className="text-xl font-semibold mb-2 text-[var(--text)]">
-            Error Loading Store
-          </h3>
-          <p className="mb-6 text-[var(--text)]/70">{error}</p>
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 px-6 py-3 bg-[var(--button)] text-white rounded-lg hover:bg-green-700 transition-colors mx-auto"
-          >
-            <ArrowLeft size={18} />
-            Go Back
-          </button>
+          <h3 className={`text-xl font-semibold ${themeMode === "dark" ? "text-[var(--error)]" : "text-red-600"} mb-2`}>Error Loading Store</h3>
+          <p className={`${themeMode === "dark" ? "text-[var(--text)]" : "text-gray-700"} opacity-80 mb-6`}>{error}</p>
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={() => navigate(-1)}
+              className={`px-6 py-3 rounded-xl font-semibold border-2 transition-all duration-300 ${
+                themeMode === "dark" 
+                  ? "border-[var(--border)] text-[var(--text)] hover:bg-[var(--hover)]" 
+                  : "border-gray-300 text-gray-700 hover:bg-gray-100"
+              } hover:scale-105`}
+            >
+              Go Back
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-[var(--button)] text-white px-6 py-3 rounded-xl hover:bg-[#015c40] transition-all duration-300 font-semibold hover:scale-105"
+            >
+              Try Again
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -222,31 +185,20 @@ const StorePage = () => {
 
   if (!selectedStore) {
     return (
-      <div
-        className={`min-h-screen ${
-          themeMode === "dark" ? "bg-[var(--bg)]" : "bg-gray-50"
-        } flex items-center justify-center`}
-      >
-        <div className="text-center">
-          <div
-            className={`w-16 h-16 mx-auto mb-4 rounded-full ${
-              themeMode === "dark"
-                ? "bg-[var(--div)]"
-                : "bg-gray-200"
-            } flex items-center justify-center`}
-          >
-            <span className="text-2xl">🏪</span>
+      <div className={`min-h-screen ${themeMode === "dark" ? "bg-[var(--bg)]" : "bg-gray-50"} flex items-center justify-center px-4 py-16`}>
+        <div className="text-center max-w-md">
+          <div className={`w-24 h-24 ${themeMode === "dark" ? "bg-[var(--div)]" : "bg-gray-200"} rounded-full flex items-center justify-center mx-auto mb-6`}>
+            <span className="text-3xl">🏪</span>
           </div>
-          <h3 className="text-xl font-semibold mb-2 text-[var(--text)]">
-            Store Not Found
-          </h3>
-          <p className="mb-6 text-[var(--text)]/70">
+          <h3 className={`text-2xl font-bold mb-4 ${themeMode === "dark" ? "text-white" : "text-gray-900"}`}>Store Not Found</h3>
+          <p className={`text-lg mb-8 ${themeMode === "dark" ? "text-gray-400" : "text-gray-600"}`}>
             The store you're looking for doesn't exist or has been removed.
           </p>
           <button
             onClick={() => navigate("/stores")}
-            className="px-6 py-3 bg-[var(--button)] text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="bg-[var(--button)] text-white px-8 py-4 rounded-xl hover:bg-[#015c40] transition-all duration-300 font-semibold hover:scale-105 hover:shadow-2xl flex items-center gap-3 mx-auto"
           >
+            <ShoppingBag size={20} />
             Browse Stores
           </button>
         </div>
@@ -255,114 +207,70 @@ const StorePage = () => {
   }
 
   return (
-    <div
-      className={`min-h-screen ${
-        themeMode === "dark" ? "bg-[var(--bg)]" : "bg-[var(--bg)]"
-      }`}
-    >
-      {/* Store Info Section with gradient */}
-      <div
-        className={` ${
-          themeMode === "dark"
-            ? "border-[var(--border)] bg-[linear-gradient(to_bottom,var(--hover)_0%,var(--bg)_100%)]"
-            : "border-gray-200 bg-[linear-gradient(to_bottom,var(--div)_0%,var(--bg)_100%)]"
-        }`}
-      >
-        {/* Store Cover Image */}
-        <div className="h-64 relative w-full">
-          {selectedStore.store_logo ? (
-            <img
-              src={selectedStore.store_logo}
-              alt="Store Cover"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div
-              className={`w-full h-full ${
-                themeMode === "dark"
-                  ? "bg-[var(--mid-dark)]"
-                  : "bg-gray-200"
-              } flex items-center justify-center`}
-            >
-              <span className="text-4xl">🏪</span>
+    <div className={`min-h-screen ${themeMode === "dark" ? "bg-[var(--bg)]" : "bg-gray-50"} transition-colors duration-300`}>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Store Header - Direct on Page */}
+        <div className="flex items-start gap-8  p-10">
+          {/* Store Logo */}
+          <div className="flex-shrink-0">
+            <div className={`w-32 h-32 rounded-2xl ${themeMode === "dark" ? "bg-[var(--mid-dark)]" : "bg-gray-100"} border-2 ${themeMode === "dark" ? "border-[var(--border)]" : "border-gray-200"} overflow-hidden shadow-2xl`}>
+              {selectedStore.store_logo ? (
+                <img
+                  src={selectedStore.store_logo}
+                  alt="Store Logo"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <span className="text-4xl">🏪</span>
+                </div>
+              )}
             </div>
-          )}
-          <div className="absolute inset-0 bg-black/30"></div>
-
-          <div className="absolute top-4 left-4">
-            <button
-              onClick={() => navigate(-1)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-                themeMode === "dark"
-                  ? "bg-[var(--div)] text-white hover:bg-black/70"
-                  : "bg-white/90 text-[var(--text)] hover:bg-white"
-              } shadow-lg ${
-                themeMode === "dark"
-                  ? "border-gray-600"
-                  : "border-gray-300"
-              } transition-colors backdrop-blur-sm`}
-            >
-              <ArrowLeft size={18} />
-              <span>Back</span>
-            </button>
           </div>
 
-          <div className="absolute bottom-4 left-6 right-6">
-            <div className="flex items-end justify-between">
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold mb-2 drop-shadow-lg text-white">
+          {/* Store Info - Direct on Page */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex-1">
+                <h1 className={`text-4xl font-bold mb-4 ${themeMode === "dark" ? "text-white" : "text-gray-900"}`}>
                   {selectedStore.store_name}
                 </h1>
-                <div className="flex items-center gap-4 text-sm">
-                  <div className="flex items-center gap-1 bg-black/50 px-3 py-1.5 rounded-full text-white">
-                    <Star
-                      size={16}
-                      className="fill-yellow-400 text-yellow-400"
-                    />
-                    <span>{displayRating.toFixed(1)}</span>
-                    <span>({uniqueReviewsCount} reviews)</span>
-                  </div>
-                  {selectedStore.location && (
-                    <div className="flex items-center gap-1 bg-black/50 px-3 py-1.5 rounded-full text-white">
-                      <MapPin size={16} />
-                      <span>{selectedStore.location}</span>
+                
+                <p className={`text-xl ${themeMode === "dark" ? "text-gray-300" : "text-gray-600"} mb-6 leading-relaxed`}>
+                  {selectedStore.description || "Explore our collection of quality products"}
+                </p>
+
+                {/* Contact Information - Direct on Page */}
+                <div className="flex items-center gap-8 mb-4">
+                  {selectedStore.phone && (
+                    <div className="flex items-center gap-3">
+                      <Phone size={20} className={`${themeMode === "dark" ? "text-gray-400" : "text-gray-600"}`} />
+                      <span className={`text-lg ${themeMode === "dark" ? "text-gray-300" : "text-gray-700"}`}>
+                        {selectedStore.phone}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {selectedStore.email && (
+                    <div className="flex items-center gap-3">
+                      <Mail size={20} className={`${themeMode === "dark" ? "text-gray-400" : "text-gray-600"}`} />
+                      <span className={`text-lg ${themeMode === "dark" ? "text-gray-300" : "text-gray-700"}`}>
+                        {selectedStore.email}
+                      </span>
                     </div>
                   )}
                 </div>
-              </div>
 
-              <button
-                onClick={handleChatWithVendor}
-                className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-colors shadow-lg font-semibold ${
-                  themeMode === "dark"
-                    ? "bg-[var(--button)] text-white hover:bg-green-700"
-                    : "bg-[var(--button)] text-white hover:bg-green-700"
-                }`}
-              >
-                <MessageCircle size={18} />
-                <span>Chat with Store</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Store Details + Reviews */}
-        <div className="container mx-auto px-4 max-w-7xl py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div>
-              <StoreDetails store={selectedStore} />
-            </div>
-
-            <div>
-              <h2 className="text-xl font-bold text-[var(--text)] mb-4">
-                Customer Reviews
-              </h2>
+            {/* Review Section - Direct on Page */}
+            <div className="pt-6">
               {token ? (
                 <ReviewSection
                   userRating={userRating}
                   averageRating={displayRating}
                   totalReviews={uniqueReviewsCount}
                   readOnly={false}
+                  compact={true}
                   onRate={(value) => {
                     if (!selectedStore?.store_id) return;
                     dispatch(
@@ -374,151 +282,122 @@ const StorePage = () => {
                       .unwrap()
                       .then(() => {
                         dispatch(fetchReviewsThunk(selectedStore.store_id));
-                        dispatch(
-                          fetchAverageRatingThunk(selectedStore.store_id)
-                        );
-                        dispatch(
-                          fetchUserRatingThunk(selectedStore.store_id)
-                        );
+                        dispatch(fetchAverageRatingThunk(selectedStore.store_id));
+                        dispatch(fetchUserRatingThunk(selectedStore.store_id));
                       })
-                      .catch((err) =>
-                        console.error("Add review failed:", err)
-                      );
+                      .catch((err) => console.error("Add review failed:", err));
                   }}
                 />
               ) : (
-                <div
-                  className={`text-center py-8 rounded-xl ${
-                    themeMode === "dark"
-                      ? "bg-[var(--mid-dark)]"
-                      : "bg-gray-100"
-                  }`}
-                >
-                  <div
-                    className={`w-16 h-16 mx-auto mb-4 rounded-full ${
-                      themeMode === "dark"
-                        ? "bg-[var(--div)]"
-                        : "bg-white"
-                    } flex items-center justify-center`}
-                  >
-                    <Star
-                      className={
-                        themeMode === "dark"
-                          ? "text-yellow-400"
-                          : "text-yellow-500"
-                      }
-                    />
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-full ${themeMode === "dark" ? "bg-[var(--div)]" : "bg-white"} flex items-center justify-center shadow-lg`}>
+                    <Star className={themeMode === "dark" ? "text-yellow-400" : "text-yellow-500"} size={24} />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2 text-[var(--text)]">
-                    Sign in to Rate
-                  </h3>
-                  <p className="text-[var(--text)]/70">
-                    Please sign in to rate this store and see reviews
-                  </p>
+                  <div>
+                    <p className={`font-semibold text-lg ${themeMode === "dark" ? "text-white" : "text-gray-900"}`}>
+                      Sign in to Rate this Store
+                    </p>
+                    <p className={`text-sm ${themeMode === "dark" ? "text-gray-400" : "text-gray-600"}`}>
+                      Join our community and share your experience
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Products Section */}
-      <div className="container mx-auto px-4 max-w-7xl py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-[var(--text)]">
-            Store Products
-          </h2>
-          <span
-            className={`px-3 py-1 rounded-full text-sm ${
-              themeMode === "dark"
-                ? "bg-[var(--bg)] text-[var(--text)]"
-                : "bg-[var(--bg)] text-[var(--text)]"
-            }`}
-          >
-            {currentProducts.length} products
-          </span>
-        </div>
-
-        {currentProducts.length === 0 ? (
-          <div
-            className={`rounded-2xl ${
-              themeMode === "dark" ? "bg-[var(--div)]" : "bg-white"
-            } shadow-sm border ${
-              themeMode === "dark"
-                ? "border-[var(--border)]"
-                : "border-gray-200"
-            } p-12 text-center`}
-          >
-            <div
-              className={`w-20 h-20 mx-auto mb-6 rounded-full ${
-                themeMode === "dark"
-                  ? "bg-[var(--mid-dark)]"
-                  : "bg-gray-100"
-              } flex items-center justify-center`}
-            >
-              <span className="text-2xl">📦</span>
-            </div>
-            <h3 className="text-xl font-semibold mb-3 text-[var(--text)]">
-              No Products Available
-            </h3>
-            <p className="text-[var(--text)]/70">
-              This store hasn't added any products yet.
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-              {currentProducts.map((product) => (
-                <div
-                  key={product.product_id}
-                  className={`group relative rounded-xl ${
-                    themeMode === "dark"
-                      ? "bg-[var(--div)]"
-                      : "bg-white"
-                  } shadow-sm border ${
-                    themeMode === "dark"
-                      ? "border-[var(--border)]"
-                      : "border-gray-200"
-                  } hover:shadow-md transition-all duration-300 overflow-hidden`}
-                >
-                  <ProductCard
-                    product={{
-                      ...product,
-                      id: product.product_id,
-                      images: Array.isArray(product.images)
-                        ? product.images
-                        : [],
-                    }}
-                    onAddToCart={handleAddToCart}
-                    compact={true}
-                  />
-                </div>
-              ))}
-            </div>
-
-            {totalProductPages > 1 && (
-              <div className="flex justify-center space-x-2">
-                {Array.from({ length: totalProductPages }, (_, i) => i + 1).map(
-                  (page) => (
-                    <button
-                      key={page}
-                      onClick={() => handleProductPageChange(page)}
-                      className={`px-4 py-2 rounded-lg transition-colors ${
-                        currentProductPage === page
-                          ? "bg-[var(--button)] text-white"
-                          : themeMode === "dark"
-                          ? "bg-[var(--mid-dark)] text-[var(--text)] hover:bg-[var(--hover)]"
-                          : "bg-gray-200 text-[var(--text)] hover:bg-gray-300"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  )
-                )}
               </div>
-            )}
-          </>
-        )}
+
+              {/* Chat Button - Far Right */}
+              <button
+                onClick={handleChatWithVendor}
+                className="bg-[var(--button)] text-white px-8 py-4 rounded-xl hover:bg-[#015c40] transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 font-semibold whitespace-nowrap ml-8"
+              >
+                <MessageCircle size={20} />
+                Contact Store
+              </button>
+            </div>
+
+
+            
+          </div>
+        </div>
+
+        {/* Products Section */}
+        <div className={`rounded-2xl p-8 ${themeMode === "dark" ? "bg-[var(--div)]" : "bg-white"} shadow-xl border ${themeMode === "dark" ? "border-[var(--border)]" : "border-gray-200"}`}>
+          {/* Products Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className={`text-3xl font-bold mb-3 ${themeMode === "dark" ? "text-white" : "text-gray-900"}`}>
+                Products
+              </h2>
+              <p className={`text-lg ${themeMode === "dark" ? "text-gray-400" : "text-gray-600"}`}>
+                Browse our collection
+              </p>
+            </div>
+            
+            {/* Products Count - Top Right */}
+            <div className={`px-6 py-3 rounded-xl ${themeMode === "dark" ? "bg-[var(--button)]/20" : "bg-[var(--button)]/10"} border ${themeMode === "dark" ? "border-[var(--button)]/30" : "border-[var(--button)]/20"}`}>
+              <span className={`font-semibold text-lg ${themeMode === "dark" ? "text-[var(--button)]" : "text-[var(--button)]"}`}>
+                {currentProducts.length} {currentProducts.length === 1 ? 'product' : 'products'}
+              </span>
+            </div>
+          </div>
+
+          {currentProducts.length === 0 ? (
+            <div className={`text-center py-20 rounded-xl ${themeMode === "dark" ? "bg-[var(--mid-dark)]" : "bg-gray-50"}`}>
+              <div className={`w-28 h-28 mx-auto mb-6 rounded-full ${themeMode === "dark" ? "bg-[var(--div)]" : "bg-white"} flex items-center justify-center shadow-2xl`}>
+                <Package className={themeMode === "dark" ? "text-gray-400" : "text-gray-500"} size={40} />
+              </div>
+              <h3 className={`text-2xl font-semibold mb-4 ${themeMode === "dark" ? "text-white" : "text-gray-900"}`}>
+                No Products Available
+              </h3>
+              <p className={`text-lg ${themeMode === "dark" ? "text-gray-400" : "text-gray-600"}`}>
+                This store hasn't added any products yet.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 mb-12">
+                {currentProducts.map((product) => (
+                  <div
+                    key={product.product_id}
+                    className={`group relative rounded-3xl ${themeMode === "dark" ? "bg-[var(--mid-dark)]" : "bg-white"} shadow-2xl border ${themeMode === "dark" ? "border-[var(--border)]" : "border-gray-200"} hover:shadow-3xl transition-all duration-300 overflow-hidden hover:border-[var(--button)]/50 transform hover:-translate-y-2`}
+                  >
+                    <ProductCard
+                      product={{
+                        ...product,
+                        id: product.product_id,
+                        images: Array.isArray(product.images) ? product.images : [],
+                      }}
+                      onAddToCart={handleAddToCart}
+                      compact={true}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalProductPages > 1 && (
+                <div className="flex justify-center">
+                  <div className="flex items-center space-x-3">
+                    {Array.from({ length: totalProductPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => handleProductPageChange(page)}
+                        className={`min-w-[52px] h-14 rounded-xl font-semibold text-lg transition-all duration-300 ${
+                          currentProductPage === page
+                            ? 'bg-[var(--button)] text-white shadow-2xl scale-110'
+                            : `${themeMode === "dark" ? "text-white border border-[var(--border)] hover:bg-[var(--hover)]" : "text-gray-700 border border-gray-300 hover:bg-gray-50"} hover:border-[var(--button)] hover:scale-105`
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

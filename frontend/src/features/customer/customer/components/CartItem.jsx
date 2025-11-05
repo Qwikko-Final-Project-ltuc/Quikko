@@ -1,23 +1,45 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { deleteItem, updateItemQuantity } from "../cartSlice";
 import customerAPI from "../services/customerAPI";
 
 const CartItem = ({ item }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { currentCart } = useSelector((state) => state.cart);
-
-  const itemWithVendorId = {
-    ...item,
-    vendor_id: item.vendor_id || item.vendorId || null,
-  };
+  const themeMode = useSelector((state) => state.customerTheme.mode);
 
   const firstImage =
     Array.isArray(item.images) && item.images.length > 0
       ? item.images[0]
       : null;
 
-  const handleRemove = async () => {
+  const handleProductClick = async () => {
+    try {
+      // البحث عن المنتج بالاسم للحصول على الـ ID
+      const productsResponse = await customerAPI.getProducts({ search: item.name });
+      const products = Array.isArray(productsResponse)
+        ? productsResponse
+        : productsResponse.items || [];
+
+      const product = products.find(p => p.name === item.name);
+
+      if (product?.id) {
+        navigate(`/customer/product/${product.id}`);
+      } else {
+        console.warn("Product not found by name:", item.name);
+        // إذا ما لقينا المنتج، نروح لصفحة البحث
+        navigate(`/customer/products?search=${encodeURIComponent(item.name)}`);
+      }
+    } catch (error) {
+      console.error("Error searching for product:", error);
+      navigate(`/customer/products?search=${encodeURIComponent(item.name)}`);
+    }
+  };
+
+  const handleRemove = async (e) => {
+    e.stopPropagation(); // منع انتشار الحدث إلى العنصر الأب
     if (!currentCart?.id) {
       console.error("No currentCart.id, cannot delete item", item.id);
       return;
@@ -47,7 +69,8 @@ const CartItem = ({ item }) => {
     }
   };
 
-  const handleDecrease = () => {
+  const handleDecrease = (e) => {
+    e.stopPropagation(); // منع انتشار الحدث إلى العنصر الأب
     if (!currentCart?.id) return;
     if (item.quantity > 1) {
       dispatch(
@@ -58,11 +81,12 @@ const CartItem = ({ item }) => {
         })
       );
     } else {
-      handleRemove();
+      handleRemove(e);
     }
   };
 
-  const handleIncrease = () => {
+  const handleIncrease = (e) => {
+    e.stopPropagation(); // منع انتشار الحدث إلى العنصر الأب
     if (!currentCart?.id) return;
     dispatch(
       updateItemQuantity({
@@ -76,7 +100,14 @@ const CartItem = ({ item }) => {
   const subtotal = Number(item.price || 0) * (item.quantity || 0);
 
   return (
-    <div className="flex items-center gap-4 p-4 bg-[var(--bg)] border border-[var(--border)] rounded-lg hover:shadow-md transition-all duration-200 group">
+    <div 
+      className={`flex items-center gap-4 p-4 border rounded-lg hover:shadow-md transition-all duration-200 group cursor-pointer ${
+        themeMode === 'dark' 
+          ? 'bg-[var(--div)] border-[var(--border)]' 
+          : 'bg-[var(--textbox)] border-gray-200'
+      }`}
+      onClick={handleProductClick}
+    >
       {/* Product Image */}
       <div className="flex-shrink-0 w-20 h-20 bg-[var(--div)] rounded-lg overflow-hidden flex items-center justify-center">
         {firstImage ? (
@@ -106,17 +137,20 @@ const CartItem = ({ item }) => {
             ${Number(item.price || 0).toFixed(2)} each
           </p>
           
-          {/* Vendor ID */}
-          {itemWithVendorId.vendor_id && (
+          {/* Vendor Name */}
+          {item.vendor_name && (
             <p className="text-xs text-[var(--text)] opacity-50 mt-1">
-              Vendor ID: {itemWithVendorId.vendor_id}
+              Vendor: {item.vendor_name}
             </p>
           )}
         </div>
 
         {/* Middle Section - Quantity Counter (Centered) */}
-        <div className="flex flex-col items-center  gap-2">
-          <div className="bg-[var(--textbox)] dark:bg-[var(--div)] rounded-lg p-2">
+        <div className="flex flex-col items-center gap-2">
+          <div 
+            className="bg-[var(--bg)] dark:bg-[var(--bg)] rounded-lg p-2"
+            onClick={(e) => e.stopPropagation()} // منع النقر على العداد من التوجيه
+          >
             <div className="flex items-center gap-3">
               <button
                 onClick={handleDecrease}
@@ -141,14 +175,16 @@ const CartItem = ({ item }) => {
               </button>
             </div>
           </div>
-
         </div>
 
         {/* Right Section - Total Price and Remove Button */}
-        <div className="flex items-center gap-4">
+        <div 
+          className="flex items-center gap-4"
+          onClick={(e) => e.stopPropagation()} // منع النقر على هذا القسم من التوجيه
+        >
           {/* Total Price - Left of remove button */}
           <div className="text-right">
-            <p className="text-2xl font-bold text-[var(--button)]">
+            <p className="text-2xl font-bold text-[var(--text)]">
               ${subtotal.toFixed(2)}
             </p>
           </div>
