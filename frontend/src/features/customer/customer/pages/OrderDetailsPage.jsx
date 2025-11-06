@@ -208,28 +208,42 @@ const OrderDetailsPage = () => {
       });
     }
   };
+const handleUsePoints = (availablePoints, enteredPoints = userPointsToUse) => {
+  let pointsToUse = 0;
 
-  const handleUsePoints = (availablePoints, enteredPoints = userPointsToUse) => {
-    if (!usePointsChecked) {
-      const pointsToUse = Math.min(enteredPoints, availablePoints);
-      if (enteredPoints > availablePoints) {
-        setPointsError(`You only have ${availablePoints} points.`);
-        setUsePointsChecked(false);
-        setPointsDiscount(0);
-      } else {
-        setUsePointsChecked(true);
-        setPointsError("");
-        setUserPointsToUse(pointsToUse);
-        const discount = pointsToUse * 0.1;
-        setPointsDiscount(discount);
-      }
-    } else {
+  if (!usePointsChecked) {
+    // نستخدم أقل قيمة بين النقاط المدخلة والنقاط المتوفرة
+    pointsToUse = Math.min(enteredPoints, availablePoints);
+
+    if (enteredPoints > availablePoints) {
+      setPointsError(`You only have ${availablePoints} points.`);
       setUsePointsChecked(false);
       setPointsDiscount(0);
       setUserPointsToUse(0);
+    } else {
+      setUsePointsChecked(true);
       setPointsError("");
+      setUserPointsToUse(pointsToUse);
+
+      // كل نقطة = 0.1 خصم بالعملة
+      const discount = pointsToUse * 0.1;
+      setPointsDiscount(discount);
     }
-  };
+  } else {
+    // إذا المستخدم ألغى استخدام النقاط
+    setUsePointsChecked(false);
+    setPointsDiscount(0);
+    setUserPointsToUse(0);
+    setPointsError("");
+  }
+
+  // حساب المجموع النهائي بعد الخصم
+  const totalAfterDiscount =
+    total - (appliedCoupon?.discount_amount || 0) - (pointsToUse * 0.1 || 0);
+
+  setFinalTotal(totalAfterDiscount > 0 ? totalAfterDiscount : 0);
+};
+
 
   const handleCheckoutClickWithDiscount = async () => {
     if (usePointsChecked && userPointsToUse > loyaltyPoints) {
@@ -240,78 +254,88 @@ const OrderDetailsPage = () => {
   };
 
   const handleCheckoutClick = async () => {
-    if (!address.address_line1 || !address.city) {
-      alert("Address Line 1 and City are required!");
-      return;
-    }
-    setCheckoutLoading(true);
-    setCheckoutError(null);
+  // تحقق أولاً من العنوان
+  if (!address.address_line1 || !address.city) {
+    alert("Address Line 1 and City are required!");
+    return;
+  }
+  setCheckoutLoading(true);
+  setCheckoutError(null);
 
-    try {
-      const paymentData =
-        paymentMethod === "card"
-          ? {
-              transactionId: `card_SANDBOX_${Date.now()}`,
-              card_last4: card.number.slice(-4),
-              card_brand: detectBrand(card.number),
-              expiry_month: parseInt(card.expiryMonth, 10),
-              expiry_year: parseInt(card.expiryYear, 10),
-            }
-          : {};
+  try {
+    // إعداد بيانات الدفع (بطاقة أو COD)
+    const paymentData =
+      paymentMethod === "card"
+        ? {
+            transactionId: `card_SANDBOX_${Date.now()}`,
+            card_last4: card.number.slice(-4),
+            card_brand: detectBrand(card.number),
+            expiry_month: parseInt(card.expiryMonth, 10),
+            expiry_year: parseInt(card.expiryYear, 10),
+          }
+        : {};
 
-      const checkoutPayload = {
-        cart_id: currentCart.id,
-        address: fullAddress,
-        paymentMethod: paymentMethod === "card" ? "credit_card" : paymentMethod,
-        paymentData,
-        coupon_code: appliedCoupon?.code || null,
-        use_loyalty_points: usePointsChecked ? userPointsToUse : 0,
-        total_amount: total,
-        discount_amount: (appliedCoupon?.discount_amount || 0) + (pointsDiscount || 0),
-        final_amount: finalTotal,
-      };
+    // إعداد payload للباك
+    const checkoutPayload = {
+      cart_id: currentCart.id,
+      address: fullAddress,
+      paymentMethod: paymentMethod === "card" ? "credit_card" : paymentMethod,
+      paymentData,
+      coupon_code: appliedCoupon?.code || null,
+      // 🔹 هنا التعديل: إرسال رقم النقاط بدل true
+      use_loyalty_points: usePointsChecked ? userPointsToUse : 0,
+      total_amount: total,
+      discount_amount: (appliedCoupon?.discount_amount || 0) + (pointsDiscount || 0),
+      final_amount: finalTotal,
+    };
 
-      if (paymentMethod === "card") {
-        const vErr = validateCardFields();
-        if (vErr) {
-          setCardError(vErr);
-          setCheckoutLoading(false);
-          return;
-        }
-        const rawNumber = card.number.replace(/\D/g, "");
-        checkoutPayload.paymentData = {
-          transactionId: `card_SANDBOX_${Date.now()}`,
-          card_last4: rawNumber.slice(-4),
-          card_brand: detectBrand(rawNumber),
-          expiry_month: parseInt(card.expiryMonth, 10),
-          expiry_year: parseInt(card.expiryYear, 10),
-        };
+    // تحقق من بيانات البطاقة إذا تم اختيار الدفع بالبطاقة
+    if (paymentMethod === "card") {
+      const vErr = validateCardFields();
+      if (vErr) {
+        setCardError(vErr);
+        setCheckoutLoading(false);
+        return;
       }
-
-      const newOrder = await customerAPI.checkout(checkoutPayload);
-      await dispatch(deleteCart(currentCart.id)).unwrap();
-      dispatch(fetchOrders());
-
-      const methodLabel =
-        paymentMethod === "cod"
-          ? "Cash on Delivery"
-          : paymentMethod === "card"
-          ? "Credit Card"
-          : "PayPal";
-
-      setOrderSuccess({
-        method: methodLabel,
-        transactionId: checkoutPayload.paymentData.transactionId,
-        order: newOrder,
-      });
-      navigate("/customer/orders");
-    } catch (err) {
-      console.error("Checkout failed:", err);
-      setCheckoutError(err.response?.data?.error || err.message);
-    } finally {
-      setCheckoutLoading(false);
+      const rawNumber = card.number.replace(/\D/g, "");
+      checkoutPayload.paymentData = {
+        transactionId: `card_SANDBOX_${Date.now()}`,
+        card_last4: rawNumber.slice(-4),
+        card_brand: detectBrand(rawNumber),
+        expiry_month: parseInt(card.expiryMonth, 10),
+        expiry_year: parseInt(card.expiryYear, 10),
+      };
     }
-  };
+
+    // إرسال الطلب للباك
+    const newOrder = await customerAPI.checkout(checkoutPayload);
+
+    // تحديث حالة الكارت والأوردرز
+    await dispatch(deleteCart(currentCart.id)).unwrap();
+    dispatch(fetchOrders());
+
+    const methodLabel =
+      paymentMethod === "cod"
+        ? "Cash on Delivery"
+        : paymentMethod === "card"
+        ? "Credit Card"
+        : "PayPal";
+
+    setOrderSuccess({
+      method: methodLabel,
+      transactionId: checkoutPayload.paymentData.transactionId,
+      order: newOrder,
+    });
+
+    navigate("/customer/orders");
+  } catch (err) {
+    console.error("Checkout failed:", err);
+    setCheckoutError(err.response?.data?.error || err.message);
+  } finally {
+    setCheckoutLoading(false);
+  }
+};
+
 
   useEffect(() => {
     if (paymentMethod === "paypal" && window.paypal && currentCart) {

@@ -15,14 +15,24 @@ export default function ProductForm({ initialData, categories, onSubmit }) {
   const [isUploading, setIsUploading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
 
+  // توحيد الصور عند initialData
   useEffect(() => {
     if (initialData) {
+      const normalizedImages = (initialData.images || []).map((img) => {
+        if (typeof img === "string") {
+          return img.startsWith("http") ? img : `${import.meta.env.VITE_API_URL}/${img}`;
+        } else if (img?.image_url) {
+          return img.image_url.startsWith("http") ? img.image_url : `${import.meta.env.VITE_API_URL}/${img.image_url}`;
+        }
+        return null;
+      }).filter(Boolean);
+
       setFormData({
         name: initialData.name || "",
         description: initialData.description || "",
         price: initialData.price || "",
         stock_quantity: initialData.stock_quantity || "",
-        images: initialData.images || [],
+        images: normalizedImages,
         category_id: initialData.category_id || "",
         variants: initialData.variants || "",
       });
@@ -44,7 +54,7 @@ export default function ProductForm({ initialData, categories, onSubmit }) {
     if (selectedFiles.length === 0) return [];
     setIsUploading(true);
     const formDataImages = new FormData();
-    selectedFiles.forEach(img => formDataImages.append("images", img));
+    selectedFiles.forEach((img) => formDataImages.append("images", img));
 
     const token = localStorage.getItem("token");
     try {
@@ -61,7 +71,12 @@ export default function ProductForm({ initialData, categories, onSubmit }) {
       );
       setIsUploading(false);
       setSelectedFiles([]);
-      return res.data.imageUrls || [];
+
+      // توحيد URLs الصور الجديدة
+      const normalizedUploaded = (res.data.imageUrls || []).map(url =>
+        url.startsWith("http") ? url : `${import.meta.env.VITE_API_URL}/${url}`
+      );
+      return normalizedUploaded;
     } catch (err) {
       console.error(err);
       setIsUploading(false);
@@ -73,10 +88,8 @@ export default function ProductForm({ initialData, categories, onSubmit }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // رفع الصور أولاً
     const uploadedUrls = await uploadImages();
 
-    // تجهيز بيانات المنتج
     let variantsData = null;
     if (formData.variants) {
       try {
@@ -95,10 +108,8 @@ export default function ProductForm({ initialData, categories, onSubmit }) {
       variants: variantsData,
     };
 
-    // إرسال المنتج
     onSubmit(preparedData);
 
-    // إعادة تعيين الفورم لو كان إضافة جديدة
     if (!initialData?.id) {
       setFormData({
         name: "",
@@ -206,7 +217,7 @@ export default function ProductForm({ initialData, categories, onSubmit }) {
         <div className="flex flex-col p-2 rounded-lg" style={{ backgroundColor: bgColor }}>
           <label className="text-sm font-medium mb-1">Images</label>
           <input type="file" multiple onChange={handleFileChange} />
-          
+
           {/* عرض الصور المحددة قبل الرفع */}
           {selectedFiles.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
@@ -221,16 +232,30 @@ export default function ProductForm({ initialData, categories, onSubmit }) {
             </div>
           )}
 
-          {/* عرض الصور المرفوعة بعد رفعها */}
+          {/* عرض الصور المرفوعة مسبقًا أو بعد التحديث */}
           {formData.images.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
-              {formData.images.map((url, idx) => (
-                <img
-                  key={idx}
-                  src={url}
-                  alt={`uploaded-${idx}`}
-                  className="w-20 h-20 object-cover rounded border"
-                />
+              {formData.images.map((img, idx) => (
+                <div key={idx} className="relative w-20 h-20">
+                  <img
+                    src={img}
+                    alt={`uploaded-${idx}`}
+                    className="w-20 h-20 object-cover rounded border"
+                  />
+                  {/* زر الحذف */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData({
+                        ...formData,
+                        images: formData.images.filter((_, i) => i !== idx)
+                      });
+                    }}
+                    className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                  >
+                    ✖
+                  </button>
+                </div>
               ))}
             </div>
           )}

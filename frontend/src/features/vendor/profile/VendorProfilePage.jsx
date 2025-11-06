@@ -56,7 +56,29 @@ const VendorProfilePage = () => {
     }
   };
 
-  if (loading) return <div className="p-6">Loading...</div>;
+  // ✅ شاشة لودينغ كاملة
+  if (loading) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: isDarkMode ? "#242625" : "#f0f2f1" }}
+      >
+        <div className="text-center">
+          <div
+            className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
+            style={{ borderColor: "#307A59" }}
+          ></div>
+          <p
+            className="text-lg"
+            style={{ color: isDarkMode ? "#ffffff" : "#242625" }}
+          >
+            Loading profile...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (!profile) return <div className="p-6">No profile found.</div>;
 
   // ألوان الداكن واللايت
@@ -79,37 +101,36 @@ const VendorProfilePage = () => {
         {!editing ? (
           <>
             {/* صورة واسم المتجر / Avatar Text */}
-<div className="flex flex-col items-center space-y-4 text-center">
-  {profile.store_logo ? (
-    <img
-      src={profile.store_logo}
-      alt="Store"
-      className="w-32 h-32 rounded-full object-cover"
-    />
-  ) : (
-    <div
-      className="w-32 h-32 rounded-full flex items-center justify-center text-3xl font-extrabold "
-      style={{
-        backgroundColor: isDarkMode ? "#5f6e68ff" : "#d1d5db",
-        color: isDarkMode ? "#ffffff" : "#242625",
-      }}
-    >
-      {profile.store_name
-        ? profile.store_name
-            .split(" ")
-            .filter(Boolean)
-            .slice(0, 2)
-            .map((word) => word[0].toUpperCase())
-            .join("")
-        : "??"}
-    </div>
-  )}
+            <div className="flex flex-col items-center space-y-4 text-center">
+              {profile.store_logo ? (
+                <img
+                  src={profile.store_logo}
+                  alt="Store"
+                  className="w-32 h-32 rounded-full object-cover"
+                />
+              ) : (
+                <div
+                  className="w-32 h-32 rounded-full flex items-center justify-center text-3xl font-extrabold "
+                  style={{
+                    backgroundColor: isDarkMode ? "#5f6e68ff" : "#d1d5db",
+                    color: isDarkMode ? "#ffffff" : "#242625",
+                  }}
+                >
+                  {profile.store_name
+                    ? profile.store_name
+                        .split(" ")
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((word) => word[0].toUpperCase())
+                        .join("")
+                    : "??"}
+                </div>
+              )}
 
-  <h2 className="text-xl font-semibold" style={{ color: textColor }}>
-    {profile.store_name}
-  </h2>
-</div>
-
+              <h2 className="text-xl font-semibold" style={{ color: textColor }}>
+                {profile.store_name}
+              </h2>
+            </div>
 
             {/* Address */}
             <div className="flex flex-col items-center text-center space-y-1">
@@ -150,19 +171,19 @@ const VendorProfilePage = () => {
             {/* فورم التعديل */}
             <div className="flex flex-col items-center space-y-4 text-center">
               <img
-    src={tempProfile.store_logo || "/placeholder.png"}
-    alt="Store"
-    className="w-32 h-32 rounded-full object-cover "
-  />
-  <input
-    type="text"
-    name="store_logo"
-    value={tempProfile.store_logo || ""}
-    onChange={handleChange}
-    placeholder="Enter image URL"
-    className="p-2 rounded-lg border text-center w-64"
-    style={{ backgroundColor: inputBg, color: textColor, borderColor: borderColor }}
-  />
+                src={tempProfile.store_logo || "/placeholder.png"}
+                alt="Store"
+                className="w-32 h-32 rounded-full object-cover "
+              />
+              <input
+                type="text"
+                name="store_logo"
+                value={tempProfile.store_logo || ""}
+                onChange={handleChange}
+                placeholder="Enter image URL"
+                className="p-2 rounded-lg border text-center w-64"
+                style={{ backgroundColor: inputBg, color: textColor, borderColor: borderColor }}
+              />
             </div>
 
             <div className="flex flex-col gap-4">
