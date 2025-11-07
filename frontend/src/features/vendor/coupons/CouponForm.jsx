@@ -12,6 +12,7 @@ export default function CouponForm({ initialData = {}, onSubmit, buttonStyle }) 
   });
 
   const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
+  const [status, setStatus] = useState("idle"); // ✅ حالة التحميل
 
   useEffect(() => {
     const handleStorageChange = () =>
@@ -23,7 +24,7 @@ export default function CouponForm({ initialData = {}, onSubmit, buttonStyle }) 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (
@@ -39,7 +40,9 @@ export default function CouponForm({ initialData = {}, onSubmit, buttonStyle }) 
       return;
     }
 
-    onSubmit(formData);
+    setStatus("loading"); // ✅ بدء التحميل
+    await onSubmit(formData);
+    setStatus("idle"); // ✅ انتهاء التحميل
 
     setFormData({
       code: "",
@@ -54,6 +57,18 @@ export default function CouponForm({ initialData = {}, onSubmit, buttonStyle }) 
 
   // تحديد لون خلفية الـ input حسب المود
   const inputBg = isDarkMode ? "var(--mid-dark)" : "var(--textbox)";
+
+  // ✅ شاشة التحميل
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--button)] mx-auto mb-4"></div>
+          <p className="text-[var(--text)] text-lg">Submitting coupon...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form
@@ -72,7 +87,6 @@ export default function CouponForm({ initialData = {}, onSubmit, buttonStyle }) 
           className="border rounded-lg p-2 focus:ring-2 outline-none"
           style={{
             color: "var(--text)",
-            
             borderColor: "var(--border)",
           }}
           required
@@ -96,7 +110,6 @@ export default function CouponForm({ initialData = {}, onSubmit, buttonStyle }) 
           className="border rounded-lg p-2 focus:ring-2 outline-none"
           style={{
             color: "var(--text)",
-            
             borderColor: "var(--border)",
           }}
           required
@@ -121,7 +134,6 @@ export default function CouponForm({ initialData = {}, onSubmit, buttonStyle }) 
           className="border rounded-lg p-2 focus:ring-2 outline-none"
           style={{
             color: "var(--text)",
-            
             borderColor: "var(--border)",
           }}
           required
@@ -145,7 +157,6 @@ export default function CouponForm({ initialData = {}, onSubmit, buttonStyle }) 
           className="border rounded-lg p-2 focus:ring-2 outline-none"
           style={{
             color: "var(--text)",
-           
             borderColor: "var(--border)",
           }}
           required
@@ -163,7 +174,6 @@ export default function CouponForm({ initialData = {}, onSubmit, buttonStyle }) 
           className="border rounded-lg p-2 focus:ring-2 outline-none"
           style={{
             color: "var(--text)",
-           
             borderColor: "var(--border)",
           }}
           required

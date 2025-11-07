@@ -146,11 +146,11 @@ exports.updateProfile = async (userId, profileData) => {
 };
 
 
-
 /**
  * Update vendor_status of a specific order item (per vendor).
  * Allowed values: 'accepted', 'rejected'.
- * If 'accepted' → decrease stock_quantity from products.
+ * If 'accepted' → decrease stock_quantity.
+ * If changing from 'accepted' → 'rejected' → restore stock_quantity.
  */
 
 exports.updateOrderItemStatus = async (itemId, status, userId) => {
@@ -173,7 +173,7 @@ exports.updateOrderItemStatus = async (itemId, status, userId) => {
     }
     const vendorId = vendorRes.rows[0].vendor_id;
 
-    // 2) Get order_item + product (lock row FOR UPDATE)
+    // 2) Get order_item + product + current vendor_status
     const itemQuery = `
       SELECT oi.*, p.vendor_id, p.stock_quantity, p.name AS product_name
       FROM order_items oi
@@ -188,8 +188,9 @@ exports.updateOrderItemStatus = async (itemId, status, userId) => {
       return null; // Not allowed to update this item
     }
 
-    // 3) If accepted → decrease stock_quantity
-    if (status === "accepted") {
+    // 3) Handle stock logic
+    if (status === "accepted" && item.vendor_status !== "accepted") {
+      // Accept → decrease stock
       const newStock = item.stock_quantity - item.quantity;
       if (newStock < 0) {
         await client.query("ROLLBACK");
@@ -199,6 +200,14 @@ exports.updateOrderItemStatus = async (itemId, status, userId) => {
       await client.query(
         `UPDATE products SET stock_quantity = $1, updated_at = NOW() WHERE id = $2`,
         [newStock, item.product_id]
+      );
+    } else if (status === "rejected" && item.vendor_status === "accepted") {
+      // Rejected after being accepted → restore stock
+      const restoredStock = item.stock_quantity + item.quantity;
+
+      await client.query(
+        `UPDATE products SET stock_quantity = $1, updated_at = NOW() WHERE id = $2`,
+        [restoredStock, item.product_id]
       );
     }
 

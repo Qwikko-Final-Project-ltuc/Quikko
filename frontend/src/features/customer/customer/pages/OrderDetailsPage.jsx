@@ -133,7 +133,7 @@ const OrderDetailsPage = () => {
     }
   }, [cartFromState, orderId, dispatch]);
 
-  // Calculate pricing breakdown - التعديل هنا
+  // Calculate pricing breakdown
   useEffect(() => {
     const cartSubtotal = currentCart?.items?.reduce(
       (sum, item) => sum + Number(item.price || 0) * (item.quantity || 1),
@@ -146,7 +146,7 @@ const OrderDetailsPage = () => {
     setTotalWithShipping(cartSubtotal); // بدون delivery fee مؤقتاً
   }, [currentCart, address]);
 
-  // بعد نجاح الطلب، تحديث deliveryFee من البيانات الفعلية - إضافة هذا الـ useEffect
+  // بعد نجاح الطلب، تحديث deliveryFee من البيانات الفعلية
   useEffect(() => {
     if (orderSuccess?.order?.delivery_fee) {
       setDeliveryFee(orderSuccess.order.delivery_fee);
@@ -239,8 +239,12 @@ const OrderDetailsPage = () => {
   };
 
   const handleUsePoints = (availablePoints, enteredPoints = userPointsToUse) => {
+    let pointsToUse = 0;
+
     if (!usePointsChecked) {
-      const pointsToUse = Math.min(enteredPoints, availablePoints);
+      // نستخدم أقل قيمة بين النقاط المدخلة والنقاط المتوفرة
+      pointsToUse = Math.min(enteredPoints, availablePoints);
+
       if (enteredPoints > availablePoints) {
         setPointsError(`You only have ${availablePoints} points.`);
         setUsePointsChecked(false);
@@ -249,10 +253,12 @@ const OrderDetailsPage = () => {
         setUsePointsChecked(true);
         setPointsError("");
         setUserPointsToUse(pointsToUse);
-        const discount = pointsToUse * 0.1; // كل 10 نقاط = 1 دولار خصم
+        // كل نقطة = 0.1 خصم بالعملة
+        const discount = pointsToUse * 0.1;
         setPointsDiscount(discount);
       }
     } else {
+      // إذا المستخدم ألغى استخدام النقاط
       setUsePointsChecked(false);
       setPointsDiscount(0);
       setUserPointsToUse(0);
@@ -269,6 +275,7 @@ const OrderDetailsPage = () => {
   };
 
   const handleCheckoutClick = async () => {
+    // تحقق أولاً من العنوان
     if (!address.address_line1 || !address.city) {
       alert("Address Line 1 and City are required!");
       return;
@@ -277,6 +284,7 @@ const OrderDetailsPage = () => {
     setCheckoutError(null);
 
     try {
+      // إعداد بيانات الدفع (بطاقة أو COD)
       const paymentData =
         paymentMethod === "card"
           ? {
@@ -288,6 +296,16 @@ const OrderDetailsPage = () => {
             }
           : {};
 
+      // تحقق من بيانات البطاقة إذا تم اختيار الدفع بالبطاقة
+      if (paymentMethod === "card") {
+        const vErr = validateCardFields();
+        if (vErr) {
+          setCardError(vErr);
+          setCheckoutLoading(false);
+          return;
+        }
+      }
+
       // لا ترسل deliveryFee محسوبة مسبقاً - دع الباك إند يحسبها
       const checkoutPayload = {
         cart_id: currentCart.id,
@@ -298,23 +316,6 @@ const OrderDetailsPage = () => {
         use_loyalty_points: usePointsChecked ? userPointsToUse : 0,
         // إزالة الحقول المحسوبة مسبقاً - دع الباك إند يحسبها
       };
-
-      if (paymentMethod === "card") {
-        const vErr = validateCardFields();
-        if (vErr) {
-          setCardError(vErr);
-          setCheckoutLoading(false);
-          return;
-        }
-        const rawNumber = card.number.replace(/\D/g, "");
-        checkoutPayload.paymentData = {
-          transactionId: `card_SANDBOX_${Date.now()}`,
-          card_last4: rawNumber.slice(-4),
-          card_brand: detectBrand(rawNumber),
-          expiry_month: parseInt(card.expiryMonth, 10),
-          expiry_year: parseInt(card.expiryYear, 10),
-        };
-      }
 
       const newOrder = await customerAPI.checkout(checkoutPayload);
       await dispatch(deleteCart(currentCart.id)).unwrap();
@@ -908,7 +909,7 @@ const OrderDetailsPage = () => {
                         <div>
                           <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Cardholder Name</label>
                           <input
-                            placeholder="John Doe"
+                            placeholder="Ahmed omar"
                             value={card.name}
                             onChange={(e) => setCard({ ...card, name: e.target.value })}
                             className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}

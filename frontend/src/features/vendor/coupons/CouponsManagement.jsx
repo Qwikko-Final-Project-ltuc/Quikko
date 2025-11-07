@@ -17,12 +17,18 @@ export default function CouponsManagement() {
   const [visibleCount, setVisibleCount] = useState(5);
   const [editingCoupon, setEditingCoupon] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [status, setStatus] = useState("loading"); // ✅ حالة التحميل
 
   useEffect(() => {
     loadCoupons();
   }, []);
 
-  const loadCoupons = async () => setCoupons(await fetchCoupons());
+  const loadCoupons = async () => {
+    setStatus("loading"); // ✅ بدء التحميل
+    const data = await fetchCoupons();
+    setCoupons(data);
+    setStatus("idle"); // ✅ انتهاء التحميل
+  };
 
   const handleFormSubmit = async (formData) => {
     if (editingCoupon) {
@@ -37,6 +43,18 @@ export default function CouponsManagement() {
 
   const handleEditClick = (coupon) => setEditingCoupon(coupon);
   const handleCancelEdit = () => setEditingCoupon(null);
+
+  // ✅ شاشة التحميل
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--button)] mx-auto mb-4"></div>
+          <p className="text-[var(--text)] text-lg">Loading coupons...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -166,7 +184,6 @@ export default function CouponsManagement() {
                         ? "var(--mid-dark)"
                         : "var(--bg)",
                       color: "var(--text)",
-                      
                     }}
                   >
                     <option value="active">Active</option>

@@ -45,7 +45,7 @@ export default function VendorNotifications() {
 
   // ألوان الثيم
   const pageBg = isDarkMode ? "#242625" : "#f0f2f1";
-  const cardBg = isDarkMode ? "#666666" : "#ffffff";
+  const cardBg = isDarkMode ? "#313131" : "#ffffff";
   const textColor = isDarkMode ? "#ffffff" : "#242625";
   const textGray = isDarkMode ? "#f9f9f9" : "#6b7280";
   const buttonBg = "#307A59";
@@ -82,7 +82,7 @@ export default function VendorNotifications() {
                     <button
                       onClick={() => handleMarkRead(notif.id)}
                       className="text-xs font-medium mt-2 inline-flex items-center gap-1 px-2 py-1 rounded"
-                      style={{ backgroundColor: "#FFD700", color: "#000" }}
+                      style={{ color: "#000" }}
                     >
                       <FaCheck /> Mark as Read
                     </button>
