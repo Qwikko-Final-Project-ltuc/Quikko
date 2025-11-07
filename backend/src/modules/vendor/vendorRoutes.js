@@ -94,6 +94,15 @@ router.put(
 router.get('/order-items', protect, vendorController.getVendorOrderItems);
 
 
+router.patch(
+  "/orders/:orderId/items/:itemId",
+  protect,
+  authorizeRole("vendor"),
+  vendorController.updateOrderItemStatus
+);
+
+
+
 module.exports = router;
 
 

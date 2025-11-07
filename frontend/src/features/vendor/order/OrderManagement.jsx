@@ -1,12 +1,31 @@
 import React, { useState, useEffect } from "react";
-// import { useNavigate } from "react-router-dom";
-import {
-  fetchOrderItems,
-  updateOrderItemStatus,
-  fetchOrderItemsWithCompany as _fetchOrderItemsWithCompany,
-} from "../VendorAPI2";
-// import { getUserIdFromToken } from "../chat/auth";
 
+// ====== Helpers (نفس أسلوبك) ======
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("token");
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
+
+// لو موجودة عندك، تقدر تبقيها. هون نسخة بسيطة للـ fetch من نفس اندبوينتاتك:
+const fetchOrderItems = async (status = "") => {
+  const query = status ? `?status=${encodeURIComponent(status)}` : "";
+  const res = await fetch(
+    `http://localhost:3000/api/vendor/order-items${query}`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
+  const json = await res.json();
+  return json.data || [];
+};
+
+// بديل آخر بجيب من /vendor/orders لو حابة:
+const _fetchOrderItemsWithCompany = null; // خليه null لو بدك الافتراضي هو order-items
+
+// ====== المكون الرئيسي ======
 const STATUS_LABELS = {
   "": "All",
   pending: "Pending",
@@ -23,9 +42,13 @@ export default function OrderManagement() {
     localStorage.getItem("theme") === "dark"
   );
 
-  // const navigate = useNavigate();
-  const allowedStatuses = ["pending", "accepted", "rejected"];
+  // ====== مودال سبب الرفض ======
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [pendingChange, setPendingChange] = useState(null);
+  // pendingChange = { itemId, orderId, nextStatus }
 
+  const allowedStatuses = ["pending", "accepted", "rejected"];
   const fetchItemsPref = _fetchOrderItemsWithCompany || fetchOrderItems;
 
   const loadItems = async (statusFilter = "") => {
@@ -47,22 +70,101 @@ export default function OrderManagement() {
   useEffect(() => {
     loadItems();
 
-    const handleStorageChange = () => {
+    const handleStorageChange = () =>
       setIsDarkMode(localStorage.getItem("theme") === "dark");
-    };
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  const handleStatusChange = async (itemId, newStatus) => {
+  // ====== ضرب الاندبوينت الجديد PATCH /vendor/orders/:orderId/items/:itemId ======
+  const callUpdateItemStatus = async ({
+    orderId,
+    itemId,
+    action,
+    reason = null,
+  }) => {
+    const url = `http://localhost:3000/api/vendor/orders/${orderId}/items/${itemId}`;
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        action,
+        ...(action === "reject" ? { reason } : {}),
+      }),
+    });
+    const json = await res.json();
+    if (!res.ok || json?.success === false) {
+      const msg = json?.message || `Failed to update item ${itemId}`;
+      throw new Error(msg);
+    }
+    return json;
+  };
+
+  // عند تغيير الستيتس من السيلكت
+  const handleStatusChange = async (item, newStatus) => {
     if (!allowedStatuses.includes(newStatus)) return;
-    await updateOrderItemStatus(itemId, newStatus);
-    loadItems(filter);
+
+    // لو رفض → افتح مودال السبب قبل الحفظ
+    if (newStatus === "rejected") {
+      setPendingChange({
+        itemId: item.order_item_id,
+        orderId: item.order_id,
+        nextStatus: newStatus,
+      });
+      setRejectReason("");
+      setShowRejectModal(true);
+      return;
+    }
+
+    // غير هيك (accepted/pending) → نستخدم الاندبوينت
+    try {
+      const action = newStatus === "accepted" ? "accept" : "accept"; // ما في "pending" أكشن عندك؛ خليه يرجع "accept" أو أعِد تحميل
+      await callUpdateItemStatus({
+        orderId: item.order_id,
+        itemId: item.order_item_id,
+        action, // "accept"
+      });
+      await loadItems(filter);
+    } catch (err) {
+      console.error(err);
+      // رجّع القائمة القديمة
+      await loadItems(filter);
+      alert(err.message);
+    }
+  };
+
+  // حفظ الرفض من المودال
+  const confirmReject = async () => {
+    if (!pendingChange) return;
+    try {
+      await callUpdateItemStatus({
+        orderId: pendingChange.orderId,
+        itemId: pendingChange.itemId,
+        action: "reject",
+        reason: rejectReason?.trim() || null,
+      });
+      setShowRejectModal(false);
+      setPendingChange(null);
+      setRejectReason("");
+      await loadItems(filter);
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    }
+  };
+
+  // إلغاء المودال (ما نحفظ شيء)
+  const cancelReject = async () => {
+    setShowRejectModal(false);
+    setPendingChange(null);
+    setRejectReason("");
+    // لإرجاع قيمة السيلكت كما كانت، أسهل حل: أعد التحميل
+    await loadItems(filter);
   };
 
   const visibleItems = items.slice(0, visibleCount);
 
-  // 🎨 نفس ألوانك الأصلية (بدون تعديل على الديزاين)
+  // 🎨 نفس ألوانك الأصلية
   const pageBg = isDarkMode ? "#242625" : "#f0f2f1";
   const innerBg = isDarkMode ? "#313131" : "#ffffff";
   const textColor = isDarkMode ? "#ffffff" : "#242625";
@@ -83,7 +185,7 @@ export default function OrderManagement() {
             key={key}
             onClick={() => {
               setFilter(key);
-              setVisibleCount(4); // إعادة الضبط عند تغيير الفلتر
+              setVisibleCount(4);
               loadItems(key);
             }}
             className={`px-4 py-1 rounded-2xl border transition-all duration-300 ${
@@ -97,7 +199,7 @@ export default function OrderManagement() {
         ))}
       </div>
 
-      {/* Orders Table */}
+      {/* Table */}
       <div
         className="p-6 rounded-2xl shadow"
         style={{ backgroundColor: innerBg, color: textColor }}
@@ -136,12 +238,9 @@ export default function OrderManagement() {
                     <td className="p-2">{item.quantity}</td>
                     <td className="p-2">
                       <select
-                        value={item.vendor_status}
+                        value={item.vendor_status || "pending"}
                         onChange={(e) =>
-                          handleStatusChange(
-                            item.order_item_id,
-                            e.target.value
-                          )
+                          handleStatusChange(item, e.target.value)
                         }
                         className="p-1 rounded-md font-medium"
                         style={{
@@ -174,7 +273,6 @@ export default function OrderManagement() {
               </tbody>
             </table>
 
-            {/* Show More Button */}
             {visibleCount < items.length && (
               <div className="mt-4 flex justify-center">
                 <button
@@ -188,6 +286,51 @@ export default function OrderManagement() {
           </>
         )}
       </div>
+
+      {/* ====== Reject Reason Modal ====== */}
+      {showRejectModal && (
+        <div
+          className="fixed inset-0 flex items-center justify-center z-50"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl p-6 shadow-lg"
+            style={{ backgroundColor: innerBg, color: textColor }}
+          >
+            <h2 className="text-lg font-semibold mb-4">Rejection reason</h2>
+
+            <textarea
+              className="w-full p-3 rounded-lg border"
+              style={{
+                backgroundColor: inputBg,
+                color: textColor,
+                borderColor: borderColor,
+              }}
+              rows={4}
+              placeholder="Write the reason (optional)"
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+            />
+
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                onClick={cancelReject}
+                className="px-4 py-2 rounded-lg border"
+                style={{ borderColor: borderColor }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmReject}
+                className="px-4 py-2 rounded-lg text-white"
+                style={{ backgroundColor: "#307A59" }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -583,6 +583,12 @@ router.patch('/:orderId/status',  async (req, res) => {
   }
 });
 
+router.patch(
+  "/orders/:orderId/decision",
+  protect,
+  authorizeRole("customer"),
+  customerController.submitOrderDecision
+);
 
 
 module.exports = router;

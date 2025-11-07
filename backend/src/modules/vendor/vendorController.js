@@ -194,41 +194,41 @@ exports.updateProfile = async (req, res) => {
  * Only 'accepted' or 'rejected'.
  */
 
-exports.updateOrderItemStatus = async (req, res) => {
-  try {
-    const { id } = req.params; 
-    const { status } = req.body;
-    const userId = req.user.id;
+// exports.updateOrderItemStatus = async (req, res) => {
+//   try {
+//     const { id } = req.params; 
+//     const { status } = req.body;
+//     const userId = req.user.id;
 
-    if (!["accepted", "rejected"].includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Status must be either accepted or rejected",
-      });
-    }
+//     if (!["accepted", "rejected"].includes(status)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Status must be either accepted or rejected",
+//       });
+//     }
 
-    const updatedItem = await vendorService.updateOrderItemStatus(
-      id,
-      status,
-      userId
-    );
+//     const updatedItem = await vendorService.updateOrderItemStatus(
+//       id,
+//       status,
+//       userId
+//     );
 
-    if (!updatedItem) {
-      return res.status(403).json({
-        success: false,
-        message: "Not allowed to update this item",
-      });
-    }
+//     if (!updatedItem) {
+//       return res.status(403).json({
+//         success: false,
+//         message: "Not allowed to update this item",
+//       });
+//     }
 
-    res.json({ success: true, data: updatedItem });
-  } catch (err) {
-    console.error("Update order item status error:", err);
-    res.status(500).json({
-      success: false,
-      message: err.message || "Error updating order item status",
-    });
-  }
-};
+//     res.json({ success: true, data: updatedItem });
+//   } catch (err) {
+//     console.error("Update order item status error:", err);
+//     res.status(500).json({
+//       success: false,
+//       message: err.message || "Error updating order item status",
+//     });
+//   }
+// };
 
 
 exports.getVendorOrderItems = async (req, res) => {
@@ -241,3 +241,38 @@ exports.getVendorOrderItems = async (req, res) => {
     res.status(500).json({ success: false, message: 'Error fetching order items' });
   }
 };
+
+
+
+
+exports.updateOrderItemStatus = async (req, res) => {
+  try {
+    const { orderId, itemId } = req.params;
+    const { action, reason } = req.body; // action: "accept" | "reject"
+    const vendorUserId = req.user.id;
+
+    if (!["accept", "reject"].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        message: "Action must be either 'accept' or 'reject'",
+      });
+    }
+
+    const result = await vendorService.updateOrderItemStatus({
+      orderId: Number(orderId),
+      itemId: Number(itemId),
+      action,
+      reason,
+      vendorUserId,
+    });
+
+    return res.json({ success: true, data: result });
+  } catch (err) {
+    console.error("Update order item status error:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || "Error updating order item status",
+    });
+  }
+};
+

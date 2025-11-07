@@ -843,3 +843,43 @@ exports.redeemLoyaltyPoints = async (req, res) => {
     res.status(500).json({ message: error.message || "Server error" });
   }
 };
+
+
+// controllers/customerController.js
+exports.submitOrderDecision = async (req, res) => {
+  try {
+    const customerId = req.user.id;
+    const { orderId } = req.params;
+    const { action } = req.body; // "cancel_order" | "proceed_without_rejected"
+
+    if (!["cancel_order", "proceed_without_rejected"].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "action must be 'cancel_order' or 'proceed_without_rejected'",
+      });
+    }
+
+    const result = await customerModel.applyCustomerDecision({
+      orderId: Number(orderId),
+      customerId,
+      action,
+    });
+
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Order not found / not eligible / or nothing changed",
+      });
+    }
+
+    // رجّع الطلب بعد التعديل + عناصره ليحدث الـ UI فورًا
+    return res.json({ success: true, data: result });
+  } catch (err) {
+    console.error("submitOrderDecision error:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: err.message || "Server error" });
+  }
+};

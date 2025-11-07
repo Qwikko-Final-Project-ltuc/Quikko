@@ -1381,29 +1381,51 @@ exports.getCustomerOrders = async (customer_id) => {
       o.payment_status,
       o.shipping_address,
       o.created_at,
+      o.customer_action_required,
+      o.customer_decision,
+
       COALESCE(
         json_agg(
           json_build_object(
-            'product_id', p.id,
-            'name', p.name,
+            'item_id',        oi.id,
+            'product_id',     p.id,
+            'name',           p.name,
+            'unit_price',     oi.price, 
             'price', p.price,
-            'quantity', oi.quantity
+            'quantity',       oi.quantity,
+            'vendor_id',      p.vendor_id,
+            'vendor_status',  oi.vendor_status,
+            'rejection_reason', oi.rejection_reason,
+            'accepted_at',    oi.accepted_at,
+            'rejected_at',    oi.rejected_at
           )
-        ) FILTER (WHERE p.id IS NOT NULL), '[]'
+          ORDER BY oi.id
+        ) FILTER (WHERE oi.id IS NOT NULL),
+        '[]'
       ) AS items,
+
+      json_build_object(
+        'total',    COUNT(oi.*),
+        'accepted', COUNT(*) FILTER (WHERE oi.vendor_status = 'accepted'),
+        'rejected', COUNT(*) FILTER (WHERE oi.vendor_status = 'rejected'),
+        'pending',  COUNT(*) FILTER (
+                      WHERE oi.vendor_status IS NULL OR oi.vendor_status = 'pending'
+                    )
+      ) AS items_summary,
+
       COALESCE(
         (
           SELECT json_agg(
             json_build_object(
-              'id', pay.id,
-              'payment_method', pay.payment_method,
-              'amount', pay.amount,
-              'status', pay.status,
-              'transaction_id', pay.transaction_id,
-              'card_last4', pay.card_last4,
-              'card_brand', pay.card_brand,
-              'expiry_month', pay.expiry_month,
-              'expiry_year', pay.expiry_year
+              'id',            pay.id,
+              'payment_method',pay.payment_method,
+              'amount',        pay.amount,
+              'status',        pay.status,
+              'transaction_id',pay.transaction_id,
+              'card_last4',    pay.card_last4,
+              'card_brand',    pay.card_brand,
+              'expiry_month',  pay.expiry_month,
+              'expiry_year',   pay.expiry_year
             )
           )
           FROM payments pay
@@ -1411,9 +1433,10 @@ exports.getCustomerOrders = async (customer_id) => {
         ),
         '[]'
       ) AS payments
+
     FROM orders o
     LEFT JOIN order_items oi ON o.id = oi.order_id
-    LEFT JOIN products p ON oi.product_id = p.id
+    LEFT JOIN products p     ON oi.product_id = p.id
     WHERE o.customer_id = $1
     GROUP BY o.id
     ORDER BY o.created_at DESC
@@ -1423,6 +1446,7 @@ exports.getCustomerOrders = async (customer_id) => {
 
   return result.rows;
 };
+
 
 exports.getVendorProducts = async (vendorId) => {
   const query = `
@@ -1719,3 +1743,209 @@ exports.redeemPoints = async (userId, points, description) => {
   const discountPercentage = Math.floor(points / 100) * 10;
   return discountPercentage;
 };
+
+
+/**
+ * يعيد حساب حالة الطلب من آيتماته
+ * - نفس منطقك السابق بالضبط
+ */
+// ✅ Export قبل اسم الفنكشن
+// models/customerModel.js (أو وين ما عندك هالدوال)
+
+exports.recomputeOrderStatus = async function recomputeOrderStatus(orderId) {
+  const q = `
+    SELECT
+      COUNT(*)::int AS total,
+      COUNT(*) FILTER (WHERE LOWER(vendor_status) = 'accepted')::int AS accepted,
+      COUNT(*) FILTER (WHERE LOWER(vendor_status) = 'rejected')::int AS rejected,
+      COUNT(*) FILTER (
+        WHERE vendor_status IS NULL OR LOWER(vendor_status) = 'pending'
+      )::int AS pending
+    FROM order_items
+    WHERE order_id = $1
+  `;
+  const { rows } = await pool.query(q, [orderId]);
+  if (!rows.length) return null;
+  const c = rows[0];
+
+  let newStatus;
+  let customerActionRequired = false;
+
+  if (c.total > 0 && c.rejected === c.total) {
+    newStatus = "cancelled";
+  } else if (c.total > 0 && c.accepted === c.total) {
+    newStatus = "requested";
+  } else if (c.rejected > 0 && (c.accepted > 0 || c.pending > 0)) {
+    newStatus = "awaiting_customer_decision";
+    customerActionRequired = true;
+  } else {
+    // خليها "requested" إذا مافي حالات حاسمة
+    newStatus = "requested";
+  }
+
+  const up = await pool.query(
+    `
+      UPDATE orders
+      SET status = $1,
+          customer_action_required = $2,
+          updated_at = NOW()
+      WHERE id = $3
+      RETURNING *;
+    `,
+    [newStatus, customerActionRequired, orderId]
+  );
+
+  return up.rows[0];
+};
+
+exports.applyCustomerDecision = async ({ orderId, customerId, action }) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // 1) تأكيد ملكية الطلب + قفل الصف
+    const { rows: oRows } = await client.query(
+      `
+        SELECT *
+        FROM orders
+        WHERE id = $1 AND customer_id = $2
+        FOR UPDATE
+      `,
+      [orderId, customerId]
+    );
+    if (!oRows.length) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+    const order = oRows[0];
+
+    // لازم يكون بمرحلة انتظار قرار الزبون
+    if ((order.status || "").toLowerCase() !== "awaiting_customer_decision") {
+      await client.query("ROLLBACK");
+      return null;
+    }
+
+    // 2) إحضار العناصر
+    const { rows: items } = await client.query(
+      `SELECT * FROM order_items WHERE order_id = $1`,
+      [orderId]
+    );
+
+    // لو ما في عناصر لأي سبب → اعتبرها cancel
+    if (!items.length) {
+      const { rows: up } = await client.query(
+        `
+          UPDATE orders
+          SET status = 'cancelled',
+              customer_action_required = false,
+              customer_decision = 'cancel_order',
+              updated_at = NOW()
+          WHERE id = $1
+          RETURNING *;
+        `,
+        [orderId]
+      );
+
+      // رجّع بدون عناصر
+      await client.query("COMMIT");
+      return { ...up[0], items: [] };
+    }
+
+    if (action === "cancel_order") {
+      // 3-A) إلغاء كامل الطلب
+      const { rows: up } = await client.query(
+        `
+          UPDATE orders
+          SET status = 'cancelled',
+              customer_action_required = false,
+              customer_decision = 'cancel_order',
+              updated_at = NOW()
+          WHERE id = $1
+          RETURNING *;
+        `,
+        [orderId]
+      );
+
+      // رجّع الطلب + عناصره الأصلية (ما منحتاج نحذف الآيتمات عند الإلغاء)
+      await client.query("COMMIT");
+      return { ...up[0], items };
+    }
+
+    // 3-B) proceed_without_rejected: حذف العناصر المرفوضة (case-insensitive)
+    await client.query(
+      `
+        DELETE FROM order_items
+        WHERE order_id = $1
+          AND LOWER(vendor_status) = 'rejected'
+      `,
+      [orderId]
+    );
+
+    // العناصر المتبقية
+    const { rows: leftItems } = await client.query(
+      `SELECT * FROM order_items WHERE order_id = $1`,
+      [orderId]
+    );
+
+    if (!leftItems.length) {
+      // ما ظل ولا عنصر → ألغِ الطلب وصفر الإجمالي
+      const { rows: up } = await client.query(
+        `
+          UPDATE orders
+          SET status = 'cancelled',
+              customer_action_required = false,
+              customer_decision = 'proceed_without_rejected_but_empty',
+              total_amount = 0,
+              total_with_shipping = COALESCE(delivery_fee, 0),
+              updated_at = NOW()
+          WHERE id = $1
+          RETURNING *;
+        `,
+        [orderId]
+      );
+
+      await client.query("COMMIT");
+      return { ...up[0], items: [] };
+    }
+
+    // 4) إعادة حساب الإجماليات من العناصر المتبقية
+    const { rows: sumRows } = await client.query(
+      `
+        SELECT COALESCE(SUM(price * quantity), 0)::numeric AS subtotal
+        FROM order_items
+        WHERE order_id = $1
+      `,
+      [orderId]
+    );
+    const subtotal = sumRows[0].subtotal || 0;
+
+    // 5) تحديث الطلب: صار “requested” بعد قرار الزبون
+    const { rows: updatedOrderRows } = await client.query(
+      `
+        UPDATE orders
+        SET total_amount = $1,
+            total_with_shipping = $1 + COALESCE(delivery_fee, 0),
+            status = 'requested',
+            customer_action_required = false,
+            customer_decision = 'proceed_without_rejected',
+            updated_at = NOW()
+        WHERE id = $2
+        RETURNING *;
+      `,
+      [subtotal, orderId]
+    );
+    const updatedOrder = updatedOrderRows[0];
+
+    await client.query("COMMIT");
+
+    // رجّع الطلب + العناصر المتبقية ليتحدث الـ UI فورًا
+    return { ...updatedOrder, items: leftItems };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+
