@@ -11,7 +11,7 @@ export default function AdminHome() {
 
   return (
     <div className="w-full mx-auto  p-6  rounded-2xl">
-      <h1 className="text-3xl font-extrabold pb-3 opacity-90 ml-9">Dashboard</h1>
+      <h1 className="text-3xl font-extrabold pb-3 opacity-90 mb-5">Dashboard</h1>
       <div
         className={`grid grid-cols-[2fr_1fr] gap-6 p-8 min-h-screen transition-colors duration-500 ${
           isDark ? "bg-[var(--bg)]" : "bg-[var(--bg)]"

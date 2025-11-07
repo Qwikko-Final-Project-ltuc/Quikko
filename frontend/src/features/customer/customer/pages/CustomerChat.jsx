@@ -1,14 +1,15 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { chatApi, SOCKET_URL } from "./chatAPI";
 import { setUnreadCount } from '../components/chatUnreadSlice';
+import { fetchProfile } from "../profileSlice";
 import { 
   FaTimes,
 } from "react-icons/fa";
 
-const roomKeyOf = (a, b) => [Number(a), Number(b)].sort((x, y) => x - y).join(":");
+const roomKeyOf = (a, b) => [String(a), String(b)].sort().join(":");
 const safeText = (v) => (v == null ? "" : typeof v === "string" ? v : JSON.stringify(v));
 
 const toUtcISO = (v) => {
@@ -88,16 +89,31 @@ const formatDate = (iso) => {
 
 const CustomerChatPage = () => {
   const auth = useSelector((s) => s.customerAuth);
+  const profile = useSelector((s) => s.profile.data);
+  const { loading: profileLoading, error: profileError } = useSelector((s) => s.profile);
   const themeMode = useSelector((s) => s.customerTheme.mode);
   const location = useLocation();
   const dispatch = useDispatch();
 
+  // نفس طريقة البروفايل تماماً للحصول على customerId
   const customerId = useMemo(() => {
-    const id1 = Number(auth.user?.id);
-    if (Number.isFinite(id1) && id1 > 0) return id1;
-    const id2 = Number(localStorage.getItem("customerId"));
-    return Number.isFinite(id2) && id2 > 0 ? id2 : null;
-  }, [auth.user?.id]);
+    // الأولوية للبيانات من الـ profile slice
+    if (profile?.id) return String(profile.id);
+    if (profile?.customer_id) return String(profile.customer_id);
+    if (profile?.user_id) return String(profile.user_id);
+    
+    // ثم من الـ auth
+    const fromAuth = auth.user?.id || auth.user?.user_id || auth.user?.customerId;
+    if (fromAuth) return String(fromAuth);
+    
+    // ثم من localStorage
+    const fromStorage = localStorage.getItem("customerId");
+    if (fromStorage && fromStorage !== "temp_id" && fromStorage !== "undefined") {
+      return String(fromStorage);
+    }
+    
+    return null;
+  }, [profile, auth.user]);
 
   const initialVendorFromState = Number(location.state?.vendorId);
   const validInitialVendor = Number.isFinite(initialVendorFromState) && initialVendorFromState > 0 ? initialVendorFromState : null;
@@ -119,6 +135,11 @@ const CustomerChatPage = () => {
   useEffect(() => {
     activeVendorIdRef.current = activeVendorId;
   }, [activeVendorId]);
+
+  // نفس loading behavior مثل البروفايل
+  useEffect(() => {
+    dispatch(fetchProfile());
+  }, [dispatch]);
 
   // احسب العدد الإجمالي للرسائل غير المقروءة من جميع المحادثات
   const totalUnreadCount = useMemo(() => {
@@ -400,13 +421,51 @@ const CustomerChatPage = () => {
     return groups;
   }, [chat]);
 
-  if (customerId == null)
+  // Loading state - نفس البروفايل
+  if (profileLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
-        <p className="text-[var(--text)]">Loading your session…</p>
+      <div className={`min-h-screen bg-[var(--bg)] flex items-center justify-center`}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--button)] mx-auto mb-4"></div>
+          <p className={`text-[var(--text)]`}>Loading chat...</p>
+        </div>
       </div>
     );
+  }
 
+  // Error state - نفس البروفايل
+  if (profileError) {
+    return (
+      <div className={`min-h-screen bg-[var(--bg)] flex items-center justify-center`}>
+        <div className="text-center">
+          <div className="w-16 h-16 bg-[var(--error)]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-[var(--error)] text-2xl">!</span>
+          </div>
+          <p className={`text-[var(--error)]`}>Error: {profileError}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // No customerId state - مشابه للبروفايل
+  if (!customerId) {
+    return (
+      <div className={`min-h-screen bg-[var(--bg)] flex items-center justify-center`}>
+        <div className="text-center">
+          <div className="w-16 h-16 bg-[var(--div)] rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-[var(--text)] text-2xl">💬</span>
+          </div>
+          <p className={`text-[var(--text)] mb-4`}>Please log in to access chat</p>
+          <button 
+            onClick={() => window.location.href = '/login'}
+            className="bg-[var(--button)] hover:bg-[#015c40] text-white font-semibold px-6 py-2 rounded-xl transition-all"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col bg-[var(--bg)]" style={{ height: "calc(100vh - 243px)" }}>
       <style>

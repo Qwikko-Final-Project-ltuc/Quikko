@@ -740,7 +740,7 @@ const Navbar = () => {
                               key={n.id}
                               className={`p-6 transition-all duration-200 hover:bg-[var(--hover)] hover:bg-opacity-30 cursor-pointer group ${
                                 !n.read_status 
-                                  ? "bg-[var(--primary)] bg-opacity-5 border-l-4 border-l-[var(--primary)]" 
+                                  ? "bg-[var(--hover)] bg-opacity-5 border-l-4 border-l-[var(--primary)]" 
                                   : "border-l-4 border-l-transparent"
                               }`}
                               onClick={() => {
