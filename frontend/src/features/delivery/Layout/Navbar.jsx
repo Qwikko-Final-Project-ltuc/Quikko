@@ -108,36 +108,25 @@ export default function Navbar({ isSidebarOpen, toggleSidebar, user }) {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 px-6 py-2 flex justify-between items-center relative z-50 shadow-md
-      ${
-        isDarkMode
-          ? "bg-[var(--div)]"
-          : "bg-gradient-to-br from-[var(--button)] to-gray-700"
-      }`}
+        className={`fixed top-0 left-0 right-0 px-3 sm:px-6 py-2 flex justify-between items-center relative z-50 shadow-md
+  ${
+    isDarkMode
+      ? "bg-[var(--div)]"
+      : "bg-gradient-to-br from-[var(--button)] to-gray-700"
+  }`}
         style={{ color: "var(--textbox)" }}
       >
         {/* زر القائمة + اللوغو */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           {!isSidebarOpen && (
-            <>
-              <button
-                onClick={toggleSidebar}
-                className="text-2xl md:hidden transition-colors duration-200"
-                style={{ color: "var(--textbox)" }}
-                aria-label="Open sidebar"
-              >
-                <FaBars />
-              </button>
-
-              <button
-                onClick={toggleSidebar}
-                className="mr-6 transition-colors duration-200 sidebar-toggle-button"
-                style={{ color: "var(--textbox)" }}
-                aria-label="Open sidebar"
-              >
-                <FaBars />
-              </button>
-            </>
+            <button
+              onClick={toggleSidebar}
+              className="text-2xl p-2 rounded-md hover:bg-white/10 transition-colors duration-200"
+              style={{ color: "var(--textbox)" }}
+              aria-label="Toggle sidebar"
+            >
+              <FaBars />
+            </button>
           )}
 
           {!isSidebarOpen && (
@@ -146,14 +135,14 @@ export default function Navbar({ isSidebarOpen, toggleSidebar, user }) {
                 <img
                   src="/LogoDark.png"
                   alt="Qwikko Logo"
-                  className="h-9 mt-3"
+                  className="h-8 sm:h-9 mt-1 sm:mt-3"
                 />
               </div>
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3 sm:gap-6">
           {/* Profile Dropdown */}
           <div className="relative" ref={dropdownRef}>
             <button
@@ -164,7 +153,7 @@ export default function Navbar({ isSidebarOpen, toggleSidebar, user }) {
               aria-expanded={isDropdownOpen}
             >
               <FaUserSolid className="text-[var(--textbox)]" />
-              <span className="font-medium">
+              <span className="font-medium text-sm sm:text-base">
                 {user?.company_name || "Guest"}
               </span>
               <FiChevronDown
@@ -176,7 +165,12 @@ export default function Navbar({ isSidebarOpen, toggleSidebar, user }) {
             </button>
             {isDropdownOpen && (
               <div
-                className="absolute right-0 mt-2 w-56 rounded-xl overflow-hidden shadow-lg border bg-[var(--bg)]"
+                className="
+      sm:absolute sm:right-0 sm:mt-2
+      fixed right-3 top-[56px]
+w-[50vw] sm:w-56
+      rounded-xl overflow-hidden shadow-lg border bg-[var(--bg)]
+    "
                 style={{ borderColor: "var(--border)", color: "var(--text)" }}
               >
                 <button
@@ -244,7 +238,7 @@ export default function Navbar({ isSidebarOpen, toggleSidebar, user }) {
                   }
                 }
               }}
-              className="text-2xl transition-colors duration-200 hover:text-[var(--hover)]"
+              className="text-2xl p-2 transition-colors duration-200 hover:text-[var(--hover)]"
               style={{ color: "var(--textbox)" }}
               aria-label="Notifications"
               title="Notifications"

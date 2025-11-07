@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FaClipboardList,
@@ -13,29 +13,146 @@ import { setTheme } from "./deliveryThemeSlice";
 import ChatBot from "../Layout/ChatBot";
 import { X } from "lucide-react";
 
+// ===== Animations =====
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.18 } },
+};
+
+const itemUp = {
+  hidden: { opacity: 0, y: 38 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 120, damping: 16 },
+  },
+};
+
+const textReveal = {
+  hidden: { opacity: 0, y: 80 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 110, damping: 14, duration: 0.9 },
+  },
+};
+
+const gradientVariants = {
+  animate: {
+    backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+    transition: { duration: 10, repeat: Infinity, ease: "linear" },
+  },
+};
+
+const floatingBubble = {
+  floating: {
+    y: [-22, 22, -22],
+    rotate: [0, 3, 0],
+    transition: { duration: 5, repeat: Infinity, ease: "easeInOut" },
+  },
+};
+
+const pulse = {
+  initial: { boxShadow: "0 0 0 0 rgba(2,106,75,0.6)" },
+  animate: {
+    boxShadow: [
+      "0 0 0 0 rgba(2,106,75,0.6)",
+      "0 0 0 18px rgba(2,106,75,0)",
+      "0 0 0 0 rgba(2,106,75,0)",
+    ],
+    transition: { duration: 2.6, repeat: Infinity, ease: "easeOut" },
+  },
+};
+
 export default function LandingPage() {
   const [cmsContent, setCmsContent] = useState(null);
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
 
-  const isDark = useSelector((state) => state.deliveryTheme.darkMode);
+  const isDark = useSelector((s) => s.deliveryTheme.darkMode);
   const dispatch = useDispatch();
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const toggleChat = () => setIsChatOpen((v) => !v);
 
-  useEffect(() => {
-    async function loadCMS() {
-      const data = await fetchLandingCMS("delivery", "Landing Page");
-      setCmsContent(data);
-      if (data?.content) {
-        const parts = data.content.split("@");
-        setTitle(parts[0]?.trim() || "");
-        setSubtitle(parts[1]?.trim() || "");
-      }
+  // unified colors (from your main landing)
+  const colors = {
+    bg: isDark ? "#0a0a0a" : "#ffffff",
+    textbox: "#ffffff",
+    text: isDark ? "#f5f5f5" : "#1a1f1d",
+    textSecondary: isDark ? "#a0a0a0" : "#5a6c65",
+    div: isDark ? "#2a2a2a" : "#e8ecea",
+    border: isDark ? "#404040" : "#d0d9d5",
+    button: "#026a4b",
+    buttonHover: "#015c40",
+    gradientStart: "#026a4b",
+    gradientEnd: "#014d34",
+  };
+
+  // ===== 3D Tilt for hero image =====
+  const cardRef = useRef(null);
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const smx = useSpring(mx, { stiffness: 150, damping: 20 });
+  const smy = useSpring(my, { stiffness: 150, damping: 20 });
+  const rotateX = useTransform(smy, [-0.5, 0.5], [10, -10]);
+  const rotateY = useTransform(smx, [-0.5, 0.5], [-10, 10]);
+  const floatY = useMotionValue(0); // subtle float
+  const sFloatY = useSpring(floatY, { stiffness: 60, damping: 15 });
+
+  function handleMouseMove(e) {
+    const el = cardRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width; // 0 → 1
+    const py = (e.clientY - rect.top) / rect.height;
+    mx.set(px - 0.5);
+    my.set(py - 0.5);
+  }
+  function handleMouseLeave() {
+    mx.set(0);
+    my.set(0);
+  }
+
+useEffect(() => {
+  async function loadCMS() {
+    const data = await fetchLandingCMS("delivery", "Landing Page");
+    setCmsContent(data);
+
+    const raw = String(data?.content ?? "").trim();
+
+    if (raw.includes("@")) {
+      const [maybeTitle, ...rest] = raw.split("@");
+      const parsedTitle = (maybeTitle || data?.title || "").trim();
+      const parsedSub = rest.join("@").trim() || (data?.subtitle ?? "");
+
+      setTitle(parsedTitle || "Welcome to Qwikko Delivery");
+      setSubtitle(parsedSub);
+    } else {
+      // ما في @ → استخدمي title من الحقل المخصص والـ subtitle من content/subtitle
+      const parsedTitle = (data?.title || "").trim();
+      const parsedSub = (raw || data?.subtitle || "").trim();
+
+      setTitle(parsedTitle || "Welcome to Qwikko Delivery");
+      setSubtitle(parsedSub);
     }
-    loadCMS();
-  }, []);
+
+    // Debug: شو القيم اللي طلعَت؟
+    // eslint-disable-next-line no-console
+    console.log("CMS parsed:", {
+      titleAfter: (data?.title || "").trim(),
+      contentRaw: raw,
+      subtitleAfter: raw.includes("@")
+        ? raw.split("@").slice(1).join("@").trim()
+        : (raw || data?.subtitle || "").trim(),
+    });
+  }
+  loadCMS();
+}, []);
+
+
 
   useEffect(() => {
     if ("scrollRestoration" in window.history) {
@@ -51,127 +168,238 @@ export default function LandingPage() {
 
   return (
     <>
-      {/* ===== HERO ===== */}
-      <div
-        className="py-12 flex flex-col items-center"
+      {/* ===== HERO with animated gradient & floating bubbles ===== */}
+      <motion.section
+        variants={gradientVariants}
+        animate="animate"
+        className="relative overflow-hidden"
         style={{
-          backgroundColor: "transparent", // ✅ الخلفية العامة صارت شفافة
-          color: "var(--text)",
+          background: `linear-gradient(135deg, ${colors.gradientStart} 0%, ${colors.gradientEnd} 50%, ${colors.gradientStart} 100%)`,
+          backgroundSize: "400% 400%",
+          color: "#ffffff",
         }}
       >
-        <div
-          className="
-    w-full
-    flex flex-col md:grid md:grid-cols-2 items-center gap-12
-    pt-12 px-12 relative overflow-hidden 
-  "
-          style={{
-            backgroundColor: isDark ? "#313131" : "#f5f6f5",
-            color: "var(--text)",
-            transition: "background-color 0.3s ease, color 0.3s ease",
-          }}
+        {/* floating bubbles */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              variants={floatingBubble}
+              animate="floating"
+              transition={{ delay: i * 0.6 }}
+              className="absolute bg-white/10 rounded-full backdrop-blur-sm"
+              style={{
+                width: `${26 + i * 24}px`,
+                height: `${26 + i * 24}px`,
+                top: `${12 + i * 12}%`,
+                left: `${6 + i * 15}%`,
+                opacity: 0.08 + i * 0.09,
+              }}
+            />
+          ))}
+        </div>
+
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          className="relative max-w-screen-xl mx-auto px-4 sm:px-6 md:px-12 py-16 sm:py-20 md:py-24"
         >
-          {/* الصورة */}
-          <div className="order-2 md:order-1 flex items-center justify-center w-full h-full">
-            {cmsContent?.image_url ? (
-              <img
-                src={cmsContent.image_url}
-                alt="Landing visual"
-                className="w-full h-full object-cover rounded-xl shadow-md"
-                style={{ maxHeight: "100%", borderRadius: "1rem" }}
-              />
-            ) : (
-              <div
-                className="w-full h-full flex items-center justify-center rounded-xl"
-                style={{ backgroundColor: "var(--hover)", minHeight: "400px" }}
+          {/* tag chip */}
+          <motion.div variants={itemUp}></motion.div>
+
+          {/* grid: text + image */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-center">
+            {/* text */}
+            <div className="order-2 md:order-1 text-center md:text-left  relative z-30">
+              <motion.h1
+                variants={textReveal}
+                className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight tracking-tight"
+                style={{ lineHeight: "1.2" }}
               >
-                Loading image...
-              </div>
-            )}
-          </div>
-
-          {/* النصوص */}
-          <div className="order-1 md:order-2 flex flex-col items-center justify-center text-center space-y-5 w-full">
-            <h1
-              className="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight"
-              style={{ color: "var(--text)", lineHeight: "1.2" }}
-            >
-              {title || "Welcome to Qwikko Delivery"}
-            </h1>
-
-            {subtitle && (
-              <h6
-                className="text-base md:text-lg leading-relaxed max-w-2xl"
-                style={{ color: "var(--light-gray)" }}
-              >
-                {subtitle}
-              </h6>
-            )}
-
-            <div className="flex items-center justify-center gap-4 pt-2">
-              <Link
-                to="/delivery/login"
-                className="inline-block px-10 py-4 rounded-lg text-lg font-semibold shadow-md transition-transform duration-300 hover:scale-[1.02] focus:outline-none"
+                <span className="bg-gradient-to-r from-white to-green-200 bg-clip-text text-transparent">
+                  {title || "Welcome to Qwikko Delivery"}
+                </span>
+              </motion.h1>
+              <motion.h6
+                variants={itemUp}
+                className="mt-4 text-sm sm:text-base md:text-lg leading-relaxed max-w-2xl mx-auto md:mx-0"
                 style={{
-                  backgroundColor: "var(--button)",
-                  color: "#ffffff",
-                  boxShadow: "0 6px 15px rgba(0,0,0,0.15)",
+                  color: "rgba(255,255,255,0.98)",
+                  position: "relative",
+                  zIndex: 40,
+                  textShadow: "0 2px 6px rgba(0,0,0,0.45)",
                 }}
               >
-                Start Now
-              </Link>
+                {subtitle && subtitle.trim().length > 0
+                  ? subtitle
+                  : "Laoding."}
+              </motion.h6>
+
+              {/* === CTA (Start Now) - Drop-in Replacement === */}
+              <motion.div
+                variants={containerVariants}
+                className="flex items-center justify-center md:justify-start gap-3 sm:gap-4 pt-4"
+              >
+                {/* زر أساسي */}
+                <motion.div
+                  variants={itemUp}
+                  whileHover={{ y: -2, scale: 1.04 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="relative"
+                  style={{ zIndex: 40 }} // فوق أي فقاعات/خلفيات
+                >
+                  {/* نبض اختياري: فعّليه بإزالة التعليق */}
+                  {/* <span className="absolute inset-0 rounded-lg animate-ping opacity-20" style={{ backgroundColor: "#ffffff" }} /> */}
+
+                  <Link
+                    to="/delivery/login"
+                    aria-label="Start Now"
+                    className="
+        inline-flex items-center justify-center
+        px-6 sm:px-8 md:px-10
+        py-3 sm:py-3.5 md:py-4
+        rounded-lg text-base sm:text-lg font-semibold
+        shadow-lg transition-all duration-300
+        hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/70
+      "
+                    style={{
+                      backgroundColor: "#ffffff",
+                      color: "#026a4b",
+                      boxShadow: "0 8px 20px rgba(0,0,0,0.18)",
+                    }}
+                  >
+                    Start Now
+                  </Link>
+                </motion.div>
+
+                {/* (اختياري) زر ثانوي — احذفيه إن ما بدك ياه */}
+                {/* 
+  <motion.div
+    variants={itemUp}
+    whileHover={{ y: -2, scale: 1.03 }}
+    whileTap={{ scale: 0.98 }}
+  >
+    <Link
+      to="/delivery/about"
+      className="
+        inline-flex items-center justify-center
+        px-5 sm:px-6 md:px-8 py-3
+        rounded-lg text-sm sm:text-base font-semibold
+        border transition-all duration-300
+        hover:bg-white/10
+        focus:outline-none focus:ring-2 focus:ring-white/60
+      "
+      style={{
+        color: "#ffffff",
+        borderColor: "rgba(255,255,255,0.6)",
+        backdropFilter: "blur(2px)",
+      }}
+    >
+      Learn More
+    </Link>
+  </motion.div>
+  */}
+              </motion.div>
+            </div>
+
+            {/* image: show FULL image with NO background behind it */}
+            <div className="order-1 md:order-2 w-full flex items-center justify-center">
+              <motion.div
+                ref={cardRef}
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
+                style={{
+                  rotateX,
+                  rotateY,
+                  y: sFloatY,
+                  transformStyle: "preserve-3d",
+                }}
+                className="w-full flex items-center justify-center bg-transparent"
+              >
+                {cmsContent?.image_url ? (
+                  <motion.img
+                    src={cmsContent.image_url}
+                    alt="Landing visual"
+                    className="
+          w-full h-auto
+          max-h-64 sm:max-h-80 md:max-h-[420px] lg:max-h-[480px]
+          object-contain rounded-2xl
+        "
+                    whileHover={{ scale: 1.015 }}
+                    transition={{ type: "spring", stiffness: 120, damping: 18 }}
+                    style={{ willChange: "transform" }}
+                  />
+                ) : (
+                  // ✅ خلفية شفافة بالكامل، بدون بوردر أو لون
+                  <div className="w-full h-[280px] sm:h-[320px] md:h-[420px] lg:h-[480px] flex items-center justify-center bg-transparent">
+                    <span className="text-white/80">Loading image...</span>
+                  </div>
+                )}
+              </motion.div>
             </div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.section>
 
       {/* ===== HOW IT WORKS ===== */}
-      <div className="w-full max-w-6xl p-10 mt-6 text-center mx-auto">
-        <h2
-          className="text-4xl font-bold mb-16"
-          style={{ color: isDark ? "#ffffff" : "#026a4b" }}
+      <section
+        className="w-full max-w-6xl px-4 sm:px-6 md:p-10 mt-6 md:mt-10 text-center mx-auto"
+        style={{ backgroundColor: colors.bg, color: colors.text }}
+      >
+        <motion.h2
+          variants={itemUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          className="text-2xl sm:text-3xl md:text-4xl font-bold mb-8 sm:mb-12 md:mb-16"
+          style={{ color: isDark ? "#ffffff" : colors.button }}
         >
           How It Works
-        </h2>
+        </motion.h2>
 
-        {/* غلاف الشبكة + الخط + الأرقام خارج الكروت */}
         <div className="relative">
-          {/* الخط الواصل */}
+          {/* connector line */}
           <div
             className="hidden md:block absolute left-0 right-0 h-[3px]"
             style={{
               top: "28px",
-              backgroundColor: isDark ? "#ffffff" : "#026a4b",
-              opacity: 0.3,
+              backgroundColor: isDark ? "#ffffff" : colors.button,
+              opacity: 0.25,
             }}
           />
 
-          {/* صف الأرقام خارج الكروت */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-16 mb-6">
+          {/* numbering bubbles with pulse */}
+          <div className="grid grid-cols-3 gap-6 sm:gap-10 md:gap-16 mb-4 sm:mb-6">
             {["1", "2", "3"].map((step, idx) => (
-              <div key={idx} className="flex justify-center">
-                <div
-                  className="w-14 h-14 flex items-center justify-center rounded-full text-lg font-bold z-10"
-                  style={{
-                    backgroundColor: "var(--button)",
-                    color: "#fff",
-                    boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+              <motion.div
+                key={idx}
+                className="flex justify-center"
+                variants={itemUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.2 }}
+              >
+                <motion.div
+                  className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full text-sm sm:text-base md:text-lg font-bold z-10 shadow-md"
+                  style={{ backgroundColor: colors.button, color: "#fff" }}
+                  animate={{ scale: [1, 1.06, 1] }}
+                  transition={{
+                    duration: 1.8,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: idx * 0.2,
                   }}
                 >
                   {step}
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
             ))}
           </div>
 
-          {/* الكروت (بدون أرقام داخلها) */}
-          <div
-            className="grid grid-cols-1 md:grid-cols-3 gap-16 justify-items-center"
-            style={{
-              backgroundColor: "transparent",
-              color: isDark ? "var(--text)" : "var(--button)",
-            }}
-          >
+          {/* cards with hover float/rotate */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10 md:gap-16 justify-items-center">
             {[
               {
                 title: "Register your company",
@@ -186,92 +414,114 @@ export default function LandingPage() {
                 desc: "Track and deliver orders smoothly and grow your business.",
               },
             ].map((item, i) => (
-              <div
+              <motion.div
                 key={i}
-                className="flex flex-col items-center text-center"
+                variants={itemUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.2 }}
+                whileHover={{ y: -6, rotate: 0.25 }}
+                transition={{ type: "spring", stiffness: 140, damping: 12 }}
+                className="flex flex-col items-center text-center w-full"
                 style={{
-                  width: "100%",
                   maxWidth: "22rem",
-                  backgroundColor: isDark ? "#313131" : "#f5f6f5",
-                  color: isDark ? "#ffffff" : "#026a4b",
+                  backgroundColor: isDark ? "#1a1a1a" : "#f8faf9",
+                  color: isDark ? "#ffffff" : colors.button,
                   borderRadius: "1rem",
-                  border: `1px solid ${
-                    isDark ? "var(--border)" : "var(--button)"
-                  }`,
+                  border: `1px solid ${isDark ? colors.border : colors.button}`,
                   boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
-                  padding: "2rem",
+                  padding: "1.5rem",
                 }}
               >
-                <p className="text-xl font-semibold mb-3">{item.title}</p>
+                <p className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">
+                  {item.title}
+                </p>
                 <p
                   className="text-sm leading-relaxed opacity-90"
-                  style={{ color: isDark ? "#ffffff" : "#026a4b" }}
+                  style={{ color: isDark ? "#eaeaea" : colors.button }}
                 >
                   {item.desc}
                 </p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* ===== BENEFITS ===== */}
-      <div className="w-full max-w-6xl p-10 mt-6 mb-24 text-center mx-auto">
-        <h2
-          className="text-3xl md:text-4xl font-bold mb-16"
-          style={{ color: isDark ? "#ffffff" : "#026a4b" }}
+      <section
+        className="w-full max-w-6xl px-4 sm:px-6 md:p-10 mt-6 mb-20 md:mb-24 text-center mx-auto"
+        style={{ backgroundColor: colors.bg, color: colors.text }}
+      >
+        <motion.h2
+          variants={itemUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          className="text-2xl sm:text-3xl md:text-4xl font-bold mb-10 sm:mb-12 md:mb-16"
+          style={{ color: isDark ? "#ffffff" : colors.button }}
         >
           Benefits
-        </h2>
+        </motion.h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12 justify-items-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 md:gap-12 justify-items-center">
           {[
             { Icon: FaClipboardList, text: "Manage orders easily" },
             { Icon: FaChartLine, text: "Accurate reports and statistics" },
             { Icon: FaUsers, text: "Reach thousands of customers & stores" },
             { Icon: FaDollarSign, text: "Guaranteed and fast payments" },
           ].map(({ Icon, text }, i) => (
-            <div
+            <motion.div
               key={i}
-              className="flex flex-col items-center justify-center"
+              variants={itemUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.2 }}
+              whileHover={{ y: -8, rotate: -0.25 }}
+              transition={{ type: "spring", stiffness: 140, damping: 12 }}
+              className="flex flex-col items-center justify-center w-full"
               style={{
-                width: "100%",
                 maxWidth: "18rem",
-                backgroundColor: isDark ? "#313131" : "#f5f6f5",
-                color: "var(--text)",
+                backgroundColor: isDark ? "#1a1a1a" : "#f8faf9",
+                color: colors.text,
                 borderRadius: "1rem",
-                border: `1px solid ${
-                  isDark ? "var(--border)" : "var(--button)"
-                }`,
+                border: `1px solid ${isDark ? colors.border : colors.button}`,
                 boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
-                padding: "2rem",
-                minHeight: "15rem",
+                padding: "1.5rem",
+                minHeight: "13rem",
               }}
             >
-              <div
-                className="w-16 h-16 rounded-full flex items-center justify-center mb-5"
-                style={{
-                  backgroundColor: "var(--button)",
-                  color: "#fff",
-                  boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+              <motion.div
+                className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center mb-4 sm:mb-5 shadow-md"
+                style={{ backgroundColor: colors.button, color: "#fff" }}
+                animate={{ scale: [1, 1.08, 1] }}
+                transition={{
+                  duration: 1.9,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: i * 0.15,
                 }}
               >
-                <Icon className="text-3xl" />
-              </div>
-              <p className="text-base font-semibold leading-relaxed opacity-95">
+                <Icon className="text-xl sm:text-2xl md:text-3xl" />
+              </motion.div>
+              <p className="text-sm sm:text-base font-semibold leading-relaxed opacity-95">
                 {text}
               </p>
-            </div>
+            </motion.div>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* ===== CHATBOT ===== */}
+      {/* ===== CHATBOT FAB ===== */}
       <button
         onClick={toggleChat}
-        className="fixed bottom-8 right-8 p-4 rounded-full shadow-lg flex items-center justify-center z-50 transition hover:scale-105"
+        className="
+          fixed bottom-4 right-4 md:bottom-6 md:right-6
+          p-3 md:p-4 rounded-full shadow-lg flex items-center justify-center
+          z-50 transition hover:scale-105
+        "
         style={{
-          backgroundColor: "var(--button)",
+          backgroundColor: colors.button,
           color: "#fff",
           boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
           border: "none",
@@ -279,39 +529,62 @@ export default function LandingPage() {
         title="Open Qwikko Chatbot"
         aria-label="Open Qwikko Chatbot"
       >
-        <FaRobot size={28} />
+        <FaRobot className="text-xl md:text-2xl" />
       </button>
 
+      {/* ===== CHATBOT PANEL ===== */}
       {isChatOpen && (
         <div
-          className="fixed top-4 right-4 sm:right-6 z-50 w-full sm:w-96 h-[85vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-          style={{ backgroundColor: "var(--div)", color: "var(--text)" }}
+          className="
+            fixed
+            inset-x-0 bottom-0 top-auto
+            md:inset-auto md:top-4 md:right-4
+            w-full md:w-96
+            h-[70vh] sm:h-[75vh] md:h-[85vh]
+            rounded-t-2xl md:rounded-2xl
+            shadow-2xl flex flex-col overflow-hidden
+            z-50
+          "
+          style={{ backgroundColor: colors.div, color: colors.text }}
         >
           <button
             onClick={toggleChat}
-            className="absolute top-4 right-4 z-10"
-            style={{ color: "var(--light-gray)" }}
+            className="absolute top-3 right-3 md:top-4 md:right-4 z-10"
+            style={{ color: colors.textSecondary }}
             title="Close"
             aria-label="Close chatbot"
           >
-            <X size={24} />
+            <X size={22} className="md:hidden" />
+            <X size={24} className="hidden md:block" />
           </button>
 
           <h2
-            className="text-base font-semibold flex items-center gap-2 px-4 py-3"
+            className="
+              text-sm sm:text-base font-semibold flex items-center gap-2
+              px-3 sm:px-4 py-2.5 sm:py-3
+            "
             style={{
-              backgroundColor: "var(--bg)",
-              color: "var(--text)",
+              backgroundColor: colors.bg,
+              color: colors.text,
               boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
             }}
           >
-            <FaRobot size={22} style={{ color: "var(--text)" }} />
+            <FaRobot
+              size={18}
+              className="sm:hidden"
+              style={{ color: colors.text }}
+            />
+            <FaRobot
+              size={22}
+              className="hidden sm:block"
+              style={{ color: colors.text }}
+            />
             Qwikko Chatbot
           </h2>
 
           <div
-            className="flex-grow overflow-auto p-2"
-            style={{ backgroundColor: "var(--bg)" }}
+            className="flex-grow overflow-auto p-2 sm:p-3 md:p-2"
+            style={{ backgroundColor: colors.bg }}
           >
             <ChatBot userId="guest" />
           </div>

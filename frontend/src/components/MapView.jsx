@@ -130,7 +130,7 @@ export default function MapView({ routePoints, deliveryCompany }) {
         })}
       </GoogleMap>
 
-      {legsInfo.length > 0 && (
+      {/* {legsInfo.length > 0 && (
         <div style={{ marginTop: "20px" }}>
           <h3>Route Details:</h3>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -206,7 +206,7 @@ export default function MapView({ routePoints, deliveryCompany }) {
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 }

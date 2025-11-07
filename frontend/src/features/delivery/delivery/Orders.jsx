@@ -459,7 +459,7 @@ if (loading) {
         className="text-2xl md:text-3xl font-extrabold mb-4 px-6"
         style={textCol}
       >
-        <span className="inline-flex items-center gap-2">
+        <span className="inline-flex items-center gap-2 mt-8">
           <FaBox />
           Company Orders
         </span>
