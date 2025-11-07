@@ -325,37 +325,44 @@ router.get("/top-rated", async (req, res) => {
 
 const pool = require("../../config/db");
 
-// في routes/orders.js
 router.get('/delivery/requested-orders', protect, async (req, res) => {
   try {
     console.log('🔐 === START GET REQUESTED ORDERS ===');
     console.log('👤 req.user id:', req.user.id);
-    
-    // البحث عن شركة التوصيل المرتبطة بهذا المستخدم
+
+    // ابحث عن شركة التوصيل التابعة للمستخدم
     const companyResult = await pool.query(
       'SELECT id FROM delivery_companies WHERE user_id = $1',
       [req.user.id]
     );
-    
-    console.log('🔍 Company search result:', companyResult.rows);
-    
+
     if (companyResult.rows.length === 0) {
       return res.status(403).json({
         success: false,
         message: 'User is not associated with any delivery company'
       });
     }
-    
+
     const deliveryCompanyId = companyResult.rows[0].id;
     console.log('🏢 Found delivery company ID:', deliveryCompanyId);
 
     const orders = await customerModel.getRequestedOrdersForDelivery(deliveryCompanyId);
-    
-    console.log('📦 Orders found:', orders.length);
-    
+    console.log('📦 Raw orders found:', orders.length);
+
+    // فقط الطلبات التي كل عناصرها vendor_status = 'accepted'
+    const validOrders = orders.filter(order =>
+      Array.isArray(order.all_vendor_statuses) &&
+      order.all_vendor_statuses.every(status => status === 'accepted')
+    );
+
+    console.log('✅ Accepted-only orders:', validOrders.length);
+
+    // إزالة الحقل المؤقت من النتيجة النهائية
+    const finalOrders = validOrders.map(({ all_vendor_statuses, ...order }) => order);
+
     res.json({
       success: true,
-      data: orders
+      data: finalOrders
     });
 
   } catch (error) {
@@ -366,6 +373,7 @@ router.get('/delivery/requested-orders', protect, async (req, res) => {
     });
   }
 });
+
 
 // في customerRoutes.js أو deliveryRoutes.js
 router.post('/:orderId/accept', protect, async (req, res) => {
@@ -422,7 +430,7 @@ router.post('/:orderId/accept', protect, async (req, res) => {
     // 3. تحديث حالة الطلب وتعيين شركة التوصيل
     const orderUpdateResult = await pool.query(
       `UPDATE orders 
-       SET assigned_delivery_company_id = $1, status = 'accepted' 
+       SET delivery_company_id = $1, status = 'accepted' 
        WHERE id = $2`,
       [deliveryCompanyId, orderId]
     );
@@ -444,12 +452,14 @@ router.post('/:orderId/accept', protect, async (req, res) => {
 });
 
 
-// GET /api/orders/delivery/accepted-orders
 router.get('/delivery/accepted-orders', protect, async (req, res) => {
   try {
     console.log('🔐 Getting accepted orders...');
     
-    // البحث عن شركة التوصيل
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+    
     const companyResult = await pool.query(
       'SELECT id FROM delivery_companies WHERE user_id = $1',
       [req.user.id]
@@ -458,11 +468,29 @@ router.get('/delivery/accepted-orders', protect, async (req, res) => {
     if (companyResult.rows.length === 0) {
       return res.json({
         success: true,
-        data: []
+        data: [],
+        pagination: {
+          currentPage: page,
+          totalPages: 0,
+          totalItems: 0,
+          hasNext: false,
+          hasPrev: false
+        }
       });
     }
     
     const deliveryCompanyId = companyResult.rows[0].id;
+
+    const countResult = await pool.query(
+      `SELECT COUNT(DISTINCT o.id) as total_count
+       FROM orders o
+       WHERE o.delivery_company_id = $1 
+         AND o.status IN ('accepted', 'processing', 'out_for_delivery')`,
+      [deliveryCompanyId]
+    );
+
+    const totalItems = parseInt(countResult.rows[0].total_count);
+    const totalPages = Math.ceil(totalItems / limit);
 
     const orders = await pool.query(
       `SELECT 
@@ -471,6 +499,8 @@ router.get('/delivery/accepted-orders', protect, async (req, res) => {
         o.total_amount,
         o.final_amount,
         o.delivery_fee,
+        o.total_with_shipping,
+        o.created_at,
         a.address_line1, 
         a.city, 
         a.state,
@@ -482,7 +512,7 @@ router.get('/delivery/accepted-orders', protect, async (req, res) => {
       JOIN addresses a ON o.address_id = a.id
       JOIN users u ON o.customer_id = u.id
       LEFT JOIN order_items oi ON o.id = oi.order_id
-      WHERE o.assigned_delivery_company_id = $1 
+      WHERE o.delivery_company_id = $1 
         AND o.status IN ('accepted', 'processing', 'out_for_delivery')
       GROUP BY o.id, a.id, u.id
       ORDER BY 
@@ -490,15 +520,24 @@ router.get('/delivery/accepted-orders', protect, async (req, res) => {
           WHEN 'out_for_delivery' THEN 1
           WHEN 'processing' THEN 2
           WHEN 'accepted' THEN 3
-        END, o.created_at ASC`,
-      [deliveryCompanyId]
+        END, o.created_at ASC
+      LIMIT $2 OFFSET $3`,
+      [deliveryCompanyId, limit, offset]
     );
 
     console.log('📦 Accepted orders found:', orders.rows.length);
     
     res.json({
       success: true,
-      data: orders.rows
+      data: orders.rows,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalItems: totalItems,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+        limit: limit
+      }
     });
 
   } catch (error) {
@@ -516,9 +555,8 @@ router.patch('/:orderId/status',  async (req, res) => {
     const { status } = req.body;
     const deliveryCompanyId = req.user.delivery_company_id;
 
-    // التحقق من أن شركة التوصيل مسؤولة عن هذا الطلب
     const orderCheck = await pool.query(
-      'SELECT id FROM orders WHERE id = $1 AND assigned_delivery_company_id = $2',
+      'SELECT id FROM orders WHERE id = $1 AND delivery_company_id = $2',
       [orderId, deliveryCompanyId]
     );
 

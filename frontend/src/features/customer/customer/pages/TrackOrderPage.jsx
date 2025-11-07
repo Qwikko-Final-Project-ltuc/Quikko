@@ -1,18 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { fetchOrderById } from "../ordersSlice"; 
 import customerAPI from "../services/customerAPI";
 import MapView from "../../../../components/MapView";
 
 const TrackOrderPage = () => {
   const { orderId } = useParams();
+  const dispatch = useDispatch();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [routePoints, setRoutePoints] = useState([]);
   const themeMode = useSelector((s) => s.customerTheme.mode);
+  
+  const { currentOrder, loading: orderLoading } = useSelector((state) => state.orders);
 
   const calculateEstimatedTime = (distance) => {
-    if (!distance) return "Calculating...";
+    if (!distance) return null;
     const avgSpeed = 30;
     const minutes = Math.round((distance / avgSpeed) * 60);
     if (minutes < 60) return `${minutes} min`;
@@ -44,10 +48,15 @@ const TrackOrderPage = () => {
   };
 
   useEffect(() => {
-    const fetchOrder = async () => {
+    const fetchOrderData = async () => {
       try {
-        const data = await customerAPI.trackOrder(orderId);
-        const orderData = data.data;
+        const trackData = await customerAPI.trackOrder(orderId);
+        const orderData = trackData.data;
+        
+        console.log('📦 Full order data from trackOrder:', orderData);
+        
+        await dispatch(fetchOrderById(orderId));
+        
         setOrder(orderData);
 
         if (!orderData) return;
@@ -56,15 +65,21 @@ const TrackOrderPage = () => {
           setRoutePoints(orderData.routePoints);
         }
       } catch (err) {
-        console.error(err);
+        console.error('Error fetching order:', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchOrder();
-  }, [orderId]);
+    fetchOrderData();
+  }, [orderId, dispatch]);
 
-  if (loading) {
+  useEffect(() => {
+    if (currentOrder && !loading) {
+      console.log('💰 Order details from Redux:', currentOrder);
+    }
+  }, [currentOrder, loading]);
+
+  if (loading || orderLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
         <div className="text-center">
@@ -95,6 +110,11 @@ const TrackOrderPage = () => {
   const progressPercentage = currentStatusIndex >= 0 
     ? `${((completedSteps + (trackingSteps[currentStatusIndex]?.current ? 0.5 : 0)) / totalSteps) * 100}%` 
     : '0%';
+
+  const isOrderNotAccepted = order.status === 'requested' || order.status === 'pending';
+
+  const displayTotal = currentOrder.data?.total_with_shipping || currentOrder?.total_amount || 0;
+  const displayPaymentStatus = currentOrder.data?.payment_status || order.payment_status || "unpaid";
 
   return (
     <div className="min-h-screen bg-[var(--bg)] p-4 md:p-6">
@@ -221,7 +241,10 @@ const TrackOrderPage = () => {
               </div>
               <div>
                 <h3 className="text-white/80 text-sm font-medium mb-1 uppercase tracking-wider">PAYMENT STATUS</h3>
-                <p className="text-white text-xl font-bold capitalize">{order.payment_status || "unpaid"}</p>
+                <p className="text-white text-xl font-bold capitalize">{displayPaymentStatus}</p>
+                <p className="text-white/70 text-sm mt-1">
+                  Total: ${parseFloat(displayTotal).toFixed(2)}
+                </p>
               </div>
             </div>
           </div>
@@ -254,7 +277,7 @@ const TrackOrderPage = () => {
               <div>
                 <h3 className="text-white/80 text-sm font-medium mb-1 uppercase tracking-wider">DISTANCE</h3>
                 <p className="text-white text-xl font-bold">
-                  {order?.distance_km ? `${order.distance_km} Km` : "Calculating..."}
+                  {isOrderNotAccepted ? "(Not available yet)" : (order?.distance_km ? `${order.distance_km} Km` : "(Calculating...)")}
                 </p>
               </div>
             </div>
@@ -270,7 +293,9 @@ const TrackOrderPage = () => {
               </div>
               <div>
                 <h3 className="text-white/80 text-sm font-medium mb-1 uppercase tracking-wider">EST. ARRIVAL</h3>
-                <p className="text-white text-xl font-bold">{estimatedTime}</p>
+                <p className="text-white text-xl font-bold">
+                  {isOrderNotAccepted ? "(Not available yet)" : (estimatedTime ? estimatedTime : "(Calculating...)")}
+                </p>
               </div>
             </div>
           </div>

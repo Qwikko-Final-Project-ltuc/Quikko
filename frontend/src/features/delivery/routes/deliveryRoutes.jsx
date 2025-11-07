@@ -29,7 +29,6 @@ export default function DeliveryRoutes() {
         <Route path="home" element={<Home />} />
         <Route path="DeliveryRequestedOrders" element={<DeliveryRequestedOrders />} />
         <Route path="DeliveryAcceptedOrders" element={<DeliveryAcceptedOrders/>} />
-
         <Route path="getProfile" element={<DeliveryProfile />} />
         <Route path="settings" element={<Settings />} />
         <Route path="orders" element={<Orders />} />

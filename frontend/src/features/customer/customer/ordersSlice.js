@@ -1,23 +1,19 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import customerAPI from "../customer/services/customerAPI";
 
-// ✅ جلب جميع الطلبات
 export const fetchOrders = createAsyncThunk("orders/fetchAll", async () => {
   return await customerAPI.getOrders();
 });
 
-// ✅ جلب طلب محدد
 export const fetchOrderById = createAsyncThunk("orders/fetchById", async (id) => {
   return await customerAPI.getOrderById(id);
 });
 
-// ✅ إعادة الطلب (reorder)
 export const reorderOrder = createAsyncThunk("orders/reorder", async (orderId) => {
   const newCart = await customerAPI.reorder(orderId);
   return newCart;
 });
 
-// ✅ التحقق من الكوبون
 export const validateCoupon = createAsyncThunk(
   "orders/validateCoupon",
   async (couponCode, { rejectWithValue }) => {
@@ -30,7 +26,6 @@ export const validateCoupon = createAsyncThunk(
   }
 );
 
-// ✅ جلب نقاط الولاء
 export const fetchLoyaltyPoints = createAsyncThunk(
   "orders/fetchLoyaltyPoints",
   async (_, { rejectWithValue }) => {
@@ -43,7 +38,6 @@ export const fetchLoyaltyPoints = createAsyncThunk(
   }
 );
 
-// ✅ استبدال النقاط (redeem)
 export const redeemPoints = createAsyncThunk(
   "orders/redeemPoints",
   async ({ points, description }, { rejectWithValue }) => {
@@ -68,7 +62,6 @@ const ordersSlice = createSlice({
     itemsPerPage: 5,
     paymentFilter: "all",
 
-    // 🆕 إضافات الكوبونات والنقاط
     coupon: null,
     loyaltyPoints: 0,
     redeemResult: null,
@@ -87,7 +80,6 @@ const ordersSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // ✅ الطلبات
       .addCase(fetchOrders.pending, (state) => {
         state.loading = true;
       })
@@ -100,7 +92,6 @@ const ordersSlice = createSlice({
         state.error = action.error.message;
       })
 
-      // ✅ تفاصيل الطلب
       .addCase(fetchOrderById.pending, (state) => {
         state.loading = true;
         state.currentOrder = null;
@@ -110,7 +101,6 @@ const ordersSlice = createSlice({
         state.currentOrder = action.payload;
       })
 
-      // ✅ إعادة الطلب
       .addCase(reorderOrder.pending, (state) => {
         state.loading = true;
         state.lastReorderedCart = null;
@@ -124,7 +114,6 @@ const ordersSlice = createSlice({
         state.error = action.error.message;
       })
 
-      // ✅ التحقق من الكوبون
       .addCase(validateCoupon.pending, (state) => {
         state.loading = true;
         state.coupon = null;
@@ -138,7 +127,6 @@ const ordersSlice = createSlice({
         state.error = action.payload?.message;
       })
 
-      // ✅ جلب نقاط الولاء
       .addCase(fetchLoyaltyPoints.pending, (state) => {
         state.loading = true;
       })
@@ -151,7 +139,6 @@ const ordersSlice = createSlice({
         state.error = action.payload?.message;
       })
 
-      // ✅ استبدال النقاط
       .addCase(redeemPoints.pending, (state) => {
         state.loading = true;
         state.redeemResult = null;

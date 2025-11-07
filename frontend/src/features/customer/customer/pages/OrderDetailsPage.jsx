@@ -53,6 +53,12 @@ const OrderDetailsPage = () => {
 
   const [paymentMethod, setPaymentMethod] = useState("cod");
 
+  // States for pricing breakdown
+  const [deliveryFee, setDeliveryFee] = useState(null);
+  const [subtotal, setSubtotal] = useState(0);
+  const [totalWithShipping, setTotalWithShipping] = useState(0);
+  const [finalTotal, setFinalTotal] = useState(0);
+
   const validateCoupon = async (couponCode, userId, cartItems = []) => {
     if (!userId) throw new Error("User ID not found. Please login again.");
     const preparedUserId = Number(userId);
@@ -86,7 +92,6 @@ const OrderDetailsPage = () => {
   const [userPointsToUse, setUserPointsToUse] = useState(0);
   const [pointsDiscount, setPointsDiscount] = useState(0);
   const [pointsError, setPointsError] = useState("");
-  const [finalTotal, setFinalTotal] = useState(0);
   const [couponResult, setCouponResult] = useState(null);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
 
@@ -128,19 +133,43 @@ const OrderDetailsPage = () => {
     }
   }, [cartFromState, orderId, dispatch]);
 
-  const total =
-    currentCart?.items?.reduce(
+  // Calculate pricing breakdown - التعديل هنا
+  useEffect(() => {
+    const cartSubtotal = currentCart?.items?.reduce(
       (sum, item) => sum + Number(item.price || 0) * (item.quantity || 1),
       0
     ) || 0;
 
+    // لا تحسب delivery fee هنا - انتظر الحساب الفعلي من الباك إند
+    setSubtotal(cartSubtotal);
+    setDeliveryFee(null); // reset إلى null حتى يحسب الباك إند
+    setTotalWithShipping(cartSubtotal); // بدون delivery fee مؤقتاً
+  }, [currentCart, address]);
+
+  // بعد نجاح الطلب، تحديث deliveryFee من البيانات الفعلية - إضافة هذا الـ useEffect
   useEffect(() => {
-    let totalAfterDiscount = total;
-    if (appliedCoupon?.discount_amount) totalAfterDiscount -= appliedCoupon.discount_amount;
-    if (usePointsChecked && pointsDiscount > 0) totalAfterDiscount -= pointsDiscount;
+    if (orderSuccess?.order?.delivery_fee) {
+      setDeliveryFee(orderSuccess.order.delivery_fee);
+      // تحديث totalWithShipping بناءً على deliveryFee الفعلي
+      setTotalWithShipping(subtotal + orderSuccess.order.delivery_fee);
+    }
+  }, [orderSuccess, subtotal]);
+
+  // Calculate final total after discounts
+  useEffect(() => {
+    let totalAfterDiscount = totalWithShipping; // Start with total including shipping
+    
+    if (appliedCoupon?.discount_amount) {
+      totalAfterDiscount -= appliedCoupon.discount_amount;
+    }
+    
+    if (usePointsChecked && pointsDiscount > 0) {
+      totalAfterDiscount -= pointsDiscount;
+    }
+    
     if (totalAfterDiscount < 0) totalAfterDiscount = 0;
     setFinalTotal(totalAfterDiscount);
-  }, [total, appliedCoupon, usePointsChecked, pointsDiscount]);
+  }, [totalWithShipping, appliedCoupon, usePointsChecked, pointsDiscount]);
 
   const fullAddress = {
     address_line1: address.address_line1,
@@ -203,8 +232,8 @@ const OrderDetailsPage = () => {
       setCouponResult({
         message: error.message || "Invalid or expired coupon.",
         discount: 0,
-        total: total,
-        final: total,
+        total: totalWithShipping,
+        final: totalWithShipping,
       });
     }
   };
@@ -220,7 +249,7 @@ const OrderDetailsPage = () => {
         setUsePointsChecked(true);
         setPointsError("");
         setUserPointsToUse(pointsToUse);
-        const discount = pointsToUse * 0.1;
+        const discount = pointsToUse * 0.1; // كل 10 نقاط = 1 دولار خصم
         setPointsDiscount(discount);
       }
     } else {
@@ -259,6 +288,7 @@ const OrderDetailsPage = () => {
             }
           : {};
 
+      // لا ترسل deliveryFee محسوبة مسبقاً - دع الباك إند يحسبها
       const checkoutPayload = {
         cart_id: currentCart.id,
         address: fullAddress,
@@ -266,9 +296,7 @@ const OrderDetailsPage = () => {
         paymentData,
         coupon_code: appliedCoupon?.code || null,
         use_loyalty_points: usePointsChecked ? userPointsToUse : 0,
-        total_amount: total,
-        discount_amount: (appliedCoupon?.discount_amount || 0) + (pointsDiscount || 0),
-        final_amount: finalTotal,
+        // إزالة الحقول المحسوبة مسبقاً - دع الباك إند يحسبها
       };
 
       if (paymentMethod === "card") {
@@ -301,9 +329,15 @@ const OrderDetailsPage = () => {
 
       setOrderSuccess({
         method: methodLabel,
-        transactionId: checkoutPayload.paymentData.transactionId,
+        transactionId: checkoutPayload.paymentData?.transactionId,
         order: newOrder,
       });
+
+      // تحديث deliveryFee بالقيمة الفعلية من الباك إند
+      if (newOrder.delivery_fee) {
+        setDeliveryFee(newOrder.delivery_fee);
+      }
+      
       navigate("/customer/orders");
     } catch (err) {
       console.error("Checkout failed:", err);
@@ -330,6 +364,8 @@ const OrderDetailsPage = () => {
                 details.id ||
                 details.purchase_units?.[0]?.payments?.captures?.[0]?.id ||
                 null;
+              
+              // لا ترسل deliveryFee محسوبة مسبقاً - دع الباك إند يحسبها
               const newOrder = await customerAPI.checkout({
                 cart_id: currentCart.id,
                 address: fullAddress,
@@ -337,10 +373,18 @@ const OrderDetailsPage = () => {
                 paymentData: { transactionId },
                 coupon_code: appliedCoupon?.code || null,
                 use_loyalty_points: usePointsChecked ? userPointsToUse : 0,
+                // إزالة الحقول المحسوبة مسبقاً
               });
+              
               await dispatch(deleteCart(currentCart.id)).unwrap();
               dispatch(fetchOrders());
               setOrderSuccess({ method: "PayPal", transactionId, order: newOrder });
+              
+              // تحديث deliveryFee بالقيمة الفعلية من الباك إند
+              if (newOrder.delivery_fee) {
+                setDeliveryFee(newOrder.delivery_fee);
+              }
+              
               navigate("/customer/orders");
             } catch (err) {
               console.error("Checkout failed:", err);
@@ -429,7 +473,7 @@ const OrderDetailsPage = () => {
   return (
     <div className={`min-h-screen py-6 ${containerClass} transition-colors duration-300 font-sans`}>
       <div className="container mx-auto px-4 max-w-6xl">
-        {/* Header - أكثر إحترافية وأقل طولاً */}
+        {/* Header */}
         <div className="text-left mb-6 p-4 animate-fade-in-up">
           <h1 className="text-3xl font-bold mb-3 text-[var(--text)] tracking-tight">
             Complete Your Order
@@ -501,7 +545,7 @@ const OrderDetailsPage = () => {
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             {/* Left Column - Order Items & Address */}
             <div className="xl:col-span-2 space-y-6">
-              {/* Order Items Card - أقصر */}
+              {/* Order Items Card */}
               <div className={`rounded-2xl border-2 ${cardClass} p-6 transition-all duration-300 hover:shadow-xl animate-fade-in-up shadow-lg backdrop-blur-sm`}>
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold flex items-center text-[var(--text)] tracking-tight">
@@ -512,7 +556,7 @@ const OrderDetailsPage = () => {
                     </span>
                   </h2>
                   <span className="text-lg font-semibold text-[var(--button)] bg-[var(--button)]/10 px-3 py-1.5 rounded-xl backdrop-blur-sm">
-                    ${total.toFixed(2)}
+                    ${subtotal.toFixed(2)}
                   </span>
                 </div>
                 
@@ -553,7 +597,7 @@ const OrderDetailsPage = () => {
                 )}
               </div>
 
-              {/* Shipping Address Card - أقصر */}
+              {/* Shipping Address Card */}
               <div className={`rounded-2xl border-2 ${cardClass} p-6 transition-all duration-300 hover:shadow-xl animate-fade-in-up shadow-lg backdrop-blur-sm`}>
                 <h2 className="text-xl font-bold mb-6 flex items-center text-[var(--text)] tracking-tight">
                   <FiMapPin className={`mr-3 text-[var(--button)]`} />
@@ -597,25 +641,62 @@ const OrderDetailsPage = () => {
                       onChange={(e) => setAddress({ ...address, city: e.target.value })}
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-2 text-[var(--text)] tracking-tight">
+                      Postal Code
+                    </label>
+                    <input
+                      className={`w-full p-3 rounded-xl border-2 ${inputClass} transition-all duration-200 focus:shadow-lg backdrop-blur-sm text-sm`}
+                      placeholder="12345"
+                      value={address.postal_code}
+                      onChange={(e) => setAddress({ ...address, postal_code: e.target.value })}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Right Column - Order Summary & Payment */}
             <div className="space-y-6 pb-6">
-              {/* Order Summary Card - أقصر */}
+              {/* Order Summary Card */}
               <div className={`rounded-2xl border-2 ${cardClass} p-6 sticky top-6 transition-all duration-300 hover:shadow-xl animate-fade-in-up shadow-xl backdrop-blur-sm`}>
                 <h2 className="text-xl font-bold mb-6 flex items-center text-[var(--text)] tracking-tight">
                   <FiFileText className={`mr-3 text-[var(--button)]`} />
                   Order Summary
                 </h2>
                 
+                {/* Pricing Breakdown */}
                 <div className="space-y-3 mb-6">
+                  {/* Subtotal */}
                   <div className="flex justify-between items-center py-3 border-b border-[var(--border)]">
                     <span className="text-[var(--light-gray)] text-sm">Subtotal</span>
-                    <span className="font-semibold text-[var(--text)] text-sm">${total.toFixed(2)}</span>
+                    <span className="font-semibold text-[var(--text)] text-sm">${subtotal.toFixed(2)}</span>
                   </div>
                   
+                  {/* Delivery Fee */}
+                  <div className="flex justify-between items-center py-3 border-b border-[var(--border)]">
+                    <span className="text-[var(--light-gray)] text-sm flex items-center">
+                      <FiTruck className="mr-2" />
+                      Delivery Fee
+                    </span>
+                    <span className="font-semibold text-[var(--text)] text-sm">
+                      {deliveryFee === null ? (
+                        <span className="text-yellow-600 dark:text-yellow-400 text-xs animate-pulse">
+                          Calculating...
+                        </span>
+                      ) : (
+                        `$${deliveryFee.toFixed(2)}`
+                      )}
+                    </span>
+                  </div>
+                  
+                  {/* Total Before Discounts */}
+                  <div className="flex justify-between items-center py-3 border-b border-[var(--border)]">
+                    <span className="text-[var(--light-gray)] text-sm">Total Before Discounts</span>
+                    <span className="font-semibold text-[var(--text)] text-sm">${totalWithShipping.toFixed(2)}</span>
+                  </div>
+                  
+                  {/* Coupon Discount */}
                   {appliedCoupon && (
                     <div className="flex justify-between items-center py-3 border-b border-[var(--border)]">
                       <span className="text-green-600 dark:text-green-400 flex items-center text-sm">
@@ -628,6 +709,7 @@ const OrderDetailsPage = () => {
                     </div>
                   )}
                   
+                  {/* Points Discount */}
                   {usePointsChecked && (
                     <div className="flex justify-between items-center py-3 border-b border-[var(--border)]">
                       <span className="text-green-600 dark:text-green-400 flex items-center text-sm">
@@ -640,8 +722,9 @@ const OrderDetailsPage = () => {
                     </div>
                   )}
                   
+                  {/* Final Total */}
                   <div className="flex justify-between items-center pt-4 border-t-2 border-[var(--border)]">
-                    <span className="text-lg font-bold text-[var(--text)] tracking-tight">Total</span>
+                    <span className="text-lg font-bold text-[var(--text)] tracking-tight">Final Total</span>
                     <span className="text-xl font-bold text-[var(--button)] bg-[var(--button)]/10 px-3 py-1.5 rounded-xl backdrop-blur-sm">
                       ${finalTotal.toFixed(2)}
                     </span>
@@ -747,7 +830,7 @@ const OrderDetailsPage = () => {
                   )}
                 </div>
 
-                {/* Payment Method - Dropdown محسن */}
+                {/* Payment Method */}
                 <div className="mb-6">
                   <h3 className="font-semibold mb-3 flex items-center text-base text-[var(--text)] tracking-tight">
                     <FiCreditCard className={`mr-2 text-[var(--button)]`} />

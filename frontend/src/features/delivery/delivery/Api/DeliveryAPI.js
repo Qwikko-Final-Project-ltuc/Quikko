@@ -102,33 +102,39 @@ export async function updateCoverage(token, companyId, data) {
   return result; // بيرجع { message: "...", data: {...} }
 }
 
+
 export const fetchCompanyOrders = async (page = 1, limit = 20) => {
   const token = localStorage.getItem("token");
-  const url = `http://localhost:3000/api/delivery/orders?page=${page}&limit=${limit}`;
+  const url = `http://localhost:3000/api/customers/delivery/accepted-orders?page=${page}&limit=${limit}`;
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to fetch orders");
+  if (!res.ok) {
+    throw new Error('Failed to fetch orders');
+  }
 
-  const total = Number(res.headers.get("X-Total-Count") || 0);
-  const orders = data.orders || [];
+  const data = await res.json();
+  
+  console.log('📦 API Response:', data); // للديباج
+  
+  if (!data.success) {
+    throw new Error(data.message || 'Failed to fetch orders');
+  }
 
   return {
-    orders,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.max(1, Math.ceil(total / limit)),
-      hasMore: page * limit < total,
-    },
+    orders: data.data || [],
+    pagination: data.pagination || {
+      currentPage: page,
+      totalPages: 1,
+      totalItems: 0,
+      hasNext: false,
+      hasPrev: false,
+      limit: limit
+    }
   };
 };
-
-
 
 //modal in orders.jsx
 export const updateOrderStatus = async (orderId, status) => {

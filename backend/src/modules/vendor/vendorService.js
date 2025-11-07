@@ -152,6 +152,7 @@ exports.updateProfile = async (userId, profileData) => {
  * Allowed values: 'accepted', 'rejected'.
  * If 'accepted' → decrease stock_quantity from products.
  */
+
 exports.updateOrderItemStatus = async (itemId, status, userId) => {
   if (!["accepted", "rejected"].includes(status)) {
     throw new Error("Invalid status. Must be 'accepted' or 'rejected'.");
@@ -209,6 +210,26 @@ exports.updateOrderItemStatus = async (itemId, status, userId) => {
       RETURNING *;
     `;
     const { rows: updated } = await client.query(updateQuery, [status, itemId]);
+    // 🔍 Check if all order items are accepted for this order
+    const checkAllAccepted = await client.query(
+      `SELECT bool_and(vendor_status = 'accepted') AS all_accepted
+      FROM order_items
+      WHERE order_id = $1`,
+      [item.order_id]
+    );
+
+    if (checkAllAccepted.rows[0].all_accepted) {
+      // ✅ Update order to requested (ready for delivery)
+      await client.query(
+        `UPDATE orders
+        SET status = 'requested', updated_at = NOW()
+        WHERE id = $1 AND status != 'requested'`,
+        [item.order_id]
+      );
+
+      console.log(`🚚 Order ${item.order_id} is now ready for delivery.`);
+    }
+
 
     await client.query("COMMIT");
     return updated[0];
