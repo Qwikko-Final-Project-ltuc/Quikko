@@ -17,7 +17,7 @@ export default function CMSPage() {
 
   return (
     <div className="w-full mx-auto  p-6  rounded-2xl">
-      <h1 className="text-3xl font-extrabold pb-3 opacity-90 ml-7">
+      <h1 className="text-3xl font-extrabold pb-3 opacity-90 mb-5">
         Content Management System
       </h1>
       <div
@@ -28,7 +28,7 @@ export default function CMSPage() {
         }`}
       >
         {/* Tabs */}
-        <div className="flex gap-6 mb-6">
+        <div className="flex gap-6 mb-6 ml-3">
           {["banners", "notifications", "categories"].map((tab) => (
             <button
               key={tab}

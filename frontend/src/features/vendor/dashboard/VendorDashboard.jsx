@@ -9,6 +9,7 @@ const Dashboard = () => {
   const [isDarkMode, setIsDarkMode] = useState(
     localStorage.getItem("theme") === "dark"
   );
+  const [status, setStatus] = useState("loading"); // ✅ حالة التحميل
 
   const calculateTotalSales = (orders) => {
     return orders.reduce(
@@ -63,9 +64,12 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    fetchReport();
-    fetchProductsCount();
-    fetchLastOrders();
+    const loadData = async () => {
+      setStatus("loading"); // ✅ بدء التحميل
+      await Promise.all([fetchReport(), fetchProductsCount(), fetchLastOrders()]);
+      setStatus("idle"); // ✅ انتهاء التحميل
+    };
+    loadData();
 
     const handleStorageChange = () => {
       setIsDarkMode(localStorage.getItem("theme") === "dark");
@@ -74,11 +78,22 @@ const Dashboard = () => {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
+  // ✅ شاشة التحميل
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--button)] mx-auto mb-4"></div>
+          <p className="text-[var(--text)] text-lg">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   const pageBg = isDarkMode ? "#242625" : "#f0f2f1";
   const innerBg = isDarkMode ? "#313131" : "#ffffff";
   const textColor = isDarkMode ? "#ffffff" : "#242625";
   const tableLineColor = isDarkMode ? "#f9f9f9" : "#ccc";
-  const inputBg = isDarkMode ? "#f9f9f9" : "#f9f9f9";
   const iconColor = isDarkMode ? "#ffffff" : "#307A59";
 
   return (
@@ -93,7 +108,7 @@ const Dashboard = () => {
           style={{ backgroundColor: innerBg }}
         >
           <div>
-            <p  style={{ color: textColor }}>Total Sales</p>
+            <p style={{ color: textColor }}>Total Sales</p>
             <h2 style={{ color: textColor }} className="text-2xl font-bold">
               ${report?.total_sales || 0}
             </h2>

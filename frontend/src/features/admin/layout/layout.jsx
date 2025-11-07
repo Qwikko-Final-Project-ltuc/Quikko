@@ -10,6 +10,7 @@ import ChatBot from "./ChatBot";
 import { Bot, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaRobot } from "react-icons/fa";
+import { profile } from "../auth/authApi";
 
 export default function Layout() {
   const navigate = useNavigate();
@@ -27,9 +28,18 @@ export default function Layout() {
   const isDark = useSelector((state) => state.theme.mode === "dark");
 
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    setUser(storedUser);
-  }, []);
+      const fetchProfile = async () => {
+        try {
+          const data = await profile();
+          console.log("profile data:", data);
+          setUser(data.user);
+        } catch (error) {
+          console.error("Failed to fetch profile:", error);
+        }
+      };
+  
+      fetchProfile();
+    }, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
@@ -54,7 +64,11 @@ export default function Layout() {
           : "bg-[var(--bg)] text-[var(--text)]"
       }`}
     >
-      <SideBar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} isDark={isDark} />
+      <SideBar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        isDark={isDark}
+      />
 
       <div className="flex-1 flex flex-col min-h-0">
         <header
@@ -185,7 +199,9 @@ export default function Layout() {
                   onClick={(e) => {
                     e.stopPropagation();
                     setDropdownOpen(false);
-                    navigate("/adminLogin");
+                    localStorage.removeItem("user");
+                    localStorage.removeItem("token");
+                    navigate("/customer/login");
                   }}
                 >
                   Logout

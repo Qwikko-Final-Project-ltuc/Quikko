@@ -25,7 +25,6 @@ const OrdersPage = () => {
   const [productImages, setProductImages] = useState({});
   const [imagesLoading, setImagesLoading] = useState(false);
 
-  // دالة لجلب صور المنتجات من الـ API الحقيقي
   const fetchProductImages = async (productIds) => {
     setImagesLoading(true);
     try {
@@ -33,7 +32,6 @@ const OrdersPage = () => {
       
       console.log('🔄 Starting to fetch images for products:', productIds);
       
-      // استخدام Promise.all لجلب جميع الصور في نفس الوقت
       const imagePromises = productIds.map(async (productId) => {
         try {
           console.log(`🔍 Fetching image for product ${productId}...`);
@@ -45,7 +43,6 @@ const OrdersPage = () => {
             const productData = await response.json();
             console.log(`✅ Product ${productId} data:`, productData);
             
-            // أخذ أول صورة من مصفوفة images
             const firstImage = productData.images?.[0] || null;
             console.log(`🖼️ First image for product ${productId}:`, firstImage);
             
@@ -66,7 +63,6 @@ const OrdersPage = () => {
       const results = await Promise.all(imagePromises);
       console.log('📊 All image results:', results);
       
-      // تحويل النتائج إلى object
       results.forEach(({ productId, image }) => {
         imagesMap[productId] = image;
       });
@@ -85,20 +81,17 @@ const OrdersPage = () => {
     dispatch(fetchOrders());
   }, [dispatch]);
 
-  // جلب الصور عندما تتغير الطلبات
   useEffect(() => {
     if (items.length > 0) {
       console.log('📦 Orders loaded:', items);
       const loadProductImages = async () => {
-        // استخراج جميع product_ids من الطلبات
         const allProductIds = items.flatMap(order => 
           (order.items || []).map(item => {
             console.log('📋 Order item:', item);
             return item.product_id;
           })
-        ).filter(id => id != null); // إزالة القيم null
+        ).filter(id => id != null); 
         
-        // إزالة التكرار
         const uniqueProductIds = [...new Set(allProductIds)];
         
         console.log('🆔 Loading images for unique product IDs:', uniqueProductIds);
@@ -339,7 +332,7 @@ const OrdersPage = () => {
                     <div className="text-center">
                       <div className="text-xs font-semibold uppercase tracking-wider text-[var(--light-gray)] mb-2">Total Amount</div>
                       <div className="text-xl font-bold text-[var(--button)]">
-                        ${parseFloat(order.total_amount).toFixed(2)}
+                        ${parseFloat(order.total_with_shipping || order.total_amount).toFixed(2)}
                       </div>
                     </div>
 

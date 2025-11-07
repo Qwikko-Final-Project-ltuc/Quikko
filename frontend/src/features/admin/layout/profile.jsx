@@ -1,16 +1,29 @@
 import { useState, useEffect } from "react";
 import { FaUserSlash } from "react-icons/fa";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { deleteProfile } from "../../customer/customer/profileSlice";
+import { profile } from "../auth/authApi";
 
 export default function Profile() {
   const [user, setUser] = useState(null);
   const mode = useSelector((state) => state.theme.mode);
   const isDark = mode === "dark";
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    setUser(storedUser);
+    const fetchProfile = async () => {
+      try {
+        const data = await profile();
+        console.log("profile data:", data);
+        setUser(data.user);
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+      }
+    };
+
+    fetchProfile();
   }, []);
 
   if (!user)
@@ -20,7 +33,7 @@ export default function Profile() {
           isDark ? "text-[var(--text)]" : "text-[var(--text)]"
         }`}
       >
-        Please login first.
+        Loading profile...
       </p>
     );
 
@@ -29,7 +42,9 @@ export default function Profile() {
       try {
         await dispatch(deleteProfile()).unwrap();
         alert("Account deleted!");
-        navigate("/adminLogin");
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        navigate("/customer/login");
       } catch (err) {
         alert("Failed to delete account: " + err.message);
       }

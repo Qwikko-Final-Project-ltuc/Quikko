@@ -190,7 +190,7 @@ export default function VendorLayout() {
     )}
   </div>
 
-  {/* إشعارات */}
+{/* إشعارات */}
 {isLoggedIn && (
   <div className="relative">
     <button
@@ -199,7 +199,7 @@ export default function VendorLayout() {
     >
       <FaBell size={22} className={isDarkMode ? "text-white" : "text-black"} />
       {unreadCount > 0 && (
-        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+        <span className="absolute -top-2 -right-2 bg-black text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
           {unreadCount}
         </span>
       )}
@@ -208,69 +208,87 @@ export default function VendorLayout() {
     {notificationsOpen && (
       <div
         className={`absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto rounded-lg shadow-lg z-50 notif-dropdown ${
-          isDarkMode ? "bg-[#666666] text-white" : "bg-white text-black"
+          isDarkMode ? "bg-[#333333] text-white" : "bg-white text-black"
         }`}
       >
         <div className="max-h-96 overflow-y-auto">
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-              <FaBell className="text-[var(--light-gray)] text-4xl mb-4 opacity-50" />
-              <p className="text-[var(--light-gray)] font-medium text-lg mb-2">No notifications</p>
-              <p className="text-[var(--light-gray)] text-sm">
+              <FaBell className={`${isDarkMode ? "text-gray-300" : "text-gray-400"} text-4xl mb-4 opacity-50`} />
+              <p className={`${isDarkMode ? "text-white" : "text-gray-400"} font-medium text-lg mb-2`}>
+                No notifications
+              </p>
+              <p className={`${isDarkMode ? "text-white" : "text-gray-400"} text-sm`}>
                 We'll notify you when something arrives
               </p>
             </div>
           ) : (
-            <ul className="divide-y divide-[var(--border)]">
+            <ul className="divide-y divide-gray-300 dark:divide-gray-600">
               {notifications.map((n) => (
                 <li
                   key={n.id}
-                  className={`p-6 transition-all duration-200 hover:bg-[var(--hover)] hover:bg-opacity-30 cursor-pointer group ${
+                  className={`p-6 transition-all duration-200  cursor-pointer group ${
                     !n.read_status
-                      ? "bg-[var(--primary)] bg-opacity-5 border-l-4 border-l-[var(--primary)]"
-                      : "border-l-4 border-l-transparent"
+                      ? "bg-gray-100 dark:bg-[#444] border-l-4 border-black"
+                      : "border-l-4 border-transparent"
                   }`}
                   onClick={() => {
                     if (!n.read_status) {
-                      setNotifications(prev =>
-                        prev.map(notif =>
+                      setNotifications((prev) =>
+                        prev.map((notif) =>
                           notif.id === n.id ? { ...notif, read_status: true } : notif
                         )
                       );
-                      setUnreadCount(prev => Math.max(0, prev - 1));
+                      setUnreadCount((prev) => Math.max(0, prev - 1));
                     }
                   }}
                 >
                   <div className="flex items-start space-x-3">
                     <div
                       className={`flex-shrink-0 w-3 h-3 rounded-full mt-2 ${
-                        !n.read_status ? "bg-[var(--primary)] animate-pulse" : "bg-[var(--light-gray)]"
+                        !n.read_status ? "bg-black animate-pulse" : "bg-gray-400"
                       }`}
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-2">
                         <h4
                           className={`font-semibold text-sm truncate ${
-                            !n.read_status ? "text-[var(--primary)]" : "text-[var(--text)]"
+                            isDarkMode
+                              ? "text-white"
+                              : !n.read_status
+                              ? "text-black"
+                              : "text-gray-700"
                           }`}
                         >
                           {n.title}
                         </h4>
                         {!n.read_status && (
-                          <span className="flex-shrink-0 bg-[var(--primary)] text-white text-xs px-2 py-1 rounded-full ml-2">
+                          <span className="flex-shrink-0 bg-black text-white text-xs px-2 py-1 rounded-full ml-2">
                             New
                           </span>
                         )}
                       </div>
-                      <p className="text-[var(--text)] text-sm leading-relaxed mb-3 line-clamp-2">
+                      <p
+                        className={`text-sm leading-relaxed mb-3 line-clamp-2 ${
+                          isDarkMode ? "text-white" : "text-gray-600"
+                        }`}
+                      >
                         {n.message}
                       </p>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-[var(--light-gray)] font-medium">
+                        <span
+                          className={`text-xs font-medium ${
+                            isDarkMode ? "text-gray-300" : "text-gray-500"
+                          }`}
+                        >
                           {new Date(n.created_at).toLocaleString()}
                         </span>
                         {!n.read_status && (
-                          <span className="text-xs text-[var(--primary)] font-medium group-hover:underline">
+                          <span
+                            className={`text-xs font-medium group-hover:underline ${
+                              isDarkMode ? "text-white" : "text-black"
+                            }`}
+                          >
                             Mark as read
                           </span>
                         )}
@@ -290,8 +308,8 @@ export default function VendorLayout() {
           }}
           className={`w-full text-center py-2 font-semibold border-t ${
             isDarkMode
-              ? "border-gray-700 hover:bg-[#555555]"
-              : "border-gray-200 hover:bg-gray-100"
+              ? "border-gray-700 hover:bg-[#444] text-white"
+              : "border-gray-200 hover:bg-gray-100 text-black"
           } transition-colors`}
         >
           View All
@@ -300,6 +318,7 @@ export default function VendorLayout() {
     )}
   </div>
 )}
+
 
   
 </div>

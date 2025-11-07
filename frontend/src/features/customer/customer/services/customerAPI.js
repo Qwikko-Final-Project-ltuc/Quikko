@@ -148,9 +148,16 @@ const customerAPI = {
 
   // Checkout
   checkout: async (data) => {
-    const res = await api.post("/checkout", data);
-    return res.data;
-  },
+  console.log("🛒 Checkout request payload:", data); // البيانات اللي رح ترسل
+  console.log("🛒 Checkout request URL:", api.defaults.baseURL + "/checkout"); // URL
+  console.log("🛒 Checkout request method: POST"); // method
+
+  const res = await api.post("/checkout", data);
+
+  console.log("✅ Checkout response:", res.data); // الرد من السيرفر
+  return res.data;
+},
+
   getOrCreateCart: async (cartId = null, userId = null, guestToken = null) => {
     if (cartId) {
       const cart = await api.get(`/cart/${cartId}`);

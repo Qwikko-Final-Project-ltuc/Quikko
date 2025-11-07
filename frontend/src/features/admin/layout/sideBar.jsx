@@ -51,7 +51,7 @@ export default function SideBar({ isOpen, onClose }) {
       {/* logo */}
       <div>
         <div
-          className={`px-6 py-6 flex items-center justify-center transition-colors`}
+          className={`mt-5 mr-8 px-6 py-6 flex items-center justify-center transition-colors`}
         >
           <img
             src={isDark ? "/LogoDark.png" : "/logo.png"}
@@ -90,7 +90,11 @@ export default function SideBar({ isOpen, onClose }) {
       {/* logout */}
       <div className="px-4 pb-4 mt-auto">
         <NavLink
-          to="/adminLogin"
+          to="/customer/login"
+          onClick={() => {
+            localStorage.removeItem("user");
+            localStorage.removeItem("token");
+          }}
           className="relative group flex items-center p-2 rounded transition-colors duration-300 hover:bg-[var(--hover)]"
         >
           <FiLogOut className="text-xl" />

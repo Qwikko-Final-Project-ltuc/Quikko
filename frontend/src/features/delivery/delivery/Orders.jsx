@@ -236,73 +236,83 @@ export default function OrdersList() {
 
   // تحميل أولي + إثراء بالشحن
   useEffect(() => {
-    const loadEnoughFirstPage = async () => {
+    const loadInitialOrders = async () => {
       setLoading(true);
       setMessage("");
 
-      const collected = [];
-      let p = 1;
-      let exhausted = false;
-
-      const accept = (o) => o?.all_accepted === true || o?.all_accepted === 1;
-
       try {
-        while (collected.length < PAGE_SIZE && !exhausted) {
-          const resp = await fetchCompanyOrders(p, PAGE_SIZE);
-          const fetched = Array.isArray(resp) ? resp : resp?.orders ?? [];
-          const filtered = (fetched || []).filter(accept);
-
-          for (const item of filtered) {
-            if (!collected.some((x) => x.id === item.id)) {
-              collected.push(item);
-              if (collected.length === PAGE_SIZE) break;
-            }
-          }
-
-          if ((fetched || []).length < PAGE_SIZE) exhausted = true;
-          p += 1;
+        const resp = await fetchCompanyOrders(1, PAGE_SIZE);
+        console.log('📦 Orders response:', resp);
+        
+        const fetched = resp.orders || [];
+        
+        if (fetched.length === 0) {
+          setMessage("No orders found");
+          setOrders([]);
+          setHasMore(false);
+          return;
         }
 
-        const enriched = await enrichOrdersWithShipping(collected);
+        const enriched = await enrichOrdersWithShipping(fetched);
         setOrders(enriched);
-        setPage(Math.max(1, p - 1));
-        setHasMore(!exhausted);
+        setPage(1);
+        setHasMore(resp.pagination?.hasNext || false);
+        
       } catch (err) {
+        console.error('❌ Error loading orders:', err);
         setMessage("❌ " + (err?.message || "Failed to load orders"));
+        setOrders([]);
       } finally {
         setLoading(false);
       }
     };
-    loadEnoughFirstPage();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
+    loadInitialOrders();
   }, [PAGE_SIZE]);
 
   // فلترة
   useEffect(() => {
     if (filter === "all") setFilteredOrders(orders);
-    else setFilteredOrders(orders.filter((o) => o.status === filter));
+    else setFilteredOrders(orders.filter((o) => o.order_status === filter));
   }, [filter, orders]);
 
   // Load More (مع الإثراء)
   const loadMore = async () => {
     if (!hasMore || loadingMore) return;
+    
     try {
       setLoadingMore(true);
       const nextPage = page + 1;
       const resp = await fetchCompanyOrders(nextPage, PAGE_SIZE);
-      const fetched = Array.isArray(resp) ? resp : resp?.orders ?? [];
-      const valid = (fetched || []).filter((o) => o?.all_accepted === true);
-      const enriched = await enrichOrdersWithShipping(valid);
+      const fetched = resp.orders || [];
+      
+      if (fetched.length === 0) {
+        setHasMore(false);
+        return;
+      }
 
+      const enriched = await enrichOrdersWithShipping(fetched);
       setOrders((prev) => appendUniqueById(prev, enriched));
-      setHasMore((fetched || []).length === PAGE_SIZE);
+      setHasMore(resp.pagination?.hasNext || false);
       setPage(nextPage);
+      
     } catch (err) {
+      console.error('❌ Error loading more orders:', err);
       setMessage("❌ " + err.message);
     } finally {
       setLoadingMore(false);
     }
   };
+
+  // Debug effect
+  useEffect(() => {
+    console.log('🔄 Orders state updated:', {
+      orders: orders,
+      filteredOrders: filteredOrders,
+      hasMore: hasMore,
+      page: page
+    });
+  }, [orders, filteredOrders, hasMore, page]);
 
   const openStatusModal = (orderId, status) => {
     setCurrentOrderId(orderId);
@@ -320,12 +330,11 @@ export default function OrdersList() {
       await updateOrderStatus(currentOrderId, newStatus);
       setOrders((prev) =>
         prev.map((o) =>
-          o.id === currentOrderId ? { ...o, status: newStatus } : o
+          o.id === currentOrderId ? { ...o, order_status: newStatus } : o
         )
       );
       setShowModal(false);
-      setMessage(` Order #${currentOrderId} status updated to ${newStatus}`);
-      setTimeout(() => setMessage(""), 2000);
+      showToast("success", `Order #${currentOrderId} status updated to ${newStatus}`);
     } catch (err) {
       showToast("error", err?.message || "Failed to update status");
     } finally {
@@ -356,23 +365,38 @@ export default function OrdersList() {
     setPayOrderId(null);
   };
 
-if (loading) {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--button)] mx-auto mb-4"></div>
-        <p className="text-[var(--text)] text-lg">Loading Orders...</p>
-      </div>
-    </div>
-  );
-}
-
-  if (!orders.length)
+  if (loading) {
     return (
-      <p className="text-center mt-10" style={{ color: "var(--text)" }}>
-        No orders found.
-      </p>
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--button)] mx-auto mb-4"></div>
+          <p className="text-[var(--text)] text-lg">Loading Orders...</p>
+        </div>
+      </div>
     );
+  }
+
+  if (!loading && orders.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
+        <div className="text-center">
+          <div className="w-20 h-20 bg-[var(--button)]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FaBox className="text-2xl text-[var(--button)]" />
+          </div>
+          <h3 className="text-xl font-bold text-[var(--text)] mb-2">No Orders Found</h3>
+          <p className="text-[var(--light-gray)] mb-4">
+            {message || "There are no accepted orders at the moment."}
+          </p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-[var(--button)] hover:bg-[#015c40] text-white font-semibold px-6 py-2 rounded-xl transition-all duration-300"
+          >
+            Refresh
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const cardBg = { backgroundColor: "var(--bg)" };
   const textCol = { color: "var(--text)" };
@@ -388,19 +412,6 @@ if (loading) {
     backgroundColor: active ? "var(--button)" : "var(--bg)",
     color: active ? "var(--btn-text, #ffffff)" : "var(--text)",
     borderColor: active ? "var(--button)" : "var(--border)",
-  });
-
-  // زر Mark as Paid (فوق العنوان)
-  const paidButtonStyles = (disabled) => ({
-    backgroundColor: disabled
-      ? "transparent"
-      : isDarkMode
-      ? "#000000"
-      : "#ffffff",
-    color: "var(--success, #10b981)", // نص أخضر
-    borderColor: "var(--success, #10b981)", // حدّ أخضر
-    opacity: disabled ? 0.6 : 1,
-    cursor: disabled ? "not-allowed" : "pointer",
   });
 
   return (
@@ -559,7 +570,7 @@ if (loading) {
                   </div>
 
                   <p className="text-sm mb-1">
-                    Customer id: <strong>{o.customer_id}</strong>
+                    Customer: <strong>{o.customer_name}</strong>
                   </p>
 
                   {/* المبلغ النهائي مع الشحن */}
@@ -580,15 +591,24 @@ if (loading) {
                     Status:{" "}
                     <span
                       className="px-2 py-0.5 rounded-md font-semibold capitalize"
-                      style={statusBadgeStyle(o.status)}
+                      style={statusBadgeStyle(o.order_status)}
                     >
-                      {o.status.replace(/_/g, " ")}
+                      {o.order_status.replace(/_/g, " ")}
                     </span>
                   </p>
 
                   <p className="text-sm mb-1">
-                    Payment: <strong>{o.payment_status}</strong>
+                    Payment: <strong>{o.payment_status || "Pending"}</strong>
                   </p>
+                  
+                  <p className="text-sm mb-1">
+                    Items: <strong>{o.items_count} items ({o.total_quantity} total)</strong>
+                  </p>
+                  
+                  <p className="text-sm mb-1">
+                    Address: <strong>{o.address_line1}, {o.city}</strong>
+                  </p>
+                  
                   <p className="text-xs mt-2">
                     Ordered At:{" "}
                     {new Date(o.created_at).toLocaleString([], {
@@ -600,9 +620,9 @@ if (loading) {
 
                 {/* ===== الأزرار السفلية (بالعرض دائمًا، بدون لف) ===== */}
                 <div className="mt-4 flex gap-2 flex-nowrap">
-                  {(STATUS_FLOW[o.status] || []).length > 0 && (
+                  {(STATUS_FLOW[o.order_status] || []).length > 0 && (
                     <button
-                      onClick={() => openStatusModal(o.id, o.status)}
+                      onClick={() => openStatusModal(o.id, o.order_status)}
                       className={
                         btnBase +
                         " flex-1 px-4 py-2 text-sm md:text-base whitespace-nowrap"

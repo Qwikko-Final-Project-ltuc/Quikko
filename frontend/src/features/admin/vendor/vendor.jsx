@@ -41,7 +41,7 @@ export default function VendorPage() {
 
   return (
     <div className="w-full mx-auto  p-6  rounded-2xl">
-      <h1 className="text-3xl font-extrabold pb-3 opacity-90 ml-7">Vendors Management</h1>
+      <h1 className="text-3xl font-extrabold pb-3 opacity-90 mb-5">Vendors Management</h1>
       <div
         className={`min-h-screen p-6 transition-colors duration-500 ${
           isDark ? "bg-[var(--bg)] text-[var(--text)]" : "bg-[var(--bg)] text-[var(--text)]"

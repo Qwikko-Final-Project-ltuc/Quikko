@@ -19,13 +19,19 @@ export default function ProductManagement() {
   const [visibleCount, setVisibleCount] = useState(5);
   const [editingProduct, setEditingProduct] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false); // ✅ حالة إظهار الفورم عند الضغط على الزر
+  const [status, setStatus] = useState("loading"); // ✅ حالة اللودينغ
 
   useEffect(() => {
     loadProducts();
     loadCategories();
   }, []);
 
-  const loadProducts = async () => setProducts(await fetchProducts());
+  const loadProducts = async () => {
+    setStatus("loading");
+    const prods = await fetchProducts();
+    setProducts(prods);
+    setStatus("loaded");
+  };
   const loadCategories = async () => setCategories(await fetchCategories());
 
   const handleDelete = async (id) => {
@@ -58,6 +64,18 @@ export default function ProductManagement() {
     inputBg: "#f9f9f9",
     line: isDarkMode ? "#f9f9f9" : "#ccc",
   };
+
+  // ✅ حالة اللودينغ
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--button)] mx-auto mb-4"></div>
+          <p className="text-[var(--text)] text-lg">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
    <div
@@ -110,7 +128,7 @@ export default function ProductManagement() {
               />
             ) : (
               <ProductForm
-                initialData={{}}
+                initialData={editingProduct || {}}
                 categories={categories}
                 onSubmit={handleFormSubmit}
                 buttonStyle={{
