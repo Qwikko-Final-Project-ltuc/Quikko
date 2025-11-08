@@ -15,6 +15,7 @@ exports.createCoupon = async (req, res) => {
       return res.status(403).json({ message: "User is not a vendor" });
     }
     const vendorId = vendorResult.rows[0].id;
+    console.log("🟢 Creating coupon for vendor:", vendorId);
 
     const now = new Date();
     const couponData = {

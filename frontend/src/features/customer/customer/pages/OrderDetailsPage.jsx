@@ -7,12 +7,12 @@ import { fetchOrders } from "../ordersSlice";
 import { deleteCart, fetchCart, setCurrentCart } from "../cartSlice";
 
 // Importing icons
-import { 
-  FiShoppingCart, 
-  FiHome, 
-  FiFileText, 
-  FiTag, 
-  FiStar, 
+import {
+  FiShoppingCart,
+  FiHome,
+  FiFileText,
+  FiTag,
+  FiStar,
   FiCreditCard,
   FiTruck,
   FiCheckCircle,
@@ -24,7 +24,7 @@ import {
   FiDollarSign,
   FiPercent,
   FiGift,
-  FiChevronDown
+  FiChevronDown,
 } from "react-icons/fi";
 
 const OrderDetailsPage = () => {
@@ -32,6 +32,19 @@ const OrderDetailsPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const location = useLocation();
+
+  const readJSON = (key) => {
+    try {
+      const v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : null;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const couponFromLocation = location.state?.appliedCoupon;
+  const savedCoupon = readJSON("appliedCoupon");
+  const appliedCouponFromState = couponFromLocation || savedCoupon;
 
   const cartFromState = location.state?.cart;
   const { data: profile } = useSelector((state) => state.profile);
@@ -58,6 +71,9 @@ const OrderDetailsPage = () => {
   const [subtotal, setSubtotal] = useState(0);
   const [totalWithShipping, setTotalWithShipping] = useState(0);
   const [finalTotal, setFinalTotal] = useState(0);
+  const [appliedCoupon, setAppliedCoupon] = useState(
+    appliedCouponFromState || { discount_amount: 0, code: null }
+  );
 
   const validateCoupon = async (couponCode, userId, cartItems = []) => {
     if (!userId) throw new Error("User ID not found. Please login again.");
@@ -68,7 +84,11 @@ const OrderDetailsPage = () => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
-      body: JSON.stringify({ coupon_code: couponCode, userId: preparedUserId, cartItems }),
+      body: JSON.stringify({
+        coupon_code: couponCode,
+        userId: preparedUserId,
+        cartItems,
+      }),
       credentials: "include",
     });
     if (!res.ok) {
@@ -87,7 +107,6 @@ const OrderDetailsPage = () => {
   });
   const [cardError, setCardError] = useState("");
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [usePointsChecked, setUsePointsChecked] = useState(false);
   const [userPointsToUse, setUserPointsToUse] = useState(0);
   const [pointsDiscount, setPointsDiscount] = useState(0);
@@ -131,14 +150,40 @@ const OrderDetailsPage = () => {
     } else if (orderId) {
       dispatch(fetchCart(orderId));
     }
-  }, [cartFromState, orderId, dispatch]);
+
+    if (appliedCouponFromState) {
+      let totalDiscount = 0;
+
+      if (typeof appliedCouponFromState === "object") {
+        Object.values(appliedCouponFromState).forEach((c) => {
+          totalDiscount += Number(c.discount || 0);
+        });
+      } else {
+        totalDiscount = Number(appliedCouponFromState.discount_amount || 0);
+      }
+
+      setAppliedCoupon({
+        discount_amount: totalDiscount,
+        code: null,
+      });
+
+      localStorage.setItem(
+        "appliedCoupon",
+        JSON.stringify({
+          discount_amount: totalDiscount,
+          code: null,
+        })
+      );
+    }
+  }, [cartFromState, appliedCouponFromState, orderId, dispatch]);
 
   // Calculate pricing breakdown
   useEffect(() => {
-    const cartSubtotal = currentCart?.items?.reduce(
-      (sum, item) => sum + Number(item.price || 0) * (item.quantity || 1),
-      0
-    ) || 0;
+    const cartSubtotal =
+      currentCart?.items?.reduce(
+        (sum, item) => sum + Number(item.price || 0) * (item.quantity || 1),
+        0
+      ) || 0;
 
     // لا تحسب delivery fee هنا - انتظر الحساب الفعلي من الباك إند
     setSubtotal(cartSubtotal);
@@ -157,17 +202,18 @@ const OrderDetailsPage = () => {
 
   // Calculate final total after discounts
   useEffect(() => {
-    let totalAfterDiscount = totalWithShipping; // Start with total including shipping
-    
+    let totalAfterDiscount = totalWithShipping || 0;
+
     if (appliedCoupon?.discount_amount) {
-      totalAfterDiscount -= appliedCoupon.discount_amount;
+      totalAfterDiscount -= Number(appliedCoupon.discount_amount);
     }
-    
+
     if (usePointsChecked && pointsDiscount > 0) {
       totalAfterDiscount -= pointsDiscount;
     }
-    
+
     if (totalAfterDiscount < 0) totalAfterDiscount = 0;
+
     setFinalTotal(totalAfterDiscount);
   }, [totalWithShipping, appliedCoupon, usePointsChecked, pointsDiscount]);
 
@@ -178,6 +224,44 @@ const OrderDetailsPage = () => {
     state: address.state || address.city,
     postal_code: address.postal_code || "0000",
     country: address.country,
+  };
+
+  const handleCalculateDelivery = async () => {
+    if (!address.address_line1 || !address.city) {
+      setDeliveryFee(null);
+      setTotalWithShipping(subtotal);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        "http://localhost:3000/api/customers/calculate-delivery-preview",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            cart_id: currentCart?.id,
+            address: fullAddress,
+          }),
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to calculate delivery fee");
+
+      const data = await res.json();
+      const fee = data.order?.delivery_fee || 0;
+
+      setDeliveryFee(fee);
+      setTotalWithShipping(subtotal + fee);
+    } catch (err) {
+      console.error("Error calculating delivery:", err);
+      setDeliveryFee(0);
+      setTotalWithShipping(subtotal);
+    }
   };
 
   const detectBrand = (num) => {
@@ -192,13 +276,15 @@ const OrderDetailsPage = () => {
   const validateCardFields = () => {
     setCardError("");
     const num = card.number.replace(/\D/g, "");
-    if (!num || num.length < 12) return "Invalid card number (min 12 digits for testing).";
+    if (!num || num.length < 12)
+      return "Invalid card number (min 12 digits for testing).";
     const m = parseInt(card.expiryMonth, 10);
     const y = parseInt(card.expiryYear, 10);
     if (!m || m < 1 || m > 12) return "Invalid expiry month";
     const currentYear = new Date().getFullYear();
     const twoDigit = y < 100 ? 2000 + y : y;
-    if (!y || twoDigit < currentYear) return "Expiry year must be current or future";
+    if (!y || twoDigit < currentYear)
+      return "Expiry year must be current or future";
     if (!card.cvc || card.cvc.length < 3) return "Invalid CVC";
     if (!card.name) return "Cardholder name required";
     return "";
@@ -220,8 +306,15 @@ const OrderDetailsPage = () => {
     });
 
     try {
-      const response = await validateCoupon(couponCode, profile.id, preparedItems);
-      setAppliedCoupon(response);
+      const response = await validateCoupon(
+        couponCode,
+        profile.id,
+        preparedItems
+      );
+      setAppliedCoupon({
+        discount_amount: Number(response.discount_amount || 0),
+        code: response.code || null,
+      });
       setCouponResult({
         message: response.message,
         discount: response.discount_amount,
@@ -238,7 +331,10 @@ const OrderDetailsPage = () => {
     }
   };
 
-  const handleUsePoints = (availablePoints, enteredPoints = userPointsToUse) => {
+  const handleUsePoints = (
+    availablePoints,
+    enteredPoints = userPointsToUse
+  ) => {
     let pointsToUse = 0;
 
     if (!usePointsChecked) {
@@ -268,7 +364,9 @@ const OrderDetailsPage = () => {
 
   const handleCheckoutClickWithDiscount = async () => {
     if (usePointsChecked && userPointsToUse > loyaltyPoints) {
-      alert(`Cannot use more points than available. You have ${loyaltyPoints} points.`);
+      alert(
+        `Cannot use more points than available. You have ${loyaltyPoints} points.`
+      );
       return;
     }
     await handleCheckoutClick();
@@ -312,9 +410,9 @@ const OrderDetailsPage = () => {
         address: fullAddress,
         paymentMethod: paymentMethod === "card" ? "credit_card" : paymentMethod,
         paymentData,
-        coupon_code: appliedCoupon?.code || null,
+        coupon_code: appliedCouponFromState?.code || null,
         use_loyalty_points: usePointsChecked ? userPointsToUse : 0,
-        // إزالة الحقول المحسوبة مسبقاً - دع الباك إند يحسبها
+        cartItems: itemsForServer,
       };
 
       const newOrder = await customerAPI.checkout(checkoutPayload);
@@ -338,7 +436,7 @@ const OrderDetailsPage = () => {
       if (newOrder.delivery_fee) {
         setDeliveryFee(newOrder.delivery_fee);
       }
-      
+
       navigate("/customer/orders");
     } catch (err) {
       console.error("Checkout failed:", err);
@@ -365,7 +463,7 @@ const OrderDetailsPage = () => {
                 details.id ||
                 details.purchase_units?.[0]?.payments?.captures?.[0]?.id ||
                 null;
-              
+
               // لا ترسل deliveryFee محسوبة مسبقاً - دع الباك إند يحسبها
               const newOrder = await customerAPI.checkout({
                 cart_id: currentCart.id,
@@ -376,16 +474,20 @@ const OrderDetailsPage = () => {
                 use_loyalty_points: usePointsChecked ? userPointsToUse : 0,
                 // إزالة الحقول المحسوبة مسبقاً
               });
-              
+
               await dispatch(deleteCart(currentCart.id)).unwrap();
               dispatch(fetchOrders());
-              setOrderSuccess({ method: "PayPal", transactionId, order: newOrder });
-              
+              setOrderSuccess({
+                method: "PayPal",
+                transactionId,
+                order: newOrder,
+              });
+
               // تحديث deliveryFee بالقيمة الفعلية من الباك إند
               if (newOrder.delivery_fee) {
                 setDeliveryFee(newOrder.delivery_fee);
               }
-              
+
               navigate("/customer/orders");
             } catch (err) {
               console.error("Checkout failed:", err);
@@ -400,79 +502,103 @@ const OrderDetailsPage = () => {
   }, [paymentMethod, finalTotal, currentCart, dispatch]);
 
   // CSS classes based on theme using the provided color variables
-  const containerClass = themeMode === 'dark' 
-    ? 'bg-[var(--bg)] text-[var(--text)]' 
-    : 'bg-[var(--bg)] text-[var(--text)]';
-    
-  const cardClass = themeMode === 'dark' 
-    ? 'bg-[var(--div)] border-[var(--border)] backdrop-blur-sm bg-opacity-80' 
-    : 'bg-[var(--textbox)] border-[var(--border)] backdrop-blur-sm bg-opacity-80';
-    
-  const inputClass = themeMode === 'dark' 
-    ? 'bg-[var(--mid-dark)] border-[var(--border)] text-[var(--text)] placeholder-[var(--light-gray)] focus:border-[var(--button)] focus:ring-2 focus:ring-[var(--button)]/20 transition-all duration-300' 
-    : 'bg-white border-[var(--border)] text-[var(--text)] placeholder-[var(--light-gray)] focus:border-[var(--button)] focus:ring-2 focus:ring-[var(--button)]/20 transition-all duration-300';
-    
-  const buttonClass = "bg-[var(--button)] hover:bg-[#015c40] text-white font-semibold transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg relative overflow-hidden";
-  const secondaryButtonClass = themeMode === 'dark' 
-    ? 'border-[var(--border)] bg-[var(--mid-dark)] hover:bg-[var(--hover)] text-[var(--text)] transition-all duration-300' 
-    : 'border-[var(--border)] bg-white hover:bg-[var(--hover)] text-[var(--text)] transition-all duration-300';
+  const containerClass =
+    themeMode === "dark"
+      ? "bg-[var(--bg)] text-[var(--text)]"
+      : "bg-[var(--bg)] text-[var(--text)]";
 
-  const successClass = themeMode === 'dark' 
-    ? 'bg-green-900/30 border-green-500/50 text-green-300 backdrop-blur-sm' 
-    : 'bg-green-50 border-green-200 text-green-800 backdrop-blur-sm';
-    
-  const errorClass = themeMode === 'dark' 
-    ? 'bg-red-900/30 border-red-500/50 text-red-300 backdrop-blur-sm' 
-    : 'bg-red-50 border-red-200 text-red-800 backdrop-blur-sm';
+  const cardClass =
+    themeMode === "dark"
+      ? "bg-[var(--div)] border-[var(--border)] backdrop-blur-sm bg-opacity-80"
+      : "bg-[var(--textbox)] border-[var(--border)] backdrop-blur-sm bg-opacity-80";
 
-  if (status === "loading") return (
-    <div className={`min-h-screen flex items-center justify-center ${containerClass}`}>
-      <div className="text-center animate-fade-in">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[var(--button)] mx-auto mb-4 backdrop-blur-sm"></div>
-        <p className="text-lg text-[var(--light-gray)]">Loading your order details...</p>
-      </div>
-    </div>
-  );
-  
-  if (error) return (
-    <div className={`min-h-screen flex items-center justify-center ${containerClass}`}>
-      <div className={`text-center max-w-md p-8 rounded-2xl border-2 ${errorClass} animate-fade-in-up backdrop-blur-sm`}>
-        <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-          <FiAlertCircle className="text-2xl text-red-500" />
+  const inputClass =
+    themeMode === "dark"
+      ? "bg-[var(--mid-dark)] border-[var(--border)] text-[var(--text)] placeholder-[var(--light-gray)] focus:border-[var(--button)] focus:ring-2 focus:ring-[var(--button)]/20 transition-all duration-300"
+      : "bg-white border-[var(--border)] text-[var(--text)] placeholder-[var(--light-gray)] focus:border-[var(--button)] focus:ring-2 focus:ring-[var(--button)]/20 transition-all duration-300";
+
+  const buttonClass =
+    "bg-[var(--button)] hover:bg-[#015c40] text-white font-semibold transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg relative overflow-hidden";
+  const secondaryButtonClass =
+    themeMode === "dark"
+      ? "border-[var(--border)] bg-[var(--mid-dark)] hover:bg-[var(--hover)] text-[var(--text)] transition-all duration-300"
+      : "border-[var(--border)] bg-white hover:bg-[var(--hover)] text-[var(--text)] transition-all duration-300";
+
+  const successClass =
+    themeMode === "dark"
+      ? "bg-green-900/30 border-green-500/50 text-green-300 backdrop-blur-sm"
+      : "bg-green-50 border-green-200 text-green-800 backdrop-blur-sm";
+
+  const errorClass =
+    themeMode === "dark"
+      ? "bg-red-900/30 border-red-500/50 text-red-300 backdrop-blur-sm"
+      : "bg-red-50 border-red-200 text-red-800 backdrop-blur-sm";
+
+  if (status === "loading")
+    return (
+      <div
+        className={`min-h-screen flex items-center justify-center ${containerClass}`}
+      >
+        <div className="text-center animate-fade-in">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[var(--button)] mx-auto mb-4 backdrop-blur-sm"></div>
+          <p className="text-lg text-[var(--light-gray)]">
+            Loading your order details...
+          </p>
         </div>
-        <h3 className="text-xl font-bold mb-2">Error Loading Order</h3>
-        <p className="mb-6 opacity-90">{error}</p>
-        <button 
-          onClick={() => navigate(-1)}
-          className={`${buttonClass} px-6 py-3 rounded-xl flex items-center justify-center mx-auto`}
-        >
-          <FiArrowLeft className="mr-2" />
-          Go Back
-        </button>
       </div>
-    </div>
-  );
-  
-  if (!currentCart) return (
-    <div className={`min-h-screen flex items-center justify-center ${containerClass}`}>
-      <div className="text-center max-w-md p-8 animate-fade-in">
-        <div className="w-20 h-20 bg-[var(--div)] rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-          <FiShoppingCart className="text-2xl text-[var(--text)]" />
+    );
+
+  if (error)
+    return (
+      <div
+        className={`min-h-screen flex items-center justify-center ${containerClass}`}
+      >
+        <div
+          className={`text-center max-w-md p-8 rounded-2xl border-2 ${errorClass} animate-fade-in-up backdrop-blur-sm`}
+        >
+          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+            <FiAlertCircle className="text-2xl text-red-500" />
+          </div>
+          <h3 className="text-xl font-bold mb-2">Error Loading Order</h3>
+          <p className="mb-6 opacity-90">{error}</p>
+          <button
+            onClick={() => navigate(-1)}
+            className={`${buttonClass} px-6 py-3 rounded-xl flex items-center justify-center mx-auto`}
+          >
+            <FiArrowLeft className="mr-2" />
+            Go Back
+          </button>
         </div>
-        <h3 className="text-xl font-bold mb-4">Cart Not Found</h3>
-        <p className="text-[var(--light-gray)] mb-6">We couldn't find the cart you're looking for.</p>
-        <button 
-          onClick={() => navigate("/")}
-          className={`${buttonClass} px-6 py-3 rounded-xl`}
-        >
-          Continue Shopping
-        </button>
       </div>
-    </div>
-  );
+    );
+
+  if (!currentCart)
+    return (
+      <div
+        className={`min-h-screen flex items-center justify-center ${containerClass}`}
+      >
+        <div className="text-center max-w-md p-8 animate-fade-in">
+          <div className="w-20 h-20 bg-[var(--div)] rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+            <FiShoppingCart className="text-2xl text-[var(--text)]" />
+          </div>
+          <h3 className="text-xl font-bold mb-4">Cart Not Found</h3>
+          <p className="text-[var(--light-gray)] mb-6">
+            We couldn't find the cart you're looking for.
+          </p>
+          <button
+            onClick={() => navigate("/")}
+            className={`${buttonClass} px-6 py-3 rounded-xl`}
+          >
+            Continue Shopping
+          </button>
+        </div>
+      </div>
+    );
 
   return (
-    <div className={`min-h-screen py-6 ${containerClass} transition-colors duration-300 font-sans`}>
+    <div
+      className={`min-h-screen py-6 ${containerClass} transition-colors duration-300 font-sans`}
+    >
       <div className="container mx-auto px-4 max-w-6xl">
         {/* Header */}
         <div className="text-left mb-6 p-4 animate-fade-in-up">
@@ -480,37 +606,48 @@ const OrderDetailsPage = () => {
             Complete Your Order
           </h1>
           <p className="text-base text-[var(--light-gray)] max-w-2xl leading-relaxed">
-            Review your items, apply discounts, and securely complete your purchase
+            Review your items, apply discounts, and securely complete your
+            purchase
           </p>
         </div>
 
         {orderSuccess ? (
           <div className="max-w-2xl mx-auto animate-fade-in">
-            <div className={`bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 border-2 ${successClass} rounded-3xl p-8 text-center shadow-2xl backdrop-blur-sm`}>
+            <div
+              className={`bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 border-2 ${successClass} rounded-3xl p-8 text-center shadow-2xl backdrop-blur-sm`}
+            >
               <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce backdrop-blur-sm">
                 <FiCheckCircle className="text-3xl text-green-500" />
               </div>
               <h2 className="text-2xl font-bold mb-4 text-green-600 dark:text-green-400 tracking-tight">
                 Order Confirmed!
               </h2>
-              <div className={`space-y-3 text-left max-w-md mx-auto ${cardClass} rounded-2xl p-5 border shadow-lg backdrop-blur-sm`}>
+              <div
+                className={`space-y-3 text-left max-w-md mx-auto ${cardClass} rounded-2xl p-5 border shadow-lg backdrop-blur-sm`}
+              >
                 <div className="flex justify-between items-center py-2">
                   <span className="text-[var(--light-gray)] flex items-center text-sm">
                     <FiPackage className="mr-2" />
                     Order ID:
                   </span>
-                  <span className="font-semibold text-[var(--text)] text-sm">#{orderSuccess.order.order?.id}</span>
+                  <span className="font-semibold text-[var(--text)] text-sm">
+                    #{orderSuccess.order.order?.id}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center py-2">
                   <span className="text-[var(--light-gray)] flex items-center text-sm">
                     <FiCreditCard className="mr-2" />
                     Payment Method:
                   </span>
-                  <span className="font-semibold text-[var(--text)] text-sm">{orderSuccess.method}</span>
+                  <span className="font-semibold text-[var(--text)] text-sm">
+                    {orderSuccess.method}
+                  </span>
                 </div>
                 {orderSuccess.transactionId && (
                   <div className="flex justify-between items-center py-2">
-                    <span className="text-[var(--light-gray)] text-sm">Transaction ID:</span>
+                    <span className="text-[var(--light-gray)] text-sm">
+                      Transaction ID:
+                    </span>
                     <span className="font-mono text-xs bg-[var(--bg)] px-2 py-1 rounded text-[var(--text)] backdrop-blur-sm">
                       {orderSuccess.transactionId}
                     </span>
@@ -521,7 +658,9 @@ const OrderDetailsPage = () => {
                     <FiDollarSign className="mr-1" />
                     Total Paid:
                   </span>
-                  <span className="text-[var(--button)]">${finalTotal.toFixed(2)}</span>
+                  <span className="text-[var(--button)]">
+                    ${finalTotal.toFixed(2)}
+                  </span>
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
@@ -547,7 +686,9 @@ const OrderDetailsPage = () => {
             {/* Left Column - Order Items & Address */}
             <div className="xl:col-span-2 space-y-6">
               {/* Order Items Card */}
-              <div className={`rounded-2xl border-2 ${cardClass} p-6 transition-all duration-300 hover:shadow-xl animate-fade-in-up shadow-lg backdrop-blur-sm`}>
+              <div
+                className={`rounded-2xl border-2 ${cardClass} p-6 transition-all duration-300 hover:shadow-xl animate-fade-in-up shadow-lg backdrop-blur-sm`}
+              >
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold flex items-center text-[var(--text)] tracking-tight">
                     <FiShoppingCart className={`mr-3 text-[var(--button)]`} />
@@ -560,15 +701,19 @@ const OrderDetailsPage = () => {
                     ${subtotal.toFixed(2)}
                   </span>
                 </div>
-                
+
                 {currentCart?.items?.length === 0 ? (
                   <div className="text-center py-8">
                     <div className="w-16 h-16 bg-[var(--div)] rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm">
                       <FiShoppingCart className="text-2xl text-[var(--text)]" />
                     </div>
-                    <h3 className="text-lg font-bold mb-2 text-[var(--text)] tracking-tight">Your cart is empty</h3>
-                    <p className="text-[var(--light-gray)] text-sm mb-4">Add some items to get started</p>
-                    <button 
+                    <h3 className="text-lg font-bold mb-2 text-[var(--text)] tracking-tight">
+                      Your cart is empty
+                    </h3>
+                    <p className="text-[var(--light-gray)] text-sm mb-4">
+                      Add some items to get started
+                    </p>
+                    <button
                       onClick={() => navigate("/")}
                       className={`${buttonClass} px-6 py-3 rounded-xl text-base backdrop-blur-sm`}
                     >
@@ -577,9 +722,9 @@ const OrderDetailsPage = () => {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {currentCart.items.map((item, index) => (
-                      <div 
-                        key={`${item.id}-${item.product_id || ""}`} 
+                    {(currentCart?.items ?? []).map((item, index) => (
+                      <div
+                        key={`${item.id}-${item.product_id || ""}`}
                         className="transform hover:scale-[1.005] transition-all duration-300 animate-fade-in-up backdrop-blur-sm"
                         style={{ animationDelay: `${index * 100}ms` }}
                       >
@@ -599,7 +744,9 @@ const OrderDetailsPage = () => {
               </div>
 
               {/* Shipping Address Card */}
-              <div className={`rounded-2xl border-2 ${cardClass} p-6 transition-all duration-300 hover:shadow-xl animate-fade-in-up shadow-lg backdrop-blur-sm`}>
+              <div
+                className={`rounded-2xl border-2 ${cardClass} p-6 transition-all duration-300 hover:shadow-xl animate-fade-in-up shadow-lg backdrop-blur-sm`}
+              >
                 <h2 className="text-xl font-bold mb-6 flex items-center text-[var(--text)] tracking-tight">
                   <FiMapPin className={`mr-3 text-[var(--button)]`} />
                   Shipping Address
@@ -614,7 +761,10 @@ const OrderDetailsPage = () => {
                       placeholder="123 Main Street"
                       value={address.address_line1}
                       onChange={(e) =>
-                        setAddress({ ...address, address_line1: e.target.value })
+                        setAddress({
+                          ...address,
+                          address_line1: e.target.value,
+                        })
                       }
                     />
                   </div>
@@ -627,7 +777,10 @@ const OrderDetailsPage = () => {
                       placeholder="Apt 4B"
                       value={address.address_line2}
                       onChange={(e) =>
-                        setAddress({ ...address, address_line2: e.target.value })
+                        setAddress({
+                          ...address,
+                          address_line2: e.target.value,
+                        })
                       }
                     />
                   </div>
@@ -639,7 +792,9 @@ const OrderDetailsPage = () => {
                       className={`w-full p-3 rounded-xl border-2 ${inputClass} transition-all duration-200 focus:shadow-lg backdrop-blur-sm text-sm`}
                       placeholder="New York"
                       value={address.city}
-                      onChange={(e) => setAddress({ ...address, city: e.target.value })}
+                      onChange={(e) =>
+                        setAddress({ ...address, city: e.target.value })
+                      }
                     />
                   </div>
                   <div>
@@ -650,8 +805,18 @@ const OrderDetailsPage = () => {
                       className={`w-full p-3 rounded-xl border-2 ${inputClass} transition-all duration-200 focus:shadow-lg backdrop-blur-sm text-sm`}
                       placeholder="12345"
                       value={address.postal_code}
-                      onChange={(e) => setAddress({ ...address, postal_code: e.target.value })}
+                      onChange={(e) =>
+                        setAddress({ ...address, postal_code: e.target.value })
+                      }
                     />
+                  </div>
+                  <div className="md:col-span-2 flex justify-end mt-4">
+                    <button
+                      onClick={handleCalculateDelivery}
+                      className={`${buttonClass} px-6 py-3 rounded-xl text-sm font-semibold backdrop-blur-sm transition-all duration-200 hover:scale-105`}
+                    >
+                      Calculate Delivery
+                    </button>
                   </div>
                 </div>
               </div>
@@ -660,20 +825,26 @@ const OrderDetailsPage = () => {
             {/* Right Column - Order Summary & Payment */}
             <div className="space-y-6 pb-6">
               {/* Order Summary Card */}
-              <div className={`rounded-2xl border-2 ${cardClass} p-6 sticky top-6 transition-all duration-300 hover:shadow-xl animate-fade-in-up shadow-xl backdrop-blur-sm`}>
+              <div
+                className={`rounded-2xl border-2 ${cardClass} p-6 sticky top-6 transition-all duration-300 hover:shadow-xl animate-fade-in-up shadow-xl backdrop-blur-sm`}
+              >
                 <h2 className="text-xl font-bold mb-6 flex items-center text-[var(--text)] tracking-tight">
                   <FiFileText className={`mr-3 text-[var(--button)]`} />
                   Order Summary
                 </h2>
-                
+
                 {/* Pricing Breakdown */}
                 <div className="space-y-3 mb-6">
                   {/* Subtotal */}
                   <div className="flex justify-between items-center py-3 border-b border-[var(--border)]">
-                    <span className="text-[var(--light-gray)] text-sm">Subtotal</span>
-                    <span className="font-semibold text-[var(--text)] text-sm">${subtotal.toFixed(2)}</span>
+                    <span className="text-[var(--light-gray)] text-sm">
+                      Subtotal
+                    </span>
+                    <span className="font-semibold text-[var(--text)] text-sm">
+                      ${subtotal.toFixed(2)}
+                    </span>
                   </div>
-                  
+
                   {/* Delivery Fee */}
                   <div className="flex justify-between items-center py-3 border-b border-[var(--border)]">
                     <span className="text-[var(--light-gray)] text-sm flex items-center">
@@ -690,26 +861,31 @@ const OrderDetailsPage = () => {
                       )}
                     </span>
                   </div>
-                  
+
                   {/* Total Before Discounts */}
                   <div className="flex justify-between items-center py-3 border-b border-[var(--border)]">
-                    <span className="text-[var(--light-gray)] text-sm">Total Before Discounts</span>
-                    <span className="font-semibold text-[var(--text)] text-sm">${totalWithShipping.toFixed(2)}</span>
+                    <span className="text-[var(--light-gray)] text-sm">
+                      Total Before Discounts
+                    </span>
+                    <span className="font-semibold text-[var(--text)] text-sm">
+                      ${totalWithShipping.toFixed(2)}
+                    </span>
                   </div>
-                  
+
                   {/* Coupon Discount */}
-                  {appliedCoupon && (
+                  {appliedCoupon?.discount_amount > 0 && (
                     <div className="flex justify-between items-center py-3 border-b border-[var(--border)]">
                       <span className="text-green-600 dark:text-green-400 flex items-center text-sm">
                         <FiPercent className="mr-2" />
                         Coupon Discount
                       </span>
                       <span className="font-semibold text-green-600 dark:text-green-400 text-sm">
-                        -${appliedCoupon.discount_amount.toFixed(2)}
+                        -$
+                        {Number(appliedCoupon.discount_amount || 0).toFixed(2)}
                       </span>
                     </div>
                   )}
-                  
+
                   {/* Points Discount */}
                   {usePointsChecked && (
                     <div className="flex justify-between items-center py-3 border-b border-[var(--border)]">
@@ -722,10 +898,12 @@ const OrderDetailsPage = () => {
                       </span>
                     </div>
                   )}
-                  
+
                   {/* Final Total */}
                   <div className="flex justify-between items-center pt-4 border-t-2 border-[var(--border)]">
-                    <span className="text-lg font-bold text-[var(--text)] tracking-tight">Final Total</span>
+                    <span className="text-lg font-bold text-[var(--text)] tracking-tight">
+                      Final Total
+                    </span>
                     <span className="text-xl font-bold text-[var(--button)] bg-[var(--button)]/10 px-3 py-1.5 rounded-xl backdrop-blur-sm">
                       ${finalTotal.toFixed(2)}
                     </span>
@@ -754,14 +932,24 @@ const OrderDetailsPage = () => {
                     </button>
                   </div>
                   {couponResult && (
-                    <div className={`p-3 rounded-xl border-2 backdrop-blur-sm text-sm ${
-                      couponResult.discount > 0 ? successClass : errorClass
-                    } animate-fade-in`}>
-                      <p className="font-semibold tracking-tight">{couponResult.message}</p>
+                    <div
+                      className={`p-3 rounded-xl border-2 backdrop-blur-sm text-sm ${
+                        couponResult.discount > 0 ? successClass : errorClass
+                      } animate-fade-in`}
+                    >
+                      <p className="font-semibold tracking-tight">
+                        {couponResult.message}
+                      </p>
                       {couponResult.discount > 0 && (
                         <div className="mt-2 text-xs space-y-1">
-                          <p className="text-[var(--text)]">Discount: <strong>${couponResult.discount.toFixed(2)}</strong></p>
-                          <p className="text-[var(--text)]">New Total: <strong>${couponResult.final.toFixed(2)}</strong></p>
+                          <p className="text-[var(--text)]">
+                            Discount:{" "}
+                            <strong>${couponResult.discount.toFixed(2)}</strong>
+                          </p>
+                          <p className="text-[var(--text)]">
+                            New Total:{" "}
+                            <strong>${couponResult.final.toFixed(2)}</strong>
+                          </p>
                         </div>
                       )}
                     </div>
@@ -779,7 +967,7 @@ const OrderDetailsPage = () => {
                       {loyaltyPoints} points
                     </span>
                   </div>
-                  
+
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
                     <label className="flex items-center cursor-pointer group">
                       <div className="relative">
@@ -789,23 +977,33 @@ const OrderDetailsPage = () => {
                           onChange={() => handleUsePoints(loyaltyPoints)}
                           className="sr-only"
                         />
-                        <div className={`w-10 h-5 rounded-full transition-all duration-300 backdrop-blur-sm ${
-                          usePointsChecked ? 'bg-[var(--button)]' : 'bg-[var(--border)]'
-                        } group-hover:shadow-md`}>
-                          <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-all duration-300 backdrop-blur-sm ${
-                            usePointsChecked ? 'transform translate-x-5' : ''
-                          } group-hover:scale-110`} />
+                        <div
+                          className={`w-10 h-5 rounded-full transition-all duration-300 backdrop-blur-sm ${
+                            usePointsChecked
+                              ? "bg-[var(--button)]"
+                              : "bg-[var(--border)]"
+                          } group-hover:shadow-md`}
+                        >
+                          <div
+                            className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-all duration-300 backdrop-blur-sm ${
+                              usePointsChecked ? "transform translate-x-5" : ""
+                            } group-hover:scale-110`}
+                          />
                         </div>
                       </div>
-                      <span className="ml-2 font-medium text-[var(--text)] tracking-tight text-sm">Use points</span>
+                      <span className="ml-2 font-medium text-[var(--text)] tracking-tight text-sm">
+                        Use points
+                      </span>
                     </label>
-                    
+
                     {usePointsChecked && (
                       <div className="flex-1 sm:mt-0 mt-2">
                         <input
                           type="number"
                           value={userPointsToUse}
-                          onChange={(e) => setUserPointsToUse(Number(e.target.value))}
+                          onChange={(e) =>
+                            setUserPointsToUse(Number(e.target.value))
+                          }
                           className={`w-full p-2 rounded-lg border-2 ${inputClass} text-xs focus:shadow-lg backdrop-blur-sm`}
                           min="0"
                           max={loyaltyPoints}
@@ -814,7 +1012,7 @@ const OrderDetailsPage = () => {
                       </div>
                     )}
                   </div>
-                  
+
                   {usePointsChecked && (
                     <div className="flex justify-between items-center text-xs bg-[var(--bg)] p-2 rounded-xl backdrop-blur-sm">
                       <span className="text-green-600 dark:text-green-400 font-semibold">
@@ -825,9 +1023,13 @@ const OrderDetailsPage = () => {
                       </span>
                     </div>
                   )}
-                  
+
                   {pointsError && (
-                    <p className={`text-red-500 text-xs mt-1 p-2 ${errorClass} rounded-xl backdrop-blur-sm`}>{pointsError}</p>
+                    <p
+                      className={`text-red-500 text-xs mt-1 p-2 ${errorClass} rounded-xl backdrop-blur-sm`}
+                    >
+                      {pointsError}
+                    </p>
                   )}
                 </div>
 
@@ -842,8 +1044,9 @@ const OrderDetailsPage = () => {
                       value={paymentMethod}
                       onChange={(e) => setPaymentMethod(e.target.value)}
                       className={`w-full p-3 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm appearance-none cursor-pointer`}
-                      style={{ 
-                        backgroundColor: themeMode === 'dark' ? 'var(--bg)' : 'white'
+                      style={{
+                        backgroundColor:
+                          themeMode === "dark" ? "var(--bg)" : "white",
                       }}
                     >
                       <option value="cod" className="flex items-center py-2">
@@ -859,65 +1062,89 @@ const OrderDetailsPage = () => {
                         PayPal
                       </option>
                     </select>
-                    <FiChevronDown 
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[var(--light-gray)] pointer-events-none" 
+                    <FiChevronDown
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[var(--light-gray)] pointer-events-none"
                       size={16}
                     />
                   </div>
 
                   {paymentMethod === "card" && (
-                    <div className={`space-y-3 ${cardClass} rounded-xl p-4 border-2 animate-fade-in backdrop-blur-sm mt-3`}>
+                    <div
+                      className={`space-y-3 ${cardClass} rounded-xl p-4 border-2 animate-fade-in backdrop-blur-sm mt-3`}
+                    >
                       <div>
-                        <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Card Number</label>
+                        <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">
+                          Card Number
+                        </label>
                         <input
                           placeholder="1234 5678 9012 3456"
                           value={card.number}
-                          onChange={(e) => setCard({ ...card, number: e.target.value })}
+                          onChange={(e) =>
+                            setCard({ ...card, number: e.target.value })
+                          }
                           className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Expiry Month</label>
+                          <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">
+                            Expiry Month
+                          </label>
                           <input
                             placeholder="MM"
                             value={card.expiryMonth}
-                            onChange={(e) => setCard({ ...card, expiryMonth: e.target.value })}
+                            onChange={(e) =>
+                              setCard({ ...card, expiryMonth: e.target.value })
+                            }
                             className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Expiry Year</label>
+                          <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">
+                            Expiry Year
+                          </label>
                           <input
                             placeholder="YYYY"
                             value={card.expiryYear}
-                            onChange={(e) => setCard({ ...card, expiryYear: e.target.value })}
+                            onChange={(e) =>
+                              setCard({ ...card, expiryYear: e.target.value })
+                            }
                             className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
                           />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">CVC</label>
+                          <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">
+                            CVC
+                          </label>
                           <input
                             placeholder="123"
                             value={card.cvc}
-                            onChange={(e) => setCard({ ...card, cvc: e.target.value })}
+                            onChange={(e) =>
+                              setCard({ ...card, cvc: e.target.value })
+                            }
                             className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Cardholder Name</label>
+                          <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">
+                            Cardholder Name
+                          </label>
                           <input
                             placeholder="Ahmed omar"
                             value={card.name}
-                            onChange={(e) => setCard({ ...card, name: e.target.value })}
+                            onChange={(e) =>
+                              setCard({ ...card, name: e.target.value })
+                            }
                             className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
                           />
                         </div>
                       </div>
                       {cardError && (
-                        <p className={`p-2.5 ${errorClass} rounded-xl font-medium tracking-tight text-xs backdrop-blur-sm`}>
+                        <p
+                          className={`p-2.5 ${errorClass} rounded-xl font-medium tracking-tight text-xs backdrop-blur-sm`}
+                        >
                           {cardError}
                         </p>
                       )}
@@ -925,8 +1152,13 @@ const OrderDetailsPage = () => {
                   )}
 
                   {paymentMethod === "paypal" && (
-                    <div className={`${cardClass} rounded-xl p-4 border-2 animate-fade-in backdrop-blur-sm mt-3`}>
-                      <div id="paypal-button-container" className="min-h-[40px]"></div>
+                    <div
+                      className={`${cardClass} rounded-xl p-4 border-2 animate-fade-in backdrop-blur-sm mt-3`}
+                    >
+                      <div
+                        id="paypal-button-container"
+                        className="min-h-[40px]"
+                      ></div>
                     </div>
                   )}
                 </div>
@@ -937,8 +1169,8 @@ const OrderDetailsPage = () => {
                   disabled={checkoutLoading || currentCart?.items?.length === 0}
                   className={`w-full ${buttonClass} py-4 rounded-2xl font-bold text-base flex items-center justify-center transition-all duration-300 backdrop-blur-sm ${
                     checkoutLoading || currentCart?.items?.length === 0
-                      ? 'opacity-50 cursor-not-allowed hover:scale-100'
-                      : 'hover:shadow-xl'
+                      ? "opacity-50 cursor-not-allowed hover:scale-100"
+                      : "hover:shadow-xl"
                   }`}
                 >
                   {checkoutLoading ? (
@@ -955,8 +1187,12 @@ const OrderDetailsPage = () => {
                 </button>
 
                 {checkoutError && (
-                  <div className={`mt-4 p-3 border-2 ${errorClass} rounded-xl animate-fade-in backdrop-blur-sm`}>
-                    <p className="font-medium tracking-tight text-sm">{checkoutError}</p>
+                  <div
+                    className={`mt-4 p-3 border-2 ${errorClass} rounded-xl animate-fade-in backdrop-blur-sm`}
+                  >
+                    <p className="font-medium tracking-tight text-sm">
+                      {checkoutError}
+                    </p>
                   </div>
                 )}
 

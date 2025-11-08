@@ -583,7 +583,12 @@ router.patch('/:orderId/status',  async (req, res) => {
   }
 });
 
-
+router.post(
+  "/calculate-delivery-preview",
+  protect,
+  authorizeRole('customer'),
+  customerController.calculateDeliveryPreview
+);
 
 module.exports = router;
 

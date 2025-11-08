@@ -110,7 +110,7 @@ exports.postOrderFromCart = async function (req, res) {
       return res.status(400).json({ error: "cart_id must be a valid number" });
     }
 
-     if (!addressId && (!address || !address.address_line1 || !address.city)) {
+    if (!addressId && (!address || !address.address_line1 || !address.city)) {
       return res.status(400).json({
         error: "Please provide a valid address or select a saved address.",
       });
@@ -134,6 +134,7 @@ exports.postOrderFromCart = async function (req, res) {
       addressId,
       paymentMethod, // "cod" ,"paypal"/"credit_card"
       paymentData: normalizedPaymentData,
+      coupon_code: req.body.coupon_code || null,
     });
 
     res.status(201).json({
@@ -798,7 +799,6 @@ exports.sendContactMessage = async (req, res) => {
   }
 };
 
-
 exports.getLoyaltyPoints = async (req, res) => {
   try {
     const userId = req.user?.id;
@@ -808,15 +808,17 @@ exports.getLoyaltyPoints = async (req, res) => {
 
     // حتى لو ما في نقاط، نرجع رسالة واضحة
     res.json({
-      message: data.points_balance === 0 ? "No loyalty points yet" : "Loyalty points fetched successfully",
-      points: data
+      message:
+        data.points_balance === 0
+          ? "No loyalty points yet"
+          : "Loyalty points fetched successfully",
+      points: data,
     });
   } catch (error) {
     console.error("Error getting loyalty points:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 // 🔹 Add loyalty points after completing an order
 exports.addLoyaltyPoints = async (req, res) => {
@@ -836,10 +838,79 @@ exports.redeemLoyaltyPoints = async (req, res) => {
   try {
     const userId = req.user.id;
     const { points, description } = req.body;
-    const discount = await customerModel.redeemPoints(userId, points, description);
+    const discount = await customerModel.redeemPoints(
+      userId,
+      points,
+      description
+    );
     res.json({ message: "Points redeemed successfully", discount });
   } catch (error) {
     console.error("Error redeeming loyalty points:", error);
     res.status(500).json({ message: error.message || "Server error" });
+  }
+};
+
+// exports.calculateDeliveryPreview = async (req, res) => {
+//   try {
+//     const { userId, cartId, address, addressId } = req.body;
+
+//     const result = await customerService.calculateDeliveryPreview({
+//       userId,
+//       cartId,
+//       address,
+//       addressId,
+//     });
+
+//     return res.status(200).json({ success: true, ...result });
+//   } catch (err) {
+//     console.error("calculate Delivery Preview error:", err);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to calculate delivery preview",
+//       error: err.message || err,
+//     });
+//   }
+// };
+
+exports.calculateDeliveryPreview = async function (req, res) {
+  try {
+    const userId = req.user.id;
+    const { cart_id, address, addressId } = req.body;
+
+    const parsedCartId = Number(cart_id);
+    if (!cart_id || Number.isNaN(parsedCartId)) {
+      return res.status(400).json({ error: "cart_id must be a valid number" });
+    }
+
+    if (!addressId && (!address || !address.address_line1 || !address.city)) {
+      return res.status(400).json({
+        error: "Please provide a valid address or select a saved address.",
+      });
+    }
+
+    const orderPreview = await customerModel.calculateDeliveryPreview(
+      parsedCartId,
+      userId,
+      address,
+      addressId
+    );
+
+    res.status(201).json({
+      order: {
+        total_amount: orderPreview.total_amount,
+        delivery_fee: orderPreview.delivery_fee,
+        total_with_shipping: orderPreview.total_with_shipping,
+        distance_km: orderPreview.distance_km,
+        vendors: orderPreview.vendors,
+        deliveryCompany: orderPreview.deliveryCompany,
+        customer_location: orderPreview.customer_location,
+      },
+    });
+  } catch (err) {
+    console.error("Error placing order from cart:", err.message);
+    console.error("STACK TRACE:", err.stack);
+    return res
+      .status(500)
+      .json({ error: "Failed to place order. Please try again." });
   }
 };
