@@ -12,15 +12,12 @@ import { useSelector, useDispatch } from "react-redux";
 import { setTheme } from "./deliveryThemeSlice";
 import ChatBot from "../Layout/ChatBot";
 import { X } from "lucide-react";
-
-// ===== Animations =====
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.18 } },
 };
-
 const itemUp = {
   hidden: { opacity: 0, y: 38 },
   visible: {
@@ -29,7 +26,6 @@ const itemUp = {
     transition: { type: "spring", stiffness: 120, damping: 16 },
   },
 };
-
 const textReveal = {
   hidden: { opacity: 0, y: 80 },
   visible: {
@@ -38,14 +34,12 @@ const textReveal = {
     transition: { type: "spring", stiffness: 110, damping: 14, duration: 0.9 },
   },
 };
-
 const gradientVariants = {
   animate: {
     backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
     transition: { duration: 10, repeat: Infinity, ease: "linear" },
   },
 };
-
 const floatingBubble = {
   floating: {
     y: [-22, 22, -22],
@@ -54,30 +48,16 @@ const floatingBubble = {
   },
 };
 
-const pulse = {
-  initial: { boxShadow: "0 0 0 0 rgba(2,106,75,0.6)" },
-  animate: {
-    boxShadow: [
-      "0 0 0 0 rgba(2,106,75,0.6)",
-      "0 0 0 18px rgba(2,106,75,0)",
-      "0 0 0 0 rgba(2,106,75,0)",
-    ],
-    transition: { duration: 2.6, repeat: Infinity, ease: "easeOut" },
-  },
-};
-
 export default function LandingPage() {
   const [cmsContent, setCmsContent] = useState(null);
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
-
   const isDark = useSelector((s) => s.deliveryTheme.darkMode);
   const dispatch = useDispatch();
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const toggleChat = () => setIsChatOpen((v) => !v);
 
-  // unified colors (from your main landing)
   const colors = {
     bg: isDark ? "#0a0a0a" : "#ffffff",
     textbox: "#ffffff",
@@ -91,7 +71,7 @@ export default function LandingPage() {
     gradientEnd: "#014d34",
   };
 
-  // ===== 3D Tilt for hero image =====
+  // 3D tilt
   const cardRef = useRef(null);
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
@@ -99,14 +79,14 @@ export default function LandingPage() {
   const smy = useSpring(my, { stiffness: 150, damping: 20 });
   const rotateX = useTransform(smy, [-0.5, 0.5], [10, -10]);
   const rotateY = useTransform(smx, [-0.5, 0.5], [-10, 10]);
-  const floatY = useMotionValue(0); // subtle float
+  const floatY = useMotionValue(0);
   const sFloatY = useSpring(floatY, { stiffness: 60, damping: 15 });
 
   function handleMouseMove(e) {
     const el = cardRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    const px = (e.clientX - rect.left) / rect.width; // 0 → 1
+    const px = (e.clientX - rect.left) / rect.width;
     const py = (e.clientY - rect.top) / rect.height;
     mx.set(px - 0.5);
     my.set(py - 0.5);
@@ -116,48 +96,38 @@ export default function LandingPage() {
     my.set(0);
   }
 
-useEffect(() => {
-  async function loadCMS() {
-    const data = await fetchLandingCMS("delivery", "Landing Page");
-    setCmsContent(data);
-
-    const raw = String(data?.content ?? "").trim();
-
-    if (raw.includes("@")) {
-      const [maybeTitle, ...rest] = raw.split("@");
-      const parsedTitle = (maybeTitle || data?.title || "").trim();
-      const parsedSub = rest.join("@").trim() || (data?.subtitle ?? "");
-
-      setTitle(parsedTitle || "Welcome to Qwikko Delivery");
-      setSubtitle(parsedSub);
-    } else {
-      // ما في @ → استخدمي title من الحقل المخصص والـ subtitle من content/subtitle
-      const parsedTitle = (data?.title || "").trim();
-      const parsedSub = (raw || data?.subtitle || "").trim();
-
-      setTitle(parsedTitle || "Welcome to Qwikko Delivery");
-      setSubtitle(parsedSub);
+  // Load CMS
+  useEffect(() => {
+    async function loadCMS() {
+      const data = await fetchLandingCMS("delivery", "Landing Page");
+      setCmsContent(data);
+      const raw = String(data?.content ?? "").trim();
+      if (raw.includes("@")) {
+        const [maybeTitle, ...rest] = raw.split("@");
+        const parsedTitle = (maybeTitle || data?.title || "").trim();
+        const parsedSub = rest.join("@").trim() || (data?.subtitle ?? "");
+        setTitle(parsedTitle || "Welcome to Qwikko Delivery");
+        setSubtitle(parsedSub);
+      } else {
+        const parsedTitle = (data?.title || "").trim();
+        const parsedSub = (raw || data?.subtitle || "").trim();
+        setTitle(parsedTitle || "Welcome to Qwikko Delivery");
+        setSubtitle(parsedSub);
+      }
+      console.log("CMS parsed:", {
+        titleAfter: (data?.title || "").trim(),
+        contentRaw: raw,
+        subtitleAfter: raw.includes("@")
+          ? raw.split("@").slice(1).join("@").trim()
+          : (raw || data?.subtitle || "").trim(),
+      });
     }
-
-    // Debug: شو القيم اللي طلعَت؟
-    // eslint-disable-next-line no-console
-    console.log("CMS parsed:", {
-      titleAfter: (data?.title || "").trim(),
-      contentRaw: raw,
-      subtitleAfter: raw.includes("@")
-        ? raw.split("@").slice(1).join("@").trim()
-        : (raw || data?.subtitle || "").trim(),
-    });
-  }
-  loadCMS();
-}, []);
-
-
+    loadCMS();
+  }, []);
 
   useEffect(() => {
-    if ("scrollRestoration" in window.history) {
+    if ("scrollRestoration" in window.history)
       window.history.scrollRestoration = "manual";
-    }
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, []);
 
@@ -166,9 +136,52 @@ useEffect(() => {
     dispatch(setTheme(savedTheme === "dark"));
   }, [dispatch]);
 
+  // ---------- BODY SCROLL LOCK (handle iOS/Android correctly) ----------
+  // We save the scrollY and set body to position:fixed to prevent background scroll.
+  useEffect(() => {
+    let scrollY = 0;
+    if (isChatOpen) {
+      // open: lock body
+      scrollY = window.scrollY || document.documentElement.scrollTop;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = "0";
+      document.body.style.right = "0";
+      document.body.style.width = "100%";
+      document.body.style.overflow = "hidden";
+      // store on element for restore
+      document.body.setAttribute("data-locked-scroll", String(scrollY));
+    } else {
+      // close: restore
+      const stored = document.body.getAttribute("data-locked-scroll");
+      const prev = stored ? parseInt(stored, 10) : 0;
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      document.body.style.width = "";
+      document.body.style.overflow = "";
+      document.body.removeAttribute("data-locked-scroll");
+      // restore scroll position
+      window.scrollTo({ top: prev, left: 0, behavior: "auto" });
+    }
+    // cleanup on unmount (just in case)
+    return () => {
+      const stored = document.body.getAttribute("data-locked-scroll");
+      const prev = stored ? parseInt(stored, 10) : 0;
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      document.body.style.width = "";
+      document.body.style.overflow = "";
+      document.body.removeAttribute("data-locked-scroll");
+      window.scrollTo({ top: prev, left: 0, behavior: "auto" });
+    };
+  }, [isChatOpen]);
+
   return (
     <>
-      {/* ===== HERO with animated gradient & floating bubbles ===== */}
       <motion.section
         variants={gradientVariants}
         animate="animate"
@@ -179,7 +192,6 @@ useEffect(() => {
           color: "#ffffff",
         }}
       >
-        {/* floating bubbles */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
           {[...Array(6)].map((_, i) => (
             <motion.div
@@ -206,12 +218,9 @@ useEffect(() => {
           viewport={{ once: true, amount: 0.2 }}
           className="relative max-w-screen-xl mx-auto px-4 sm:px-6 md:px-12 py-16 sm:py-20 md:py-24"
         >
-          {/* tag chip */}
           <motion.div variants={itemUp}></motion.div>
 
-          {/* grid: text + image */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-center">
-            {/* text */}
             <div className="order-2 md:order-1 text-center md:text-left  relative z-30">
               <motion.h1
                 variants={textReveal}
@@ -232,38 +241,24 @@ useEffect(() => {
                   textShadow: "0 2px 6px rgba(0,0,0,0.45)",
                 }}
               >
-                {subtitle && subtitle.trim().length > 0
-                  ? subtitle
-                  : "Laoding."}
+                {subtitle && subtitle.trim().length > 0 ? subtitle : "Laoding."}
               </motion.h6>
 
-              {/* === CTA (Start Now) - Drop-in Replacement === */}
               <motion.div
                 variants={containerVariants}
                 className="flex items-center justify-center md:justify-start gap-3 sm:gap-4 pt-4"
               >
-                {/* زر أساسي */}
                 <motion.div
                   variants={itemUp}
                   whileHover={{ y: -2, scale: 1.04 }}
                   whileTap={{ scale: 0.98 }}
                   className="relative"
-                  style={{ zIndex: 40 }} // فوق أي فقاعات/خلفيات
+                  style={{ zIndex: 40 }}
                 >
-                  {/* نبض اختياري: فعّليه بإزالة التعليق */}
-                  {/* <span className="absolute inset-0 rounded-lg animate-ping opacity-20" style={{ backgroundColor: "#ffffff" }} /> */}
-
                   <Link
                     to="/delivery/login"
                     aria-label="Start Now"
-                    className="
-        inline-flex items-center justify-center
-        px-6 sm:px-8 md:px-10
-        py-3 sm:py-3.5 md:py-4
-        rounded-lg text-base sm:text-lg font-semibold
-        shadow-lg transition-all duration-300
-        hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/70
-      "
+                    className="inline-flex items-center justify-center px-6 sm:px-8 md:px-10 py-3 sm:py-3.5 md:py-4 rounded-lg text-base sm:text-lg font-semibold shadow-lg transition-all duration-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/70"
                     style={{
                       backgroundColor: "#ffffff",
                       color: "#026a4b",
@@ -273,38 +268,9 @@ useEffect(() => {
                     Start Now
                   </Link>
                 </motion.div>
-
-                {/* (اختياري) زر ثانوي — احذفيه إن ما بدك ياه */}
-                {/* 
-  <motion.div
-    variants={itemUp}
-    whileHover={{ y: -2, scale: 1.03 }}
-    whileTap={{ scale: 0.98 }}
-  >
-    <Link
-      to="/delivery/about"
-      className="
-        inline-flex items-center justify-center
-        px-5 sm:px-6 md:px-8 py-3
-        rounded-lg text-sm sm:text-base font-semibold
-        border transition-all duration-300
-        hover:bg-white/10
-        focus:outline-none focus:ring-2 focus:ring-white/60
-      "
-      style={{
-        color: "#ffffff",
-        borderColor: "rgba(255,255,255,0.6)",
-        backdropFilter: "blur(2px)",
-      }}
-    >
-      Learn More
-    </Link>
-  </motion.div>
-  */}
               </motion.div>
             </div>
 
-            {/* image: show FULL image with NO background behind it */}
             <div className="order-1 md:order-2 w-full flex items-center justify-center">
               <motion.div
                 ref={cardRef}
@@ -322,17 +288,12 @@ useEffect(() => {
                   <motion.img
                     src={cmsContent.image_url}
                     alt="Landing visual"
-                    className="
-          w-full h-auto
-          max-h-64 sm:max-h-80 md:max-h-[420px] lg:max-h-[480px]
-          object-contain rounded-2xl
-        "
+                    className="w-full h-auto max-h-64 sm:max-h-80 md:max-h-[420px] lg:max-h-[480px] object-contain rounded-2xl"
                     whileHover={{ scale: 1.015 }}
                     transition={{ type: "spring", stiffness: 120, damping: 18 }}
                     style={{ willChange: "transform" }}
                   />
                 ) : (
-                  // ✅ خلفية شفافة بالكامل، بدون بوردر أو لون
                   <div className="w-full h-[280px] sm:h-[320px] md:h-[420px] lg:h-[480px] flex items-center justify-center bg-transparent">
                     <span className="text-white/80">Loading image...</span>
                   </div>
@@ -343,7 +304,6 @@ useEffect(() => {
         </motion.div>
       </motion.section>
 
-      {/* ===== HOW IT WORKS ===== */}
       <section
         className="w-full max-w-6xl px-4 sm:px-6 md:p-10 mt-6 md:mt-10 text-center mx-auto"
         style={{ backgroundColor: colors.bg, color: colors.text }}
@@ -359,72 +319,87 @@ useEffect(() => {
           How It Works
         </motion.h2>
 
-        <div className="relative">
-          {/* connector line */}
-          <div
-            className="hidden md:block absolute left-0 right-0 h-[3px]"
-            style={{
-              top: "28px",
-              backgroundColor: isDark ? "#ffffff" : colors.button,
-              opacity: 0.25,
-            }}
-          />
+        <div
+          className="hidden md:block absolute left-0 right-0 h-[3px]"
+          style={{
+            top: "28px",
+            backgroundColor: isDark ? "#ffffff" : colors.button,
+            opacity: 0.25,
+          }}
+        />
 
-          {/* numbering bubbles with pulse */}
-          <div className="grid grid-cols-3 gap-6 sm:gap-10 md:gap-16 mb-4 sm:mb-6">
-            {["1", "2", "3"].map((step, idx) => (
+        <div className="hidden md:grid grid-cols-3 gap-6 sm:gap-10 md:gap-16 mb-4 sm:mb-6">
+          {["1", "2", "3"].map((step, idx) => (
+            <motion.div
+              key={idx}
+              className="flex justify-center"
+              variants={itemUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.2 }}
+            >
               <motion.div
-                key={idx}
-                className="flex justify-center"
-                variants={itemUp}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.2 }}
+                className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full text-sm sm:text-base md:text-lg font-bold z-10 shadow-md"
+                style={{ backgroundColor: colors.button, color: "#fff" }}
+                animate={{ scale: [1, 1.06, 1] }}
+                transition={{
+                  duration: 1.8,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: idx * 0.2,
+                }}
               >
+                {step}
+              </motion.div>
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10 md:gap-16 justify-items-center">
+          {[
+            {
+              title: "Register your company",
+              desc: "Sign up quickly and create your business account.",
+            },
+            {
+              title: "Set up your delivery zones",
+              desc: "Define the areas where your company will operate and deliver.",
+            },
+            {
+              title: "Start receiving orders",
+              desc: "Track and deliver orders smoothly and grow your business.",
+            },
+          ].map((item, i) => (
+            <motion.div
+              key={i}
+              variants={itemUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.2 }}
+              whileHover={{ y: -6, rotate: 0.25 }}
+              transition={{ type: "spring", stiffness: 140, damping: 12 }}
+              className="flex flex-col items-center text-center w-full relative"
+              style={{ maxWidth: "22rem" }}
+            >
+              <div className="md:hidden flex justify-center -mb-3">
                 <motion.div
-                  className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full text-sm sm:text-base md:text-lg font-bold z-10 shadow-md"
+                  className="w-10 h-10 flex items-center justify-center rounded-full text-base font-bold shadow-md"
                   style={{ backgroundColor: colors.button, color: "#fff" }}
                   animate={{ scale: [1, 1.06, 1] }}
                   transition={{
                     duration: 1.8,
                     repeat: Infinity,
                     ease: "easeInOut",
-                    delay: idx * 0.2,
+                    delay: i * 0.2,
                   }}
                 >
-                  {step}
+                  {i + 1}
                 </motion.div>
-              </motion.div>
-            ))}
-          </div>
+              </div>
 
-          {/* cards with hover float/rotate */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10 md:gap-16 justify-items-center">
-            {[
-              {
-                title: "Register your company",
-                desc: "Sign up quickly and create your business account.",
-              },
-              {
-                title: "Set up your delivery zones",
-                desc: "Define the areas where your company will operate and deliver.",
-              },
-              {
-                title: "Start receiving orders",
-                desc: "Track and deliver orders smoothly and grow your business.",
-              },
-            ].map((item, i) => (
-              <motion.div
-                key={i}
-                variants={itemUp}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.2 }}
-                whileHover={{ y: -6, rotate: 0.25 }}
-                transition={{ type: "spring", stiffness: 140, damping: 12 }}
-                className="flex flex-col items-center text-center w-full"
+              <div
+                className="w-full"
                 style={{
-                  maxWidth: "22rem",
                   backgroundColor: isDark ? "#1a1a1a" : "#f8faf9",
                   color: isDark ? "#ffffff" : colors.button,
                   borderRadius: "1rem",
@@ -442,13 +417,12 @@ useEffect(() => {
                 >
                   {item.desc}
                 </p>
-              </motion.div>
-            ))}
-          </div>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </section>
 
-      {/* ===== BENEFITS ===== */}
       <section
         className="w-full max-w-6xl px-4 sm:px-6 md:p-10 mt-6 mb-20 md:mb-24 text-center mx-auto"
         style={{ backgroundColor: colors.bg, color: colors.text }}
@@ -464,7 +438,7 @@ useEffect(() => {
           Benefits
         </motion.h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 md:gap-12 justify-items-center">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-6 sm:gap-y-12 md:gap-y-14 justify-items-center">
           {[
             { Icon: FaClipboardList, text: "Manage orders easily" },
             { Icon: FaChartLine, text: "Accurate reports and statistics" },
@@ -512,14 +486,10 @@ useEffect(() => {
         </div>
       </section>
 
-      {/* ===== CHATBOT FAB ===== */}
+      {/* FAB */}
       <button
         onClick={toggleChat}
-        className="
-          fixed bottom-4 right-4 md:bottom-6 md:right-6
-          p-3 md:p-4 rounded-full shadow-lg flex items-center justify-center
-          z-50 transition hover:scale-105
-        "
+        className="fixed bottom-4 right-4 md:bottom-6 md:right-6 p-3 md:p-4 rounded-full shadow-lg flex items-center justify-center z-50 transition hover:scale-105"
         style={{
           backgroundColor: colors.button,
           color: "#fff",
@@ -532,19 +502,10 @@ useEffect(() => {
         <FaRobot className="text-xl md:text-2xl" />
       </button>
 
-      {/* ===== CHATBOT PANEL ===== */}
+      {/* Chat panel */}
       {isChatOpen && (
         <div
-          className="
-            fixed
-            inset-x-0 bottom-0 top-auto
-            md:inset-auto md:top-4 md:right-4
-            w-full md:w-96
-            h-[70vh] sm:h-[75vh] md:h-[85vh]
-            rounded-t-2xl md:rounded-2xl
-            shadow-2xl flex flex-col overflow-hidden
-            z-50
-          "
+          className="fixed inset-x-0 bottom-0 top-auto md:inset-auto md:top-4 md:right-4 w-full md:w-96 h-[70vh] sm:h-[75vh] md:h-[85vh] rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50"
           style={{ backgroundColor: colors.div, color: colors.text }}
         >
           <button
@@ -559,10 +520,7 @@ useEffect(() => {
           </button>
 
           <h2
-            className="
-              text-sm sm:text-base font-semibold flex items-center gap-2
-              px-3 sm:px-4 py-2.5 sm:py-3
-            "
+            className="text-sm sm:text-base font-semibold flex items-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3"
             style={{
               backgroundColor: colors.bg,
               color: colors.text,
@@ -582,9 +540,14 @@ useEffect(() => {
             Qwikko Chatbot
           </h2>
 
+          {/* IMPORTANT: overscrollBehavior + webkit momentum scroll to avoid scroll chaining/elastic issues on mobile */}
           <div
             className="flex-grow overflow-auto p-2 sm:p-3 md:p-2"
-            style={{ backgroundColor: colors.bg }}
+            style={{
+              backgroundColor: colors.bg,
+              overscrollBehavior: "contain",
+              WebkitOverflowScrolling: "touch",
+            }}
           >
             <ChatBot userId="guest" />
           </div>

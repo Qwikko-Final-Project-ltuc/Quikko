@@ -80,12 +80,14 @@ return (
         {/* زر الشاتبوت */}
         <button
           onClick={toggleChat}
-          className="fixed right-4 sm:bottom-6 p-4 rounded-full shadow-lg transition flex items-center justify-center z-[9999]"
+          className="fixed right-4 md:right-6 p-4 rounded-full shadow-lg transition flex items-center justify-center z-[9999] md:bottom-6"
           style={{
-            bottom: "calc(env(safe-area-inset-bottom, 0px) + 90px)",
+            bottom: "calc(env(safe-area-inset-bottom, 0px) + 90px)", // موبايل أعلى شوي
             backgroundColor: "var(--button)",
             color: "#fff",
           }}
+          title="Open Qwikko Chatbot"
+          aria-label="Open Qwikko Chatbot"
         >
           <FaRobot size={28} />
         </button>
@@ -93,36 +95,48 @@ return (
         {/* نافذة الشات */}
         {isChatOpen && (
           <div
-            className="fixed right-4 sm:right-6 z-50 w-[calc(100%-2rem)] sm:w-96 h-[85vh] sm:h-[90vh] rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            className="
+      fixed
+      inset-x-0 bottom-0 top-auto
+      md:inset-auto md:top-6 md:right-6
+      w-full md:w-96
+      h-[75vh] sm:h-[80vh] md:h-[85vh]
+      rounded-t-2xl md:rounded-2xl
+      shadow-2xl flex flex-col overflow-hidden
+      z-[9998]
+    "
             style={{
-              bottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)",
               backgroundColor: "var(--div)",
               color: "var(--text)",
+              // نرفعه شوي فوق حافة الأجهزة:
+              marginBottom: "env(safe-area-inset-bottom, 0px)",
             }}
           >
             <button
               onClick={toggleChat}
-              className="absolute top-4 right-4 z-10"
+              className="absolute top-3 right-3 md:top-4 md:right-4 z-10"
               style={{ color: "var(--light-gray)" }}
+              aria-label="Close chatbot"
             >
               <X size={24} />
             </button>
 
             <h2
-              className="text-base font-semibold flex items-center gap-2 px-4 py-3"
+              className="text-sm sm:text-base font-semibold flex items-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3"
               style={{
-                backgroundColor: isDarkMode
-                  ? "var(--mid-dark)"
-                  : "var(--textbox)",
+                backgroundColor: isDark ? "var(--mid-dark)" : "var(--textbox)",
               }}
             >
-              <FaRobot size={26} />
+              <FaRobot size={22} />
               Qwikko Chatbot
             </h2>
 
             <div
-              className="flex-grow overflow-auto p-2"
-              style={{ backgroundColor: "var(--bg)" }}
+              className="flex-grow overflow-auto p-2 sm:p-3"
+              style={{
+                backgroundColor: "var(--bg)",
+                overscrollBehavior: "contain",
+              }}
             >
               <ChatBot userId={currentUser?.id || "guest"} />
             </div>

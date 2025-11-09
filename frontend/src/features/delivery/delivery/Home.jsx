@@ -237,7 +237,7 @@ export default function DeliveryDashboard() {
               Order Status
             </h2>
 
-            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {["accepted", "processing", "out_for_delivery", "delivered"].map(
                 (statusKey) => {
                   const val = report.statuses?.[statusKey] || 0;
@@ -298,20 +298,31 @@ export default function DeliveryDashboard() {
               Payment Status
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {["paid", "pending", "unpaid"].map((key) => {
+            {/* موبايل: عمودين / ديسكتوب: 3 أعمدة، والكارد الثالث بالموبايل يمتد عمودين ليصير بالنص */}
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {["paid", "pending", "unpaid"].map((key, i) => {
                 const val = paymentStatus?.[key] ?? 0;
                 let iconColor = "#22c55e";
                 if (key === "pending") iconColor = "#facc15";
                 if (key === "unpaid") iconColor = "#ef4444";
                 const label = key.replace(/_/g, " ");
+
+                // لو هو الكارد الثالث (i === 2): خلِّيه يمتد عمودين على الموبايل ويتوسّط
+                const spanCenterMobile =
+                  i === 2
+                    ? "col-span-2 justify-self-center lg:col-span-1 lg:justify-self-stretch"
+                    : "";
+
                 return (
                   <div
                     key={key}
-                    className="p-4 sm:p-5 rounded-xl text-center shadow border"
+                    className={`p-4 sm:p-5 rounded-xl text-center shadow border ${spanCenterMobile}`}
                     style={{
                       backgroundColor: "var(--bg)",
                       borderColor: "var(--border)",
+                      // اختيارياً: حددي أقصى عرض للكارد الثالث عشان ما يصير أعرض من اللازم وهو بالنص
+                      maxWidth: i === 2 ? "22rem" : "unset",
+                      width: "100%",
                     }}
                   >
                     <FaDollarSign

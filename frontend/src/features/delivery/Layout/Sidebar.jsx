@@ -62,7 +62,7 @@ const navLinks = [
     label: "Orders",
   },
 
-  { to: "chat", icon: <FaComments className="text-lg" />, label: "Chats" },
+  // { to: "chat", icon: <FaComments className="text-lg" />, label: "Chats" },
   { to: "settings", icon: <FaCog className="text-lg" />, label: "Settings" },
 ];
 

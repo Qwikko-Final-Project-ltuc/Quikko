@@ -16,8 +16,9 @@ import {
   FaDollarSign,
   FaTrophy,
   FaMoneyBill,
+  FaChevronDown,
+  FaChevronUp,
 } from "react-icons/fa";
-
 
 import { useSelector } from "react-redux";
 
@@ -27,6 +28,11 @@ export default function TrackingPage() {
   const [estimate, setEstimate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [expandedSections, setExpandedSections] = useState({
+    routeDetails: false,
+    vendors: true,
+    summary: false,
+  });
   const navigate = useNavigate();
   const isDarkMode = useSelector((state) => state.deliveryTheme.darkMode);
 
@@ -187,23 +193,27 @@ export default function TrackingPage() {
   }, [order?.status]);
 
   // =============== UI states ===============
-if (loading) {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--button)] mx-auto mb-4"></div>
-        <p className="text-[var(--text)] text-lg">Loading...</p>
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)] p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--button)] mx-auto mb-4"></div>
+          <p className="text-[var(--text)] text-lg">Loading...</p>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   if (message)
-    return <p className="text-left mt-10 text-[var(--error)]">{message}</p>;
+    return (
+      <p className="text-left mt-10 text-[var(--error)] px-4">{message}</p>
+    );
 
   if (!order)
     return (
-      <p className="text-left mt-10 text-[var(--error)]">❌ Order not found</p>
+      <p className="text-left mt-10 text-[var(--error)] px-4">
+        ❌ Order not found
+      </p>
     );
 
   // =============== Styles helpers ===============
@@ -243,7 +253,6 @@ if (loading) {
   );
 
   const goChatWithVendor = (vendor) => {
-    // نحاول نحصل على اليوزر آي دي للفندور من الداتا
     const vendorUserId =
       Number(
         vendor.vendor_user_id ??
@@ -257,10 +266,8 @@ if (loading) {
       return;
     }
 
-    // اسم الفندور (اختياري لعرضه في صفحة الشات)
     const vendorName = vendor.vendor_name || `Vendor #${vendor.vendor_id}`;
 
-    // الانتقال إلى صفحة الشات وتمرير البيانات
     navigate("/delivery/dashboard/chat", {
       state: {
         vendorUserId,
@@ -270,26 +277,31 @@ if (loading) {
     });
   };
 
+  const toggleSection = (section) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-6 bg-[var(--bg)] text-[var(--text)]">
+    <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 bg-[var(--bg)] text-[var(--text)]">
       {/* ------ Title ------ */}
-      <div className="mb-4">
-        <h2 className="text-left text-3xl font-extrabold mt-8">
+      <div className="mb-4 px-2">
+        <h2 className="text-left text-xl sm:text-2xl md:text-3xl font-extrabold mt-6 sm:mt-8">
           Tracking Order #{order?.order_id || "N/A"}
         </h2>
       </div>
 
       {/* ------ Status Flow (Stepper) ------ */}
       <section
-        className="rounded-2xl shadow-lg border border-[var(--border)] p-5 mb-6"
+        className="rounded-2xl shadow-lg border border-[var(--border)] p-4 sm:p-5 mb-6 mx-2 sm:mx-0"
         style={cardBg}
       >
         <div className="flex items-center gap-2 sm:gap-3">
           {STEPS.map((step, i) => {
             const color = step.color;
             const isFilled = i <= currentIndex;
-
-            // لو الحالة Delivered: آخر دائرة كمان تكون ✓
             const isDeliveredNow = STEPS[currentIndex]?.key === "delivered";
             const showCheck =
               isFilled &&
@@ -317,12 +329,13 @@ if (loading) {
           })}
         </div>
         {/* labels for mobile under the bar */}
-        <div className="sm:hidden mt-3 grid grid-cols-4 gap-2 text-[11px] text-center">
+        <div className="sm:hidden mt-3 grid grid-cols-4 gap-1 text-[10px] xs:text-[11px] text-center">
           {STEPS.map((s, i) => {
             const filled = i <= currentIndex;
             return (
               <span
                 key={s.key}
+                className="truncate px-1"
                 style={{ color: filled ? s.color : "var(--text)" }}
               >
                 {s.label}
@@ -332,32 +345,31 @@ if (loading) {
         </div>
       </section>
 
-      {/* ===== Customer (1/4) + Delivery Route Details (3/4) ===== */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+      {/* ===== Customer + Delivery Route Details ===== */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 items-start mx-2 sm:mx-0">
         {/* Customer Card — 1/4 */}
         <section
-          className="lg:col-span-1 rounded-2xl shadow-lg border border-[var(--border)] p-6 h-full"
+          className="lg:col-span-1 rounded-2xl shadow-lg border border-[var(--border)] p-4 sm:p-6 h-full"
           style={cardBg}
         >
-          <h3 className="flex items-center gap-2 text-xl font-semibold mb-4">
-            <FaUser /> Customer Info
+          <h3 className="flex items-center gap-2 text-lg sm:text-xl font-semibold mb-3 sm:mb-4">
+            <FaUser className="text-sm sm:text-base" /> Customer Info
           </h3>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
-            <p>
-              <span className="opacity-75">Name:</span>{" "}
-              {order?.customer_name || "N/A"}
+          <div className="grid grid-cols-1 gap-3 sm:gap-4">
+            <p className="text-sm sm:text-base">
+              <span className="opacity-75">Name:</span>
+              <br />
+              <strong>{order?.customer_name || "N/A"}</strong>
             </p>
-            <p>
-              <span className="opacity-75">Phone:</span>{" "}
-              {order?.customer_phone || "N/A"}
+            <p className="text-sm sm:text-base">
+              <span className="opacity-75">Phone:</span>
+              <br />
+              <strong>{order?.customer_phone || "N/A"}</strong>
             </p>
-            {/* Address (اختياري) */}
-            {/* <p><span className="opacity-75">Address:</span> ...</p> */}
           </div>
 
-          {/* Email صغير بأسفل الكارد */}
-          <div className="mt-4 pt-3 border-t border-[var(--border)]">
+          <div className="mt-3 sm:mt-4 pt-3 border-t border-[var(--border)]">
             <p className="text-xs opacity-80">
               <span className="opacity-75">Email:</span>{" "}
               {order?.customer_email || "N/A"}
@@ -367,45 +379,65 @@ if (loading) {
 
         {/* Delivery Route Details — 3/4 */}
         <section
-          className="lg:col-span-3 rounded-2xl shadow-lg border border-[var(--border)] p-6"
+          className="lg:col-span-3 rounded-2xl shadow-lg border border-[var(--border)] p-4 sm:p-6"
           style={cardBg}
         >
-          <h3 className="flex items-center gap-2 text-xl font-semibold mb-4">
-            <FaRoute /> Delivery Route Details
-          </h3>
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h3 className="flex items-center gap-2 text-lg sm:text-xl font-semibold">
+              <FaRoute className="text-sm sm:text-base" /> Delivery Route
+              Details
+            </h3>
+            <button
+              onClick={() => toggleSection("routeDetails")}
+              className="lg:hidden p-2 rounded-lg border border-[var(--border)]"
+              style={innerCardBg}
+            >
+              {expandedSections.routeDetails ? (
+                <FaChevronUp />
+              ) : (
+                <FaChevronDown />
+              )}
+            </button>
+          </div>
 
           {/* ملخص سريع */}
           {estimate?.route && (
             <div
-              className="rounded-xl border border-[var(--border)] p-4 mb-4"
+              className="rounded-xl border border-[var(--border)] p-3 sm:p-4 mb-4"
               style={innerCardBg}
             >
-              <p className="text-sm">
-                Total Distance:{" "}
-                <strong>
-                  {estimate.route
-                    .reduce((sum, step) => sum + (step.distance_km || 0), 0)
-                    .toFixed(2)}{" "}
-                  km
-                </strong>
-              </p>
-              <p className="text-sm">
-                Total Delivery Fee:{" "}
-                <strong>
-                  {formatCurrency(
-                    estimate?.total_delivery_fee ??
-                      estimate.route.reduce(
-                        (sum, step) => sum + (step.delivery_fee || 0),
-                        0
-                      )
-                  )}
-                </strong>
-              </p>
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-4 text-xs sm:text-sm">
+                <p>
+                  Distance:{" "}
+                  <strong>
+                    {estimate.route
+                      .reduce((sum, step) => sum + (step.distance_km || 0), 0)
+                      .toFixed(2)}{" "}
+                    km
+                  </strong>
+                </p>
+                <p>
+                  Fee:{" "}
+                  <strong>
+                    {formatCurrency(
+                      estimate?.total_delivery_fee ??
+                        estimate.route.reduce(
+                          (sum, step) => sum + (step.delivery_fee || 0),
+                          0
+                        )
+                    )}
+                  </strong>
+                </p>
+              </div>
             </div>
           )}
 
-          {/* تفاصيل كل Segment */}
-          <div className="space-y-2 text-sm max-h-[240px] overflow-auto pr-1">
+          {/* تفاصيل كل Segment - مخفية على الموبايل/تابلت إلا إذا مفتوحة */}
+          <div
+            className={`${
+              expandedSections.routeDetails ? "block" : "hidden lg:block"
+            } space-y-2 text-sm max-h-[240px] overflow-auto pr-1`}
+          >
             {estimate?.route?.map((segment, idx) => (
               <div
                 key={idx}
@@ -434,12 +466,12 @@ if (loading) {
       {/* ------ Map (Improved) ------ */}
       {routePoints.length >= 2 && (
         <section
-          className="rounded-2xl shadow-lg border border-[var(--border)] p-6 mt-6"
+          className="rounded-2xl shadow-lg border border-[var(--border)] p-4 sm:p-6 mt-6 mx-2 sm:mx-0"
           style={cardBg}
         >
           {/* Top bar: title + quick summary chips + legend */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h3 className="text-xl font-semibold">Delivery Route</h3>
+            <h3 className="text-lg sm:text-xl font-semibold">Delivery Route</h3>
 
             {/* Quick numbers */}
             <div className="flex flex-wrap items-center gap-2">
@@ -461,7 +493,7 @@ if (loading) {
                 return (
                   <>
                     <span
-                      className="px-3 py-1 rounded-full border text-sm"
+                      className="px-2 py-1 rounded-full border text-xs sm:text-sm"
                       style={{
                         borderColor: "var(--border)",
                         background: innerCardBg.background,
@@ -470,7 +502,7 @@ if (loading) {
                       Distance: <strong>{totalDistance} km</strong>
                     </span>
                     <span
-                      className="px-3 py-1 rounded-full border text-sm"
+                      className="px-2 py-1 rounded-full border text-xs sm:text-sm"
                       style={{
                         borderColor: "var(--border)",
                         background: innerCardBg.background,
@@ -479,7 +511,7 @@ if (loading) {
                       Fee: <strong>{formatCurrency(totalFee || 0)}</strong>
                     </span>
                     <span
-                      className="px-3 py-1 rounded-full border text-sm"
+                      className="px-2 py-1 rounded-full border text-xs sm:text-sm"
                       style={{
                         borderColor: "var(--border)",
                         background: innerCardBg.background,
@@ -494,54 +526,57 @@ if (loading) {
           </div>
 
           {/* Legend */}
-          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
             <span
-              className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full border border-[var(--border)]"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-[var(--border)]"
               style={innerCardBg}
             >
-              <FaRoute /> Start
+              <FaRoute className="text-xs" /> Start
             </span>
             <span
-              className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full border border-[var(--border)]"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-[var(--border)]"
               style={innerCardBg}
             >
-              <FaIndustry /> Vendor
+              <FaIndustry className="text-xs" /> Vendor
             </span>
             <span
-              className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full border border-[var(--border)]"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-[var(--border)]"
               style={innerCardBg}
             >
-              <FaUser /> Customer
+              <FaUser className="text-xs" /> Customer
             </span>
           </div>
 
           {/* Route pills */}
           {routePoints.length > 0 && (
-            <div className="flex flex-wrap items-center justify-center gap-3 mt-4 mb-6 text-sm sm:text-base font-medium">
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-4 mb-4 sm:mb-6 text-xs sm:text-sm font-medium">
               {routePoints.map((point, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--border)] shadow-sm"
+                  className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 rounded-full border border-[var(--border)] shadow-sm"
                   style={{ background: isDarkMode ? "#292e2c" : "#ffffff" }}
                   title={point?.label}
                 >
                   <span className="inline-flex items-center">
                     {idx === 0 ? (
-                      <FaRoute aria-label="Delivery Start" />
+                      <FaRoute
+                        className="text-xs"
+                        aria-label="Delivery Start"
+                      />
                     ) : idx === routePoints.length - 1 ? (
-                      <FaUser aria-label="Customer" />
+                      <FaUser className="text-xs" aria-label="Customer" />
                     ) : (
-                      <FaIndustry aria-label="Vendor" />
+                      <FaIndustry className="text-xs" aria-label="Vendor" />
                     )}
                   </span>
 
-                  <span className="truncate max-w-[180px] sm:max-w-[260px]">
+                  <span className="truncate max-w-[80px] xs:max-w-[100px] sm:max-w-[140px] md:max-w-[180px] lg:max-w-[260px]">
                     {point?.label || "—"}
                   </span>
 
                   {idx < routePoints.length - 1 && (
                     <span className="mx-1 text-[var(--primary)] inline-flex items-center">
-                      <FaRoute aria-hidden="true" />
+                      <FaRoute className="text-xs" aria-hidden="true" />
                     </span>
                   )}
                 </div>
@@ -550,175 +585,186 @@ if (loading) {
           )}
 
           {/* Map */}
-          <div className="rounded-xl overflow-hidden border border-[var(--border)]">
+          <div className="rounded-xl overflow-hidden border border-[var(--border)] h-[300px] sm:h-[400px]">
             <MapView
               routePoints={routePoints}
               drawPolyline={true}
               polyline={estimate?.polyline}
             />
           </div>
-
-          {/* Collapsible Details */}
-          {/* <RouteDetails
-            estimate={estimate}
-            innerCardBg={innerCardBg}
-            formatCurrency={formatCurrency}
-          /> */}
         </section>
       )}
 
       {/* ------ Vendors + Products (Cards with images + Chat) ------ */}
       <section
-        className="rounded-2xl shadow-lg border border-[var(--border)] p-6 mt-6"
+        className="rounded-2xl shadow-lg border border-[var(--border)] p-4 sm:p-6 mt-6 mx-2 sm:mx-0"
         style={cardBg}
       >
-        <h3 className="flex items-center gap-2 text-xl font-semibold mb-4">
-          <FaIndustry /> Vendor - Product Info
-        </h3>
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <h3 className="flex items-center gap-2 text-lg sm:text-xl font-semibold">
+            <FaIndustry className="text-sm sm:text-base" /> Vendor - Product
+            Info
+          </h3>
+          <button
+            onClick={() => toggleSection("vendors")}
+            className="lg:hidden p-2 rounded-lg border border-[var(--border)]"
+            style={innerCardBg}
+          >
+            {expandedSections.vendors ? <FaChevronUp /> : <FaChevronDown />}
+          </button>
+        </div>
 
-        {vendorsGrouped.length > 0 ? (
-          vendorsGrouped.map(({ vendor, products }, idx) => (
-            <div
-              key={vendor.vendor_id}
-              className="p-5 rounded-2xl border border-[var(--border)] shadow-sm hover:shadow-md transition-shadow duration-300 mb-5"
-              style={innerCardBg}
-            >
-              {/* رأس الكارد: الاسم + الإيميل/الموبايل + زر الشات */}
-              <div className="flex flex-col gap-3 mb-4">
-                {/* السطر الأول: اسم المتجر و Chips على اليمين */}
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                  <h4 className="text-lg font-bold flex items-center gap-2">
-                    {vendor.vendor_name}
-                  </h4>
+        {vendorsGrouped.length > 0 && expandedSections.vendors
+          ? vendorsGrouped.map(({ vendor, products }, idx) => (
+              <div
+                key={vendor.vendor_id}
+                className="p-4 sm:p-5 rounded-2xl border border-[var(--border)] shadow-sm hover:shadow-md transition-shadow duration-300 mb-4"
+                style={innerCardBg}
+              >
+                {/* رأس الكارد: الاسم + الإيميل/الموبايل + زر الشات */}
+                <div className="flex flex-col gap-3 mb-4">
+                  {/* السطر الأول: اسم المتجر و Chips على اليمين */}
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <h4 className="text-base sm:text-lg font-bold flex items-center gap-2">
+                      {vendor.vendor_name}
+                    </h4>
 
-                  {/* Chips: المسافة/الرسوم/المدة/الترتيب */}
-                  <div className="flex flex-wrap items-center gap-2 text-sm font-semibold">
-                    <span className="px-3 py-1 rounded-full border border-[var(--border)] inline-flex items-center gap-2">
-                      <FaMapMarkerAlt /> Distance:{" "}
-                      {vendor.distance_km != null
-                        ? vendor.distance_km.toFixed(2)
-                        : "—"}{" "}
-                      km
-                    </span>
-                    <span className="px-3 py-1 rounded-full border border-[var(--border)] inline-flex items-center gap-2">
-                      <FaDollarSign /> Fee:{" "}
-                      {formatCurrency(vendor.delivery_fee || 0)}
-                    </span>
-                    <span className="px-3 py-1 rounded-full border border-[var(--border)] inline-flex items-center gap-2">
-                      <FaClock /> Duration:{" "}
-                      {vendor.duration_min != null
-                        ? `${vendor.duration_min} min`
-                        : "—"}
-                    </span>
-                    <span className="px-3 py-1 rounded-full border border-[var(--border)] inline-flex items-center gap-2">
-                      <FaTrophy /> Rank: {idx + 1}
-                    </span>
-                  </div>
-                </div>
-
-                {/* السطر الثاني: ايميل/موبايل على اليسار + زر الشات على اليمين */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="flex flex-wrap items-center gap-4 text-sm">
-                    <a
-                      href={
-                        vendor.vendor_email
-                          ? `mailto:${vendor.vendor_email}`
-                          : undefined
-                      }
-                      className="inline-flex items-center gap-2 hover:underline"
-                      style={{ color: "var(--text)" }}
-                      title="Email"
-                    >
-                      <FaEnvelope /> {vendor.vendor_email || "N/A"}
-                    </a>
-                    <a
-                      href={
-                        vendor.vendor_phone
-                          ? `tel:${vendor.vendor_phone}`
-                          : undefined
-                      }
-                      className="inline-flex items-center gap-2 hover:underline"
-                      style={{ color: "var(--text)" }}
-                      title="Phone"
-                    >
-                      <FaPhone /> {vendor.vendor_phone || "N/A"}
-                    </a>
-                  </div>
-
-                  <button
-                    onClick={() => goChatWithVendor(vendor)}
-                    className="px-4 py-2 rounded-xl font-semibold shadow-sm transition-transform hover:scale-105 inline-flex items-center gap-2"
-                    style={{
-                      background: "var(--button)",
-                      color: "#fff",
-                      border: "1px solid var(--button)",
-                    }}
-                    title="Chat with vendor"
-                  >
-                    <FaComments /> Chat
-                  </button>
-                </div>
-              </div>
-
-              {/* المنتجات + الصور */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {products.map((item) => (
-                  <div
-                    key={item.order_item_id}
-                    className="flex gap-4 p-3 rounded-xl border border-[var(--border)]"
-                    style={innerCardBg}
-                  >
-                    {item.images?.[0] ? (
-                      <img
-                        src={item.images[0]}
-                        alt={item.product_name}
-                        className="w-28 h-28 object-cover rounded-lg border border-[var(--border)]"
-                      />
-                    ) : (
-                      <div className="w-28 h-28 rounded-lg border border-[var(--border)] flex items-center justify-center text-xs opacity-70">
-                        No Image
-                      </div>
-                    )}
-
-                    <div className="flex-1 space-y-1">
-                      <p className="font-semibold">{item.product_name}</p>
-
-                      {item.variant && (
-                        <p className="text-sm opacity-80">
-                          {typeof item.variant === "object"
-                            ? Object.entries(item.variant)
-                                .map(([k, v]) => `${k}: ${v}`)
-                                .join(", ")
-                            : item.variant}
-                        </p>
-                      )}
-
-                      <p>
-                        Quantity: {item.quantity} ×{" "}
-                        {formatCurrency(item.item_price)}
-                      </p>
-
-                      <p className="font-semibold">
-                        Total:{" "}
-                        {formatCurrency(
-                          (item.quantity || 0) * (item.item_price || 0)
-                        )}
-                      </p>
+                    {/* Chips: المسافة/الرسوم/المدة/الترتيب */}
+                    <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-xs sm:text-sm font-semibold">
+                      <span className="px-2 py-1 rounded-full border border-[var(--border)] inline-flex items-center gap-1">
+                        <FaMapMarkerAlt className="text-xs" />
+                        <span className="hidden xs:inline">Dist:</span>
+                        {vendor.distance_km != null
+                          ? vendor.distance_km.toFixed(1)
+                          : "—"}
+                        km
+                      </span>
+                      <span className="px-2 py-1 rounded-full border border-[var(--border)] inline-flex items-center gap-1">
+                        <FaDollarSign className="text-xs" />
+                        {formatCurrency(vendor.delivery_fee || 0)}
+                      </span>
+                      <span className="px-2 py-1 rounded-full border border-[var(--border)] inline-flex items-center gap-1">
+                        <FaClock className="text-xs" />
+                        {vendor.duration_min != null
+                          ? `${vendor.duration_min}m`
+                          : "—"}
+                      </span>
+                      <span className="px-2 py-1 rounded-full border border-[var(--border)] inline-flex items-center gap-1">
+                        <FaTrophy className="text-xs" /> #{idx + 1}
+                      </span>
                     </div>
                   </div>
-                ))}
+
+                  {/* السطر الثاني: ايميل/موبايل على اليسار + زر الشات على اليمين */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex flex-col xs:flex-row xs:items-center gap-2 sm:gap-4 text-xs sm:text-sm">
+                      <a
+                        href={
+                          vendor.vendor_email
+                            ? `mailto:${vendor.vendor_email}`
+                            : undefined
+                        }
+                        className="inline-flex items-center gap-1 hover:underline"
+                        style={{ color: "var(--text)" }}
+                        title="Email"
+                      >
+                        <FaEnvelope className="text-xs" />
+                        <span className="truncate max-w-[120px] sm:max-w-none">
+                          {vendor.vendor_email || "N/A"}
+                        </span>
+                      </a>
+                      <a
+                        href={
+                          vendor.vendor_phone
+                            ? `tel:${vendor.vendor_phone}`
+                            : undefined
+                        }
+                        className="inline-flex items-center gap-1 hover:underline"
+                        style={{ color: "var(--text)" }}
+                        title="Phone"
+                      >
+                        <FaPhone className="text-xs" />
+                        <span className="truncate max-w-[100px] sm:max-w-none">
+                          {vendor.vendor_phone || "N/A"}
+                        </span>
+                      </a>
+                    </div>
+
+                    <button
+                      onClick={() => goChatWithVendor(vendor)}
+                      className="px-3 py-2 rounded-xl font-semibold shadow-sm transition-transform hover:scale-105 inline-flex items-center gap-2 text-xs sm:text-sm w-full sm:w-auto justify-center"
+                      style={{
+                        background: "var(--button)",
+                        color: "#fff",
+                        border: "1px solid var(--button)",
+                      }}
+                      title="Chat with vendor"
+                    >
+                      <FaComments className="text-xs" /> Chat
+                    </button>
+                  </div>
+                </div>
+
+                {/* المنتجات + الصور */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                  {products.map((item) => (
+                    <div
+                      key={item.order_item_id}
+                      className="flex gap-3 p-3 rounded-xl border border-[var(--border)]"
+                      style={innerCardBg}
+                    >
+                      {item.images?.[0] ? (
+                        <img
+                          src={item.images[0]}
+                          alt={item.product_name}
+                          className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg border border-[var(--border)]"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg border border-[var(--border)] flex items-center justify-center text-xs opacity-70">
+                          No Image
+                        </div>
+                      )}
+
+                      <div className="flex-1 space-y-1 text-xs sm:text-sm">
+                        <p className="font-semibold truncate">
+                          {item.product_name}
+                        </p>
+
+                        {item.variant && (
+                          <p className="opacity-80 text-xs">
+                            {typeof item.variant === "object"
+                              ? Object.entries(item.variant)
+                                  .map(([k, v]) => `${k}: ${v}`)
+                                  .join(", ")
+                              : item.variant}
+                          </p>
+                        )}
+
+                        <p>
+                          Qty: {item.quantity} ×{" "}
+                          {formatCurrency(item.item_price)}
+                        </p>
+
+                        <p className="font-semibold">
+                          Total:{" "}
+                          {formatCurrency(
+                            (item.quantity || 0) * (item.item_price || 0)
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))
-        ) : (
-          <p className="text-sm opacity-70">No vendors found.</p>
-        )}
+            ))
+          : expandedSections.vendors && (
+              <p className="text-sm opacity-70">No vendors found.</p>
+            )}
       </section>
 
       {/* ------ Order Summary ------ */}
       {!!order?.items?.length &&
         (() => {
-          // Helpers
           const payment = String(order?.payment_status || "").toLowerCase();
           const paymentUI = {
             label:
@@ -766,119 +812,129 @@ if (loading) {
 
           return (
             <section
-              className="rounded-2xl shadow-lg border border-[var(--border)] p-6 mt-6"
+              className="rounded-2xl shadow-lg border border-[var(--border)] p-4 sm:p-6 mt-6 mx-2 sm:mx-0"
               style={cardBg}
             >
-              {/* Header + Chips */}
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <h3 className="text-xl font-semibold">Order Summary</h3>
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h3 className="text-lg sm:text-xl font-semibold">
+                  Order Summary
+                </h3>
+                <button
+                  onClick={() => toggleSection("summary")}
+                  className="lg:hidden p-2 rounded-lg border border-[var(--border)]"
+                  style={innerCardBg}
+                >
+                  {expandedSections.summary ? (
+                    <FaChevronUp />
+                  ) : (
+                    <FaChevronDown />
+                  )}
+                </button>
+              </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {/* Items count */}
-                  <span
-                    className="px-3 py-1 rounded-full border text-sm"
-                    style={{
-                      borderColor: "var(--border)",
-                      background: innerCardBg.background,
-                    }}
-                  >
-                    Items in this order: <strong>{itemsCount}</strong>
-                  </span>
+              {expandedSections.summary && (
+                <>
+                  {/* Header + Chips */}
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap gap-2">
+                      {/* Items count */}
+                      <span
+                        className="px-2 py-1 rounded-full border text-xs sm:text-sm"
+                        style={{
+                          borderColor: "var(--border)",
+                          background: innerCardBg.background,
+                        }}
+                      >
+                        Items: <strong>{itemsCount}</strong>
+                      </span>
 
-                  {/* Vendors count */}
-                  <span
-                    className="px-3 py-1 rounded-full border text-sm"
-                    style={{
-                      borderColor: "var(--border)",
-                      background: innerCardBg.background,
-                    }}
-                  >
-                    Vendors: <strong>{vendorsGrouped.length}</strong>
-                  </span>
+                      {/* Vendors count */}
+                      <span
+                        className="px-2 py-1 rounded-full border text-xs sm:text-sm"
+                        style={{
+                          borderColor: "var(--border)",
+                          background: innerCardBg.background,
+                        }}
+                      >
+                        Vendors: <strong>{vendorsGrouped.length}</strong>
+                      </span>
 
-                  {/* Payment status badge */}
-                  <span
-                    className="px-3 py-1 rounded-full text-sm font-semibold"
-                    style={{
-                      background: paymentUI.bg,
-                      color: "#fff",
-                      border: `1px solid ${paymentUI.bg}`,
-                    }}
-                    title="Payment Status"
+                      {/* Payment status badge */}
+                      <span
+                        className="px-2 py-1 rounded-full text-xs sm:text-sm font-semibold"
+                        style={{
+                          background: paymentUI.bg,
+                          color: "#fff",
+                          border: `1px solid ${paymentUI.bg}`,
+                        }}
+                        title="Payment Status"
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          <FaMoneyBill className="text-xs" /> {paymentUI.label}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Shipping address card */}
+                  <div
+                    className="mt-4 rounded-xl border border-[var(--border)] p-3 sm:p-4"
+                    style={innerCardBg}
                   >
-                    <span className="inline-flex items-center gap-2">
-                      <FaMoneyBill /> {paymentUI.label}
-                    </span>
-                  </span>
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <div className="mt-1">
+                        <FaMapMarkerAlt className="text-sm" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs sm:text-sm opacity-70 mb-1">
+                          Shipping Address
+                        </div>
+                        <div className="text-sm sm:text-base break-words">
+                          {shippingDisplay}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Totals row */}
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <div className="text-xs sm:text-sm opacity-70">
+                        Products Total
+                      </div>
+                      <div className="text-xl sm:text-2xl font-bold mt-1">
+                        {formatCurrency(productsTotal)}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-xs sm:text-sm opacity-70">
+                        Order Total (with Shipping)
+                      </div>
+                      <div className="text-xl sm:text-2xl font-bold mt-1 text-[var(--primary)]">
+                        {formatCurrency(totalWithShipping)}
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Created at */}
-                  <span
-                    className="px-3 py-1 rounded-full border text-sm"
-                    style={{
-                      borderColor: "var(--border)",
-                      background: innerCardBg.background,
-                    }}
-                    title="Order Date"
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      <FaClock /> {createdAtStr}
-                    </span>
-                  </span>
-                </div>
-              </div>
-
-              {/* Shipping address card */}
-              <div
-                className="mt-4 rounded-xl border border-[var(--border)] p-4"
-                style={innerCardBg}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="mt-1">
-                    <FaMapMarkerAlt />
+                  <div className="mt-3 pt-3 border-t border-[var(--border)]">
+                    <p className="text-xs opacity-70">
+                      <span className="opacity-75">Order Date:</span>{" "}
+                      {createdAtStr}
+                    </p>
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-sm opacity-70 mb-1">
-                      Shipping Address
-                    </div>
-                    <div className="text-base">{shippingDisplay}</div>
-
-                    {/* لو بدك تبيني الإحداثيات بشكل خفيف */}
-                    {addrObj?.latitude && addrObj?.longitude && (
-                      <div className="text-xs opacity-70 mt-1">
-                        ({addrObj.latitude}, {addrObj.longitude})
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Totals row */}
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div>
-                  <div className="text-sm opacity-70">Products Total</div>
-                  <div className="text-2xl font-bold mt-1">
-                    {formatCurrency(productsTotal)}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-sm opacity-70">
-                    Order Total (with Shipping)
-                  </div>
-                  <div className="text-2xl font-bold mt-1 text-[var(--primary)]">
-                    {formatCurrency(totalWithShipping)}
-                  </div>
-                </div>
-              </div>
+                </>
+              )}
             </section>
           );
         })()}
 
       {/* Back (centered) */}
-      <div className="mt-6 flex justify-center">
+      <div className="mt-6 flex justify-center px-2">
         <button
           onClick={() => navigate(-1)}
-          className="px-6 py-3 rounded-xl hover:scale-105 transition-transform duration-200 bg-[var(--button)] text-white"
+          className="px-6 py-3 rounded-xl hover:scale-105 transition-transform duration-200 bg-[var(--button)] text-white w-full sm:w-auto text-sm sm:text-base"
         >
           Back to Orders
         </button>
@@ -886,4 +942,3 @@ if (loading) {
     </div>
   );
 }
-

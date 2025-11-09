@@ -198,6 +198,23 @@ const OrdersPage = () => {
     dispatch(setCurrentPage(1));
   };
 
+  // إصلاح الـ reorder
+  const handleReorder = async (orderId) => {
+    try {
+      const action = await dispatch(reorderOrder(orderId)).unwrap();
+      navigate(`/customer/order-details/${action.id}`, {
+        state: { reorder: true },
+      });
+    } catch (err) {
+      alert("Failed to reorder: " + err.message);
+    }
+  };
+
+  // إصلاح النقر على المنتج
+  const handleProductClick = (productId) => {
+    navigate(`/customer/product/${productId}`);
+  };
+
   return (
     <div
       className={`min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors duration-300`}
@@ -413,6 +430,8 @@ const OrdersPage = () => {
                             ? "bg-green-500/20 text-green-600 border border-green-500/30"
                             : order.status === "pending"
                             ? "bg-yellow-500/20 text-yellow-600 border border-yellow-500/30"
+                            : order.status === "awaiting_customer_decision"
+                            ? "bg-orange-500/20 text-orange-600 border border-orange-500/30"
                             : "bg-blue-500/20 text-blue-600 border border-blue-500/30"
                         }`}
                       >
@@ -469,18 +488,7 @@ const OrdersPage = () => {
                               ? "bg-[var(--textbox)] text-[var(--button)] hover:bg-[var(--button)] hover:text-white"
                               : "bg-white text-[var(--button)] border border-[var(--button)] hover:bg-[var(--button)] hover:text-white"
                           }`}
-                          onClick={async () => {
-                            try {
-                              const action = await dispatch(
-                                reorderOrder(order.id)
-                              ).unwrap();
-                              navigate(`/customer/order-details/${action.id}`, {
-                                state: { reorder: true },
-                              });
-                            } catch (err) {
-                              alert("Failed to reorder: " + err.message);
-                            }
-                          }}
+                          onClick={() => handleReorder(order.id)}
                         >
                           <svg
                             className="w-3 h-3"
@@ -658,8 +666,7 @@ const OrdersPage = () => {
                           <div
                             key={item.product_id}
                             className="relative flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] hover:border-[var(--button)]/50 transition-all duration-200 cursor-pointer"
-                            // 🔇 تم تعطيل النقل إلى صفحة المنتج بناءً على طلبك
-                            // onClick={() => navigate(`/customer/product/${item.product_id}`)}
+                            onClick={() => handleProductClick(item.product_id)}
                           >
                             {/* شارة الحالة أعلى يمين الكارد */}
                             <span
