@@ -14,6 +14,22 @@ const CartDetailPage = () => {
   const themeMode = useSelector((state) => state.customerTheme.mode);
   const [groupedItems, setGroupedItems] = useState({});
   const token = localStorage.getItem("token");
+  const [modalMsg, setModalMsg] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [redirectToLogin, setRedirectToLogin] = useState(false);
+
+  const showModal = (msg, shouldRedirect = false) => {
+    setModalMsg(msg);
+    setModalVisible(true);
+    setRedirectToLogin(shouldRedirect);
+  };
+
+  const closeModal = () => {
+    setModalVisible(false);
+    if (redirectToLogin) {
+      navigate("/customer/login");
+    }
+  };
 
   // Fetch cart from server
   useEffect(() => {
@@ -61,10 +77,10 @@ const CartDetailPage = () => {
   const handleCheckout = async () => {
     try {
       if (!token) {
-        alert("Please log in to proceed to checkout.");
-        return navigate("/customer/login");
+        showModal("Please log in to proceed to checkout.", true);
+        return;
       }
-      if (!currentCart?.id) return alert("Cart not loaded yet");
+      if (!currentCart?.id) return showModal("Cart not loaded yet");
       navigate(`/customer/order-details/${currentCart.id}`, { state: { cartId: currentCart.id } });
     } catch (err) {
       console.error("Checkout failed", err);
@@ -72,39 +88,59 @@ const CartDetailPage = () => {
   };
 
   return (
-    <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-white'} transition-colors duration-300`}>
-      {/* Header Section with Gradient */}
-      <div 
-        className="w-full text-left pt-4" 
-        style={{ 
-          background: themeMode === 'dark' 
-            ? `linear-gradient(to bottom, 
-                rgba(0, 0, 0, 0.21) 0%, 
-                var(--bg) 100%)`
-            : `linear-gradient(to bottom, 
-                rgba(113, 117, 116, 0.12) 0%, 
-                var(--bg) 100%)`
-        }}
-      >
+    <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-[var(--textbox)]'} transition-colors duration-300`}>
+      {/* Modal */}
+      {modalVisible && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
+          <div className={`p-6 rounded-xl shadow-xl max-w-sm w-full text-center ${
+            themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-white'
+          }`}>
+            <p className={`mb-4 ${themeMode === 'dark' ? 'text-white' : 'text-gray-800'}`}>{modalMsg}</p>
+            <button
+              onClick={closeModal}
+              className="bg-[var(--button)] text-white px-6 py-2 rounded-lg hover:bg-[#015c40] font-semibold transition-colors duration-300"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Header Section - بدون غرادينت */}
+      <div className="h-6"></div>
+      <div className={`w-full text-left  ${
+        themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-[var(--textbox)]'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className={`text-4xl font-bold mb-3 pt-8 ${themeMode === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+          <h1 className={`text-3xl sm:text-4xl font-bold mb-3 pt-6 sm:pt-8 ${
+            themeMode === 'dark' ? 'text-white' : 'text-gray-900'
+          }`}>
             Shopping Cart
           </h1>
-          <p className={`${themeMode === 'dark' ? 'text-gray-300' : 'text-gray-600'} max-w-2xl text-lg`}>
+          <p className={`${
+            themeMode === 'dark' ? 'text-gray-300' : 'text-gray-600'
+          } max-w-2xl text-base sm:text-lg`}>
             Review your items and proceed to checkout
           </p>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        
         {/* Header Actions */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
             {/* Cart Stats Badge */}
             {currentCart?.items?.length > 0 && (
-              <div className={`px-4 py-2 rounded-2xl ${themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-gray-100'} shadow-lg border ${themeMode === 'dark' ? 'border-[var(--border)]' : 'border-gray-200'}`}>
-                <span className={`font-semibold ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}`}>
+              <div className={`px-3 sm:px-4 py-2 rounded-2xl ${
+                themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-gray-100'
+              } shadow-lg border ${
+                themeMode === 'dark' ? 'border-[var(--border)]' : 'border-gray-200'
+              }`}>
+                <span className={`font-semibold text-sm sm:text-base ${
+                  themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'
+                }`}>
                   {totalItemsCount} {totalItemsCount === 1 ? 'item' : 'items'} • ${total.toFixed(2)}
                 </span>
               </div>
@@ -113,9 +149,9 @@ const CartDetailPage = () => {
           
           <button
             onClick={handleAddProduct}
-            className="bg-[var(--button)] text-white px-6 py-3 rounded-xl hover:bg-[#015c40] transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 font-semibold"
+            className="bg-[var(--button)] text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl hover:bg-[#015c40] transition-all duration-300 flex items-center gap-2 sm:gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 font-semibold text-sm sm:text-base w-full sm:w-auto justify-center"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             Add More Products
@@ -124,10 +160,16 @@ const CartDetailPage = () => {
 
         {/* Compact Cart Stats */}
         {currentCart?.items?.length > 0 && (
-          <div className={`mb-8 p-3 rounded-xl ${themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-gray-50'} border ${themeMode === 'dark' ? 'border-[var(--border)]' : 'border-gray-200'}`}>
-            <div className="flex items-center justify-center gap-6 text-sm">
+          <div className={`mb-6 sm:mb-8 p-3 sm:p-4 rounded-xl ${
+            themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-gray-50'
+          } border ${
+            themeMode === 'dark' ? 'border-[var(--border)]' : 'border-gray-200'
+          }`}>
+            <div className="flex items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm">
               <div className="flex items-center gap-2">
-                <span className={`font-semibold ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-gray-800'}`}>
+                <span className={`font-semibold ${
+                  themeMode === 'dark' ? 'text-[var(--text)]' : 'text-gray-800'
+                }`}>
                   {currentCart.items.length}
                 </span>
                 <span className={`${themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Products</span>
@@ -136,7 +178,9 @@ const CartDetailPage = () => {
               <div className="w-px h-4 bg-gray-400/30"></div>
               
               <div className="flex items-center gap-2">
-                <span className={`font-semibold ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-gray-800'}`}>
+                <span className={`font-semibold ${
+                  themeMode === 'dark' ? 'text-[var(--text)]' : 'text-gray-800'
+                }`}>
                   {totalItemsCount}
                 </span>
                 <span className={`${themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Items</span>
@@ -145,7 +189,9 @@ const CartDetailPage = () => {
               <div className="w-px h-4 bg-gray-400/30"></div>
               
               <div className="flex items-center gap-2">
-                <span className={`font-semibold ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-gray-800'}`}>
+                <span className={`font-semibold ${
+                  themeMode === 'dark' ? 'text-[var(--text)]' : 'text-gray-800'
+                }`}>
                   {Object.keys(groupedItems).length}
                 </span>
                 <span className={`${themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Vendors</span>
@@ -156,24 +202,36 @@ const CartDetailPage = () => {
 
         {/* Empty State */}
         {Object.keys(groupedItems).length === 0 ? (
-          <div className={`text-center py-20 rounded-3xl ${themeMode === 'dark' ? 'bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)]' : 'bg-gray-50'} shadow-2xl border-2 ${themeMode === 'dark' ? 'border-[var(--border)]' : 'border-gray-200'}`}>
-            <div className="max-w-md mx-auto">
-              <div className={`w-24 h-24 ${themeMode === 'dark' ? 'bg-[var(--button)]/10' : 'bg-[var(--button)]/5'} rounded-full flex items-center justify-center mx-auto mb-6`}>
-                <svg className={`w-12 h-12 ${themeMode === 'dark' ? 'text-[var(--button)]' : 'text-[var(--button)]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className={`text-center py-12 sm:py-20 rounded-2xl sm:rounded-3xl ${
+            themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-white'
+          } shadow-2xl border-2 ${
+            themeMode === 'dark' ? 'border-[var(--border)]' : 'border-gray-200'
+          }`}>
+            <div className="max-w-md mx-auto px-4">
+              <div className={`w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 ${
+                themeMode === 'dark' ? 'bg-[var(--button)]/10' : 'bg-[var(--button)]/5'
+              } rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6`}>
+                <svg className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 ${
+                  themeMode === 'dark' ? 'text-[var(--button)]' : 'text-[var(--button)]'
+                }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <h3 className={`text-2xl font-bold mb-4 ${themeMode === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+              <h3 className={`text-xl sm:text-2xl font-bold mb-3 sm:mb-4 ${
+                themeMode === 'dark' ? 'text-white' : 'text-gray-900'
+              }`}>
                 Your Cart is Empty
               </h3>
-              <p className={`text-lg mb-8 ${themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+              <p className={`text-base sm:text-lg mb-6 sm:mb-8 ${
+                themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'
+              }`}>
                 Start adding products to your cart to see them here
               </p>
               <button
                 onClick={handleAddProduct}
-                className="bg-[var(--button)] text-white px-8 py-4 rounded-xl hover:bg-[#015c40] transition-all duration-300 inline-flex items-center gap-3 font-semibold hover:scale-105 hover:shadow-2xl"
+                className="bg-[var(--button)] text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl hover:bg-[#015c40] transition-all duration-300 inline-flex items-center gap-2 sm:gap-3 font-semibold hover:scale-105 hover:shadow-2xl text-sm sm:text-base"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
                 Browse Products
@@ -182,38 +240,42 @@ const CartDetailPage = () => {
           </div>
         ) : (
           /* Enhanced Cart Content */
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Vendors Sections */}
             {Object.entries(groupedItems).map(([vendor, vendorData]) => (
               <div 
                 key={vendor} 
-                className={`rounded-2xl p-6 shadow-lg border-2 transition-all duration-300 ${
+                className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border-2 transition-all duration-300 ${
                   themeMode === 'dark' 
-                    ? 'bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)] hover:border-[var(--button)]/50' 
-                    : 'bg-[var(--textbox)] border-gray-200 hover:border-[var(--button)]/30 hover:shadow-xl'
+                    ? 'bg-[var(--div)] border-[var(--border)] hover:border-[var(--button)]/50' 
+                    : 'bg-white border-gray-200 hover:border-[var(--button)]/30 hover:shadow-xl'
                 }`}
               >
                 {/* Vendor Header */}
-                <div className="flex items-center gap-4 mb-6 pb-4 border-b border-[var(--border)]">
-                  <div className={`p-3 rounded-xl ${
+                <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-[var(--border)]">
+                  <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl ${
                     themeMode === 'dark' 
                       ? 'bg-[var(--button)]/10 text-[var(--button)]' 
                       : 'bg-[var(--button)]/5 text-[var(--button)]'
                   }`}>
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h2 className={`text-xl font-bold ${themeMode === 'dark' ? 'text-white' : 'text-gray-900'}`}>{vendor}</h2>
-                    <p className={`text-sm ${themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <h2 className={`text-lg sm:text-xl font-bold ${
+                      themeMode === 'dark' ? 'text-white' : 'text-gray-900'
+                    }`}>{vendor}</h2>
+                    <p className={`text-xs sm:text-sm ${
+                      themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
                       {vendorData.items.length} product{vendorData.items.length !== 1 ? 's' : ''} • {vendorData.items.reduce((sum, item) => sum + (item.quantity || 0), 0)} items
                     </p>
                   </div>
                 </div>
 
                 {/* Items List */}
-                <div className="space-y-4 text-[var(--text)]">
+                <div className="space-y-3 sm:space-y-4 text-[var(--text)]">
                   {vendorData.items.map((item) => (
                     <CartItem key={item.id} item={item} />
                   ))}
@@ -222,33 +284,37 @@ const CartDetailPage = () => {
             ))}
 
             {/* Enhanced Checkout Section */}
-            <div className={`rounded-2xl p-6 shadow-2xl border-2 sticky bottom-6 ${
+            <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-2xl border-2 sticky bottom-4 sm:bottom-6 ${
               themeMode === 'dark' 
-                ? 'bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)]' 
-                : 'bg-[var(--textbox)] border-gray-200'
+                ? 'bg-[var(--div)] border-[var(--border)]' 
+                : 'bg-white border-gray-200'
             }`}>
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6">
                 {/* Total Price */}
                 <div className="text-center lg:text-left">
-                  <p className={`text-3xl font-bold ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}`}>
+                  <p className={`text-2xl sm:text-3xl font-bold ${
+                    themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'
+                  }`}>
                     ${total.toFixed(2)}
                   </p>
-                  <p className={`text-sm ${themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <p className={`text-xs sm:text-sm ${
+                    themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
                     Total for {totalItemsCount} item{totalItemsCount !== 1 ? 's' : ''}
                   </p>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-end">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-end">
                   <button
                     onClick={handleAddProduct}
-                    className={`px-8 py-3 rounded-xl border-2 transition-all duration-300 font-semibold ${
+                    className={`px-4 sm:px-6 lg:px-8 py-2 sm:py-3 rounded-xl border-2 transition-all duration-300 font-semibold text-sm sm:text-base ${
                       themeMode === 'dark' 
                         ? 'border-[var(--border)] text-[var(--text)] hover:bg-[var(--hover)] hover:border-[var(--button)]' 
                         : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-[var(--button)]'
-                    } hover:scale-105 flex items-center gap-3`}
+                    } hover:scale-105 flex items-center gap-2 sm:gap-3 justify-center`}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                     Add More Items
@@ -256,9 +322,9 @@ const CartDetailPage = () => {
                   
                   <button
                     onClick={handleCheckout}
-                    className="bg-[var(--button)] text-white px-8 py-3 rounded-xl hover:bg-[#015c40] transition-all duration-300 font-semibold flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105"
+                    className="bg-[var(--button)] text-white px-4 sm:px-6 lg:px-8 py-2 sm:py-3 rounded-xl hover:bg-[#015c40] transition-all duration-300 font-semibold flex items-center gap-2 sm:gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 text-sm sm:text-base justify-center"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     Proceed to Checkout
@@ -269,6 +335,7 @@ const CartDetailPage = () => {
           </div>
         )}
       </div>
+      <div className="h-6"></div>
     </div>
   );
 };

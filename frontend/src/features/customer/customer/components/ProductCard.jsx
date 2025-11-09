@@ -23,41 +23,34 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
   const navigate = useNavigate();
   const themeMode = useSelector((state) => state.customerTheme.mode); 
 
-  // تحويل الصور إذا كانت نص JSON
   const images = Array.isArray(product.images)
     ? product.images
     : typeof product.images === "string"
     ? JSON.parse(product.images)
     : [];
 
-  // تحديد عدد النقاط المرئية (بحد أقصى 5)
   const MAX_DOTS = 5;
   const totalImages = images.length;
   
-  // حساب النقاط المرئية فقط
   const getVisibleDots = () => {
     if (totalImages <= MAX_DOTS) {
       return Array.from({ length: totalImages }, (_, i) => i);
     }
     
-    // إذا كان هناك أكثر من 5 صور، نعرض نقاط ذكية
     const dots = [];
     const halfMax = Math.floor(MAX_DOTS / 2);
     
     if (currentImage <= halfMax) {
-      // في البداية
       for (let i = 0; i < MAX_DOTS - 1; i++) {
         dots.push(i);
       }
       dots.push(totalImages - 1); // النقطة الأخيرة
     } else if (currentImage >= totalImages - 1 - halfMax) {
-      // في النهاية
       dots.push(0); // النقطة الأولى
       for (let i = totalImages - MAX_DOTS + 1; i < totalImages; i++) {
         dots.push(i);
       }
     } else {
-      // في المنتصف
       dots.push(0); // النقطة الأولى
       for (let i = currentImage - 1; i <= currentImage + 1; i++) {
         if (i > 0 && i < totalImages - 1) {
@@ -388,15 +381,13 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
           />
         )}
       </div>
-      
-      {/* Toast Notification */}
-      {toast && (
+      {/* {toast && (
         <Toast
           message={toast.message}
           type={toast.type}
           onClose={() => setToast(null)}
         />
-      )}
+      )} */}
     </>
   );
 };

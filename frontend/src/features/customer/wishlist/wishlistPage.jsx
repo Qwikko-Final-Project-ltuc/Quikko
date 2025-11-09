@@ -4,7 +4,7 @@ import ProductCard from "../customer/components/ProductCard";
 import { fetchCart, setCurrentCart } from "../customer/cartSlice";
 import customerAPI from "../customer/services/customerAPI";
 import { GetWishlist, RemoveWishlist } from "../wishlist/wishlistApi";
-import { Heart, Trash2, ArrowLeft, ShoppingBag } from "lucide-react";
+import { Heart, Trash2, ArrowLeft, ShoppingBag, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function WishlistPage() {
@@ -169,37 +169,48 @@ export default function WishlistPage() {
     });
   };
 
+  // Loading State - Same as other pages
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--button)] mx-auto mb-4"></div>
-          <p className="text-[var(--text)] text-lg">Loading Wishlist...</p>
+      <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-white'} relative overflow-hidden`}>
+        {/* Animated Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[var(--button)]/5 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[var(--primary)]/5 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '2s'}}></div>
+        </div>
+        
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="relative">
+              <div className="w-20 h-20 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-2xl flex items-center justify-center mx-auto mb-6 animate-spin">
+                <Sparkles className="text-white" size={32} />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-2xl blur-lg opacity-50 animate-ping"></div>
+            </div>
+            <p className="text-[var(--text)] text-xl font-semibold bg-gradient-to-r from-[var(--text)] to-[var(--light-gray)] bg-clip-text text-transparent">
+              Loading Wishlist...
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-gray-50'}`}>
+    <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-gray-50'} transition-all duration-500 relative overflow-hidden`}>
+      
+      {/* Animated Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 left-0 w-96 h-96 bg-[var(--button)]/5 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute bottom-0 right-0 w-80 h-80 bg-[var(--primary)]/5 rounded-full blur-3xl animate-float" style={{animationDelay: '2s'}}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[var(--success)]/3 rounded-full blur-3xl animate-pulse-slow"></div>
+      </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Actions */}
-        <div className="flex p-8 flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ">
+        <div className="flex p-8 flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            {/* <button
-              onClick={() => navigate(-1)}
-              className={`p-3 rounded-xl ${
-                themeMode === 'dark' 
-                  ? 'bg-[var(--div)] text-[var(--text)] hover:bg-[var(--hover)]' 
-                  : 'bg-white text-[var(--text)] hover:bg-gray-100'
-              } shadow-lg border-2 ${
-                themeMode === 'dark' ? 'border-[var(--border)]' : 'border-gray-200'
-              } transition-all duration-300 hover:scale-105`}
-            >
-              <ArrowLeft size={20} />
-            </button> */}
             <div>
               <div className="flex items-center gap-3">
                 <h2 className="text-2xl font-bold text-[var(--text)]">
@@ -213,7 +224,7 @@ export default function WishlistPage() {
                   {wishlist.length} {wishlist.length === 1 ? 'item' : 'items'}
                 </span>
               </div>
-              <p className={`mt-1 ${themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+              <p className={`mt-1 ${themeMode === 'dark' ? 'text-[var(--light-gray)]' : 'text-gray-600'}`}>
                 Products you've saved for later
               </p>
             </div>
@@ -223,14 +234,11 @@ export default function WishlistPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => navigate('/customer/products')}
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl border-2 ${
-                  themeMode === 'dark' 
-                    ? 'border-[var(--button)] text-[var(--button)] hover:bg-[var(--button)]/10' 
-                    : 'border-[var(--button)] text-[var(--button)] hover:bg-[var(--button)]/5'
-                } transition-all duration-300 hover:scale-105 font-semibold`}
+                className="relative bg-gradient-to-r from-[var(--button)] to-[var(--primary)] text-white px-6 py-3 rounded-2xl hover:shadow-2xl transition-all duration-300 flex items-center gap-3 shadow-lg transform hover:scale-105 font-semibold group/btn overflow-hidden"
               >
-                <ShoppingBag size={18} />
-                <span>Continue Shopping</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-1000"></div>
+                <ShoppingBag size={18} className="relative z-10" />
+                <span className="relative z-10">Continue Shopping</span>
               </button>
               <button
                 onClick={handleRemoveAll}
@@ -258,7 +266,7 @@ export default function WishlistPage() {
             <div className="max-w-md mx-auto">
               <div className={`w-24 h-24 mx-auto mb-8 rounded-full ${
                 themeMode === 'dark' ? 'bg-[var(--button)]/10' : 'bg-[var(--button)]/5'
-              } flex items-center justify-center`}>
+              } flex items-center justify-center transform hover:scale-110 transition-all duration-300`}>
                 <Heart size={40} className={themeMode === 'dark' ? 'text-[var(--button)]' : 'text-[var(--button)]'} />
               </div>
               <h3 className={`text-2xl font-bold mb-4 ${themeMode === 'dark' ? 'text-gray-300' : 'text-gray-800'}`}>
@@ -280,10 +288,11 @@ export default function WishlistPage() {
                 </button>
                 <button
                   onClick={() => navigate('/customer/products')}
-                  className="px-8 py-4 bg-[var(--button)] text-white rounded-xl font-semibold hover:bg-[#015c40] transition-all duration-300 hover:scale-105 hover:shadow-2xl flex items-center gap-3"
+                  className="relative bg-gradient-to-r from-[var(--button)] to-[var(--primary)] text-white px-8 py-4 rounded-xl font-semibold hover:shadow-2xl transition-all duration-300 transform hover:scale-105 flex items-center gap-3 group/btn overflow-hidden"
                 >
-                  <ShoppingBag size={20} />
-                  Browse Store
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-1000"></div>
+                  <ShoppingBag size={20} className="relative z-10" />
+                  <span className="relative z-10">Browse Store</span>
                 </button>
               </div>
             </div>
@@ -293,14 +302,15 @@ export default function WishlistPage() {
         {/* Wishlist Grid */}
         {wishlist.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            {wishlist.map((product) => (
+            {wishlist.map((product, index) => (
               <div
                 key={product.wishlist_id || product.product_id}
                 className={`group relative rounded-2xl ${
                   themeMode === 'dark' ? 'bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)]' : 'bg-white'
                 } shadow-lg border-2 ${
                   themeMode === 'dark' ? 'border-[var(--border)]' : 'border-gray-200'
-                } hover:shadow-2xl transition-all duration-300 overflow-hidden hover:border-[var(--button)]/50`}
+                } hover:shadow-2xl transition-all duration-300 overflow-hidden hover:border-[var(--button)]/50 transform hover:-translate-y-2`}
+                style={{ animationDelay: `${index * 100}ms` }}
               >
                 {/* Remove Button */}
                 <button
@@ -310,7 +320,7 @@ export default function WishlistPage() {
                     themeMode === 'dark' 
                       ? 'bg-[var(--mid-dark)] text-[var(--error)] hover:bg-red-950/30' 
                       : 'bg-white text-red-500 hover:bg-red-50 shadow-lg'
-                  } disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-110 border ${
+                  } disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-110 border-2 ${
                     themeMode === 'dark' ? 'border-[var(--border)]' : 'border-gray-200'
                   }`}
                 >
@@ -350,10 +360,11 @@ export default function WishlistPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={() => navigate('/customer/products')}
-                className="px-8 py-3 bg-[var(--button)] text-white rounded-xl font-semibold hover:bg-[#015c40] transition-all duration-300 hover:scale-105 hover:shadow-2xl flex items-center gap-3 justify-center"
+                className="relative bg-gradient-to-r from-[var(--button)] to-[var(--primary)] text-white px-8 py-3 rounded-xl font-semibold hover:shadow-2xl transition-all duration-300 transform hover:scale-105 flex items-center gap-3 justify-center group/btn overflow-hidden"
               >
-                <ShoppingBag size={18} />
-                Continue Shopping
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-1000"></div>
+                <ShoppingBag size={18} className="relative z-10" />
+                <span className="relative z-10">Continue Shopping</span>
               </button>
               <button
                 onClick={handleRemoveAll}
@@ -370,6 +381,33 @@ export default function WishlistPage() {
           </div>
         )}
       </div>
+
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { 
+            transform: translateY(0px) translateX(0px) rotate(0deg); 
+            opacity: 0.7;
+          }
+          33% { 
+            transform: translateY(-20px) translateX(10px) rotate(120deg); 
+            opacity: 1;
+          }
+          66% { 
+            transform: translateY(10px) translateX(-15px) rotate(240deg); 
+            opacity: 0.8;
+          }
+        }
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 0.1; transform: scale(1); }
+          50% { opacity: 0.3; transform: scale(1.1); }
+        }
+        .animate-float { 
+          animation: float 8s ease-in-out infinite; 
+        }
+        .animate-pulse-slow { 
+          animation: pulse-slow 4s ease-in-out infinite; 
+        }
+      `}</style>
     </div>
   );
 }

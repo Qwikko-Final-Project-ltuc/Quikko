@@ -22,7 +22,7 @@ const PaymentMethodsPanel = () => {
     try {
       await dispatch(deletePayment(id)).unwrap();
     } catch (err) {
-      alert("Delete failed: " + err);
+      console.log("Delete failed: " + err);
     } finally {
       setLoadingAction(false);
     }

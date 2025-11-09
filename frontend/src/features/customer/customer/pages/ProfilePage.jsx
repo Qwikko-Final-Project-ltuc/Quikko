@@ -2,11 +2,17 @@ import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchProfile, updateProfile } from "../profileSlice";
 import PaymentMethodsPanel from "../components/PaymentMethodsPanel";
+import { Sparkles, Zap, Star, MapPin, Phone, Mail, User, Edit3, CreditCard, ChevronDown } from "lucide-react";
 
 const ProfilePage = () => {
   const dispatch = useDispatch();
   const { data: profile, loading, error } = useSelector((state) => state.profile);
   const theme = useSelector((state) => state.customerTheme.mode);
+
+  const cities = [
+    "Amman", "Zarqa", "Irbid", "Aqaba", "Mafraq", "Jerash", 
+    "Madaba", "Karak", "Tafilah", "Ma'an", "Ajloun",
+  ];
 
   const [formData, setFormData] = useState({
     name: "",
@@ -18,6 +24,7 @@ const ProfilePage = () => {
   const [successMsg, setSuccessMsg] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.className = theme;
@@ -59,6 +66,11 @@ const ProfilePage = () => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const handleCitySelect = (city) => {
+    setFormData((prev) => ({ ...prev, address: city }));
+    setIsDropdownOpen(false);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSuccessMsg("");
@@ -71,279 +83,419 @@ const ProfilePage = () => {
     }
   };
 
-  if (loading)
+  // Loading State - Same as stores page
+  if (loading) {
     return (
-      <div className={`min-h-screen bg-[var(--bg)] flex items-center justify-center`}>
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--button)] mx-auto mb-4"></div>
-          <p className={`text-[var(--text)]`}>Loading profile...</p>
+      <div className={`min-h-screen ${theme === 'dark' ? 'bg-[var(--bg)]' : 'bg-white'} relative overflow-hidden`}>
+        {/* Animated Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[var(--button)]/5 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[var(--primary)]/5 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '2s'}}></div>
         </div>
-      </div>
-    );
-
-  if (error)
-    return (
-      <div className={`min-h-screen bg-[var(--bg)] flex items-center justify-center`}>
-        <div className="text-center">
-          <div className="w-16 h-16 bg-[var(--error)]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-[var(--error)] text-2xl">!</span>
+        
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="relative">
+              <div className="w-20 h-20 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-2xl flex items-center justify-center mx-auto mb-6 animate-spin">
+                <Sparkles className="text-white" size={32} />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-2xl blur-lg opacity-50 animate-ping"></div>
+            </div>
+            <p className="text-[var(--text)] text-xl font-semibold bg-gradient-to-r from-[var(--text)] to-[var(--light-gray)] bg-clip-text text-transparent">
+              Loading Profile...
+            </p>
           </div>
-          <p className={`text-[var(--error)]`}>Error: {error}</p>
         </div>
       </div>
     );
+  }
 
-  if (!profile)
+  // Error State - Same as stores page
+  if (error) {
     return (
-      <div className={`min-h-screen bg-[var(--bg)] flex items-center justify-center`}>
-        <div className="text-center">
-          <div className="w-16 h-16 bg-[var(--div)] rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-[var(--text)] text-2xl">👤</span>
+      <div className={`min-h-screen ${theme === 'dark' ? 'bg-[var(--bg)]' : 'bg-white'} flex items-center justify-center relative overflow-hidden`}>
+        {/* Animated Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/3 left-1/3 w-64 h-64 bg-[var(--error)]/5 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute bottom-1/3 right-1/3 w-56 h-56 bg-[var(--button)]/5 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '1.5s'}}></div>
+        </div>
+
+        <div className="text-center max-w-md relative z-10">
+          <div className="w-28 h-28 bg-[var(--error)]/20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl transform hover:scale-110 transition-all duration-300">
+            <Zap className="w-14 h-14 text-[var(--error)]" />
           </div>
-          <p className={`text-[var(--text)]`}>Profile not found</p>
+          <h3 className="text-3xl font-black mb-4 bg-gradient-to-r from-[var(--error)] to-red-600 bg-clip-text text-transparent">
+            Oops! Error Loading
+          </h3>
+          <p className="text-[var(--text)]/80 text-lg mb-8 leading-relaxed">{error}</p>
+          <button 
+            onClick={() => dispatch(fetchProfile())}
+            className="relative bg-gradient-to-r from-[var(--button)] to-[var(--primary)] text-white px-8 py-4 rounded-2xl hover:shadow-2xl transition-all duration-300 font-bold shadow-lg transform hover:scale-105 group overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+            <span className="relative z-10 flex items-center gap-3">
+              <Sparkles size={20} />
+              Try Again
+            </span>
+          </button>
         </div>
       </div>
     );
+  }
+
+  if (!profile) {
+    return (
+      <div className={`min-h-screen ${theme === 'dark' ? 'bg-[var(--bg)]' : 'bg-white'} flex items-center justify-center relative overflow-hidden`}>
+        {/* Animated Background */}
+        
+
+        <div className="text-center max-w-md relative z-10">
+          <div className="w-28 h-28 bg-[var(--div)]/20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
+            <User className="w-14 h-14 text-[var(--text)]" />
+          </div>
+          <h3 className="text-3xl font-black mb-4 bg-gradient-to-r from-[var(--text)] to-[var(--light-gray)] bg-clip-text text-transparent">
+            Profile Not Found
+          </h3>
+          <p className="text-[var(--text)]/80 text-lg mb-8 leading-relaxed">
+            We couldn't find your profile information.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`min-h-screen bg-[var(--bg)] text-[var(--text)] transition-colors duration-300`}>
-      <div className="max-w-6xl mx-auto px-6 py-12">
-        {/* Header */}
-        <header className="flex flex-col md:flex-row items-center justify-between mb-12 pt-10">
-          <div className="flex items-center gap-6 mb-6 md:mb-0">
-            <div className="relative">
-              <div className="w-24 h-24 bg-gradient-to-br from-[var(--button)] to-[#02966a] rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-2xl">
-                {profile.name?.charAt(0)?.toUpperCase() || "U"}
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-4 border-[var(--bg)]"></div>
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-[var(--text)] to-[var(--button)] bg-clip-text text-transparent">
-                {profile.name}
-              </h1>
-              <p className="text-[var(--light-gray)] text-lg mt-2">{profile.email}</p>
-              <div className="flex items-center gap-2 mt-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-[var(--light-gray)]">Active now</span>
-              </div>
-            </div>
-          </div>
-          {!isEditing && (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="bg-[var(--button)] hover:bg-[#015c40] text-white font-semibold px-8 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Edit Profile
-            </button>
-          )}
-        </header>
+    <div className={`min-h-screen ${theme === 'dark' ? 'bg-[var(--bg)]' : 'bg-white'} transition-all duration-500 relative overflow-hidden`}>
+      
+      {/* Animated Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 left-0 w-96 h-96 bg-[var(--button)]/5 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute bottom-0 right-0 w-80 h-80 bg-[var(--primary)]/5 rounded-full blur-3xl animate-float" style={{animationDelay: '2s'}}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[var(--success)]/3 rounded-full blur-3xl animate-pulse-slow"></div>
+                
+      </div>
 
-        {/* Profile & Loyalty Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12">
-          {/* Profile Card */}
-          <div className="lg:col-span-3">
-            <div className={`border-2 border-[var(--border)] rounded-3xl p-8 shadow-2xl transition-all duration-300 hover:shadow-3xl ${
-              theme === "dark" 
-                ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)]" 
-                : "bg-gradient-to-br from-white to-[var(--textbox)]"
-            }`}>
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-bold flex items-center gap-3">
-                  <svg className="w-6 h-6 text-[var(--button)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  Personal Information
-                </h2>
-                <div className="w-3 h-3 bg-[var(--button)] rounded-full animate-pulse"></div>
-              </div>
+      {/* Main Content - بدون هيدر */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="h-8"></div>
+        
+        {/* Profile Content - يبدأ مباشرة */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pb-12">
+          
+          {/* Profile Header Card - أول سكشن مباشرة */}
+          <div className={`rounded-3xl p-6 mb-6 shadow-2xl border-2 ${
+            theme === "dark" 
+              ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)]" 
+              : "bg-gradient-to-br from-white to-gray-50 border-gray-200"
+          } relative overflow-hidden group`}>
+            
+            {/* Background Pattern */}
+            <div className="absolute inset-0 opacity-5">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--button)] rounded-full -translate-y-32 translate-x-32"></div>
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-[var(--primary)] rounded-full translate-y-24 -translate-x-24"></div>
+            </div>
 
-              {!isEditing ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-6">
-                    <div className="group">
-                      <p className="text-sm text-[var(--light-gray)] mb-2 flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        Full Name
-                      </p>
-                      <p className="font-semibold text-lg text-[var(--text)] group-hover:text-[var(--button)] transition-colors duration-200">
-                        {profile.name}
-                      </p>
-                    </div>
-                    <div className="group">
-                      <p className="text-sm text-[var(--light-gray)] mb-2 flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                        </svg>
-                        Phone Number
-                      </p>
-                      <p className="font-semibold text-lg text-[var(--text)] group-hover:text-[var(--button)] transition-colors duration-200">
-                        {profile.phone || "Not provided"}
-                      </p>
-                    </div>
+            <div className="relative flex flex-col md:flex-row items-center justify-between gap-6">
+              {/* User Info */}
+              <div className="flex items-center gap-6">
+                <div className="relative group/avatar">
+                  <div className="w-20 h-20 bg-gradient-to-br from-[var(--button)] to-[#02966a] rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-2xl transform group-hover/avatar:scale-110 transition-all duration-300 relative z-10">
+                    {profile.name?.charAt(0)?.toUpperCase() || "U"}
                   </div>
-                  <div className="space-y-6">
-                    <div className="group">
-                      <p className="text-sm text-[var(--light-gray)] mb-2 flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        Address
-                      </p>
-                      <p className="font-semibold text-lg text-[var(--text)] group-hover:text-[var(--button)] transition-colors duration-200">
-                        {profile.address || "Not provided"}
-                      </p>
-                    </div>
-                    <div className="group">
-                      <p className="text-sm text-[var(--light-gray)] mb-2 flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                        Email Address
-                      </p>
-                      <p className="font-semibold text-lg text-[var(--text)] group-hover:text-[var(--button)] transition-colors duration-200">
-                        {profile.email}
-                      </p>
-                      <p className="text-[var(--light-gray)] text-xs mt-1 opacity-80">Email cannot be edited</p>
-                    </div>
+                  {/* Glow Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-full blur-xl opacity-0 group-hover/avatar:opacity-30 transition-opacity duration-300"></div>
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-4 border-[var(--bg)] z-20"></div>
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-[var(--text)] to-[var(--button)] bg-clip-text text-transparent mb-2">
+                    {profile.name}
+                  </h1>
+                  <p className={`text-base ${theme === 'dark' ? 'text-[var(--light-gray)]' : 'text-gray-600'} mb-3`}>
+                    {profile.email}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className={`text-sm ${theme === 'dark' ? 'text-[var(--light-gray)]' : 'text-gray-600'}`}>
+                      Active now
+                    </span>
                   </div>
                 </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {successMsg && (
-                    <div className="bg-green-500/20 border border-green-500/50 text-green-300 p-4 rounded-xl text-center animate-fade-in">
-                      <p className="font-medium">{successMsg}</p>
-                    </div>
-                  )}
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-semibold mb-3 text-[var(--text)]">
-                        Full Name
-                      </label>
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        placeholder="Enter your full name"
-                        className={`w-full border-2 border-[var(--border)] rounded-xl px-4 py-3 text-[1rem] placeholder-[var(--light-gray)] outline-none transition-all duration-200 focus:border-[var(--button)] focus:ring-2 focus:ring-[var(--button)]/20 ${
-                          theme === "dark"
-                            ? "bg-[var(--mid-dark)] text-[var(--text)]"
-                            : "bg-white text-[var(--text)]"
-                        }`}
-                      />
-                    </div>
+              </div>
 
-                    <div>
-                      <label className="block text-sm font-semibold mb-3 text-[var(--text)]">
-                        Phone Number
-                      </label>
-                      <input
-                        type="text"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        placeholder="Enter your phone number"
-                        className={`w-full border-2 border-[var(--border)] rounded-xl px-4 py-3 text-[1rem] placeholder-[var(--light-gray)] outline-none transition-all duration-200 focus:border-[var(--button)] focus:ring-2 focus:ring-[var(--button)]/20 ${
-                          theme === "dark"
-                            ? "bg-[var(--mid-dark)] text-[var(--text)]"
-                            : "bg-white text-[var(--text)]"
-                        }`}
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold mb-3 text-[var(--text)]">
-                        Address
-                      </label>
-                      <input
-                        type="text"
-                        name="address"
-                        value={formData.address}
-                        onChange={handleChange}
-                        placeholder="Enter your complete address"
-                        className={`w-full border-2 border-[var(--border)] rounded-xl px-4 py-3 text-[1rem] placeholder-[var(--light-gray)] outline-none transition-all duration-200 focus:border-[var(--button)] focus:ring-2 focus:ring-[var(--button)]/20 ${
-                          theme === "dark"
-                            ? "bg-[var(--mid-dark)] text-[var(--text)]"
-                            : "bg-white text-[var(--text)]"
-                        }`}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end gap-4 pt-6 border-t border-[var(--border)]">
-                    <button
-                      type="button"
-                      onClick={() => setIsEditing(false)}
-                      className="bg-[var(--div)] hover:bg-[var(--hover)] text-[var(--text)] font-semibold px-8 py-3 rounded-xl border-2 border-[var(--border)] transition-all duration-300 transform hover:scale-105"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="bg-[var(--button)] hover:bg-[#015c40] text-white font-semibold px-8 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
-                    >
-                      Save Changes
-                    </button>
-                  </div>
-                </form>
+              {/* Edit Button */}
+              {!isEditing && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="relative bg-gradient-to-r from-[var(--button)] to-[var(--primary)] text-white px-6 py-3 rounded-2xl hover:shadow-2xl transition-all duration-300 flex items-center gap-3 shadow-lg transform hover:scale-105 font-bold group/btn overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-1000"></div>
+                  <Edit3 size={18} className="relative z-10" />
+                  <span className="relative z-10">Edit Profile</span>
+                </button>
               )}
             </div>
           </div>
 
-          {/* Loyalty Points Card */}
-          <div className="lg:col-span-1">
-            <div className={`border-2 border-[var(--border)] rounded-3xl p-8 shadow-2xl transition-all duration-300 hover:shadow-3xl ${
-              theme === "dark" 
-                ? "bg-gradient-to-br from-[var(--button)] to-[#02966a]" 
-                : "bg-gradient-to-br from-[var(--button)] to-[#02966a]"
-            }`}>
-              <div className="text-center">
-                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                  </svg>
+          {/* Profile & Loyalty Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+            
+            {/* Profile Information Card */}
+            <div className="lg:col-span-3">
+              <div className={`rounded-3xl p-6 shadow-2xl border-2 ${
+                theme === "dark" 
+                  ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)]" 
+                  : "bg-gradient-to-br from-white to-gray-50 border-gray-200"
+              } relative overflow-hidden group`}>
+                
+                {/* Card Header */}
+                <div className="flex items-center justify-between mb-6 relative z-10">
+                  <h2 className="text-xl font-bold flex items-center gap-3 text-[var(--text)]">
+                    <User className="w-6 h-6 text-[var(--button)]" />
+                    Personal Information
+                  </h2>
+                  <div className="w-3 h-3 bg-[var(--button)] rounded-full animate-pulse"></div>
                 </div>
-                <h2 className="text-xl font-bold mb-2 text-white">Loyalty Points</h2>
-                <div className="text-4xl font-bold text-white mb-4 animate-pulse">
-                  {loyaltyPoints}
-                </div>
-                <p className="text-white/80 text-sm">Keep earning rewards as you shop!</p>
-                <div className="mt-6 bg-white/20 rounded-full px-4 py-2">
-                  <p className="text-white text-xs font-medium">🎉 Every purchase earns you points!</p>
+
+                {!isEditing ? (
+                  /* Display Mode */
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+                    <div className="space-y-6">
+                      <div className="group transform hover:-translate-y-1 transition-all duration-300">
+                        <p className="text-sm text-[var(--light-gray)] mb-2 flex items-center gap-2">
+                          <User className="w-4 h-4" />
+                          Full Name
+                        </p>
+                        <p className="font-semibold text-lg text-[var(--text)] group-hover:text-[var(--button)] transition-colors duration-200">
+                          {profile.name}
+                        </p>
+                      </div>
+                      <div className="group transform hover:-translate-y-1 transition-all duration-300">
+                        <p className="text-sm text-[var(--light-gray)] mb-2 flex items-center gap-2">
+                          <Phone className="w-4 h-4" />
+                          Phone Number
+                        </p>
+                        <p className="font-semibold text-lg text-[var(--text)] group-hover:text-[var(--button)] transition-colors duration-200">
+                          {profile.phone || "Not provided"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-6">
+                      <div className="group transform hover:-translate-y-1 transition-all duration-300">
+                        <p className="text-sm text-[var(--light-gray)] mb-2 flex items-center gap-2">
+                          <MapPin className="w-4 h-4" />
+                          Address
+                        </p>
+                        <p className="font-semibold text-lg text-[var(--text)] group-hover:text-[var(--button)] transition-colors duration-200">
+                          {profile.address || "Not provided"}
+                        </p>
+                      </div>
+                      <div className="group transform hover:-translate-y-1 transition-all duration-300">
+                        <p className="text-sm text-[var(--light-gray)] mb-2 flex items-center gap-2">
+                          <Mail className="w-4 h-4" />
+                          Email Address
+                        </p>
+                        <p className="font-semibold text-lg text-[var(--text)] group-hover:text-[var(--button)] transition-colors duration-200">
+                          {profile.email}
+                        </p>
+                        <p className="text-[var(--light-gray)] text-xs mt-1 opacity-80">
+                          Email cannot be edited
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* Edit Mode */
+                  <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+                    {successMsg && (
+                      <div className="bg-green-500/20 border border-green-500/50 text-green-300 p-4 rounded-xl text-center animate-fade-in">
+                        <p className="font-medium">{successMsg}</p>
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="group">
+                        <label className="block text-sm font-semibold mb-3 text-[var(--text)]">
+                          Full Name
+                        </label>
+                        <input
+                          type="text"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleChange}
+                          placeholder="Enter your full name"
+                          className={`w-full border-2 border-[var(--border)] rounded-xl px-4 py-3 text-[1rem] placeholder-[var(--light-gray)] outline-none transition-all duration-200 focus:border-[var(--button)] focus:ring-2 focus:ring-[var(--button)]/20 ${
+                            theme === "dark"
+                              ? "bg-[var(--mid-dark)] text-[var(--text)]"
+                              : "bg-white text-[var(--text)]"
+                          }`}
+                        />
+                      </div>
+
+                      <div className="group">
+                        <label className="block text-sm font-semibold mb-3 text-[var(--text)]">
+                          Phone Number
+                        </label>
+                        <input
+                          type="text"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleChange}
+                          placeholder="Enter your phone number"
+                          className={`w-full border-2 border-[var(--border)] rounded-xl px-4 py-3 text-[1rem] placeholder-[var(--light-gray)] outline-none transition-all duration-200 focus:border-[var(--button)] focus:ring-2 focus:ring-[var(--button)]/20 ${
+                            theme === "dark"
+                              ? "bg-[var(--mid-dark)] text-[var(--text)]"
+                              : "bg-white text-[var(--text)]"
+                          }`}
+                        />
+                      </div>
+
+                      <div className="md:col-span-2 group">
+                        <label className="block text-sm font-semibold mb-3 text-[var(--text)]">
+                          City
+                        </label>
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            className={`w-full border-2 border-[var(--border)] rounded-xl px-4 py-3 text-[1rem] text-left outline-none transition-all duration-200 focus:border-[var(--button)] focus:ring-2 focus:ring-[var(--button)]/20 flex items-center justify-between ${
+                              theme === "dark"
+                                ? "bg-[var(--mid-dark)] text-[var(--text)]"
+                                : "bg-white text-[var(--text)]"
+                            } ${!formData.address ? 'text-[var(--light-gray)]' : ''}`}
+                          >
+                            {formData.address || "Select your city"}
+                            <ChevronDown 
+                              size={20} 
+                              className={`text-[var(--light-gray)] transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
+                            />
+                          </button>
+                          
+                          {isDropdownOpen && (
+                            <div className={`absolute top-full left-0 right-0 mt-2 border-2 border-[var(--border)] rounded-xl shadow-2xl z-50 max-h-60 overflow-y-auto ${
+                              theme === "dark"
+                                ? "bg-[var(--mid-dark)]"
+                                : "bg-white"
+                            }`}>
+                              {cities.map((city) => (
+                                <button
+                                  key={city}
+                                  type="button"
+                                  onClick={() => handleCitySelect(city)}
+                                  className={`w-full px-4 py-3 text-left transition-all duration-200 hover:bg-[var(--button)] hover:text-white ${
+                                    theme === "dark"
+                                      ? "text-[var(--text)] hover:bg-[var(--button)]"
+                                      : "text-gray-700 hover:bg-[var(--button)]"
+                                  } ${formData.address === city ? 'bg-[var(--button)] text-white' : ''}`}
+                                >
+                                  {city}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-4 pt-6 border-t border-[var(--border)]">
+                      <button
+                        type="button"
+                        onClick={() => setIsEditing(false)}
+                        className="bg-[var(--div)] hover:bg-[var(--hover)] text-[var(--text)] font-semibold px-6 py-3 rounded-xl border-2 border-[var(--border)] transition-all duration-300 transform hover:scale-105"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="relative bg-gradient-to-r from-[var(--button)] to-[var(--primary)] text-white px-6 py-3 rounded-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 font-semibold group/btn overflow-hidden"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-1000"></div>
+                        <span className="relative z-10">Save Changes</span>
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            </div>
+
+            {/* Loyalty Points Card */}
+            <div className="lg:col-span-1">
+              <div className={`rounded-3xl p-6 shadow-2xl ${
+                theme === "dark" 
+                  ? "bg-gradient-to-br from-[var(--button)] to-[#02966a]" 
+                  : "bg-gradient-to-br from-[var(--button)] to-[#02966a]"
+              } relative overflow-hidden group transform hover:-translate-y-2 transition-all duration-300`}>
+                
+                <div className="text-center relative z-10">
+                  <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 transform group-hover:scale-110 transition-all duration-300">
+                    <Star className="w-7 h-7 text-white" />
+                  </div>
+                  <h2 className="text-lg font-bold mb-2 text-white">Loyalty Points</h2>
+                  <div className="text-3xl font-bold text-white mb-4 animate-pulse">
+                    {loyaltyPoints}
+                  </div>
+                  <p className="text-white/80 text-sm mb-4">
+                    Keep earning rewards as you shop!
+                  </p>
+                  <div className="bg-white/20 rounded-full px-3 py-2 transform group-hover:scale-105 transition-all duration-300">
+                    <p className="text-white text-xs font-medium">
+                      🎉 Every purchase earns you points!
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Payment Methods */}
-        <div className="mb-12">
-          <div className="relative mb-8">
-            <h2 className="text-3xl font-bold inline-flex items-center gap-3 bg-gradient-to-r from-[var(--text)] to-[var(--button)] bg-clip-text text-transparent">
-              <svg className="w-8 h-8 text-[var(--button)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-              </svg>
-              Payment Methods & Transactions
-            </h2>
-            <div className="absolute -bottom-2 left-0 w-24 h-1 bg-gradient-to-r from-[var(--button)] to-transparent rounded-full"></div>
+          {/* Payment Methods Section */}
+          <div className="mb-8">
+            <div className="relative mb-6">
+              <h2 className="text-2xl font-bold inline-flex items-center gap-3 bg-gradient-to-r from-[var(--text)] to-[var(--button)] bg-clip-text text-transparent">
+                <CreditCard className="w-7 h-7 text-[var(--button)]" />
+                Payment Methods & Transactions
+              </h2>
+              <div className="absolute -bottom-2 left-0 w-20 h-1 bg-gradient-to-r from-[var(--button)] to-transparent rounded-full"></div>
+            </div>
+            
+            <section className={`rounded-3xl p-6 shadow-2xl border-2 ${
+              theme === "dark" 
+                ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)]" 
+                : "bg-gradient-to-br from-white to-gray-50 border-gray-200"
+            } relative overflow-hidden group`}>
+              <PaymentMethodsPanel />
+            </section>
           </div>
-          
-          <section className={`rounded-3xl p-8 shadow-2xl transition-all duration-300 hover:shadow-3xl ${
-            theme === "dark" 
-              ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)]" 
-              : "bg-gradient-to-br from-white to-[var(--textbox)]"
-          }`}>
-            <PaymentMethodsPanel />
-          </section>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes gradient-x {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        @keyframes float {
+          0%, 100% { 
+            transform: translateY(0px) translateX(0px) rotate(0deg); 
+            opacity: 0.7;
+          }
+          33% { 
+            transform: translateY(-20px) translateX(10px) rotate(120deg); 
+            opacity: 1;
+          }
+          66% { 
+            transform: translateY(10px) translateX(-15px) rotate(240deg); 
+            opacity: 0.8;
+          }
+        }
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 0.1; transform: scale(1); }
+          50% { opacity: 0.3; transform: scale(1.1); }
+        }
+        @keyframes gradient-x-slow {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+
+      `}</style>
     </div>
   );
 };

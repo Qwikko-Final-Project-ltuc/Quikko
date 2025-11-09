@@ -231,6 +231,8 @@ exports.placeOrderFromCart = async function ({
       const pointsToUse = Math.min(use_loyalty_points, loyaltyData.points_balance);
       console.log("📊 Points to use:", pointsToUse, "Available:", loyaltyData.points_balance);
       
+
+      
       if (pointsToUse > 0) {
         const discountPercent = Math.min((pointsToUse / 100) * 10, 50);
         discount_from_points = parseFloat(((total_amount * discountPercent) / 100).toFixed(2));

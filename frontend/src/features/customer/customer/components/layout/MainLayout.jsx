@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Navbar from "./Navbar";
 import { Outlet } from "react-router-dom";
 import Footer from "./Footer";
@@ -11,11 +11,34 @@ import { motion, AnimatePresence } from "framer-motion";
 const MainLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const chatModalRef = useRef();
 
   const currentUser = useSelector((state) => state.customerAuth.user);
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const toggleChat = () => setIsChatOpen(!isChatOpen);
+  const closeChat = () => setIsChatOpen(false);
+
+  // إغلاق الشات عند الضغط خارج النافذة
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (chatModalRef.current && !chatModalRef.current.contains(event.target)) {
+        // تحقق إذا كان الضغط ليس على زر فتح الشات
+        const chatButton = document.querySelector('.chat-button');
+        if (!chatButton?.contains(event.target)) {
+          closeChat();
+        }
+      }
+    };
+
+    if (isChatOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isChatOpen]);
 
   return (
     <div className="relative min-h-screen flex flex-col">
@@ -29,7 +52,7 @@ const MainLayout = () => {
 
       <button
         onClick={toggleChat}
-        className="fixed bottom-8 right-6 bg-[var(--button)] text-white p-4 rounded-full shadow-lg hover:bg-green-900 transition flex items-center justify-center z-50"
+        className="chat-button fixed bottom-8 right-6 bg-[var(--button)] text-white p-4 rounded-full shadow-lg hover:bg-green-900 transition flex items-center justify-center z-40"
       >
         <Bot size={28} />
       </button>
@@ -38,23 +61,15 @@ const MainLayout = () => {
       <AnimatePresence>
         {isChatOpen && (
           <motion.div
-            className="fixed top-4 right-4 sm:right-6 z-50 w-full sm:w-96 h-[90vh] sm:h-[90vh]  rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
+            ref={chatModalRef}
+            className="fixed bottom-4 right-4 z-50" // نفس الموقع كما في ChatBot الأصلي
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
-            {/* زر الإغلاق كأيقونة */}
-            <button
-              onClick={toggleChat}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10"
-            >
-              <X size={24} />
-            </button>
-
-
-            <div className="flex-grow overflow-auto p-2">
-              <ChatBot userId={currentUser?.id || "guest"} />
+            <div className="relative">
+              <ChatBot userId={currentUser?.id || "guest"} onClose={closeChat} />
             </div>
           </motion.div>
         )}

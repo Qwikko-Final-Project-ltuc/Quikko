@@ -17,7 +17,7 @@ import {
   fetchUserRatingThunk,
 } from "../../review/reviewSlice";
 import customerAPI from "../services/customerAPI";
-import { MessageCircle, Star, ShoppingBag, Package, Phone, Mail } from "lucide-react";
+import { MessageCircle, Star, ShoppingBag, Package, Phone, Mail, MapPin, Clock, Globe, Sparkles, Zap } from "lucide-react";
 
 const StorePage = () => {
   const { id } = useParams();
@@ -127,23 +127,23 @@ const StorePage = () => {
 
   if (loading) {
     return (
-      <div className={`min-h-screen ${themeMode === "dark" ? "bg-[var(--bg)]" : "bg-gray-50"}`}>
-        <div className="animate-pulse">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-              {[...Array(10)].map((_, i) => (
-                <div
-                  key={i}
-                  className={`rounded-2xl ${themeMode === "dark" ? "bg-[var(--div)]" : "bg-white"} p-4 shadow-lg border-2 ${themeMode === "dark" ? "border-[var(--border)]" : "border-gray-200"}`}
-                >
-                  <div className={`h-48 rounded-xl ${themeMode === "dark" ? "bg-[var(--mid-dark)]" : "bg-gray-300"} mb-4`}></div>
-                  <div className={`h-4 rounded ${themeMode === "dark" ? "bg-[var(--mid-dark)]" : "bg-gray-300"} mb-3`}></div>
-                  <div className={`h-4 rounded ${themeMode === "dark" ? "bg-[var(--mid-dark)]" : "bg-gray-300"} w-3/4 mb-4`}></div>
-                  <div className={`h-10 rounded-lg ${themeMode === "dark" ? "bg-[var(--mid-dark)]" : "bg-gray-300"}`}></div>
-                </div>
-              ))}
+      <div className={`min-h-screen ${themeMode === "dark" ? "bg-[var(--bg)]" : "bg-white"} relative overflow-hidden flex items-center justify-center`}>
+        {/* Animated Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[var(--button)]/5 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[var(--primary)]/5 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '2s'}}></div>
+        </div>
+        
+        <div className="text-center relative z-10">
+          <div className="relative">
+            <div className="w-20 h-20 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-2xl flex items-center justify-center mx-auto mb-6 animate-spin">
+              <Sparkles className="text-white" size={32} />
             </div>
+            <div className="absolute inset-0 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-2xl blur-lg opacity-50 animate-ping"></div>
           </div>
+          <p className="text-[var(--text)] text-xl font-semibold bg-gradient-to-r from-[var(--text)] to-[var(--light-gray)] bg-clip-text text-transparent">
+            Loading Store...
+          </p>
         </div>
       </div>
     );
@@ -151,15 +151,21 @@ const StorePage = () => {
 
   if (error) {
     return (
-      <div className={`min-h-screen ${themeMode === "dark" ? "bg-[var(--bg)]" : "bg-gray-50"} flex items-center justify-center px-4 py-16`}>
-        <div className="text-center max-w-md">
-          <div className={`w-20 h-20 ${themeMode === "dark" ? "bg-[var(--error)]/20" : "bg-red-100"} rounded-full flex items-center justify-center mx-auto mb-4`}>
-            <svg className={`w-10 h-10 ${themeMode === "dark" ? "text-[var(--error)]" : "text-red-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+      <div className={`min-h-screen ${themeMode === "dark" ? "bg-[var(--bg)]" : "bg-white"} flex items-center justify-center relative overflow-hidden`}>
+        {/* Animated Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/3 left-1/3 w-64 h-64 bg-[var(--error)]/5 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute bottom-1/3 right-1/3 w-56 h-56 bg-[var(--button)]/5 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '1.5s'}}></div>
+        </div>
+
+        <div className="text-center max-w-md relative z-10">
+          <div className="w-28 h-28 bg-[var(--error)]/20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl transform hover:scale-110 transition-all duration-300">
+            <Zap className="w-14 h-14 text-[var(--error)]" />
           </div>
-          <h3 className={`text-xl font-semibold ${themeMode === "dark" ? "text-[var(--error)]" : "text-red-600"} mb-2`}>Error Loading Store</h3>
-          <p className={`${themeMode === "dark" ? "text-[var(--text)]" : "text-gray-700"} opacity-80 mb-6`}>{error}</p>
+          <h3 className="text-3xl font-black mb-4 bg-gradient-to-r from-[var(--error)] to-red-600 bg-clip-text text-transparent">
+            Oops! Error Loading
+          </h3>
+          <p className="text-[var(--text)]/80 text-lg mb-8 leading-relaxed">{error}</p>
           <div className="flex gap-4 justify-center">
             <button
               onClick={() => navigate(-1)}
@@ -185,13 +191,21 @@ const StorePage = () => {
 
   if (!selectedStore) {
     return (
-      <div className={`min-h-screen ${themeMode === "dark" ? "bg-[var(--bg)]" : "bg-gray-50"} flex items-center justify-center px-4 py-16`}>
-        <div className="text-center max-w-md">
-          <div className={`w-24 h-24 ${themeMode === "dark" ? "bg-[var(--div)]" : "bg-gray-200"} rounded-full flex items-center justify-center mx-auto mb-6`}>
-            <span className="text-3xl">🏪</span>
+      <div className={`min-h-screen ${themeMode === "dark" ? "bg-[var(--bg)]" : "bg-white"} flex items-center justify-center relative overflow-hidden`}>
+        {/* Animated Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/3 left-1/3 w-64 h-64 bg-[var(--button)]/5 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute bottom-1/3 right-1/3 w-56 h-56 bg-[var(--primary)]/5 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '1.5s'}}></div>
+        </div>
+
+        <div className="text-center max-w-md relative z-10">
+          <div className="w-28 h-28 bg-[var(--div)]/20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
+            <span className="text-4xl">🏪</span>
           </div>
-          <h3 className={`text-2xl font-bold mb-4 ${themeMode === "dark" ? "text-white" : "text-gray-900"}`}>Store Not Found</h3>
-          <p className={`text-lg mb-8 ${themeMode === "dark" ? "text-gray-400" : "text-gray-600"}`}>
+          <h3 className="text-3xl font-black mb-4 bg-gradient-to-r from-[var(--text)] to-[var(--light-gray)] bg-clip-text text-transparent">
+            Store Not Found
+          </h3>
+          <p className="text-[var(--text)]/80 text-lg mb-8 leading-relaxed">
             The store you're looking for doesn't exist or has been removed.
           </p>
           <button
@@ -208,149 +222,234 @@ const StorePage = () => {
 
   return (
     <div className={`min-h-screen ${themeMode === "dark" ? "bg-[var(--bg)]" : "bg-gray-50"} transition-colors duration-300`}>
+      {/* Animated Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[var(--button)]/5 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[var(--primary)]/5 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '2s'}}></div>
+      </div>
+
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Store Header - Direct on Page */}
-        <div className="flex items-start gap-8  p-10">
-          {/* Store Logo */}
-          <div className="flex-shrink-0">
-            <div className={`w-32 h-32 rounded-2xl ${themeMode === "dark" ? "bg-[var(--mid-dark)]" : "bg-gray-100"} border-2 ${themeMode === "dark" ? "border-[var(--border)]" : "border-gray-200"} overflow-hidden shadow-2xl`}>
-              {selectedStore.store_logo ? (
-                <img
-                  src={selectedStore.store_logo}
-                  alt="Store Logo"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <span className="text-4xl">🏪</span>
-                </div>
-              )}
-            </div>
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Store Header - Enhanced Design */}
+        <div className={`rounded-3xl p-8 mb-8 shadow-2xl border ${
+          themeMode === "dark" 
+            ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)]" 
+            : "bg-gradient-to-br from-white to-gray-50 border-gray-200"
+        } relative overflow-hidden group`}>
+          
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--button)] rounded-full -translate-y-32 translate-x-32"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-[var(--primary)] rounded-full translate-y-24 -translate-x-24"></div>
           </div>
 
-          {/* Store Info - Direct on Page */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between mb-6">
-              <div className="flex-1">
-                <h1 className={`text-4xl font-bold mb-4 ${themeMode === "dark" ? "text-white" : "text-gray-900"}`}>
-                  {selectedStore.store_name}
-                </h1>
-                
-                <p className={`text-xl ${themeMode === "dark" ? "text-gray-300" : "text-gray-600"} mb-6 leading-relaxed`}>
-                  {selectedStore.description || "Explore our collection of quality products"}
-                </p>
-
-                {/* Contact Information - Direct on Page */}
-                <div className="flex items-center gap-8 mb-4">
-                  {selectedStore.phone && (
-                    <div className="flex items-center gap-3">
-                      <Phone size={20} className={`${themeMode === "dark" ? "text-gray-400" : "text-gray-600"}`} />
-                      <span className={`text-lg ${themeMode === "dark" ? "text-gray-300" : "text-gray-700"}`}>
-                        {selectedStore.phone}
-                      </span>
-                    </div>
-                  )}
-                  
-                  {selectedStore.email && (
-                    <div className="flex items-center gap-3">
-                      <Mail size={20} className={`${themeMode === "dark" ? "text-gray-400" : "text-gray-600"}`} />
-                      <span className={`text-lg ${themeMode === "dark" ? "text-gray-300" : "text-gray-700"}`}>
-                        {selectedStore.email}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-            {/* Review Section - Direct on Page */}
-            <div className="pt-6">
-              {token ? (
-                <ReviewSection
-                  userRating={userRating}
-                  averageRating={displayRating}
-                  totalReviews={uniqueReviewsCount}
-                  readOnly={false}
-                  compact={true}
-                  onRate={(value) => {
-                    if (!selectedStore?.store_id) return;
-                    dispatch(
-                      addReviewThunk({
-                        vendor_id: selectedStore.store_id,
-                        rating: value,
-                      })
-                    )
-                      .unwrap()
-                      .then(() => {
-                        dispatch(fetchReviewsThunk(selectedStore.store_id));
-                        dispatch(fetchAverageRatingThunk(selectedStore.store_id));
-                        dispatch(fetchUserRatingThunk(selectedStore.store_id));
-                      })
-                      .catch((err) => console.error("Add review failed:", err));
-                  }}
-                />
-              ) : (
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-full ${themeMode === "dark" ? "bg-[var(--div)]" : "bg-white"} flex items-center justify-center shadow-lg`}>
-                    <Star className={themeMode === "dark" ? "text-yellow-400" : "text-yellow-500"} size={24} />
+          <div className="relative flex items-start gap-8">
+            {/* Store Logo with Enhanced Design */}
+            <div className="flex-shrink-0 relative group/logo">
+              <div className={`w-32 h-32 rounded-2xl ${
+                themeMode === "dark" ? "bg-[var(--mid-dark)]" : "bg-white"
+              } border-2 ${
+                themeMode === "dark" ? "border-[var(--border)]" : "border-gray-200"
+              } overflow-hidden shadow-2xl transform group-hover/logo:scale-105 transition-all duration-300 relative z-10`}>
+                {selectedStore.store_logo ? (
+                  <img
+                    src={selectedStore.store_logo}
+                    alt="Store Logo"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className="text-4xl">🏪</span>
                   </div>
-                  <div>
-                    <p className={`font-semibold text-lg ${themeMode === "dark" ? "text-white" : "text-gray-900"}`}>
-                      Sign in to Rate this Store
-                    </p>
-                    <p className={`text-sm ${themeMode === "dark" ? "text-gray-400" : "text-gray-600"}`}>
-                      Join our community and share your experience
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
               </div>
-
-              {/* Chat Button - Far Right */}
-              <button
-                onClick={handleChatWithVendor}
-                className="bg-[var(--button)] text-white px-8 py-4 rounded-xl hover:bg-[#015c40] transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 font-semibold whitespace-nowrap ml-8"
-              >
-                <MessageCircle size={20} />
-                Contact Store
-              </button>
+              {/* Glow Effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-2xl blur-xl opacity-0 group-hover/logo:opacity-30 transition-opacity duration-300"></div>
             </div>
 
+            {/* Store Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex-1">
+                  <h1 className={`text-5xl font-black mb-4 bg-gradient-to-r ${
+                    themeMode === "dark" 
+                      ? "from-white to-gray-300" 
+                      : "from-gray-900 to-gray-700"
+                  } bg-clip-text text-transparent`}>
+                    {selectedStore.store_name}
+                  </h1>
+                  
+                  <p className={`text-xl ${
+                    themeMode === "dark" ? "text-gray-300" : "text-gray-600"
+                  } mb-6 leading-relaxed max-w-3xl`}>
+                    {selectedStore.description || "Explore our collection of quality products"}
+                  </p>
 
-            
+                  {/* Enhanced Contact Information */}
+                  <div className="flex flex-wrap gap-6 mb-6">
+                    {selectedStore.address && (
+                      <div className="flex items-center gap-3 group cursor-pointer transform hover:-translate-y-1 transition-all duration-300">
+                        <div className={`w-10 h-10 rounded-xl ${
+                          themeMode === "dark" ? "bg-[var(--button)]/20" : "bg-[var(--button)]/10"
+                        } flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                          <MapPin size={18} className={themeMode === "dark" ? "text-[var(--button)]" : "text-[var(--button)]"} />
+                        </div>
+                        <span className={`text-lg font-medium ${
+                          themeMode === "dark" ? "text-gray-300" : "text-gray-700"
+                        }`}>
+                          {selectedStore.address}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {selectedStore.phone && (
+                      <div className="flex items-center gap-3 group cursor-pointer transform hover:-translate-y-1 transition-all duration-300">
+                        <div className={`w-10 h-10 rounded-xl ${
+                          themeMode === "dark" ? "bg-[var(--button)]/20" : "bg-[var(--button)]/10"
+                        } flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                          <Phone size={18} className={themeMode === "dark" ? "text-[var(--button)]" : "text-[var(--button)]"} />
+                        </div>
+                        <span className={`text-lg font-medium ${
+                          themeMode === "dark" ? "text-gray-300" : "text-gray-700"
+                        }`}>
+                          {selectedStore.phone}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {selectedStore.email && (
+                      <div className="flex items-center gap-3 group cursor-pointer transform hover:-translate-y-1 transition-all duration-300">
+                        <div className={`w-10 h-10 rounded-xl ${
+                          themeMode === "dark" ? "bg-[var(--button)]/20" : "bg-[var(--button)]/10"
+                        } flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                          <Mail size={18} className={themeMode === "dark" ? "text-[var(--button)]" : "text-[var(--button)]"} />
+                        </div>
+                        <span className={`text-lg font-medium ${
+                          themeMode === "dark" ? "text-gray-300" : "text-gray-700"
+                        }`}>
+                          {selectedStore.email}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Enhanced Review Section */}
+                  <div className="pt-6 border-t border-[var(--border)]/30">
+                    {token ? (
+                      <ReviewSection
+                        userRating={userRating}
+                        averageRating={displayRating}
+                        totalReviews={uniqueReviewsCount}
+                        readOnly={false}
+                        compact={true}
+                        onRate={(value) => {
+                          if (!selectedStore?.store_id) return;
+                          dispatch(
+                            addReviewThunk({
+                              vendor_id: selectedStore.store_id,
+                              rating: value,
+                            })
+                          )
+                            .unwrap()
+                            .then(() => {
+                              dispatch(fetchReviewsThunk(selectedStore.store_id));
+                              dispatch(fetchAverageRatingThunk(selectedStore.store_id));
+                              dispatch(fetchUserRatingThunk(selectedStore.store_id));
+                            })
+                            .catch((err) => console.error("Add review failed:", err));
+                        }}
+                      />
+                    ) : (
+                      <div className="flex items-center gap-4 group cursor-pointer transform hover:-translate-y-1 transition-all duration-300">
+                        <div className={`w-14 h-14 rounded-2xl ${
+                          themeMode === "dark" ? "bg-[var(--div)]" : "bg-white"
+                        } flex items-center justify-center shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300`}>
+                          <Star className="text-yellow-500" size={28} />
+                        </div>
+                        <div>
+                          <p className={`font-bold text-xl ${
+                            themeMode === "dark" ? "text-white" : "text-gray-900"
+                          }`}>
+                            Sign in to Rate this Store
+                          </p>
+                          <p className={`text-base ${
+                            themeMode === "dark" ? "text-gray-400" : "text-gray-600"
+                          }`}>
+                            Join our community and share your experience
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Enhanced Chat Button */}
+                <button
+                  onClick={handleChatWithVendor}
+                  className="relative bg-gradient-to-r from-[var(--button)] to-[var(--primary)] text-white px-8 py-4 rounded-2xl hover:shadow-2xl transition-all duration-300 flex items-center gap-3 shadow-lg transform hover:scale-105 font-bold whitespace-nowrap ml-8 group/btn overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-1000"></div>
+                  <MessageCircle size={22} className="relative z-10" />
+                  <span className="relative z-10">Contact Store</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Products Section */}
-        <div className={`rounded-2xl p-8 ${themeMode === "dark" ? "bg-[var(--div)]" : "bg-white"} shadow-xl border ${themeMode === "dark" ? "border-[var(--border)]" : "border-gray-200"}`}>
+        {/* Products Section - Enhanced */}
+        <div className={`rounded-3xl p-8 ${
+          themeMode === "dark" 
+            ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)]" 
+            : "bg-gradient-to-br from-white to-gray-50 border-gray-200"
+        } shadow-2xl border relative overflow-hidden`}>
+          
           {/* Products Header */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-8 relative z-10">
             <div>
-              <h2 className={`text-3xl font-bold mb-3 ${themeMode === "dark" ? "text-white" : "text-gray-900"}`}>
-                Products
+              <h2 className={`text-4xl font-black mb-3 ${
+                themeMode === "dark" ? "text-white" : "text-gray-900"
+              }`}>
+                Featured Products
               </h2>
-              <p className={`text-lg ${themeMode === "dark" ? "text-gray-400" : "text-gray-600"}`}>
-                Browse our collection
+              <p className={`text-lg ${
+                themeMode === "dark" ? "text-gray-400" : "text-gray-600"
+              }`}>
+                Discover our exclusive collection
               </p>
             </div>
             
-            {/* Products Count - Top Right */}
-            <div className={`px-6 py-3 rounded-xl ${themeMode === "dark" ? "bg-[var(--button)]/20" : "bg-[var(--button)]/10"} border ${themeMode === "dark" ? "border-[var(--button)]/30" : "border-[var(--button)]/20"}`}>
-              <span className={`font-semibold text-lg ${themeMode === "dark" ? "text-[var(--button)]" : "text-[var(--button)]"}`}>
+            {/* Enhanced Products Count */}
+            <div className={`px-6 py-3 rounded-2xl ${
+              themeMode === "dark" ? "bg-[var(--button)]/20" : "bg-[var(--button)]/10"
+            } border ${
+              themeMode === "dark" ? "border-[var(--button)]/30" : "border-[var(--button)]/20"
+            } transform hover:scale-105 transition-all duration-300`}>
+              <span className={`font-bold text-lg ${
+                themeMode === "dark" ? "text-[var(--button)]" : "text-[var(--button)]"
+              }`}>
                 {currentProducts.length} {currentProducts.length === 1 ? 'product' : 'products'}
               </span>
             </div>
           </div>
 
           {currentProducts.length === 0 ? (
-            <div className={`text-center py-20 rounded-xl ${themeMode === "dark" ? "bg-[var(--mid-dark)]" : "bg-gray-50"}`}>
-              <div className={`w-28 h-28 mx-auto mb-6 rounded-full ${themeMode === "dark" ? "bg-[var(--div)]" : "bg-white"} flex items-center justify-center shadow-2xl`}>
-                <Package className={themeMode === "dark" ? "text-gray-400" : "text-gray-500"} size={40} />
+            <div className={`text-center py-20 rounded-2xl ${
+              themeMode === "dark" ? "bg-[var(--mid-dark)]" : "bg-gray-50"
+            } relative overflow-hidden group`}>
+              <div className={`w-32 h-32 mx-auto mb-6 rounded-full ${
+                themeMode === "dark" ? "bg-[var(--div)]" : "bg-white"
+              } flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-all duration-300 relative z-10`}>
+                <Package className={themeMode === "dark" ? "text-gray-400" : "text-gray-500"} size={50} />
               </div>
-              <h3 className={`text-2xl font-semibold mb-4 ${themeMode === "dark" ? "text-white" : "text-gray-900"}`}>
+              <h3 className={`text-3xl font-bold mb-4 ${
+                themeMode === "dark" ? "text-white" : "text-gray-900"
+              } relative z-10`}>
                 No Products Available
               </h3>
-              <p className={`text-lg ${themeMode === "dark" ? "text-gray-400" : "text-gray-600"}`}>
+              <p className={`text-xl ${
+                themeMode === "dark" ? "text-gray-400" : "text-gray-600"
+              } relative z-10`}>
                 This store hasn't added any products yet.
               </p>
             </div>
@@ -360,7 +459,11 @@ const StorePage = () => {
                 {currentProducts.map((product) => (
                   <div
                     key={product.product_id}
-                    className={`group relative rounded-3xl ${themeMode === "dark" ? "bg-[var(--mid-dark)]" : "bg-white"} shadow-2xl border ${themeMode === "dark" ? "border-[var(--border)]" : "border-gray-200"} hover:shadow-3xl transition-all duration-300 overflow-hidden hover:border-[var(--button)]/50 transform hover:-translate-y-2`}
+                    className={`group relative rounded-3xl ${
+                      themeMode === "dark" ? "bg-[var(--mid-dark)]" : "bg-white"
+                    } shadow-2xl border ${
+                      themeMode === "dark" ? "border-[var(--border)]" : "border-gray-200"
+                    } hover:shadow-3xl transition-all duration-300 overflow-hidden hover:border-[var(--button)]/50 transform hover:-translate-y-2`}
                   >
                     <ProductCard
                       product={{
@@ -375,7 +478,7 @@ const StorePage = () => {
                 ))}
               </div>
 
-              {/* Pagination */}
+              {/* Enhanced Pagination */}
               {totalProductPages > 1 && (
                 <div className="flex justify-center">
                   <div className="flex items-center space-x-3">
@@ -383,9 +486,9 @@ const StorePage = () => {
                       <button
                         key={page}
                         onClick={() => handleProductPageChange(page)}
-                        className={`min-w-[52px] h-14 rounded-xl font-semibold text-lg transition-all duration-300 ${
+                        className={`min-w-[52px] h-14 rounded-xl font-bold text-lg transition-all duration-300 ${
                           currentProductPage === page
-                            ? 'bg-[var(--button)] text-white shadow-2xl scale-110'
+                            ? 'bg-gradient-to-r from-[var(--button)] to-[var(--primary)] text-white shadow-2xl scale-110'
                             : `${themeMode === "dark" ? "text-white border border-[var(--border)] hover:bg-[var(--hover)]" : "text-gray-700 border border-gray-300 hover:bg-gray-50"} hover:border-[var(--button)] hover:scale-105`
                         }`}
                       >
@@ -399,6 +502,14 @@ const StorePage = () => {
           )}
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 0.1; transform: scale(1); }
+          50% { opacity: 0.3; transform: scale(1.1); }
+        }
+        .animate-pulse-slow { animation: pulse-slow 4s ease-in-out infinite; }
+      `}</style>
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { fetchOrderById } from "../ordersSlice"; 
 import customerAPI from "../services/customerAPI";
 import MapView from "../../../../components/MapView";
+import { Package, Clock, MapPin, Truck, CheckCircle, CreditCard, Calendar, Sparkles, Zap, FileText, ShoppingCart, User, Navigation } from "lucide-react";
 
 const TrackOrderPage = () => {
   const { orderId } = useParams();
@@ -25,26 +26,36 @@ const TrackOrderPage = () => {
     return `${hours}h ${remainingMinutes}m`;
   };
 
-  // Adjusted tracking steps logic
+  // Modified tracking steps logic - Order Received always completed
   const getTrackingSteps = (order) => {
     if (!order) return [];
 
     const statusFlow = [
-      { status: "pending", label: "Order Received" },
-      { status: "accepted", label: "Order Accepted" },
-      { status: "processing", label: "Preparing" },
-      { status: "out for delivery", label: "On the Way" },
-      { status: "delivered", label: "Delivered" }
+      { status: "pending", label: "Order Received", icon: FileText },
+      { status: "accepted", label: "Order Accepted", icon: CheckCircle },
+      { status: "processing", label: "Preparing", icon: ShoppingCart },
+      { status: "out for delivery", label: "On the Way", icon: Truck },
+      { status: "delivered", label: "Delivered", icon: Package }
     ];
 
     const currentStatus = order?.status?.toLowerCase();
     const currentIndex = statusFlow.findIndex(step => step.status === currentStatus);
 
-    return statusFlow.map((step, index) => ({
-      ...step,
-      completed: index <= currentIndex,
-      current: index === currentIndex + 1
-    }));
+    return statusFlow.map((step, index) => {
+      // Order Received is always completed
+      const isOrderReceived = step.status === "pending";
+      const completed = isOrderReceived ? true : index <= currentIndex;
+      const current = isOrderReceived ? false : index === currentIndex;
+      // Make the next step after last completed step as "in progress"
+      const isNextStepAfterLastCompleted = index === currentIndex + 1;
+      
+      return {
+        ...step,
+        completed,
+        current: current || isNextStepAfterLastCompleted,
+        upcoming: index === currentIndex + 2
+      };
+    });
   };
 
   useEffect(() => {
@@ -81,10 +92,23 @@ const TrackOrderPage = () => {
 
   if (loading || orderLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--button)] mx-auto mb-4"></div>
-          <p className="text-[var(--text)] text-lg">Loading order...</p>
+      <div className="min-h-screen bg-[var(--bg)] relative overflow-hidden flex items-center justify-center">
+        {/* Animated Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[var(--button)]/5 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[var(--primary)]/5 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '2s'}}></div>
+        </div>
+        
+        <div className="text-center relative z-10">
+          <div className="relative">
+            <div className="w-16 h-16 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-xl flex items-center justify-center mx-auto mb-4 animate-spin">
+              <Package className="text-white" size={24} />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-xl blur-lg opacity-50 animate-ping"></div>
+          </div>
+          <p className="text-[var(--text)] text-lg font-semibold bg-gradient-to-r from-[var(--text)] to-[var(--light-gray)] bg-clip-text text-transparent">
+            Tracking Your Order...
+          </p>
         </div>
       </div>
     );
@@ -92,9 +116,21 @@ const TrackOrderPage = () => {
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-[var(--text)]">Order not found</p>
+      <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center relative overflow-hidden">
+        {/* Animated Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/3 left-1/3 w-64 h-64 bg-[var(--error)]/5 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute bottom-1/3 right-1/3 w-56 h-56 bg-[var(--button)]/5 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '1.5s'}}></div>
+        </div>
+
+        <div className="text-center max-w-md relative z-10">
+          <div className="w-20 h-20 bg-[var(--error)]/20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl transform hover:scale-110 transition-all duration-300">
+            <Zap className="w-10 h-10 text-[var(--error)]" />
+          </div>
+          <h3 className="text-2xl font-black mb-3 bg-gradient-to-r from-[var(--error)] to-red-600 bg-clip-text text-transparent">
+            Order Not Found
+          </h3>
+          <p className="text-[var(--text)]/80 text-base mb-6 leading-relaxed">We couldn't find this order in our system.</p>
         </div>
       </div>
     );
@@ -104,7 +140,7 @@ const TrackOrderPage = () => {
   const currentStatusIndex = trackingSteps.findIndex(step => step.current);
   const estimatedTime = calculateEstimatedTime(order?.distance_km);
 
-  // Calculate progress percentage for the line - FIXED
+  // Calculate progress percentage for the line
   const completedSteps = trackingSteps.filter(step => step.completed).length;
   const totalSteps = trackingSteps.length;
   const progressPercentage = currentStatusIndex >= 0 
@@ -117,249 +153,358 @@ const TrackOrderPage = () => {
   const displayPaymentStatus = currentOrder.data?.payment_status || order.payment_status || "unpaid";
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] p-4 md:p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-[var(--bg)] relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-0 w-96 h-96 bg-[var(--button)]/5 rounded-full blur-3xl animate-float-slow"></div>
+        <div className="absolute bottom-0 right-0 w-80 h-80 bg-[var(--primary)]/5 rounded-full blur-3xl animate-float-slow" style={{animationDelay: '2s'}}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[var(--success)]/3 rounded-full blur-3xl animate-pulse-slow"></div>
+      </div>
+
+      <div className="relative z-10 max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-6">
         
-        {/* Header */}
-        <div className="p-4 md:p-6 text-left mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-[var(--text)] mb-3">
+        {/* Enhanced Header */}
+        <div className="text-center mb-8 relative">
+          {/* Animated Floating Circles */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-10 left-10 w-6 h-6 bg-[var(--button)]/20 rounded-full animate-float-slow"></div>
+            <div className="absolute top-20 right-20 w-4 h-4 bg-[var(--primary)]/20 rounded-full animate-float-slow" style={{animationDelay: '1s'}}></div>
+            <div className="absolute bottom-20 left-20 w-5 h-5 bg-[var(--success)]/20 rounded-full animate-float-slow" style={{animationDelay: '2s'}}></div>
+            <div className="absolute bottom-10 right-10 w-3 h-3 bg-[var(--warning)]/20 rounded-full animate-float-slow" style={{animationDelay: '1.5s'}}></div>
+          </div>
+
+          <h1 className="text-3xl md:text-4xl font-black mb-4 tracking-tight bg-gradient-to-r from-[var(--text)] via-[var(--button)] to-[var(--primary)] bg-clip-text text-transparent animate-gradient-x-slow">
             Track Order #{order.id || order.order_id}
           </h1>
-          <div className="w-16 h-1 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-full"></div>
+          <div className="w-16 h-0.5 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-full mx-auto mb-4"></div>
+          <p className="text-base text-[var(--light-gray)] max-w-xl mx-auto">
+            Real-time tracking for your delivery journey
+          </p>
         </div>
 
-        {/* First Row - Timeline */}
-        <div className={`rounded-2xl overflow-hidden mb-6 ${
-          themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-white'
-        } shadow-lg border border-[var(--border)] backdrop-blur-sm`}>
-          <div className="p-6 md:p-8">
-            <div className="relative">
-              {/* Connecting line */}
-              <div className="absolute left-4 md:left-8 right-4 md:right-8 top-4 h-0.5 bg-gray-200/50">
-                {/* Progress line - FIXED */}
-                <div 
-                  className="h-full bg-gradient-to-r from-green-400 to-emerald-600 transition-all duration-700 ease-out shadow-lg"
-                  style={{ width: progressPercentage }}
-                ></div>
-              </div>
-              
-              <div className="flex justify-between">
-                {trackingSteps.map((step, index) => (
-                  <div key={index} className="flex flex-col items-center text-center relative">
-                    {/* Step dot with meaningful colors */}
-                    <div className={`flex-shrink-0 w-10 h-10 rounded-full border-2 z-10 mb-4 flex items-center justify-center transition-all duration-300 shadow-lg ${
+        {/* Enhanced Timeline - Responsive with Vertical Layout on Mobile */}
+        <div className={`rounded-2xl p-4 sm:p-6 mb-6 shadow-xl border ${
+          themeMode === "dark" 
+            ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)]" 
+            : "bg-gradient-to-br from-white to-gray-50 border-gray-200"
+        } relative overflow-hidden group backdrop-blur-sm`}>
+          
+          <div className="relative">
+            {/* Horizontal line for tablet and desktop */}
+            <div className="hidden sm:block absolute left-4 md:left-6 right-4 md:right-6 top-8 h-0.5 bg-gray-200/50">
+              <div 
+                className="h-full bg-gradient-to-r from-green-400 to-emerald-600 transition-all duration-700 ease-out shadow-lg"
+                style={{ width: progressPercentage }}
+              ></div>
+            </div>
+
+            {/* Vertical line for mobile */}
+            <div className="sm:hidden absolute left-6 top-4 bottom-4 w-0.5 bg-gray-200/50">
+              <div 
+                className="w-full bg-gradient-to-b from-green-400 to-emerald-600 transition-all duration-700 ease-out shadow-lg"
+                style={{ height: progressPercentage }}
+              ></div>
+            </div>
+            
+            {/* Timeline steps - Vertical on mobile, Horizontal on tablet+ */}
+            <div className="space-y-4 sm:space-y-0 sm:flex sm:justify-between">
+              {trackingSteps.map((step, index) => {
+                const IconComponent = step.icon;
+                return (
+                  <div key={index} className="flex items-start sm:flex-col sm:items-center sm:text-center relative">
+                    {/* Step dot */}
+                    <div className={`flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full border-3 z-10 flex items-center justify-center transition-all duration-500 shadow-lg transform hover:scale-110 ${
                       step.completed 
-                        ? 'bg-emerald-500 border-emerald-500 text-white scale-110' 
+                        ? 'bg-gradient-to-br from-emerald-500 to-green-600 border-emerald-500 text-white scale-110 shadow-lg' 
                         : step.current
-                        ? 'bg-amber-500 border-amber-500 text-white scale-110 animate-pulse'
+                        ? 'bg-gradient-to-br from-[var(--button)] to-[var(--primary)] border-[var(--button)] text-white scale-110 shadow-lg animate-pulse-glow'
                         : 'bg-white border-gray-300 text-gray-400'
                     }`}>
-                      {step.completed ? (
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      ) : (
-                        <>
-                          {step.status === "pending" && (
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                          )}
-                          {step.status === "accepted" && (
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          )}
-                          {step.status === "processing" && (
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                          )}
-                          {step.status === "out for delivery" && (
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
-                            </svg>
-                          )}
-                          {step.status === "delivered" && (
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                            </svg>
-                          )}
-                        </>
-                      )}
+                      <IconComponent className={`w-5 h-5 sm:w-6 sm:h-6 ${
+                        step.completed || step.current ? 'text-white' : 'text-gray-400'
+                      }`} />
                     </div>
                     
                     {/* Step content */}
-                    <div className="max-w-28 md:max-w-32">
-                      <div className={`text-sm font-semibold mb-2 transition-colors duration-300 ${
+                    <div className="ml-4 sm:ml-0 sm:mt-3 flex-1 sm:flex-none min-w-0">
+                      <div className={`text-base sm:text-lg font-bold mb-2 transition-colors duration-300 min-h-[3rem] flex items-center ${
                         step.completed ? 'text-emerald-600' : 
-                        step.current ? 'text-amber-600' : 'text-gray-400'
+                        step.current ? 'text-[var(--button)] animate-text-pulse' : 
+                        'text-gray-400'
                       }`}>
                         {step.label}
                       </div>
-                      <div className={`text-xs font-medium px-2 py-1 rounded-full ${
+                      <div className={`text-sm font-medium px-3 py-2 rounded-xl transition-all duration-300 ${
                         step.completed ? 'bg-emerald-100 text-emerald-700' : 
-                        step.current ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'
+                        step.current ? 'bg-gradient-to-r from-[var(--button)]/20 to-[var(--primary)]/20 text-[var(--button)] border border-[var(--button)]/30 animate-badge-pulse' : 
+                        'bg-gray-100 text-gray-500'
                       }`}>
                         {step.completed ? "Completed" : step.current ? "In Progress" : "Pending"}
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
           </div>
         </div>
 
-        {/* Second Row - Enhanced Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        {/* Enhanced Cards Grid - 2 per row on mobile, 3 per row on iPad, 6 per row on desktop */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4 mb-6">
           
           {/* Order Status Card */}
-          <div className={`p-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-xl bg-gradient-to-br from-[var(--button)] to-gray-900 shadow-lg border border-[var(--border)] group`}>
-            <div className="flex items-center gap-4">
-              <div className="p-4 rounded-xl bg-white/10 group-hover:scale-110 transition-transform duration-300">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+          <div className={`p-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl ${
+            themeMode === "dark" 
+              ? "bg-gradient-to-br from-[var(--button)] to-gray-900" 
+              : "bg-gradient-to-br from-[var(--button)] to-gray-900"
+          } shadow-lg border border-[var(--border)] group backdrop-blur-sm relative overflow-hidden`}>
+            {/* Dark Overlay for Dark Mode Only */}
+            {themeMode === "dark" && (
+              <div className="absolute inset-0 bg-black/10 rounded-xl pointer-events-none z-10"></div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+            <div className="flex flex-col items-center text-center relative z-20">
+              <div className="p-3 rounded-xl bg-white/10 group-hover:scale-110 transition-transform duration-300 mb-2">
+                <CheckCircle className="w-6 h-6 text-white" />
               </div>
-              <div>
-                <h3 className="text-white/80 text-sm font-medium mb-1 uppercase tracking-wider">ORDER STATUS</h3>
-                <p className="text-white text-xl font-bold capitalize">{order.status}</p>
-              </div>
+              <h3 className="text-white/80 text-sm font-medium mb-1 uppercase tracking-wider">ORDER STATUS</h3>
+              <p className="text-white text-lg font-bold capitalize leading-tight">
+                {order.status}
+              </p>
             </div>
           </div>
 
           {/* Payment Status Card */}
-          <div className={`p-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-xl bg-gradient-to-br from-[var(--button)] to-gray-900 shadow-lg border border-[var(--border)] group`}>
-            <div className="flex items-center gap-4">
-              <div className="p-4 rounded-xl bg-white/10 group-hover:scale-110 transition-transform duration-300">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                </svg>
+          <div className={`p-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl ${
+            themeMode === "dark" 
+              ? "bg-gradient-to-br from-[var(--button)] to-gray-900" 
+              : "bg-gradient-to-br from-[var(--button)] to-gray-900"
+          } shadow-lg border border-[var(--border)] group backdrop-blur-sm relative overflow-hidden`}>
+            {/* Dark Overlay for Dark Mode Only */}
+            {themeMode === "dark" && (
+              <div className="absolute inset-0 bg-black/10 rounded-xl pointer-events-none z-10"></div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+            <div className="flex flex-col items-center text-center relative z-20">
+              <div className="p-3 rounded-xl bg-white/10 group-hover:scale-110 transition-transform duration-300 mb-2">
+                <CreditCard className="w-6 h-6 text-white" />
               </div>
-              <div>
-                <h3 className="text-white/80 text-sm font-medium mb-1 uppercase tracking-wider">PAYMENT STATUS</h3>
-                <p className="text-white text-xl font-bold capitalize">{displayPaymentStatus}</p>
-                <p className="text-white/70 text-sm mt-1">
-                  Total: ${parseFloat(displayTotal).toFixed(2)}
-                </p>
-              </div>
+              <h3 className="text-white/80 text-sm font-medium mb-1 uppercase tracking-wider">PAYMENT STATUS</h3>
+              <p className="text-white text-lg font-bold capitalize leading-tight">
+                {displayPaymentStatus}
+              </p>
+              <p className="text-white/70 text-base mt-2 font-semibold">
+                Total: ${parseFloat(displayTotal).toFixed(2)}
+              </p>
             </div>
           </div>
 
           {/* Last Updated Card */}
-          <div className={`p-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-xl bg-gradient-to-br from-[var(--button)] to-gray-900 shadow-lg border border-[var(--border)] group`}>
-            <div className="flex items-center gap-4">
-              <div className="p-4 rounded-xl bg-white/10 group-hover:scale-110 transition-transform duration-300">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+          <div className={`p-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl ${
+            themeMode === "dark" 
+              ? "bg-gradient-to-br from-[var(--button)] to-gray-900 "
+              : "bg-gradient-to-br from-[var(--button)] to-gray-900"
+          } shadow-lg border border-[var(--border)] group backdrop-blur-sm relative overflow-hidden`}>
+            {/* Dark Overlay for Dark Mode Only */}
+            {themeMode === "dark" && (
+              <div className="absolute inset-0 bg-black/10 rounded-xl pointer-events-none z-10"></div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+            <div className="flex flex-col items-center text-center relative z-20">
+              <div className="p-3 rounded-xl bg-white/10 group-hover:scale-110 transition-transform duration-300 mb-2">
+                <Calendar className="w-6 h-6 text-white" />
               </div>
-              <div>
-                <h3 className="text-white/80 text-sm font-medium mb-1 uppercase tracking-wider">LAST UPDATED</h3>
-                <p className="text-white text-lg font-bold">{new Date(order.updated_at).toLocaleDateString()}</p>
-                <p className="text-white/70 text-sm">{new Date(order.updated_at).toLocaleTimeString()}</p>
-              </div>
+              <h3 className="text-white/80 text-sm font-medium mb-1 uppercase tracking-wider">LAST UPDATED</h3>
+              <p className="text-white text-base font-bold">{new Date(order.updated_at).toLocaleDateString()}</p>
+              <p className="text-white/70 text-sm mt-1">{new Date(order.updated_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
             </div>
           </div>
 
           {/* Distance Card */}
-          <div className={`p-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-xl bg-gradient-to-br from-[var(--button)] to-gray-900 shadow-lg border border-[var(--border)] group`}>
-            <div className="flex items-center gap-4">
-              <div className="p-4 rounded-xl bg-white/10 group-hover:scale-110 transition-transform duration-300">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+          <div className={`p-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl ${
+            themeMode === "dark" 
+              ? "bg-gradient-to-br from-[var(--button)] to-gray-900" 
+              : "bg-gradient-to-br from-[var(--button)] to-gray-900"
+          } shadow-lg border border-[var(--border)] group backdrop-blur-sm relative overflow-hidden`}>
+            {/* Dark Overlay for Dark Mode Only */}
+            {themeMode === "dark" && (
+              <div className="absolute inset-0 bg-black/10 rounded-xl pointer-events-none z-10"></div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+            <div className="flex flex-col items-center text-center relative z-20">
+              <div className="p-3 rounded-xl bg-white/10 group-hover:scale-110 transition-transform duration-300 mb-2">
+                <MapPin className="w-6 h-6 text-white" />
               </div>
-              <div>
-                <h3 className="text-white/80 text-sm font-medium mb-1 uppercase tracking-wider">DISTANCE</h3>
-                <p className="text-white text-xl font-bold">
-                  {isOrderNotAccepted ? "(Not available yet)" : (order?.distance_km ? `${order.distance_km} Km` : "(Calculating...)")}
-                </p>
-              </div>
+              <h3 className="text-white/80 text-sm font-medium mb-1 uppercase tracking-wider">DISTANCE</h3>
+              <p className="text-white text-lg font-bold">
+                {isOrderNotAccepted ? "N/A" : (order?.distance_km ? `${order.distance_km} Km` : "Calculating")}
+              </p>
             </div>
           </div>
 
           {/* Estimated Time Card */}
-          <div className={`p-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-xl bg-gradient-to-br from-[var(--button)] to-gray-900 shadow-lg border border-[var(--border)] group`}>
-            <div className="flex items-center gap-4">
-              <div className="p-4 rounded-xl bg-white/10 group-hover:scale-110 transition-transform duration-300">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+          <div className={`p-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl ${
+            themeMode === "dark" 
+              ? "bg-gradient-to-br from-[var(--button)] to-gray-900" 
+              : "bg-gradient-to-br from-[var(--button)] to-gray-900"
+          } shadow-lg border border-[var(--border)] group backdrop-blur-sm relative overflow-hidden`}>
+            {/* Dark Overlay for Dark Mode Only */}
+            {themeMode === "dark" && (
+              <div className="absolute inset-0 bg-black/10 rounded-xl pointer-events-none z-10"></div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+            <div className="flex flex-col items-center text-center relative z-20">
+              <div className="p-3 rounded-xl bg-white/10 group-hover:scale-110 transition-transform duration-300 mb-2">
+                <Clock className="w-6 h-6 text-white" />
               </div>
-              <div>
-                <h3 className="text-white/80 text-sm font-medium mb-1 uppercase tracking-wider">EST. ARRIVAL</h3>
-                <p className="text-white text-xl font-bold">
-                  {isOrderNotAccepted ? "(Not available yet)" : (estimatedTime ? estimatedTime : "(Calculating...)")}
-                </p>
-              </div>
+              <h3 className="text-white/80 text-sm font-medium mb-1 uppercase tracking-wider">EST. ARRIVAL</h3>
+              <p className="text-white text-lg font-bold">
+                {isOrderNotAccepted ? "N/A" : (estimatedTime ? estimatedTime : "Calculating")}
+              </p>
             </div>
           </div>
 
           {/* Order ID Card */}
-          <div className={`p-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-xl bg-gradient-to-br from-[var(--button)] to-gray-900 shadow-lg border border-[var(--border)] group`}>
-            <div className="flex items-center gap-4">
-              <div className="p-4 rounded-xl bg-white/10 group-hover:scale-110 transition-transform duration-300">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-white/80 text-sm font-medium mb-1 uppercase tracking-wider">ORDER ID</h3>
-                <p className="text-white text-xl font-bold">#{order.id || order.order_id}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Third Row - Map */}
-        <div className={`rounded-2xl overflow-hidden mb-6 ${
-          themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-white'
-        } shadow-lg border border-[var(--border)] backdrop-blur-sm`}>
-          <div className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold text-[var(--text)]">Delivery Route</h3>
-            </div>
-            
-            {routePoints.length >= 2 ? (
-              <div className="h-80 md:h-96 rounded-xl overflow-hidden border border-gray-200/50 shadow-lg">
-                <MapView routePoints={routePoints} />
-              </div>
-            ) : (
-              <div className="h-64 flex items-center justify-center rounded-xl border-2 border-dashed border-gray-300/50 bg-gradient-to-br from-gray-50 to-gray-100">
-                <div className="text-center p-6">
-                  <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                  </svg>
-                  <p className="text-gray-500 text-lg font-medium mb-2">Route information loading</p>
-                  <p className="text-gray-400 text-sm">Tracking map will appear once delivery starts</p>
-                </div>
-              </div>
+          <div className={`p-4 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl ${
+            themeMode === "dark" 
+              ? "bg-gradient-to-tr from-[var(--button)]  to-gray-900" 
+              : "bg-gradient-to-br from-[var(--button)]   to-gray-900"
+          } shadow-lg border border-[var(--border)] group backdrop-blur-sm relative overflow-hidden`}>
+            {/* Dark Overlay for Dark Mode Only */}
+            {themeMode === "dark" && (
+              <div className="absolute inset-0 bg-black/10 rounded-xl pointer-events-none z-10"></div>
             )}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+            <div className="flex flex-col items-center text-center relative z-20">
+              <div className="p-3 rounded-xl bg-white/10 group-hover:scale-110 transition-transform duration-300 mb-2">
+                <Package className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-white/80 text-sm font-medium mb-1 uppercase tracking-wider">ORDER ID</h3>
+              <p className="text-white text-lg font-bold">#{order.id || order.order_id}</p>
+            </div>
           </div>
         </div>
 
-        {/* Footer Note */}
-        <div className="text-center py-6">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
-            <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-sm text-blue-600 font-medium">
+        {/* Enhanced Map Section */}
+        <div className={`rounded-2xl p-4 sm:p-6 mb-6 shadow-xl border ${
+          themeMode === "dark" 
+            ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)]" 
+            : "bg-gradient-to-br from-white to-gray-50 border-gray-200"
+        } relative overflow-hidden backdrop-blur-sm`}>
+          
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-lg bg-gradient-to-r from-[var(--button)] to-[var(--primary)] shadow-lg">
+              <Navigation className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-[var(--text)]">Delivery Route</h3>
+              <p className="text-[var(--light-gray)] text-sm">Real-time tracking visualization</p>
+            </div>
+          </div>
+          
+          {routePoints.length >= 2 ? (
+            <div className="h-64 md:h-80 rounded-xl overflow-hidden border-2 border-gray-200/50 shadow-xl">
+              <MapView routePoints={routePoints} />
+            </div>
+          ) : (
+            <div className="h-48 flex items-center justify-center rounded-xl border-2 border-dashed border-gray-300/50 bg-gradient-to-br from-gray-50 to-gray-100 relative overflow-hidden">
+              <div className="text-center p-4 relative z-10">
+                <div className="w-16 h-16 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+                  <Truck className="w-8 h-8 text-white" />
+                </div>
+                <p className="text-gray-600 text-base font-semibold mb-1">Route information loading</p>
+                <p className="text-gray-500 text-sm">Tracking map will appear once delivery starts</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Enhanced Footer Note */}
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-[var(--button)]/10 to-[var(--primary)]/10 border-2 border-[var(--button)]/30 shadow-lg transform hover:scale-105 transition-all duration-300 group relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--button)]/5 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+            <Sparkles className="w-5 h-5 text-[var(--button)] relative z-10" />
+            <p className="text-[var(--button)] text-base font-semibold relative z-10">
               For inquiries, please contact our customer service
             </p>
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes gradient-x-slow {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        @keyframes float-slow {
+          0%, 100% { 
+            transform: translateY(0px) translateX(0px) rotate(0deg); 
+            opacity: 0.7;
+          }
+          33% { 
+            transform: translateY(-20px) translateX(10px) rotate(120deg); 
+            opacity: 1;
+          }
+          66% { 
+            transform: translateY(10px) translateX(-15px) rotate(240deg); 
+            opacity: 0.8;
+          }
+        }
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 0.1; transform: scale(1); }
+          50% { opacity: 0.3; transform: scale(1.1); }
+        }
+        @keyframes pulse-glow {
+          0%, 100% { 
+            box-shadow: 0 0 20px 0px rgba(var(--button-rgb), 0.4),
+                       inset 0 0 20px rgba(255, 255, 255, 0.1);
+          }
+          50% { 
+            box-shadow: 0 0 30px 10px rgba(var(--button-rgb), 0.6),
+                       inset 0 0 30px rgba(255, 255, 255, 0.2);
+            transform: scale(1.15);
+          }
+        }
+        @keyframes text-pulse {
+          0%, 100% { 
+            opacity: 1;
+            text-shadow: 0 0 10px rgba(var(--button-rgb), 0.3);
+          }
+          50% { 
+            opacity: 0.9;
+            text-shadow: 0 0 20px rgba(var(--button-rgb), 0.6);
+          }
+        }
+        @keyframes badge-pulse {
+          0%, 100% { 
+            transform: scale(1);
+            box-shadow: 0 4px 15px rgba(var(--button-rgb), 0.2);
+          }
+          50% { 
+            transform: scale(1.05);
+            box-shadow: 0 6px 25px rgba(var(--button-rgb), 0.4);
+          }
+        }
+        .animate-gradient-x-slow { 
+          background-size: 200% 200%; 
+          animation: gradient-x-slow 8s ease infinite; 
+        }
+        .animate-float-slow { 
+          animation: float-slow 12s ease-in-out infinite; 
+        }
+        .animate-pulse-slow { 
+          animation: pulse-slow 4s ease-in-out infinite; 
+        }
+        .animate-pulse-glow {
+          animation: pulse-glow 2s ease-in-out infinite;
+        }
+        .animate-text-pulse {
+          animation: text-pulse 2s ease-in-out infinite;
+        }
+        .animate-badge-pulse {
+          animation: badge-pulse 1.5s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 };
