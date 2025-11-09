@@ -48,30 +48,47 @@ const ChatBot = ({ userId }) => {
     setInput("");
   };
 
+  // === ألوان بنفس ستايل المثال (ألوان فقط) ===
+  const bgPanel = isDarkMode ? "var(--div)" : "var(--bg)";
+  const panelGradient = isDarkMode
+    ? "linear-gradient(rgba(255,255,255,0.02), rgba(255,255,255,0.02))"
+    : "linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8))";
+
+  const sectionGradient = isDarkMode
+    ? "linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)"
+    : "linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%)";
+
+  const msgBg = (sender) =>
+    sender === "user"
+      ? "var(--button)"
+      : isDarkMode
+      ? "var(--bg)"
+      : "var(--div)";
+
+  const msgBorder = isDarkMode
+    ? "1px solid rgba(255,255,255,0.1)"
+    : "1px solid rgba(0,0,0,0.05)";
+
+  const inputBg = isDarkMode ? "var(--div)" : "white";
+
   return (
     <div
       className="flex flex-col h-full rounded-xl shadow-xl overflow-hidden transition-colors duration-300"
       style={{
-        backgroundColor: "var(--div)",
+        backgroundColor: bgPanel,
         color: "var(--text)",
+        border: "1px solid var(--border)",
+        backgroundImage: panelGradient,
+        backdropFilter: "blur(8px)",
       }}
     >
-      {/* Header داخل المكوّن إذا احتجتيه */}
-      {/* <div
-        className="px-4 py-3 font-semibold"
-        style={{
-          backgroundColor: isDarkMode ? "var(--mid-dark)" : "var(--textbox)",
-          color: "var(--text)",
-          boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
-        }}
-      >
-        Qwikko Chatbot
-      </div> */}
-
       {/* Messages */}
       <div
         className="flex-1 overflow-y-auto p-4 space-y-3"
-        style={{ backgroundColor: "var(--bg)" }}
+        style={{
+          backgroundColor: bgPanel,
+          backgroundImage: "none",
+        }}
       >
         {messages.map((msg, index) => (
           <div
@@ -82,11 +99,10 @@ const ChatBot = ({ userId }) => {
             }}
           >
             <div
-              className="break-words shadow-sm"
+              className="break-words shadow-sm transition-all duration-300 hover:shadow-md"
               style={{
                 maxWidth: msg.sender === "user" ? "85%" : "65%",
-                backgroundColor:
-                  msg.sender === "user" ? "var(--button)" : "var(--div)",
+                backgroundColor: msgBg(msg.sender),
                 color: msg.sender === "user" ? "#ffffff" : "var(--text)",
                 borderRadius:
                   msg.sender === "user"
@@ -94,7 +110,8 @@ const ChatBot = ({ userId }) => {
                     : "18px 18px 18px 6px",
                 padding: msg.sender === "user" ? "12px 16px" : "10px 14px",
                 marginBottom: "8px",
-                border: "none",
+                border: msgBorder, // نفس ستايل المثال
+                backdropFilter: "blur(10px)",
               }}
             >
               <ReactMarkdown
@@ -144,14 +161,41 @@ const ChatBot = ({ userId }) => {
 
         {isTyping && (
           <div
-            className="max-w-[60%] p-2 rounded-2xl animate-pulse self-start shadow-sm"
+            className="max-w-[60%] p-2 rounded-2xl self-start shadow-sm"
             style={{
-              backgroundColor: "var(--div)",
+              backgroundColor: isDarkMode ? "var(--bg)" : "var(--div)",
               color: "var(--text)",
-              border: "none",
+              border: msgBorder,
+              backdropFilter: "blur(10px)",
             }}
           >
-            Thinking...
+            <div className="flex items-center gap-3">
+              <div className="flex space-x-1.5">
+                <div
+                  className="w-2 h-2 rounded-full animate-bounce"
+                  style={{ backgroundColor: "var(--text)", opacity: 0.8 }}
+                />
+                <div
+                  className="w-2 h-2 rounded-full animate-bounce"
+                  style={{
+                    backgroundColor: "var(--text)",
+                    opacity: 0.8,
+                    animationDelay: "0.1s",
+                  }}
+                />
+                <div
+                  className="w-2 h-2 rounded-full animate-bounce"
+                  style={{
+                    backgroundColor: "var(--text)",
+                    opacity: 0.8,
+                    animationDelay: "0.2s",
+                  }}
+                />
+              </div>
+              <span className="text-sm opacity-90 font-semibold">
+                Thinking...
+              </span>
+            </div>
           </div>
         )}
 
@@ -160,23 +204,24 @@ const ChatBot = ({ userId }) => {
 
       {/* Input */}
       <div
-        className="flex items-center gap-2 p-3"
+        className="flex items-center gap-2 p-3 border-t"
         style={{
-          backgroundColor: "var(--div)",
-          borderTop: "none",
-          boxShadow: "0 -4px 10px rgba(0,0,0,0.04)",
+          backgroundColor: bgPanel,
+          borderTop: "1px solid var(--border)",
+          backgroundImage: sectionGradient,
         }}
       >
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          className="flex-1 rounded-full px-4 py-2 outline-none focus:ring-2 transition-all"
+          className="flex-1 rounded-full px-4 py-2 outline-none transition-all"
           style={{
-            backgroundColor: "var(--textbox)",
+            backgroundColor: inputBg,
             color: "var(--text)",
-            border: "none",
-            boxShadow: "0 0 0 1px var(--border) inset",
+            border: "1px solid var(--border)",
+            boxShadow: "none",
+            backdropFilter: "blur(10px)",
           }}
           placeholder="Type your message..."
         />
@@ -184,13 +229,16 @@ const ChatBot = ({ userId }) => {
         <button
           onClick={handleSend}
           disabled={!input.trim()}
-          className="p-3 rounded-full flex items-center justify-center transition-all shadow-md"
+          className={`p-3 rounded-full flex items-center justify-center transition-all shadow-md ${
+            !input.trim()
+              ? "opacity-50 cursor-not-allowed grayscale"
+              : "hover:shadow-lg"
+          }`}
           style={{
             backgroundColor: "var(--button)",
             color: "#ffffff",
-            opacity: !input.trim() ? 0.5 : 1,
-            cursor: !input.trim() ? "not-allowed" : "pointer",
             border: "none",
+            backdropFilter: "blur(10px)",
           }}
           title="Send"
           aria-label="Send message"

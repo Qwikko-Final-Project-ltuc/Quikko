@@ -18,6 +18,51 @@ module.exports = (io) => {
     protect,
     chatController.getCustomerConversations
   );
+  // ===== helper: delivery unread count =====
+  const getDeliveryUnreadCount = async (deliveryUserId) => {
+    try {
+      const query = `
+      SELECT COUNT(*) AS unread_count
+      FROM chat_messages
+      WHERE receiver_id = $1
+        AND read_status = false
+    `;
+      const result = await pool.query(query, [deliveryUserId]);
+      return parseInt(result.rows[0]?.unread_count || "0", 10);
+    } catch (error) {
+      console.error("Error in getDeliveryUnreadCount:", error);
+      return 0;
+    }
+  };
+
+  // ===== route: delivery unread count (by token) =====
+  // ضع هذا الراوت قبل الراوت الديناميكي "/:customerId/:vendorId"
+  router.get("/delivery/me/unread-count", protect, async (req, res) => {
+    try {
+      if (req.user.role !== "delivery") {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied. Delivery only.",
+        });
+      }
+
+      const deliveryId = req.user.id; // من التوكن
+      const unreadCount = await getDeliveryUnreadCount(deliveryId);
+
+      return res.json({
+        success: true,
+        count: unreadCount,
+        message: "Unread messages count for delivery retrieved successfully",
+      });
+    } catch (error) {
+      console.error("Error in delivery unread-count route:", error);
+      return res.status(500).json({
+        success: false,
+        count: 0,
+        message: error.message,
+      });
+    }
+  });
 
   router.post("/mark-read", protect, chatController.markRead);
 
@@ -31,58 +76,51 @@ module.exports = (io) => {
     chatController.getDeliveryConversations
   );
 
-
-
-
-const getCustomerUnreadCount = async (customerId) => {
-  try {
-    const query = `
+  const getCustomerUnreadCount = async (customerId) => {
+    try {
+      const query = `
       SELECT COUNT(*) AS unread_count
       FROM chat_messages
       WHERE receiver_id = $1
         AND read_status = false
     `;
 
-    const result = await pool.query(query, [customerId]); // نفّذ الكويري هنا
-    console.log("DB result:", result.rows); // للتأكد
-    return parseInt(result.rows[0].unread_count, 10);
-  } catch (error) {
-    console.error("Error in getCustomerUnreadCount:", error);
-    return 0;
-  }
-};
+      const result = await pool.query(query, [customerId]); // نفّذ الكويري هنا
+      console.log("DB result:", result.rows); // للتأكد
+      return parseInt(result.rows[0].unread_count, 10);
+    } catch (error) {
+      console.error("Error in getCustomerUnreadCount:", error);
+      return 0;
+    }
+  };
 
+  router.get("/unread-count", protect, async (req, res) => {
+    try {
+      const customerId = req.user.id; // خليها من التوكن بدل الرقم الثابت
 
-router.get("/unread-count", protect, async (req, res) => {
-  try {
-    const customerId = req.user.id; // خليها من التوكن بدل الرقم الثابت
+      if (req.user.role !== "customer") {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied. Customers only.",
+        });
+      }
 
-    if (req.user.role !== "customer") {
-      return res.status(403).json({
+      const unreadCount = await getCustomerUnreadCount(customerId);
+      console.log("User from token:", req.user);
+      res.json({
+        success: true,
+        count: unreadCount,
+        message: "Unread messages count retrieved successfully",
+      });
+    } catch (error) {
+      console.error("Error in getCustomerUnreadCount route:", error);
+      res.status(500).json({
         success: false,
-        message: "Access denied. Customers only.",
+        count: 0,
+        message: error.message,
       });
     }
-
-    const unreadCount = await getCustomerUnreadCount(customerId);
-    console.log("User from token:", req.user);
-    res.json({
-      success: true,
-      count: unreadCount,
-      message: "Unread messages count retrieved successfully",
-    });
-  } catch (error) {
-    console.error("Error in getCustomerUnreadCount route:", error);
-    res.status(500).json({
-      success: false,
-      count: 0,
-      message: error.message,
-    });
-  }
-});
-
-
-
+  });
 
   return router;
 };

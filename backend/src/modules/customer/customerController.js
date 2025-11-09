@@ -858,27 +858,43 @@ exports.redeemLoyaltyPoints = async (req, res) => {
   }
 };
 
-// exports.calculateDeliveryPreview = async (req, res) => {
-//   try {
-//     const { userId, cartId, address, addressId } = req.body;
 
-//     const result = await customerService.calculateDeliveryPreview({
-//       userId,
-//       cartId,
-//       address,
-//       addressId,
-//     });
+exports.submitOrderDecision = async (req, res) => {
+  try {
+    const customerId = req.user.id;
+    const { orderId } = req.params;
+    const { action } = req.body; // "cancel_order" | "proceed_without_rejected"
 
-//     return res.status(200).json({ success: true, ...result });
-//   } catch (err) {
-//     console.error("calculate Delivery Preview error:", err);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Failed to calculate delivery preview",
-//       error: err.message || err,
-//     });
-//   }
-// };
+    if (!["cancel_order", "proceed_without_rejected"].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "action must be 'cancel_order' or 'proceed_without_rejected'",
+      });
+    }
+
+    const result = await customerModel.applyCustomerDecision({
+      orderId: Number(orderId),
+      customerId,
+      action,
+    });
+
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Order not found / not eligible / or nothing changed",
+      });
+    }
+
+    // رجّع الطلب بعد التعديل + عناصره ليحدث الـ UI فورًا
+    return res.json({ success: true, data: result });
+  } catch (err) {
+    console.error("submitOrderDecision error:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: err.message || "Server error" });
+
 
 exports.calculateDeliveryPreview = async function (req, res) {
   try {

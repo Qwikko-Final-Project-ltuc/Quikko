@@ -1,35 +1,45 @@
-const { body, validationResult } = require('express-validator');
+// backend/src/modules/vendor/vendorValidators.js
+const { body, param, validationResult } = require("express-validator");
 
-/**
- * ===============================
- * Vendor Validators
- * ===============================
- * @module vendorValidators
- * @desc Validation middleware for vendor-related requests, e.g., updating order status.
- */
-
-/**
- * Validate request body when updating order status
- * @middleware
- * @function updateOrderStatusValidator
- * @throws {400} Bad Request if validation fails
- * 
- * Validations:
- * - `status` is required
- * - `status` must be one of ['pending', 'shipped', 'delivered', 'cancelled']
- * 
- * @example
- * router.put('/orders/:id', protect, updateOrderStatusValidator, vendorController.updateOrderStatus);
- */
-exports.updateOrderStatusValidator = [
-  body('status')
+// قديمك كما هو:
+const updateOrderStatusValidator = [
+  body("status")
     .notEmpty()
-    .withMessage('Status is required')
-    .isIn(['pending', 'shipped', 'delivered', 'cancelled'])
-    .withMessage('Invalid status'),
+    .withMessage("Status is required")
+    .isIn(["pending", "shipped", "delivered", "cancelled"])
+    .withMessage("Invalid status"),
   (req, res, next) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    if (!errors.isEmpty())
+      return res.status(400).json({ errors: errors.array() });
     next();
   },
 ];
+
+// جديد:
+const updateOrderItemStatusValidator = [
+  param("orderId").isInt({ min: 1 }).toInt(),
+  param("itemId").isInt({ min: 1 }).toInt(),
+  body("action")
+    .notEmpty()
+    .withMessage("action is required")
+    .isIn(["accept", "reject"])
+    .withMessage("action must be 'accept' or 'reject'"),
+  body("reason")
+    .optional({ nullable: true })
+    .isString()
+    .withMessage("reason must be a string")
+    .isLength({ max: 500 })
+    .withMessage("reason too long"),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty())
+      return res.status(400).json({ errors: errors.array() });
+    next();
+  },
+];
+
+module.exports = {
+  updateOrderStatusValidator,
+  updateOrderItemStatusValidator,
+};

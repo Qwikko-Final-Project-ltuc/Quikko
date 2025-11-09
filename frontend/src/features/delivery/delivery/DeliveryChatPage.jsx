@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { useSelector } from "react-redux";
 import { chatApi, SOCKET_URL } from "./Api/chatAPI.JS";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { FaArrowLeft, FaSearch } from "react-icons/fa";
 
 /* ===================== Helpers (بدون تغيير المنطق) ===================== */
 const toUtcISO = (v) => {
@@ -76,6 +77,7 @@ const safeText = (v) => {
 /* ===================== Component ===================== */
 const DeliveryChatPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const initialVendorUserId = Number(location.state?.vendorUserId);
   const initialVendorName = location.state?.vendorName ?? null;
 
@@ -108,6 +110,9 @@ const DeliveryChatPage = () => {
   const prevRoomRef = useRef(null);
   const messagesEndRef = useRef(null);
   const activeVendorIdRef = useRef(null);
+
+  // حالة جديدة للتحكم بعرض الشات على الموبايل
+  const [showChat, setShowChat] = useState(false);
 
   const upsertConversation = (list, item) => {
     const key = Number(item.vendorUserId);
@@ -380,6 +385,11 @@ const DeliveryChatPage = () => {
             : c
         )
       );
+
+      // على الموبايل: اظهار صفحة الشات
+      if (window.innerWidth < 768) {
+        setShowChat(true);
+      }
     } catch (err) {
       console.error("loadMessages error:", err);
     }
@@ -467,9 +477,17 @@ const DeliveryChatPage = () => {
     setActiveVendorId(null);
     setActiveVendorName("");
     setChat([]);
+    setShowChat(false);
   };
 
-  /* ===================== UI (تصميم الكود الثاني) ===================== */
+  const handleBackToConversations = () => {
+    setShowChat(false);
+  };
+
+  // تحديد إذا كان الموبايل
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
+  /* ===================== UI (تصميم متجاوب) ===================== */
   return (
     <div className="flex flex-col bg-[var(--bg)]" style={{ height: "100vh" }}>
       {/* Scrollbar Styles */}
@@ -494,200 +512,236 @@ const DeliveryChatPage = () => {
       </style>
 
       <div className="flex-1 flex max-w-7xl mx-auto w-full min-h-0 gap-2">
-        <div className="flex w-full h-full bg-[var(--bg)] min-h-0">
-          {/* Sidebar */}
-          <aside
-            className={`w-80 flex flex-col min-h-0 border-r-3 ${
-              themeDark ? "border-[var(--mid-dark)]" : "border-[var(--textbox)]"
-            }`}
-          >
-            <div className="p-4 flex-shrink-0">
+        {/* Sidebar - يظهر دائماً على الديسكتوب، على الموبايل يظهر فقط إذا showChat = false */}
+        <aside
+          className={`
+          ${isMobile ? (showChat ? "hidden" : "w-full") : "w-80 flex"}
+          flex-col min-h-0 border-r-3 
+          ${themeDark ? "border-[var(--mid-dark)]" : "border-[var(--textbox)]"}
+        `}
+        >
+          {/* Header للموبايل */}
+          {isMobile && (
+            <div className="p-4 border-b border-[var(--border)]">
+              <h1 className="text-lg font-bold text-[var(--text)] text-center">
+                Conversations
+              </h1>
+            </div>
+          )}
+
+          <div className="p-4 flex-shrink-0">
+            <div className="relative">
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search Contact..."
-                className={`w-full px-4 py-2 rounded-full text-sm ${
+                className={`w-full pl-10 pr-4 py-2 rounded-full text-sm ${
                   themeDark
                     ? "bg-[var(--div)] text-[var(--text)]"
                     : "bg-[var(--textbox)] text-[var(--text)]"
                 } placeholder-gray-400 focus:outline-none`}
               />
-              {authError && (
-                <p className="text-xs text-red-600 mt-2">{authError}</p>
-              )}
             </div>
+            {authError && (
+              <p className="text-xs text-red-600 mt-2">{authError}</p>
+            )}
+          </div>
 
-            <div className="flex-1 overflow-y-auto min-h-0 px-2 pb-4 messages-scroll">
-              {loading ? (
-                <div className="p-4 text-sm opacity-70 text-[var(--text)]">
-                  Loading…
-                </div>
-              ) : filteredConversations.length === 0 ? (
-                <div className="p-4 text-sm opacity-70 text-[var(--text)]">
-                  No conversations yet.
-                </div>
-              ) : (
-                filteredConversations.map((c) => (
-                  <div
-                    key={c.vendorUserId}
-                    onClick={() => handleSelectConversation(c)}
-                    className={`cursor-pointer mb-2 rounded-xl p-3 transition-all ${
-                      Number(activeVendorId) === Number(c.vendorUserId)
-                        ? themeDark
-                          ? "bg-[var(--light-gray)] border-l-4 border-[var(--button)]"
-                          : "bg-gray-100 border-l-4 border-[var(--button)]"
-                        : Number(c.unread) > 0
-                        ? themeDark
-                          ? "bg-[var(--div)]"
-                          : "bg-[var(--textbox)]"
-                        : themeDark
-                        ? "bg-[var(--div)] hover:bg-[var(--hover)]"
-                        : "bg-[var(--textbox)] hover:bg-[var(--div)]"
-                    }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex flex-col min-w-0">
-                        <p className="font-semibold truncate text-[var(--text)] mb-1">
-                          {c.vendorName}
-                        </p>
-                        <p className="text-sm truncate text-[var(--text)]">
-                          {c.lastMessage || "No messages yet"}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-end flex-shrink-0">
-                        <span className="text-xs text-[var(--text)] mb-1">
-                          {formatMessageTime(c.updatedAt)}
+          <div className="flex-1 overflow-y-auto min-h-0 px-2 pb-4 messages-scroll">
+            {loading ? (
+              <div className="p-4 text-sm opacity-70 text-[var(--text)]">
+                Loading…
+              </div>
+            ) : filteredConversations.length === 0 ? (
+              <div className="p-4 text-sm opacity-70 text-[var(--text)]">
+                No conversations yet.
+              </div>
+            ) : (
+              filteredConversations.map((c) => (
+                <div
+                  key={c.vendorUserId}
+                  onClick={() => handleSelectConversation(c)}
+                  className={`cursor-pointer mb-2 rounded-xl p-3 transition-all ${
+                    Number(activeVendorId) === Number(c.vendorUserId)
+                      ? themeDark
+                        ? "bg-[var(--light-gray)] border-l-4 border-[var(--button)]"
+                        : "bg-gray-100 border-l-4 border-[var(--button)]"
+                      : Number(c.unread) > 0
+                      ? themeDark
+                        ? "bg-[var(--div)]"
+                        : "bg-[var(--textbox)]"
+                      : themeDark
+                      ? "bg-[var(--div)] hover:bg-[var(--hover)]"
+                      : "bg-[var(--textbox)] hover:bg-[var(--div)]"
+                  }`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <p className="font-semibold truncate text-[var(--text)] mb-1">
+                        {c.vendorName}
+                      </p>
+                      <p className="text-sm truncate text-[var(--text)] opacity-80">
+                        {c.lastMessage || "No messages yet"}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end flex-shrink-0 ml-2">
+                      <span className="text-xs text-[var(--text)] mb-1 opacity-70">
+                        {formatMessageTime(c.updatedAt)}
+                      </span>
+                      {Number(c.unread) > 0 && (
+                        <span className="bg-[var(--button)] text-white text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
+                          {c.unread}
                         </span>
-                        {Number(c.unread) > 0 && (
-                          <span className="bg-[var(--button)] text-white text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
-                            {c.unread}
-                          </span>
-                        )}
-                      </div>
+                      )}
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-          </aside>
+                </div>
+              ))
+            )}
+          </div>
+        </aside>
 
-          {/* Chat Area */}
-          <main
-            className={`flex-1 flex flex-col min-h-0 ${
-              themeDark ? "border-[var(--div)]" : "border-[var(--textbox)]"
-            } rounded-lg`}
-          >
-            {activeVendorId ? (
-              <>
-                {/* Header */}
-                <div
-                  className={`flex items-center justify-between px-6 py-4 flex-shrink-0 border-b-2 ${
-                    themeDark
-                      ? "border-[var(--div)]"
-                      : "border-[var(--textbox)]"
-                  }`}
-                >
-                  <h2 className="font-bold text-[var(--text)] text-lg mt-2">
+        {/* Chat Area - على الموبايل يظهر فقط إذا showChat = true */}
+        <main
+          className={`
+          ${isMobile ? (showChat ? "flex-1 flex" : "hidden") : "flex-1 flex"} 
+          flex-col min-h-0 
+          ${themeDark ? "border-[var(--div)]" : "border-[var(--textbox)]"} 
+          rounded-lg
+        `}
+        >
+          {activeVendorId ? (
+            <>
+              {/* Header */}
+              <div
+                className={`flex items-center px-4 py-3 flex-shrink-0 border-b-2 ${
+                  themeDark ? "border-[var(--div)]" : "border-[var(--textbox)]"
+                }`}
+              >
+                {/* زر الرجوع للموبايل فقط */}
+                {isMobile && (
+                  <button
+                    onClick={handleBackToConversations}
+                    className="mr-3 text-[var(--text)] p-2 rounded-lg hover:bg-[var(--div)] transition-colors"
+                  >
+                    <FaArrowLeft />
+                  </button>
+                )}
+
+                <div className="flex-1">
+                  <h2 className="font-bold text-[var(--text)] text-base">
                     {headerTitle}
                   </h2>
-                  <button
-                    onClick={closeChat}
-                    className="text-gray-400 hover:text-[var(--button)] text-2xl"
-                  >
-                    ×
-                  </button>
+                  <p className="text-xs text-[var(--text)] opacity-70">
+                    Online
+                  </p>
                 </div>
 
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto min-h-0 px-6 py-4 space-y-3 messages-scroll">
-                  {groupedMessages.map((msg) =>
-                    msg.type === "date" ? (
-                      <div
-                        key={msg.id}
-                        className="text-center text-xs text-gray-400 my-2"
-                      >
-                        {msg.date}
-                      </div>
-                    ) : (
-                      <div
-                        key={msg.clientId || msg.id}
-                        className={`flex ${
-                          msg.sender === "delivery"
-                            ? "justify-end"
-                            : "justify-start"
-                        }`}
-                      >
-                        <div className="max-w-[70%]">
-                          <div
-                            className={`p-3 rounded-lg text-sm ${
-                              msg.sender === "delivery"
-                                ? "bg-[var(--button)] text-white"
-                                : `${
-                                    themeDark
-                                      ? "bg-[var(--div)] border-[var(--button)]"
-                                      : "bg-[var(--textbox)] border-[var(--button)]"
-                                  } text-[var(--text)]`
-                            }`}
-                          >
-                            {safeText(msg.message)}
-                          </div>
-                          <div
-                            className={`text-xs mt-1 ${
-                              msg.sender === "delivery"
-                                ? "text-right text-[var(--text)]"
-                                : "text-left text-[var(--text)]"
-                            }`}
-                          >
-                            {formatMessageTime(msg.createdAt)}
-                          </div>
+                <button
+                  onClick={closeChat}
+                  className="text-gray-400 hover:text-[var(--button)] text-xl p-2 rounded-lg hover:bg-[var(--div)] transition-colors"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto min-h-0 px-4 py-3 space-y-3 messages-scroll">
+                {groupedMessages.map((msg) =>
+                  msg.type === "date" ? (
+                    <div
+                      key={msg.id}
+                      className="text-center text-xs text-gray-400 my-2"
+                    >
+                      {msg.date}
+                    </div>
+                  ) : (
+                    <div
+                      key={msg.clientId || msg.id}
+                      className={`flex ${
+                        msg.sender === "delivery"
+                          ? "justify-end"
+                          : "justify-start"
+                      }`}
+                    >
+                      <div className="max-w-[85%] xs:max-w-[80%]">
+                        <div
+                          className={`p-3 rounded-lg text-sm ${
+                            msg.sender === "delivery"
+                              ? "bg-[var(--button)] text-white rounded-br-none"
+                              : `${
+                                  themeDark
+                                    ? "bg-[var(--div)] border-[var(--button)]"
+                                    : "bg-[var(--textbox)] border-[var(--button)]"
+                                } text-[var(--text)] rounded-bl-none`
+                          }`}
+                        >
+                          {safeText(msg.message)}
+                        </div>
+                        <div
+                          className={`text-xs mt-1 ${
+                            msg.sender === "delivery"
+                              ? "text-right text-[var(--text)] opacity-70"
+                              : "text-left text-[var(--text)] opacity-70"
+                          }`}
+                        >
+                          {formatMessageTime(msg.createdAt)}
                         </div>
                       </div>
-                    )
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
+                    </div>
+                  )
+                )}
+                <div ref={messagesEndRef} />
+              </div>
 
-                {/* Input */}
-                <div
-                  className={`px-6 py-4 flex items-center gap-3 flex-shrink-0 border-t-2 ${
+              {/* Input */}
+              <div
+                className={`px-4 py-3 flex items-center gap-2 flex-shrink-0 border-t-2 ${
+                  themeDark ? "border-[var(--div)]" : "border-[var(--textbox)]"
+                }`}
+              >
+                <input
+                  type="text"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                  placeholder="Type a message here..."
+                  className={`flex-1 px-4 py-3 rounded-full border-2 text-sm ${
                     themeDark
-                      ? "border-[var(--div)]"
-                      : "border-[var(--textbox)]"
+                      ? "bg-[var(--bg)] border-[var(--div)] text-[var(--text)]"
+                      : "bg-white text-[var(--text)] border-[var(--textbox)]"
+                  } placeholder-gray-500 focus:outline-none`}
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={!message.trim()}
+                  className={`p-3 rounded-full ${
+                    message.trim()
+                      ? "bg-[var(--button)] text-white hover:scale-105 transition-transform"
+                      : "bg-gray-400 cursor-not-allowed text-white"
                   }`}
                 >
-                  <input
-                    type="text"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                    placeholder="Type a message here..."
-                    className={`flex-1 px-4 py-2 rounded-full border-2 ${
-                      themeDark
-                        ? "bg-[var(--bg)] border-[var(--div)] text-[var(--text)]"
-                        : "bg-white text-[var(--text)] border-[var(--textbox)]"
-                    } placeholder-gray-500 focus:outline-none`}
-                  />
-                  <button
-                    onClick={sendMessage}
-                    disabled={!message.trim()}
-                    className={`p-3 rounded-full ${
-                      message.trim()
-                        ? "bg-[var(--button)] text-white hover:scale-105 transition-transform"
-                        : "bg-gray-400 cursor-not-allowed text-white"
-                    }`}
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
                   >
-                    ➤
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-gray-500 min-h-0">
-                Select a conversation to start chatting
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                  </svg>
+                </button>
               </div>
-            )}
-          </main>
-        </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-gray-500 min-h-0 p-4 text-center">
+              {isMobile
+                ? "Select a conversation to start chatting"
+                : "Select a conversation from the list to start chatting"}
+            </div>
+          )}
+        </main>
       </div>
     </div>
   );

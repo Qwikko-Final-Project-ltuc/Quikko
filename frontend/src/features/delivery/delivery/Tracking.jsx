@@ -274,7 +274,7 @@ if (loading) {
     <div className="w-full px-4 sm:px-6 lg:px-8 py-6 bg-[var(--bg)] text-[var(--text)]">
       {/* ------ Title ------ */}
       <div className="mb-4">
-        <h2 className="text-left text-3xl font-extrabold">
+        <h2 className="text-left text-3xl font-extrabold mt-8">
           Tracking Order #{order?.order_id || "N/A"}
         </h2>
       </div>
@@ -559,11 +559,11 @@ if (loading) {
           </div>
 
           {/* Collapsible Details */}
-          <RouteDetails
+          {/* <RouteDetails
             estimate={estimate}
             innerCardBg={innerCardBg}
             formatCurrency={formatCurrency}
-          />
+          /> */}
         </section>
       )}
 
@@ -854,20 +854,14 @@ if (loading) {
 
               {/* Totals row */}
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div
-                  className="rounded-xl border border-[var(--border)] p-4"
-                  style={innerCardBg}
-                >
+                <div>
                   <div className="text-sm opacity-70">Products Total</div>
                   <div className="text-2xl font-bold mt-1">
                     {formatCurrency(productsTotal)}
                   </div>
                 </div>
 
-                <div
-                  className="rounded-xl border border-[var(--border)] p-4"
-                  style={innerCardBg}
-                >
+                <div>
                   <div className="text-sm opacity-70">
                     Order Total (with Shipping)
                   </div>
@@ -889,96 +883,6 @@ if (loading) {
           Back to Orders
         </button>
       </div>
-    </div>
-  );
-}
-
-function RouteDetails({ estimate, innerCardBg, formatCurrency }) {
-  const [open, setOpen] = useState(true);
-  const rows = Array.isArray(estimate?.route) ? estimate.route : [];
-
-  return (
-    <div className="mt-6">
-      <div className="flex items-center justify-between">
-        <h4 className="text-lg font-semibold">Route Details</h4>
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="px-3 py-1.5 rounded-lg border text-sm hover:opacity-90"
-          style={{
-            borderColor: "var(--border)",
-            background: innerCardBg.background,
-          }}
-        >
-          {open ? "Hide" : "Show"} Details
-        </button>
-      </div>
-
-      {open && (
-        <div
-          className="mt-3 rounded-xl border border-[var(--border)] overflow-auto"
-          style={innerCardBg}
-        >
-          {/* Header */}
-          <div
-            className="grid grid-cols-12 text-xs sm:text-sm font-semibold sticky top-0"
-            style={{ background: "rgba(0,0,0,0.04)" }}
-          >
-            <div className="col-span-4 sm:col-span-3 px-3 py-2 border-b border-[var(--border)]">
-              From
-            </div>
-            <div className="col-span-4 sm:col-span-3 px-3 py-2 border-b border-[var(--border)]">
-              To
-            </div>
-            <div className="hidden sm:block sm:col-span-2 px-3 py-2 border-b border-[var(--border)]">
-              Distance
-            </div>
-            <div className="hidden sm:block sm:col-span-2 px-3 py-2 border-b border-[var(--border)]">
-              Duration
-            </div>
-            <div className="col-span-4 sm:col-span-2 px-3 py-2 border-b border-[var(--border)]">
-              Fee
-            </div>
-          </div>
-
-          {/* Rows */}
-          <div className="text-xs sm:text-sm">
-            {rows.length ? (
-              rows.map((seg, idx) => {
-                const dist = Number(seg?.distance_km ?? 0).toFixed(2);
-                const mins = Number(seg?.duration_min ?? 0).toFixed(0);
-                const fee = Number(seg?.delivery_fee ?? 0);
-
-                return (
-                  <div
-                    key={idx}
-                    className={`grid grid-cols-12 ${
-                      idx % 2 === 1 ? "bg-black/5 dark:bg-white/5" : ""
-                    }`}
-                  >
-                    <div className="col-span-4 sm:col-span-3 px-3 py-2 border-b border-[var(--border)] truncate">
-                      {seg?.from || `Step ${idx + 1}`}
-                    </div>
-                    <div className="col-span-4 sm:col-span-3 px-3 py-2 border-b border-[var(--border)] truncate">
-                      {seg?.to || "—"}
-                    </div>
-                    <div className="hidden sm:block sm:col-span-2 px-3 py-2 border-b border-[var(--border)]">
-                      {dist} km
-                    </div>
-                    <div className="hidden sm:block sm:col-span-2 px-3 py-2 border-b border-[var(--border)]">
-                      {mins} min
-                    </div>
-                    <div className="col-span-4 sm:col-span-2 px-3 py-2 border-b border-[var(--border)] font-semibold">
-                      {formatCurrency(fee)}
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="px-3 py-4 opacity-70">No route segments.</div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

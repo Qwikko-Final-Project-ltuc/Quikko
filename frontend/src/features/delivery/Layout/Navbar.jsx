@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate , Link} from "react-router-dom";
 import {
   FiMenu,
   FiChevronDown,
@@ -9,6 +9,8 @@ import {
   FiUser,
   FiLogOut,
 } from "react-icons/fi";
+import { FaComments } from "react-icons/fa";
+
 
 import { FaBell, FaBars, FaUser as FaUserSolid } from "react-icons/fa";
 import notificationAPI from "../notification/notificatationAPI";
@@ -30,6 +32,31 @@ export default function Navbar({ isSidebarOpen, toggleSidebar, user }) {
 
   const dispatch = useDispatch();
   const isDarkMode = useSelector((state) => state.deliveryTheme.darkMode);
+
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+
+  const CHAT_API_BASE = "http://localhost:3000";
+
+  const fetchUnreadChatCount = async () => {
+    try {
+      const res = await fetch(
+        `${CHAT_API_BASE}/api/chat/delivery/me/unread-count`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok) throw new Error("Failed to fetch chat unread count");
+      const data = await res.json();
+      setUnreadChatCount(Number(data?.count || 0));
+    } catch (err) {
+      console.error("Unread chat count error:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (!token) return;
+    fetchUnreadChatCount(); // أول تحميل
+    const id = setInterval(fetchUnreadChatCount, 15000); // كل 15 ثانية
+    return () => clearInterval(id);
+  }, [token]);
 
   useEffect(() => {
     if (isDarkMode) document.documentElement.classList.add("dark");
@@ -108,53 +135,44 @@ export default function Navbar({ isSidebarOpen, toggleSidebar, user }) {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 px-6 py-2 flex justify-between items-center relative z-50 shadow-md
-      ${
-        isDarkMode
-          ? "bg-[var(--div)]"
-          : "bg-gradient-to-br from-[var(--button)] to-gray-700"
-      }`}
+        className={`fixed top-0 left-0 right-0 px-3 sm:px-6 py-2 flex justify-between items-center relative z-50 shadow-md
+  ${
+    isDarkMode
+      ? "bg-[var(--div)]"
+      : "bg-gradient-to-br from-[var(--button)] to-gray-700"
+  }`}
         style={{ color: "var(--textbox)" }}
       >
-        {/* زر القائمة + اللوغو */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           {!isSidebarOpen && (
-            <>
-              <button
-                onClick={toggleSidebar}
-                className="text-2xl md:hidden transition-colors duration-200"
-                style={{ color: "var(--textbox)" }}
-                aria-label="Open sidebar"
-              >
-                <FaBars />
-              </button>
-
-              <button
-                onClick={toggleSidebar}
-                className="mr-6 transition-colors duration-200 sidebar-toggle-button"
-                style={{ color: "var(--textbox)" }}
-                aria-label="Open sidebar"
-              >
-                <FaBars />
-              </button>
-            </>
+            <button
+              onClick={toggleSidebar}
+              className="text-2xl p-2 rounded-md hover:bg-white/10 transition-colors duration-200"
+              style={{ color: "var(--textbox)" }}
+              aria-label="Toggle sidebar"
+            >
+              <FaBars />
+            </button>
           )}
 
           {!isSidebarOpen && (
             <div className="text-2xl font-bold">
-              <div className="py-2 flex items-center">
+              <Link
+                to="/delivery/dashboard/Home"
+                className="py-2 flex items-center focus:outline-none cursor-pointer"
+                aria-label="Go to Home"
+              >
                 <img
                   src="/LogoDark.png"
                   alt="Qwikko Logo"
-                  className="h-9 mt-3"
+                  className="h-8 sm:h-9 mt-1 sm:mt-3"
                 />
-              </div>
+              </Link>
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-6">
-          {/* Profile Dropdown */}
+        <div className="flex items-center gap-3 sm:gap-6">
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen((v) => !v)}
@@ -164,7 +182,7 @@ export default function Navbar({ isSidebarOpen, toggleSidebar, user }) {
               aria-expanded={isDropdownOpen}
             >
               <FaUserSolid className="text-[var(--textbox)]" />
-              <span className="font-medium">
+              <span className="font-medium text-sm sm:text-base">
                 {user?.company_name || "Guest"}
               </span>
               <FiChevronDown
@@ -176,7 +194,12 @@ export default function Navbar({ isSidebarOpen, toggleSidebar, user }) {
             </button>
             {isDropdownOpen && (
               <div
-                className="absolute right-0 mt-2 w-56 rounded-xl overflow-hidden shadow-lg border bg-[var(--bg)]"
+                className="
+      sm:absolute sm:right-0 sm:mt-2
+      fixed right-3 top-[56px]
+w-[50vw] sm:w-56
+      rounded-xl overflow-hidden shadow-lg border bg-[var(--bg)]
+    "
                 style={{ borderColor: "var(--border)", color: "var(--text)" }}
               >
                 <button
@@ -187,7 +210,7 @@ export default function Navbar({ isSidebarOpen, toggleSidebar, user }) {
                   className="flex items-center gap-3 w-full text-left px-4 py-3 transition-colors duration-200 hover:bg-[var(--hover)]"
                   style={{ color: "var(--text)" }}
                 >
-                  <FiUser />
+                  <FiUser  />
                   <span>View Profile</span>
                 </button>
 
@@ -203,23 +226,53 @@ export default function Navbar({ isSidebarOpen, toggleSidebar, user }) {
                   <span>{isDarkMode ? "Light Mode" : "Dark Mode"}</span>
                 </button>
 
-                {/* ✅ Logout بنفس مستوى الأزرار */}
                 <button
-                  onClick={() => {
-                    setIsDropdownOpen(false);
-                    setShowLogoutModal(true);
-                  }}
-                  className="flex items-center gap-3 w-full text-left px-4 py-3 transition-colors duration-200 hover:bg-[var(--hover)] border-t"
-                  style={{
-                    color: "var(--text)",
-                    borderColor: "var(--border)",
-                  }}
+                  onClick={() => setShowLogoutModal(true)}
+                  className="
+    group flex items-center gap-3
+    w-full text-left
+    px-4 py-3
+    rounded-md
+    transition-colors duration-200
+    text-[var(--text)]
+    hover:bg-[var(--error)]
+    hover:!text-white
+  "
                 >
-                  <FiLogOut />
+                  <FiLogOut className="text-current group-hover:text-white" />
                   <span>Logout</span>
                 </button>
               </div>
             )}
+          </div>
+
+          {/* Chats */}
+          <div className="relative flex items-center justify-center">
+            <button
+              onClick={() => navigate("/delivery/dashboard/chat")}
+              className="p-2 transition-colors duration-200 hover:text-[var(--hover)]"
+              style={{ color: "var(--textbox)" }}
+              aria-label="Chat"
+              title="Chat"
+            >
+              <div className="relative inline-block">
+                <FaComments size={28} />
+                {unreadChatCount > 0 && (
+                  <span
+                    className="
+            pointer-events-none
+            absolute -top-2 -right-2
+            bg-[var(--error)] text-white text-[12px] font-bold
+            w-6 h-6 rounded-full
+            flex items-center justify-center
+            leading-none shadow-md
+          "
+                  >
+                    {unreadChatCount > 99 ? "99+" : unreadChatCount}
+                  </span>
+                )}
+              </div>
+            </button>
           </div>
 
           {/* Notifications */}
@@ -244,25 +297,38 @@ export default function Navbar({ isSidebarOpen, toggleSidebar, user }) {
                   }
                 }
               }}
-              className="text-2xl transition-colors duration-200 hover:text-[var(--hover)]"
+              className="p-2 rounded-md transition-colors duration-200 hover:text-[var(--hover)] relative"
               style={{ color: "var(--textbox)" }}
               aria-label="Notifications"
               title="Notifications"
             >
-              <FaBell />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[var(--error)] text-white text-[10px] font-bold rounded-full min-w-4 h-4 px-1 flex items-center justify-center">
-                  {unreadCount}
-                </span>
-              )}
+              <div className="relative inline-block">
+                <FaBell size={28} />
+                {unreadCount > 0 && (
+                  <span
+                    className="
+            pointer-events-none
+            absolute -top-2 -right-2
+            bg-[var(--error)] text-white text-[12px] font-bold
+            w-6 h-6 rounded-full
+            flex items-center justify-center
+            leading-none shadow-md
+          "
+                  >
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </div>
             </button>
 
             {showNotifications && (
               <div className="fixed inset-0 z-[999] flex items-start justify-end">
+                {/* overlay */}
                 <div
                   className="absolute inset-0 z-0 bg-black/40 backdrop-blur-sm"
                   onClick={() => setShowNotifications(false)}
                 />
+                {/* panel */}
                 <div
                   className="relative z-10 mt-16 mr-4 bg-[var(--bg)] rounded-xl shadow-2xl w-[380px] max-h-[75vh] overflow-hidden border"
                   style={{ borderColor: "var(--border)", color: "var(--text)" }}
@@ -432,7 +498,6 @@ export default function Navbar({ isSidebarOpen, toggleSidebar, user }) {
         </div>
       </header>
 
-      {/* مودال تأكيد اللوج آوت */}
       {showLogoutModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center z-[999]">
           <div

@@ -7,28 +7,31 @@ export default function Footer() {
 
   return (
     <footer
-      className={`py-8 px-10 border-t transition-colors duration-300 ${
+      className={`py-6 px-6 border-t transition-colors duration-300 sm:pb-10
+      ${
         isDarkMode
           ? "bg-[var(--div)] border-[var(--border)] text-[var(--text)]"
           : "bg-gradient-to-br from-[var(--button)] to-gray-700 border-[var(--button)] text-white"
       }`}
     >
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+      <div
+        className="
+        max-w-7xl mx-auto 
+        flex flex-col gap-6
+        sm:flex-row sm:items-center sm:justify-between
+      "
+      >
         {/* ✅ Logo */}
-        <div className="flex items-center">
-          <img
-            src= "/darklogo.png"
-            alt="Qwikko Logo"
-            className="h-9"
-          />
+        <div className="flex justify-center sm:justify-start">
+          <img src="/darklogo.png" alt="Qwikko Logo" className="h-8 sm:h-9" />
         </div>
 
         {/* ✅ Links + Text */}
-        <div className="flex flex-col items-center text-center">
-          <div className="flex space-x-8 text-sm mb-3">
+        <div className="flex flex-col items-center text-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:space-x-8 text-sm mb-1 gap-2">
             <Link
               to="/contact"
-              className={`hover:underline transition-colors duration-200 font-medium ${
+              className={`hover:underline transition font-medium ${
                 isDarkMode
                   ? "hover:text-[var(--primary)]"
                   : "hover:text-white/80"
@@ -36,9 +39,10 @@ export default function Footer() {
             >
               Contact Us
             </Link>
+
             <Link
               to="/about"
-              className={`hover:underline transition-colors duration-200 font-medium ${
+              className={`hover:underline transition font-medium ${
                 isDarkMode
                   ? "hover:text-[var(--primary)]"
                   : "hover:text-white/80"
@@ -58,36 +62,36 @@ export default function Footer() {
         </div>
 
         {/* ✅ Social Icons */}
-        <div className="flex space-x-3">
+        <div className="flex justify-center sm:justify-end space-x-3">
           <a
             href="https://github.com"
             target="_blank"
             rel="noopener noreferrer"
-            className={`p-3 rounded-full transition-all duration-200 shadow-sm ${
-              isDarkMode
-                ? "bg-[var(--bg)] text-[var(--text)] hover:bg-[var(--primary)] hover:text-white"
-                : "bg-white/20 text-white hover:bg-white hover:text-[var(--button)]"
-            }`}
+            className={`p-3 rounded-full transition shadow-sm
+              ${
+                isDarkMode
+                  ? "bg-[var(--bg)] text-[var(--text)] hover:bg-[var(--primary)] hover:text-white"
+                  : "bg-white/20 text-white hover:bg-white hover:text-[var(--button)]"
+              }`}
           >
-            <FaGithub size={18} />
+            <FaGithub size={20} />
           </a>
 
           <a
             href="https://linkedin.com"
             target="_blank"
             rel="noopener noreferrer"
-            className={`p-3 rounded-full transition-all duration-200 shadow-sm ${
-              isDarkMode
-                ? "bg-[var(--bg)] text-[var(--text)] hover:bg-[var(--primary)] hover:text-white"
-                : "bg-white/20 text-white hover:bg-white hover:text-[var(--button)]"
-            }`}
+            className={`p-3 rounded-full transition shadow-sm
+              ${
+                isDarkMode
+                  ? "bg-[var(--bg)] text-[var(--text)] hover:bg-[var(--primary)] hover:text-white"
+                  : "bg-white/20 text-white hover:bg-white hover:text-[var(--button)]"
+              }`}
           >
-            <FaLinkedin size={18} />
+            <FaLinkedin size={20} />
           </a>
         </div>
       </div>
-
- 
     </footer>
   );
 }

@@ -116,28 +116,46 @@ exports.getVendorProducts = async (vendorId) => {
  * @returns {Promise<Array<Object>>} Array of orders with items & product details
  */
 // model
+// vendorModel.js
 exports.getVendorOrders = async (vendorId) => {
   const query = `
     SELECT
-      o.id AS order_id,
-      o.status,
-      o.total_amount,
-      o.shipping_address,
-      o.delivery_company_id,                           -- مفيد كمرجع
-      dc.company_name AS delivery_company_name,        -- اسم شركة التوصيل
-      dc.user_id AS delivery_company_user_id,          -- user_id تبع شركة التوصيل (للدردشة)
-      oi.id AS item_id,
-      oi.quantity,
-      oi.price,
-      oi.vendor_status,
-      p.name AS product_name,
-      p.id AS product_id
+      -- ===== حقول الطلب (Order) =====
+      o.id                                 AS order_id,
+      o.status                             AS order_status,
+      o.customer_action_required           AS customer_action_required,
+      o.customer_decision                  AS customer_decision,
+      o.total_amount                       AS total_amount,
+      o.total_with_shipping                AS total_with_shipping,
+      o.delivery_fee                       AS delivery_fee,
+      o.shipping_address                   AS shipping_address,
+      o.created_at                         AS order_created_at,
+      o.updated_at                         AS order_updated_at,
+
+      -- شركة التوصيل (اختياري)
+      o.delivery_company_id                AS delivery_company_id,
+      dc.company_name                      AS delivery_company_name,
+      dc.user_id                           AS delivery_company_user_id,
+
+      -- ===== عنصر الطلب (Order Item) =====
+      oi.id                                AS item_id,
+      oi.product_id                        AS product_id,
+      oi.quantity                          AS quantity,
+      oi.price                             AS price,
+      oi.vendor_status                     AS vendor_status,
+      oi.rejection_reason                  AS rejection_reason,
+      oi.accepted_at                       AS item_accepted_at,
+      oi.rejected_at                       AS item_rejected_at,
+
+      -- المنتج
+      p.name                               AS product_name
+
     FROM orders o
-    JOIN order_items oi ON o.id = oi.order_id
-    JOIN products p ON p.id = oi.product_id
+    JOIN order_items oi   ON o.id = oi.order_id
+    JOIN products     p   ON p.id = oi.product_id
     LEFT JOIN delivery_companies dc ON dc.id = o.delivery_company_id
     WHERE p.vendor_id = $1
-    ORDER BY o.created_at DESC
+    ORDER BY o.created_at DESC, oi.id ASC
   `;
   const { rows } = await pool.query(query, [vendorId]);
   return rows;

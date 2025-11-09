@@ -275,3 +275,190 @@ exports.getVendorOrderItems = async (userId) => {
     client.release();
   }
 };
+
+//---------------------------------------------
+
+/**
+ * يعاد استخدامها داخل ترانزاكشن واحدة
+ */
+exports.recomputeOrderStatusTx = async (client, orderId) => {
+  const q = `
+    SELECT
+      COUNT(*)::int AS total,
+      COUNT(*) FILTER (WHERE vendor_status = 'accepted')::int AS accepted,
+      COUNT(*) FILTER (WHERE vendor_status = 'rejected')::int AS rejected,
+      COUNT(*) FILTER (
+        WHERE vendor_status IS NULL OR vendor_status = 'pending'
+      )::int AS pending
+    FROM order_items
+    WHERE order_id = $1
+  `;
+  const { rows } = await client.query(q, [orderId]);
+  if (!rows.length) return null;
+  const c = rows[0];
+
+  let newStatus;
+  let customerActionRequired = false;
+
+  if (c.total > 0 && c.rejected === c.total) {
+    // كلهم مرفوضين
+    newStatus = "cancelled";
+    customerActionRequired = false;
+  } else if (c.total > 0 && c.accepted === c.total) {
+    // كلهم مقبولين
+    newStatus = "requested";
+    customerActionRequired = false;
+  } else if (c.rejected > 0 && (c.accepted > 0 || c.pending > 0)) {
+    // في رفض + (مقبول أو معلّق) → بدنا قرار من الزبون
+    newStatus = "awaiting_customer_decision";
+    customerActionRequired = true;
+  } else {
+    // إما كلها pending، أو مزيج accepted+pending بدون رفض
+    newStatus = "requested";
+    customerActionRequired = false;
+  }
+
+  const up = await client.query(
+    `
+      UPDATE orders
+      SET status = $1,
+          customer_action_required = $2,
+          updated_at = NOW()
+      WHERE id = $3
+      RETURNING *;
+    `,
+    [newStatus, customerActionRequired, orderId]
+  );
+
+  return up.rows[0];
+};
+
+//---------------------------------------------------------------------------------------------
+
+exports.recomputeOrderStatus = async (orderId) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const row = await exports.recomputeOrderStatusTx(client, orderId);
+    await client.query("COMMIT");
+    return row;
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+  }
+};
+
+exports.updateOrderItemStatus = async ({
+  orderId,
+  itemId,
+  action,
+  reason,
+  vendorUserId,
+}) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // ✅ تأكيد الفندور
+    const v = await client.query(
+      `SELECT id FROM vendors WHERE user_id = $1 LIMIT 1`,
+      [vendorUserId]
+    );
+    if (v.rows.length === 0) {
+      throw new Error("Vendor not found");
+    }
+    const vendorId = v.rows[0].id;
+
+    // ✅ قفل الطلب وفحص حالته قبل أي تعديل
+    const ordRes = await client.query(
+      `SELECT id, status FROM orders WHERE id = $1 FOR UPDATE`,
+      [orderId]
+    );
+    if (ordRes.rows.length === 0) {
+      throw new Error("Order not found");
+    }
+    const ord = ordRes.rows[0];
+
+    // ⛔ إذا الطلب ملغى: لا تعدّل مخزون ولا عناصر — ارجع بخطأ 409
+    if ((ord.status || "").toLowerCase() === "cancelled") {
+      const err = new Error("Order has been cancelled by the customer");
+      err.statusCode = 409; // Conflict
+      throw err;
+    }
+
+    // ✅ جلب الآيتم + المنتج (مع قفل الصفوف) والتأكد أنه يتبع لنفس الفندور وهذا الأوردر
+    const itemRes = await client.query(
+      `
+      SELECT 
+        oi.*,
+        p.id AS product_id,
+        p.vendor_id AS product_vendor_id,
+        p.stock_quantity
+      FROM order_items oi
+      JOIN products p ON p.id = oi.product_id
+      WHERE oi.id = $1
+        AND oi.order_id = $2
+        AND p.vendor_id = $3
+      FOR UPDATE
+      `,
+      [itemId, orderId, vendorId]
+    );
+    if (itemRes.rows.length === 0) {
+      throw new Error("Order item not found for this vendor");
+    }
+    const item = itemRes.rows[0];
+
+    const newStatus = action === "accept" ? "accepted" : "rejected";
+
+    // ✅ منطق المخزون
+    if (newStatus === "accepted" && item.vendor_status !== "accepted") {
+      const newStock = item.stock_quantity - item.quantity;
+      if (newStock < 0) {
+        throw new Error("Not enough stock for this product");
+      }
+      await client.query(
+        `UPDATE products SET stock_quantity = $1, updated_at = NOW() WHERE id = $2`,
+        [newStock, item.product_id]
+      );
+    } else if (newStatus === "rejected" && item.vendor_status === "accepted") {
+      const restored = item.stock_quantity + item.quantity;
+      await client.query(
+        `UPDATE products SET stock_quantity = $1, updated_at = NOW() WHERE id = $2`,
+        [restored, item.product_id]
+      );
+    }
+
+    // ✅ تحديث حالة الآيتم
+    const timeSet =
+      newStatus === "accepted"
+        ? `accepted_at = NOW(), rejected_at = NULL`
+        : `rejected_at = NOW(), accepted_at = NULL`;
+
+    const upItemRes = await client.query(
+      `
+      UPDATE order_items
+      SET vendor_status = $1,
+          rejection_reason = $2,
+          ${timeSet}
+      WHERE id = $3
+      RETURNING *;
+      `,
+      [newStatus, newStatus === "rejected" ? reason || null : null, itemId]
+    );
+    const updatedItem = upItemRes.rows[0];
+
+    // ✅ إعادة حساب حالة الطلب
+    const updatedOrder = await exports.recomputeOrderStatusTx(client, orderId);
+
+    await client.query("COMMIT");
+    return { item: updatedItem, order: updatedOrder };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
