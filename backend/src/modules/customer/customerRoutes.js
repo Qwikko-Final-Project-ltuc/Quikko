@@ -685,6 +685,13 @@ router.patch(
 );
 
 
+router.post(
+  "/calculate-delivery-preview",
+  protect,
+  authorizeRole('customer'),
+  customerController.calculateDeliveryPreview
+);
+
 module.exports = router;
 
 

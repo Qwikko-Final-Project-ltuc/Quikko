@@ -98,19 +98,22 @@ exports.fetchStoreDetails = async function (req, res) {
 exports.postOrderFromCart = async function (req, res) {
   try {
     const userId = req.user.id;
-    const { cart_id, address, addressId, paymentMethod, paymentData } =
-      req.body;
-
-    // if (!cart_id || typeof cart_id !== "number") {
-    //   return res.status(400).json({ error: "cart_id must be a valid number" });
-    // }
+    const { 
+      cart_id, 
+      address, 
+      addressId, 
+      paymentMethod, 
+      paymentData,
+      coupon_code,          
+      use_loyalty_points    
+    } = req.body;
 
     const parsedCartId = Number(cart_id);
     if (!cart_id || Number.isNaN(parsedCartId)) {
       return res.status(400).json({ error: "cart_id must be a valid number" });
     }
 
-     if (!addressId && (!address || !address.address_line1 || !address.city)) {
+    if (!addressId && (!address || !address.address_line1 || !address.city)) {
       return res.status(400).json({
         error: "Please provide a valid address or select a saved address.",
       });
@@ -134,6 +137,17 @@ exports.postOrderFromCart = async function (req, res) {
       addressId,
       paymentMethod, // "cod" ,"paypal"/"credit_card"
       paymentData: normalizedPaymentData,
+
+      coupon_code: req.body.coupon_code || null,
+      
+      use_loyalty_points: use_loyalty_points || 0
+    });
+
+    console.log("🔍 [CONTROLLER] Sent to model:", {
+      userId,
+      cartId: parsedCartId,
+      use_loyalty_points: use_loyalty_points || 0,
+      coupon_code: coupon_code || null
     });
 
     res.status(201).json({
@@ -798,7 +812,6 @@ exports.sendContactMessage = async (req, res) => {
   }
 };
 
-
 exports.getLoyaltyPoints = async (req, res) => {
   try {
     const userId = req.user?.id;
@@ -806,10 +819,12 @@ exports.getLoyaltyPoints = async (req, res) => {
 
     const data = await customerModel.getPointsByUser(userId);
 
-    // حتى لو ما في نقاط، نرجع رسالة واضحة
     res.json({
-      message: data.points_balance === 0 ? "No loyalty points yet" : "Loyalty points fetched successfully",
-      points: data
+      message:
+        data.points_balance === 0
+          ? "No loyalty points yet"
+          : "Loyalty points fetched successfully",
+      points: data,
     });
   } catch (error) {
     console.error("Error getting loyalty points:", error);
@@ -817,13 +832,11 @@ exports.getLoyaltyPoints = async (req, res) => {
   }
 };
 
-
-// 🔹 Add loyalty points after completing an order
 exports.addLoyaltyPoints = async (req, res) => {
   try {
     const userId = req.user.id;
     const { points, description } = req.body;
-    await customerModel.addPoints(userId, points, description);
+    await customerModel.addPointsViaPool(userId, points, description);
     res.json({ message: "Points added successfully" });
   } catch (error) {
     console.error("Error adding loyalty points:", error);
@@ -831,12 +844,13 @@ exports.addLoyaltyPoints = async (req, res) => {
   }
 };
 
+
 // 🔹 Redeem loyalty points for discount
 exports.redeemLoyaltyPoints = async (req, res) => {
   try {
     const userId = req.user.id;
     const { points, description } = req.body;
-    const discount = await customerModel.redeemPoints(userId, points, description);
+    const discount = await customerModel.redeemPointsViaPool(userId, points, description);
     res.json({ message: "Points redeemed successfully", discount });
   } catch (error) {
     console.error("Error redeeming loyalty points:", error);
@@ -880,5 +894,47 @@ exports.submitOrderDecision = async (req, res) => {
     return res
       .status(500)
       .json({ success: false, message: err.message || "Server error" });
+
+
+exports.calculateDeliveryPreview = async function (req, res) {
+  try {
+    const userId = req.user.id;
+    const { cart_id, address, addressId } = req.body;
+
+    const parsedCartId = Number(cart_id);
+    if (!cart_id || Number.isNaN(parsedCartId)) {
+      return res.status(400).json({ error: "cart_id must be a valid number" });
+    }
+
+    if (!addressId && (!address || !address.address_line1 || !address.city)) {
+      return res.status(400).json({
+        error: "Please provide a valid address or select a saved address.",
+      });
+    }
+
+    const orderPreview = await customerModel.calculateDeliveryPreview(
+      parsedCartId,
+      userId,
+      address,
+      addressId
+    );
+
+    res.status(201).json({
+      order: {
+        total_amount: orderPreview.total_amount,
+        delivery_fee: orderPreview.delivery_fee,
+        total_with_shipping: orderPreview.total_with_shipping,
+        distance_km: orderPreview.distance_km,
+        vendors: orderPreview.vendors,
+        deliveryCompany: orderPreview.deliveryCompany,
+        customer_location: orderPreview.customer_location,
+      },
+    });
+  } catch (err) {
+    console.error("Error placing order from cart:", err.message);
+    console.error("STACK TRACE:", err.stack);
+    return res
+      .status(500)
+      .json({ error: "Failed to place order. Please try again." });
   }
 };
