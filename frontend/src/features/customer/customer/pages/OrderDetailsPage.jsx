@@ -199,38 +199,63 @@ const OrderDetailsPage = () => {
     fetchLoyaltyPoints();
   }, []);
 
-  useEffect(() => {
-    if (cartFromState) {
-      dispatch(setCurrentCart(cartFromState));
-    } else if (orderId) {
-      dispatch(fetchCart(orderId));
+ useEffect(() => {
+  if (cartFromState) {
+    dispatch(setCurrentCart(cartFromState));
+  } else if (orderId) {
+    dispatch(fetchCart(orderId));
+  }
+
+  const isReorder = location.state?.reorder;
+  
+  if (isReorder) {
+    console.log("🔄 Reorder flow - resetting coupon data");
+    setAppliedCoupon({
+      discount_amount: 0,
+      code: null,
+    });
+    localStorage.removeItem("appliedCoupon");
+    return; // توقف هنا علشان ما تشتغلش على الـ coupon
+  }
+
+  // ✅ فقط للـ orders العادية (ليست reorder)
+  if (appliedCouponFromState && appliedCouponFromState !== null) {
+    console.log("🎫 Regular order with coupon:", appliedCouponFromState);
+    
+    let totalDiscount = 0;
+
+    // تحقق آمن من الـ coupon data
+    if (typeof appliedCouponFromState === "object") {
+      // استخدم optional chaining علشان تتجنب الأخطاء
+      Object.values(appliedCouponFromState).forEach((c) => {
+        if (c && typeof c === 'object') {
+          totalDiscount += Number(c?.discount || 0);
+        }
+      });
+    } else {
+      totalDiscount = Number(appliedCouponFromState?.discount_amount || 0);
     }
 
-    if (appliedCouponFromState) {
-      let totalDiscount = 0;
+    setAppliedCoupon({
+      discount_amount: totalDiscount,
+      code: null,
+    });
 
-      if (typeof appliedCouponFromState === "object") {
-        Object.values(appliedCouponFromState).forEach((c) => {
-          totalDiscount += Number(c.discount || 0);
-        });
-      } else {
-        totalDiscount = Number(appliedCouponFromState.discount_amount || 0);
-      }
-
-      setAppliedCoupon({
+    localStorage.setItem(
+      "appliedCoupon",
+      JSON.stringify({
         discount_amount: totalDiscount,
         code: null,
-      });
-
-      localStorage.setItem(
-        "appliedCoupon",
-        JSON.stringify({
-          discount_amount: totalDiscount,
-          code: null,
-        })
-      );
-    }
-  }, [cartFromState, appliedCouponFromState, orderId, dispatch]);
+      })
+    );
+  } else {
+    // حالة افتراضية
+    setAppliedCoupon({
+      discount_amount: 0,
+      code: null,
+    });
+  }
+}, [cartFromState, appliedCouponFromState, orderId, dispatch, location.state]);
 
   // Calculate pricing breakdown
   useEffect(() => {
@@ -812,13 +837,13 @@ const OrderDetailsPage = () => {
                 <div className={`rounded-2xl border-2 ${cardClass} p-6 transition-all duration-300 hover:shadow-xl animate-fade-in-up shadow-lg backdrop-blur-sm`}>
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-bold flex items-center text-[var(--text)] tracking-tight">
-                      <FiShoppingCart className={`mr-3 text-[var(--button)]`} />
+                      <FiShoppingCart className={`mr-3 ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}`} />
                       Order Items
                       <span className="ml-2 text-xs bg-[var(--button)] text-white px-2 py-1 rounded-full backdrop-blur-sm">
                         {currentCart?.items?.length || 0}
                       </span>
                     </h2>
-                    <span className="text-lg font-semibold text-[var(--button)] bg-[var(--button)]/10 px-3 py-1.5 rounded-xl backdrop-blur-sm">
+                    <span className={`text-xl font-bold flex items-center  bg-[var(--button)]/10  p-2 rounded-xl ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}`}>
                       ${subtotal.toFixed(2)}
                     </span>
                   </div>
@@ -826,7 +851,7 @@ const OrderDetailsPage = () => {
                   {currentCart?.items?.length === 0 ? (
                     <div className="text-center py-8">
                       <div className="w-16 h-16 bg-[var(--div)] rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-sm">
-                        <FiShoppingCart className="text-2xl text-[var(--text)]" />
+                        <FiShoppingCart  className={`mr-3 ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}`}  />
                       </div>
                       <h3 className="text-lg font-bold mb-2 text-[var(--text)] tracking-tight">Your cart is empty</h3>
                       <p className="text-[var(--light-gray)] text-sm mb-4">Add some items to get started</p>
@@ -863,7 +888,7 @@ const OrderDetailsPage = () => {
                 {/* Shipping Address Card */}
                 <div className={`rounded-2xl border-2 ${cardClass} p-6 transition-all duration-300 hover:shadow-xl animate-fade-in-up shadow-lg backdrop-blur-sm`}>
                   <h2 className="text-xl font-bold mb-6 flex items-center text-[var(--text)] tracking-tight">
-                    <FiMapPin className={`mr-3 text-[var(--button)]`} />
+                    <FiMapPin  className={`mr-3 ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}`}  />
                     Shipping Address
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -927,7 +952,7 @@ const OrderDetailsPage = () => {
                 {/* Order Summary Card */}
                 <div className={`rounded-2xl border-2 ${cardClass} p-6 sticky top-6 transition-all duration-300 hover:shadow-xl animate-fade-in-up shadow-xl backdrop-blur-sm`}>
                   <h2 className="text-xl font-bold mb-6 flex items-center text-[var(--text)] tracking-tight">
-                    <FiFileText className={`mr-3 text-[var(--button)]`} />
+                    <FiFileText className={`mr-3 ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}`} />
                     Order Summary
                   </h2>
                   
@@ -992,7 +1017,7 @@ const OrderDetailsPage = () => {
                     {/* Final Total */}
                     <div className="flex justify-between items-center pt-4 border-t-2 border-[var(--border)]">
                       <span className="text-lg font-bold text-[var(--text)] tracking-tight">Final Total</span>
-                      <span className="text-xl font-bold text-[var(--button)] bg-[var(--button)]/10 px-3 py-1.5 rounded-xl backdrop-blur-sm">
+                      <span className={`text-xl font-bold bg-[var(--button)]/10 px-3 py-1.5 rounded-xl backdrop-blur-sm  ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}`} >
                         ${finalTotal.toFixed(2)}
                       </span>
                     </div>
@@ -1002,7 +1027,7 @@ const OrderDetailsPage = () => {
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold flex items-center text-base text-[var(--text)] tracking-tight">
-                        <FiStar className={`mr-2 text-[var(--button)]`} />
+                        <FiStar className={`mr-3 ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}`} />
                         Loyalty Points
                       </h3>
                       <span className="text-xs text-[var(--light-gray)] bg-[var(--bg)] px-2 py-1 rounded-full backdrop-blur-sm">
@@ -1106,7 +1131,7 @@ const OrderDetailsPage = () => {
                   {/* Payment Method */}
                   <div className="mb-6">
                     <h3 className="font-semibold mb-3 flex items-center text-base text-[var(--text)] tracking-tight">
-                      <FiCreditCard className={`mr-2 text-[var(--button)]`} />
+                      <FiCreditCard className={`mr-3 ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}`}/>
                       Payment Method
                     </h3>
                     <div className="relative">
@@ -1233,7 +1258,7 @@ const OrderDetailsPage = () => {
                   )}
 
                   <p className="text-xs text-center mt-4 text-[var(--light-gray)] flex items-center justify-center bg-[var(--bg)] p-3 rounded-xl backdrop-blur-sm">
-                    <FiShield className="mr-2 text-[var(--button)]" />
+                    <FiShield className={`mr-3 ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}`} />
                     Your payment information is secure and encrypted
                   </p>
                 </div>

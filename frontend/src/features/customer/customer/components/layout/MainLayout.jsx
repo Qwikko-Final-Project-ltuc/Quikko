@@ -8,7 +8,7 @@ import { useSelector } from "react-redux";
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 
-const MainLayout = () => {
+const MainLayout = ({ hideFooter = false }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const chatModalRef = useRef();
@@ -47,8 +47,8 @@ const MainLayout = () => {
       <main className="flex-grow transition-all duration-300">
         <Outlet />
       </main>
+      {!hideFooter && <Footer />}
 
-      <Footer />
 
       <button
         onClick={toggleChat}

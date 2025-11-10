@@ -42,7 +42,10 @@ const CustomerRoutes = () => {
       <Route path="/customer/forgot-password" element={<ForgotPassword />} /> 
       <Route path="/customer/verify-email" element={<VerifyEmailPage />} />
       <Route path="/customer/reset-password" element={<ResetPasswordPage />} />
-
+      
+      <Route element={<MainLayout hideFooter={true} />}>
+        <Route path="/customer/chat" element={<ChatPage />} />
+      </Route>
 
       <Route path="/customer/password-updated" element={<PasswordUpdated />} />
 
@@ -63,7 +66,6 @@ const CustomerRoutes = () => {
         <Route path="/customer/about" element={<AboutPage />} />
         <Route path="/customer/profile" element={<ProfilePage />} />
         <Route path="/customer/contact" element={<ContactUs />} />
-        <Route path="/customer/chat" element={<ChatPage />} />
         <Route path="/customer/product/:id" element={<ProductDetails />} />
         <Route path="/customer/privacy" element={<PrivacyPolicy />} />
         <Route path="/customer/terms" element={<TermsOfService />} />

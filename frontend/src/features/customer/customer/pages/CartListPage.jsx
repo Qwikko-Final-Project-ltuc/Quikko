@@ -52,28 +52,26 @@ const CartListPage = () => {
     return String(id).slice(-8);
   };
 
-  // Loading State - Updated to match theme
+// Loading State - أخف شادو فقط
 if (status === "loading") {
   return (
     <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-white'} relative overflow-hidden`}>
-      {/* Animated Background */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[var(--button)]/5 rounded-full blur-3xl animate-pulse-slow"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[var(--primary)]/5 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '2s'}}></div>
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-[var(--button)]/2 rounded-full blur-xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-56 h-56 bg-[var(--primary)]/2 rounded-full blur-xl animate-pulse" style={{animationDelay: '1.5s'}}></div>
       </div>
       
       <div className="relative z-10 flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="relative">
-            <div className="w-20 h-20 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-2xl flex items-center justify-center mx-auto mb-6 animate-spin">
-              {/* أيقونة النجوم (Sparkles) */}
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-16 h-16 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-xl flex items-center justify-center mx-auto mb-4 animate-spin">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
               </svg>
             </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-2xl blur-lg opacity-50 animate-ping"></div>
+            <div className="absolute inset-0 w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-xl blur-sm opacity-15 animate-ping"></div>
           </div>
-          <p className="text-[var(--text)] text-xl font-semibold bg-gradient-to-r from-[var(--text)] to-[var(--light-gray)] bg-clip-text text-transparent">
+          <p className="text-[var(--text)] text-lg font-medium">
             Loading Carts...
           </p>
         </div>
@@ -135,7 +133,7 @@ if (status === "loading") {
             
             {/* Stats Badge */}
             <div className={`px-4 py-2 rounded-2xl ${themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-white'} shadow-lg border ${themeMode === 'dark' ? 'border-[var(--border)]' : 'border-gray-200'}`}>
-              <span className={`font-semibold ${themeMode === 'dark' ? 'text-[var(--button)]' : 'text-[var(--button)]'}`}>
+              <span className={`font-semibold ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}`}>
                 {allCarts.length} {allCarts.length === 1 ? 'cart' : 'carts'}
               </span>
             </div>
@@ -217,7 +215,7 @@ if (status === "loading") {
                           {/* Cart Icon */}
                           <div className={`p-3 rounded-xl flex-shrink-0 ${
                             themeMode === 'dark' 
-                              ? 'bg-[var(--button)]/10 text-[var(--button)]' 
+                              ? 'bg-[var(--button)]/10 text-[var(--text)]' 
                               : 'bg-[var(--button)]/5 text-[var(--button)]'
                           }`}>
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,7 +256,7 @@ if (status === "loading") {
                         {/* Price */}
                         <div className="text-right">
                           <p className={`text-xl sm:text-2xl font-bold mb-1 ${
-                            themeMode === 'dark' ? 'text-[var(--button)]' : 'text-[var(--button)]'
+                            themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'
                           }`}>
                             ${totalPrice.toFixed(2)}
                           </p>
@@ -319,7 +317,7 @@ if (status === "loading") {
             } shadow-lg border-2 ${themeMode === 'dark' ? 'border-[var(--border)]' : 'border-gray-200'}`}>
               <div className="flex flex-wrap gap-6 sm:gap-8 justify-center">
                 <div className="text-center">
-                  <div className={`text-2xl font-bold mb-1 ${themeMode === 'dark' ? 'text-[var(--button)]' : 'text-[var(--button)]'}`}>
+                  <div className={`text-2xl font-bold mb-1 ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}`}>
                     {allCarts.length}
                   </div>
                   <div className={`text-sm ${themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>

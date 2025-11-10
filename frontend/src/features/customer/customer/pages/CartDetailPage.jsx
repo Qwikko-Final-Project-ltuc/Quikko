@@ -356,7 +356,7 @@ const CartDetailPage = () => {
                   <div
                     className={`p-3 rounded-xl ${
                       themeMode === "dark"
-                        ? "bg-[var(--button)]/10 text-[var(--button)]"
+                        ? "bg-[var(--button)]/10 text-[var(--text)]"
                         : "bg-[var(--button)]/5 text-[var(--button)]"
                     }`}
                   >
@@ -406,7 +406,7 @@ const CartDetailPage = () => {
                               </svg>
                               <span className="font-semibold text-[var(--text)]">
                                 Coupon available:
-                                <span className="text-[var(--button)] ml-1">
+                                <span className={`${themeMode === "dark" ? "text-white" : "text-[var(--button)]"}`}>
                                   {coupon.code} ({coupon.discount_value}%)
                                 </span>
                               </span>

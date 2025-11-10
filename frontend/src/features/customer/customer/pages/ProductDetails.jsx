@@ -630,13 +630,13 @@ const handleAddToCartWithAnimation = (e) => {
       Customer Reviews ({reviewsCount})
     </h2>
 
-    {averageRating && (
+    {/* {averageRating && (
       <div className="mb-3">
         <h4 className="font-semibold text-lg">
           ⭐ Average Rating: {averageRating}
         </h4>
       </div>
-    )}
+    )} */}
 
     {reviews.length === 0 ? (
       <p className="text-[var(--light-gray)] text-center py-6">

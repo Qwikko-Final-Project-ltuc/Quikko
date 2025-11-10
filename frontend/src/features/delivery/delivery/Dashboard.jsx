@@ -1,7 +1,7 @@
 // DashboardLayout.jsx
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "../Layout/Sidebar";
 import Navbar from "../Layout/Navbar";
 import Footer from "../Layout/Footer";
@@ -15,11 +15,11 @@ export default function DashboardLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const dispatch = useDispatch();
-
+  const location = useLocation(); 
   const { user } = useSelector((state) => state.auth);
   const currentUser = useSelector((state) => state.deliveryAuth?.user);
   const isDarkMode = useSelector((state) => state.deliveryTheme.darkMode);
-
+  const isChatPage = location.pathname.includes('/chat');
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
     if (savedToken) {
@@ -73,9 +73,11 @@ return (
         </main>
 
         {/* الفوتر */}
-        <div className="relative z-10 mt-auto">
-          <Footer />
-        </div>
+        {!isChatPage && (
+            <div className="relative z-10 mt-auto">
+              <Footer />
+            </div>
+          )}
 
         {/* زر الشاتبوت */}
         <button

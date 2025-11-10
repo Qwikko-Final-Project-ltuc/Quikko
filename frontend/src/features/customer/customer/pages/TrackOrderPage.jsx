@@ -26,37 +26,47 @@ const TrackOrderPage = () => {
     return `${hours}h ${remainingMinutes}m`;
   };
 
-  // Modified tracking steps logic - Order Received always completed
-  const getTrackingSteps = (order) => {
-    if (!order) return [];
+// Simple and correct version
+const getTrackingSteps = (order) => {
+  if (!order) return [];
 
-    const statusFlow = [
-      { status: "pending", label: "Order Received", icon: FileText },
-      { status: "accepted", label: "Order Accepted", icon: CheckCircle },
-      { status: "processing", label: "Preparing", icon: ShoppingCart },
-      { status: "out for delivery", label: "On the Way", icon: Truck },
-      { status: "delivered", label: "Delivered", icon: Package }
-    ];
+  const statusFlow = [
+    { status: "pending", label: "Order Received", icon: FileText },
+    { status: "accepted", label: "Order Accepted", icon: CheckCircle },
+    { status: "processing", label: "Preparing", icon: ShoppingCart },
+    { status: "out for delivery", label: "On the Way", icon: Truck },
+    { status: "delivered", label: "Delivered", icon: Package }
+  ];
 
-    const currentStatus = order?.status?.toLowerCase();
-    const currentIndex = statusFlow.findIndex(step => step.status === currentStatus);
+  let currentStatus = order?.status?.toLowerCase();
+  
+  if (currentStatus === "requested" || currentStatus === "needs_decision") {
+    currentStatus = "pending";
+  }
 
-    return statusFlow.map((step, index) => {
-      // Order Received is always completed
-      const isOrderReceived = step.status === "pending";
-      const completed = isOrderReceived ? true : index <= currentIndex;
-      const current = isOrderReceived ? false : index === currentIndex;
-      // Make the next step after last completed step as "in progress"
-      const isNextStepAfterLastCompleted = index === currentIndex + 1;
-      
-      return {
-        ...step,
-        completed,
-        current: current || isNextStepAfterLastCompleted,
-        upcoming: index === currentIndex + 2
-      };
-    });
-  };
+  const currentIndex = statusFlow.findIndex(step => step.status === currentStatus);
+
+  return statusFlow.map((step, index) => {
+    const isOrderReceived = step.status === "pending";
+    
+    // Always complete Order Received, and others based on position
+    const completed = isOrderReceived ? true : index <= currentIndex;
+    
+    // For requested/pending status, show Order Accepted as In Progress
+    const shouldShowNextAsInProgress = currentIndex === 0 && index === 1;
+    
+    const current = index === currentIndex || shouldShowNextAsInProgress;
+    const hasAnimation = current && !completed;
+
+    return {
+      ...step,
+      completed,
+      current,
+      upcoming: index === currentIndex + 1,
+      hasAnimation
+    };
+  });
+};
 
   useEffect(() => {
     const fetchOrderData = async () => {
@@ -91,27 +101,31 @@ const TrackOrderPage = () => {
   }, [currentOrder, loading]);
 
   if (loading || orderLoading) {
-    return (
-      <div className="min-h-screen bg-[var(--bg)] relative overflow-hidden flex items-center justify-center">
-        {/* Animated Background */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[var(--button)]/5 rounded-full blur-3xl animate-pulse-slow"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[var(--primary)]/5 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '2s'}}></div>
-        </div>
-        
-        <div className="text-center relative z-10">
+  return (
+    <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-white'} relative overflow-hidden`}>
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-[var(--button)]/2 rounded-full blur-xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-56 h-56 bg-[var(--primary)]/2 rounded-full blur-xl animate-pulse" style={{animationDelay: '1.5s'}}></div>
+      </div>
+      
+      <div className="relative z-10 flex items-center justify-center min-h-screen">
+        <div className="text-center">
           <div className="relative">
             <div className="w-16 h-16 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-xl flex items-center justify-center mx-auto mb-4 animate-spin">
-              <Package className="text-white" size={24} />
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+              </svg>
             </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-xl blur-lg opacity-50 animate-ping"></div>
+            <div className="absolute inset-0 w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-xl blur-sm opacity-15 animate-ping"></div>
           </div>
-          <p className="text-[var(--text)] text-lg font-semibold bg-gradient-to-r from-[var(--text)] to-[var(--light-gray)] bg-clip-text text-transparent">
-            Tracking Your Order...
+          <p className="text-[var(--text)] text-lg font-medium">
+            Loading Your Order...
           </p>
         </div>
       </div>
-    );
+    </div>
+  );
+
   }
 
   if (!order) {
@@ -167,10 +181,10 @@ const TrackOrderPage = () => {
         <div className="text-center mb-8 relative">
           {/* Animated Floating Circles */}
           <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-10 left-10 w-6 h-6 bg-[var(--button)]/20 rounded-full animate-float-slow"></div>
-            <div className="absolute top-20 right-20 w-4 h-4 bg-[var(--primary)]/20 rounded-full animate-float-slow" style={{animationDelay: '1s'}}></div>
-            <div className="absolute bottom-20 left-20 w-5 h-5 bg-[var(--success)]/20 rounded-full animate-float-slow" style={{animationDelay: '2s'}}></div>
-            <div className="absolute bottom-10 right-10 w-3 h-3 bg-[var(--warning)]/20 rounded-full animate-float-slow" style={{animationDelay: '1.5s'}}></div>
+            <div className="absolute top-10 left-10 w-6 h-6 bg-[var(--button)]/20 rounded-full "></div>
+            <div className="absolute top-20 right-20 w-4 h-4 bg-[var(--primary)]/20 rounded-full " style={{animationDelay: '1s'}}></div>
+            <div className="absolute bottom-20 left-20 w-5 h-5 bg-[var(--success)]/20 rounded-full " style={{animationDelay: '2s'}}></div>
+            <div className="absolute bottom-10 right-10 w-3 h-3 bg-[var(--warning)]/20 rounded-full " style={{animationDelay: '1.5s'}}></div>
           </div>
 
           <h1 className="text-3xl md:text-4xl font-black mb-4 tracking-tight bg-gradient-to-r from-[var(--text)] via-[var(--button)] to-[var(--primary)] bg-clip-text text-transparent animate-gradient-x-slow">
@@ -213,15 +227,15 @@ const TrackOrderPage = () => {
                 return (
                   <div key={index} className="flex items-start sm:flex-col sm:items-center sm:text-center relative">
                     {/* Step dot */}
-                    <div className={`flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full border-3 z-10 flex items-center justify-center transition-all duration-500 shadow-lg transform hover:scale-110 ${
+                    <div className={`flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full border-3 z-10 flex items-center justify-center transition-all duration-500  transform hover:scale-110 ${
                       step.completed 
-                        ? 'bg-gradient-to-br from-emerald-500 to-green-600 border-emerald-500 text-white scale-110 shadow-lg' 
-                        : step.current
-                        ? 'bg-gradient-to-br from-[var(--button)] to-[var(--primary)] border-[var(--button)] text-white scale-110 shadow-lg animate-pulse-glow'
+                        ? 'bg-gradient-to-br from-emerald-500 to-green-600 border-emerald-500 text-white scale-110 ' 
+                        : step.hasAnimation // Use hasAnimation instead of step.current
+                        ? 'bg-gradient-to-br from-orange-600 to-amber-600 border-orange-500 text-white scale-110  animate-pulse-glow'
                         : 'bg-white border-gray-300 text-gray-400'
                     }`}>
                       <IconComponent className={`w-5 h-5 sm:w-6 sm:h-6 ${
-                        step.completed || step.current ? 'text-white' : 'text-gray-400'
+                        step.completed || step.hasAnimation ? 'text-white' : 'text-gray-400'
                       }`} />
                     </div>
                     
@@ -229,17 +243,17 @@ const TrackOrderPage = () => {
                     <div className="ml-4 sm:ml-0 sm:mt-3 flex-1 sm:flex-none min-w-0">
                       <div className={`text-base sm:text-lg font-bold mb-2 transition-colors duration-300 min-h-[3rem] flex items-center ${
                         step.completed ? 'text-emerald-600' : 
-                        step.current ? 'text-[var(--button)] animate-text-pulse' : 
+                        step.hasAnimation ? 'text-orange-500 animate-text-pulse' : // Use hasAnimation here with orange color
                         'text-gray-400'
                       }`}>
                         {step.label}
                       </div>
                       <div className={`text-sm font-medium px-3 py-2 rounded-xl transition-all duration-300 ${
                         step.completed ? 'bg-emerald-100 text-emerald-700' : 
-                        step.current ? 'bg-gradient-to-r from-[var(--button)]/20 to-[var(--primary)]/20 text-[var(--button)] border border-[var(--button)]/30 animate-badge-pulse' : 
+                        step.hasAnimation ? 'bg-gradient-to-r from-orange-100 to-amber-100 text-orange-700 border border-orange-300 ' : // Use hasAnimation here with orange colors
                         'bg-gray-100 text-gray-500'
                       }`}>
-                        {step.completed ? "Completed" : step.current ? "In Progress" : "Pending"}
+                        {step.completed ? "Completed" : step.hasAnimation ? "In Progress" : "Pending"} {/* Use hasAnimation here */}
                       </div>
                     </div>
                   </div>
@@ -424,7 +438,7 @@ const TrackOrderPage = () => {
           <div className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-[var(--button)]/10 to-[var(--primary)]/10 border-2 border-[var(--button)]/30 shadow-lg transform hover:scale-105 transition-all duration-300 group relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--button)]/5 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
             <Sparkles className="w-5 h-5 text-[var(--button)] relative z-10" />
-            <p className="text-[var(--button)] text-base font-semibold relative z-10">
+            <p className={`${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'} text-base font-semibold relative z-10`}>
               For inquiries, please contact our customer service
             </p>
           </div>
@@ -456,11 +470,11 @@ const TrackOrderPage = () => {
         }
         @keyframes pulse-glow {
           0%, 100% { 
-            box-shadow: 0 0 20px 0px rgba(var(--button-rgb), 0.4),
+            box-shadow: 0 0 20px 0px rgba(249, 116, 22, 0),
                        inset 0 0 20px rgba(255, 255, 255, 0.1);
           }
           50% { 
-            box-shadow: 0 0 30px 10px rgba(var(--button-rgb), 0.6),
+            box-shadow: 0 0 30px 10px rgba(249, 116, 22, 0),
                        inset 0 0 30px rgba(255, 255, 255, 0.2);
             transform: scale(1.15);
           }
@@ -468,21 +482,21 @@ const TrackOrderPage = () => {
         @keyframes text-pulse {
           0%, 100% { 
             opacity: 1;
-            text-shadow: 0 0 10px rgba(var(--button-rgb), 0.3);
+            text-shadow: 0 0 10px rgba(249, 116, 22, 0);
           }
           50% { 
             opacity: 0.9;
-            text-shadow: 0 0 20px rgba(var(--button-rgb), 0.6);
+            text-shadow: 0 0 20px rgba(249, 116, 22, 0);
           }
         }
         @keyframes badge-pulse {
           0%, 100% { 
             transform: scale(1);
-            box-shadow: 0 4px 15px rgba(var(--button-rgb), 0.2);
+            box-shadow: 0 4px 15px rgba(249, 116, 22, 0);
           }
           50% { 
             transform: scale(1.05);
-            box-shadow: 0 6px 25px rgba(var(--button-rgb), 0.4);
+            box-shadow: 0 6px 25px rgba(249, 116, 22, 0);
           }
         }
         .animate-gradient-x-slow { 

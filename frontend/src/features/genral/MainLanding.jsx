@@ -1,15 +1,42 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { FaShoppingBag, FaStore, FaTruck, FaArrowRight, FaRocket, FaShieldAlt, FaBrain, FaGlobe } from "react-icons/fa";
+import { FaShoppingBag, FaStore, FaTruck, FaArrowRight, FaStar, FaShieldAlt, FaRocket, FaBolt, FaChartLine, FaUsers, FaFire, FaRegClock, FaHeart, FaGem } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 
-// Advanced Animation Variants
-const quantumEntrance = {
-  hidden: { 
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: {
     opacity: 0,
-    scale: 0.8,
-    y: 100
+    y: 30
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 120,
+      damping: 14,
+      duration: 0.7
+    }
+  }
+};
+
+const cardVariants = {
+  hidden: {
+    opacity: 0,
+    scale: 0.95,
+    y: 30
   },
   visible: {
     opacity: 1,
@@ -17,480 +44,584 @@ const quantumEntrance = {
     y: 0,
     transition: {
       type: "spring",
-      stiffness: 200,
-      damping: 15,
-      duration: 1.2
+      stiffness: 100,
+      damping: 16,
+      duration: 0.6
     }
   }
 };
 
-const holographicFloat = {
-  holographic: {
-    y: [-8, 8, -8],
+const floatingVariants = {
+  floating: {
+    y: [-20, 20, -20],
+    rotate: [0, 2, 0],
     transition: {
-      duration: 4,
+      duration: 6,
       repeat: Infinity,
       ease: "easeInOut"
     }
   }
 };
 
-const neuralNetwork = {
+const gradientVariants = {
   animate: {
-    backgroundPosition: ["0% 0%", "100% 100%"],
+    backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
     transition: {
-      duration: 6,
+      duration: 12,
       repeat: Infinity,
       ease: "linear"
     }
   }
 };
 
-const particleStorm = {
-  animate: (i) => ({
-    x: [0, Math.random() * 100 - 50],
-    y: [0, Math.random() * 100 - 50],
-    scale: [0, 1, 0],
-    opacity: [0, 0.6, 0],
-    transition: {
-      duration: 2 + Math.random() * 2,
-      repeat: Infinity,
-      delay: i * 0.1,
-      ease: "easeOut"
-    }
-  })
-};
-
-const morphingGradient = {
-  animate: {
-    background: [
-      "linear-gradient(45deg, var(--button), #1e293b)",
-      "linear-gradient(135deg, var(--button), #1e293b)",
-      "linear-gradient(225deg, var(--button), #1e293b)",
-      "linear-gradient(315deg, var(--button), #1e293b)"
-    ],
-    transition: {
-      duration: 8,
-      repeat: Infinity,
-      ease: "linear"
-    }
-  }
-};
-
-const cyberGlitch = {
-  initial: { 
+const textRevealVariants = {
+  hidden: {
     opacity: 0,
-    y: 30
+    y: 80
   },
-  animate: {
+  visible: {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.8,
+      type: "spring",
+      stiffness: 100,
+      damping: 14,
+      duration: 0.9
+    }
+  }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15
+    }
+  }
+};
+
+const fadeInUp = {
+  hidden: {
+    opacity: 0,
+    y: 50
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 14,
+      duration: 0.8
+    }
+  }
+};
+
+const scaleIn = {
+  hidden: {
+    opacity: 0,
+    scale: 0.9
+  },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 16,
+      duration: 0.7
+    }
+  }
+};
+
+const pulseGlow = {
+  initial: {
+    boxShadow: "0 0 0 0 rgba(2, 106, 75, 0.5)"
+  },
+  pulse: {
+    boxShadow: [
+      "0 0 0 0 rgba(2, 106, 75, 0.5)",
+      "0 0 0 15px rgba(2, 106, 75, 0)",
+      "0 0 0 0 rgba(2, 106, 75, 0)"
+    ],
+    transition: {
+      duration: 3,
+      repeat: Infinity,
       ease: "easeOut"
     }
   }
 };
 
-const LoadingSpinner = () => {
-  const themeMode = useSelector((state) => state.customerTheme.mode);
-  
-  return (
-    <div className={`min-h-screen relative overflow-hidden flex items-center justify-center ${
-      themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-[var(--mid-dark)]'
-    }`}>
-      {/* Quantum Particles */}
-      {[...Array(30)].map((_, i) => (
-        <motion.div
-          key={i}
-          custom={i}
-          variants={particleStorm}
-          animate="animate"
-          className="absolute w-1 h-1 bg-[var(--button)] rounded-full"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-          }}
-        />
-      ))}
-      
-      <div className="text-center relative z-10">
-        <motion.div
-          variants={quantumEntrance}
-          initial="hidden"
-          animate="visible"
-          className="relative mb-8"
-        >
-          <div className="w-20 h-20 bg-gradient-to-br from-[var(--button)] to-gray-900 rounded-full flex items-center justify-center mx-auto shadow-2xl shadow-[var(--button)]/30">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              className="text-2xl text-white"
-            >
-              ⚡
-            </motion.div>
-          </div>
-          <motion.div
-            animate={{ 
-              scale: [1, 1.1, 1],
-              opacity: [0.3, 0.5, 0.3]
-            }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="absolute inset-0 bg-gradient-to-br from-[var(--button)] to-gray-900 rounded-full blur-lg"
-          />
-        </motion.div>
-        
-        <motion.p
-          variants={cyberGlitch}
-          initial="initial"
-          animate="animate"
-          className={`text-xl font-bold ${
-            themeMode === 'dark' ? 'text-[var(--text)]' : 'text-white'
-          }`}
-        >
-          INITIALIZING QWIKKO...
-        </motion.p>
-      </div>
-    </div>
-  );
+const bounceIn = {
+  hidden: {
+    opacity: 0,
+    scale: 0.7,
+    rotate: -5
+  },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    rotate: 0,
+    transition: {
+      type: "spring",
+      stiffness: 200,
+      damping: 12,
+      duration: 0.7
+    }
+  }
 };
 
 export default function LandingPage() {
   const themeMode = useSelector((state) => state.customerTheme.mode);
-  const [isLoading, setIsLoading] = React.useState(true);
 
-  React.useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 2000);
-    return () => clearTimeout(timer);
-  }, []);
+  // استخدام الألوان من CSS Variables فقط
+  const getColor = (colorName) => {
+    return `var(--${colorName})`;
+  };
 
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
+  // ألوان متوازنة للوضعين
+  const getCardColor = () => {
+    return themeMode === 'dark' 
+      ? 'rgba(0, 0, 0, 0.2)' // شفاف مع طبقة سوداء خفيفة
+      : 'rgba(226, 255, 212, 0.33)'; // شفاف مع طبقة بيضاء خفيفة
+  };
+
+  const getInnerDivColor = () => {
+    return themeMode === 'dark' 
+      ? 'rgba(0, 0, 0, 0.0)' // شفاف مع طبقة سوداء أخف
+      : 'rgba(255, 255, 255, 0.6)'; // شفاف مع طبقة بيضاء أخف
+  };
+
+  const getIconColor = () => {
+    return getColor('text');
+  };
+
+  const getBorderColor = () => {
+    return themeMode === 'dark' 
+      ? 'rgba(255, 255, 255, 0.1)' // حدود شفافة للداكن
+      : 'rgba(0, 0, 0, 0.1)'; // حدود شفافة للفاتح
+  };
+
+  const getTextColor = () => {
+    return getColor('text');
+  };
+
+  const getLightGrayColor = () => {
+    return getColor('light-gray');
+  };
+
+  const getButtonColor = () => {
+    return getColor('button');
+  };
 
   return (
     <motion.div
       initial="hidden"
       animate="visible"
-      className={`min-h-screen font-sans overflow-x-hidden ${
-        themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-[var(--bg)]'
-      } text-[var(--text)]`}
+      className="min-h-screen font-sans transition-colors duration-500 overflow-x-hidden"
+      style={{
+        backgroundColor: getColor('bg'),
+        color: getTextColor(),
+      }}
     >
-      {/* 🌌 Quantum Hero Section */}
+      {/* 🌟 Hero Section */}
       <motion.section
-        variants={morphingGradient}
+        variants={gradientVariants}
         animate="animate"
-        className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 overflow-hidden"
+        className="relative text-center py-24 px-6 overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${getButtonColor()} 0%, #014d34 50%, ${getButtonColor()} 100%)`,
+          backgroundSize: "400% 400%",
+          color: "#ffffff",
+        }}
       >
-        {/* Neural Network Background */}
-        <motion.div
-          variants={neuralNetwork}
-          animate="animate"
-          className="absolute inset-0 opacity-10"
-          style={{
-            background: "linear-gradient(90deg, transparent 0%, var(--button) 50%, transparent 100%)",
-            backgroundSize: "200% 200%",
-          }}
-        />
-        
-        {/* Holographic Grid */}
-        <div className="absolute inset-0 opacity-5">
-          {[...Array(15)].map((_, i) => (
+        <div className="absolute inset-0 overflow-hidden">
+          {[...Array(8)].map((_, i) => (
             <motion.div
               key={i}
-              animate={{
-                x: [0, 50, 0],
-                opacity: [0.05, 0.2, 0.05],
+              variants={floatingVariants}
+              animate="floating"
+              transition={{ delay: i * 0.5 }}
+              className="absolute bg-white/10 rounded-full backdrop-blur-sm"
+              style={{
+                width: `${20 + i * 20}px`,
+                height: `${20 + i * 20}px`,
+                top: `${10 + i * 10}%`,
+                left: `${5 + i * 12}%`,
+                opacity: 0.05 + (i * 0.05)
               }}
-              transition={{
-                duration: 3 + i * 0.3,
-                repeat: Infinity,
-                delay: i * 0.1
-              }}
-              className="absolute h-px bg-gradient-to-r from-[var(--button)] to-gray-900"
-              style={{ top: `${i * 7}%`, width: "100%" }}
             />
           ))}
         </div>
 
         <motion.div
-          variants={quantumEntrance}
-          className="relative text-center max-w-4xl mx-auto"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="relative max-w-5xl mx-auto"
         >
-          {/* Cyber Badge */}
           <motion.div
-            variants={holographicFloat}
-            animate="holographic"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-br from-[var(--button)] to-gray-900 backdrop-blur-sm border border-[var(--button)]/30 mb-8"
+            variants={bounceIn}
+            className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-10"
           >
             <motion.div
               animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
             >
-              <FaRocket className="text-white text-sm" />
+              <FaRocket className="text-yellow-300 text-base" />
             </motion.div>
-            <span className="text-white font-semibold tracking-wide text-xs uppercase">
-              Next Generation Platform
-            </span>
+            <span className="text-sm font-medium tracking-wider text-white">All-in-One Platform</span>
           </motion.div>
-          
-          {/* Main Heading */}
-          <div className="mb-8">
-            <motion.h1
-              initial={{ opacity: 0, y: 80 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, ease: "easeOut" }}
-              className="text-4xl sm:text-6xl md:text-7xl font-black mb-4 leading-tight text-white"
-            >
-              QWIKKO
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              className="text-lg sm:text-xl md:text-2xl text-white/90 font-light tracking-wide"
-            >
-              REVOLUTIONARY COMMERCE EXPERIENCE
-            </motion.p>
-          </div>
-          
-          {/* Holographic Description */}
-          <motion.p
-            variants={holographicFloat}
-            animate="holographic"
-            className="text-base sm:text-lg md:text-xl mb-10 max-w-2xl mx-auto text-white/80 leading-relaxed font-light"
+         
+          <motion.h1
+            variants={textRevealVariants}
+            className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight"
           >
-            Discover the future of shopping, business, and delivery. 
-            Advanced technology meets exceptional user experience.
+            <span className="bg-gradient-to-r from-white to-green-100 bg-clip-text text-transparent">
+              Everything You Need
+            </span>
+            <br />
+            <span className="bg-gradient-to-r from-green-100 to-white bg-clip-text text-transparent">
+              In One Place
+            </span>
+          </motion.h1>
+         
+          <motion.p
+            variants={fadeInUp}
+            className="text-lg md:text-xl mb-12 max-w-2xl mx-auto opacity-95 leading-relaxed text-white"
+          >
+            Discover amazing products, grow your business, or join our delivery network —
+            experience the future of commerce today.
           </motion.p>
-          
-          {/* Quantum Action Buttons */}
+         
           <motion.div
-            variants={quantumEntrance}
+            variants={containerVariants}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
-            <motion.button
-              whileHover={{ 
-                scale: 1.02,
-                boxShadow: "0 0 20px var(--button)"
-              }}
-              whileTap={{ scale: 0.98 }}
-              className="group relative px-6 py-3 bg-gradient-to-br from-[var(--button)] to-gray-900 text-white font-semibold rounded-lg overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-              <Link to="/customer/home" className="relative z-10 flex items-center gap-2 text-sm sm:text-base">
-                <FaShoppingBag className="text-lg" />
-                <span>Explore Store</span>
-                <motion.div
-                  animate={{ x: [0, 4, 0] }}
-                  transition={{ duration: 1.2, repeat: Infinity }}
+            <motion.div variants={itemVariants}>
+              <motion.div
+                variants={pulseGlow}
+                initial="initial"
+                animate="pulse"
+              >
+                <Link
+                  to="/customer/home"
+                  className="group px-8 py-4 bg-white text-[#026a4b] font-semibold rounded-xl transition-all duration-300 flex items-center gap-3 text-base hover:shadow-lg hover:scale-105"
                 >
-                  <FaArrowRight className="text-sm" />
-                </motion.div>
-              </Link>
-            </motion.button>
-
-            <motion.button
-              whileHover={{ 
-                scale: 1.02,
-                boxShadow: "0 0 20px var(--button)"
-              }}
-              whileTap={{ scale: 0.98 }}
-              className="group relative px-6 py-3 border border-[var(--button)] text-white font-semibold rounded-lg bg-gradient-to-br from-gray-900/50 to-[var(--button)]/20 backdrop-blur-sm overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-[var(--button)]/10 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
-              <Link to="/vendor" className="relative z-10 flex items-center gap-2 text-sm sm:text-base">
+                  <FaShoppingBag className="text-lg" />
+                  <span>Start Shopping</span>
+                  <FaArrowRight className="group-hover:translate-x-1 transition-transform duration-300" />
+                </Link>
+              </motion.div>
+            </motion.div>
+           
+            <motion.div variants={itemVariants}>
+              <Link
+                to="/vendor"
+                className="group px-8 py-4 border border-white/50 text-white font-semibold rounded-xl backdrop-blur-sm transition-all duration-300 flex items-center gap-3 text-base hover:bg-white/10"
+              >
                 <FaStore className="text-lg" />
-                <span>Start Business</span>
-                <motion.div
-                  animate={{ x: [0, 4, 0] }}
-                  transition={{ duration: 1.2, repeat: Infinity, delay: 0.2 }}
-                >
-                  <FaArrowRight className="text-sm" />
-                </motion.div>
+                Become a Vendor
+                <FaArrowRight className="group-hover:translate-x-1 transition-transform duration-300" />
               </Link>
-            </motion.button>
+            </motion.div>
           </motion.div>
         </motion.div>
-
-        {/* Floating Quantum Elements */}
-        {[...Array(12)].map((_, i) => (
-          <motion.div
-            key={i}
-            custom={i}
-            variants={particleStorm}
-            animate="animate"
-            className="absolute w-1.5 h-1.5 bg-[var(--button)] rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-          />
-        ))}
       </motion.section>
 
-      {/* 🚀 Premium Features Section */}
-      <section className={`relative py-16 px-4 sm:px-6 ${
-        themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-[var(--bg)]'
-      }`}>
+      {/* 🎯 Features Section */}
+      <motion.section
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.1 }}
+        className="relative py-16 px-6"
+        style={{
+          backgroundColor: getColor('bg'),
+        }}
+      >
         <div className="max-w-6xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
+            variants={staggerContainer}
+            className="text-center mb-12"
           >
-            <h2 className="text-3xl sm:text-5xl font-black mb-6 text-[var(--text)]">
-              PREMIUM FEATURES
-            </h2>
-            <p className="text-lg text-[var(--text)] max-w-2xl mx-auto font-light opacity-80">
-              Advanced capabilities designed for modern commerce needs
-            </p>
+            <motion.h2
+              variants={fadeInUp}
+              className="text-3xl md:text-4xl font-bold mb-6"
+              style={{ color: getTextColor() }}
+            >
+              Why Choose Qwikko?
+            </motion.h2>
+            <motion.p
+              variants={fadeInUp}
+              className="text-lg max-w-2xl mx-auto"
+              style={{ color: getLightGrayColor() }}
+            >
+              Experience the future of commerce with our all-in-one platform designed for everyone
+            </motion.p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <motion.div
+            variants={containerVariants}
+            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+          >
             {[
               {
-                icon: FaBrain,
+                icon: FaShoppingBag,
                 title: "Smart Shopping",
-                desc: "Intelligent recommendations and personalized shopping experience",
-                features: ["AI Personalization", "Smart Search", "Wishlist Sync"]
-              },
-              {
-                icon: FaShieldAlt,
-                title: "Secure Commerce", 
-                desc: "Enterprise-grade security for all your transactions and data",
-                features: ["Encrypted Payments", "Data Protection", "Fraud Prevention"]
-              },
-              {
-                icon: FaGlobe,
-                title: "Global Delivery",
-                desc: "Worldwide shipping with real-time tracking and smart logistics",
-                features: ["Live Tracking", "Fast Shipping", "Global Coverage"]
+                desc: "AI-powered recommendations and exclusive deals tailored just for you",
+                features: [
+                  { icon: FaFire, text: "Trending Products" },
+                  { icon: FaHeart, text: "Personalized Experience" },
+                  { icon: FaShieldAlt, text: "Secure Payments" }
+                ],
+                link: "/customer/home",
+                btn: "Explore Products",
               },
               {
                 icon: FaStore,
-                title: "Vendor Platform",
-                desc: "Complete business solution with analytics and management tools",
-                features: ["Sales Analytics", "Inventory Management", "Customer Insights"]
+                title: "Vendor Excellence",
+                desc: "Powerful tools to grow your business and reach new customers worldwide",
+                features: [
+                  { icon: FaChartLine, text: "Real-time Analytics" },
+                  { icon: FaBolt, text: "Quick Setup" },
+                  { icon: FaUsers, text: "Customer Insights" }
+                ],
+                link: "/vendor",
+                btn: "Start Selling",
               },
               {
                 icon: FaTruck,
-                title: "Fast Delivery",
-                desc: "Optimized delivery routes and multiple shipping options",
-                features: ["Express Delivery", "Route Optimization", "Multiple Carriers"]
+                title: "Delivery Network",
+                desc: "Flexible delivery system to earn on your schedule with maximum efficiency",
+                features: [
+                  { icon: FaRegClock, text: "Real-time Tracking" },
+                  { icon: FaGem, text: "Competitive Earnings" },
+                  { icon: FaUsers, text: "Flexible Hours" }
+                ],
+                link: "/delivery",
+                btn: "Join as Driver",
               },
-              {
-                icon: FaRocket,
-                title: "Innovation",
-                desc: "Constantly evolving platform with cutting-edge features",
-                features: ["Regular Updates", "New Features", "Tech Advancements"]
-              }
             ].map((card, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: i * 0.1 }}
-                whileHover={{ 
-                  scale: 1.02,
-                  y: -5,
+                variants={cardVariants}
+                className="group relative rounded-2xl p-6 border backdrop-blur-sm transition-all duration-500 h-full flex flex-col hover:shadow-lg hover:border-opacity-70"
+                style={{
+                  backgroundColor: getCardColor(),
+                  borderColor: getBorderColor(),
                 }}
-                className={`group relative rounded-xl p-6 border transition-all duration-300 ${
-                  themeMode === 'dark' 
-                    ? 'bg-[var(--div)] border-[var(--border)] hover:border-[var(--button)]' 
-                    : 'bg-[var(--textbox)] border-[var(--border)] hover:border-[var(--button)]'
-                }`}
               >
-                <div className="relative z-10">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-[var(--button)] to-gray-900 shadow-md">
-                      <card.icon className="text-lg text-white" />
+                <div className="flex-1 flex flex-col">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div
+                      className="p-4 rounded-xl border backdrop-blur-sm transition-colors duration-300"
+                      style={{
+                        backgroundColor: getInnerDivColor(),
+                        borderColor: getBorderColor(),
+                      }}
+                    >
+                      <card.icon className="text-xl" style={{ color: getIconColor() }} />
                     </div>
-                    <h3 className="text-xl font-bold text-[var(--text)]">
+                    <h3
+                      className="text-xl font-bold flex-1"
+                      style={{ color: getTextColor() }}
+                    >
                       {card.title}
                     </h3>
                   </div>
-                  
-                  <p className="text-[var(--text)] mb-4 leading-relaxed text-sm opacity-80">
+                 
+                  <p className="text-base mb-6 leading-relaxed flex-1" style={{ color: getLightGrayColor() }}>
                     {card.desc}
                   </p>
-                  
-                  <div className="space-y-2">
+                 
+                  <div className="space-y-3 mb-6 flex-1">
                     {card.features.map((feature, idx) => (
-                      <motion.div
+                      <div
                         key={idx}
-                        whileHover={{ x: 5 }}
-                        className="flex items-center gap-2 text-[var(--text)]"
+                        className="flex items-center gap-3 p-3 rounded-lg backdrop-blur-sm transition-all duration-300 hover:shadow-md border border-transparent hover:border-opacity-30"
+                        style={{
+                          backgroundColor: getInnerDivColor(),
+                          borderColor: getBorderColor(),
+                        }}
                       >
-                        <div className="w-1.5 h-1.5 bg-[var(--button)] rounded-full" />
-                        <span className="text-sm font-medium opacity-90">{feature}</span>
-                      </motion.div>
+                        <div
+                          className="w-10 h-10 rounded-lg flex items-center justify-center border backdrop-blur-sm transition-colors duration-300"
+                          style={{
+                            backgroundColor: getCardColor(),
+                            borderColor: getBorderColor()
+                          }}
+                        >
+                          <feature.icon className="text-base" style={{ color: getIconColor() }} />
+                        </div>
+                        <span style={{ color: getTextColor() }} className="font-medium text-sm">
+                          {feature.text}
+                        </span>
+                      </div>
                     ))}
+                  </div>
+                 
+                  <div className="mt-auto">
+                    <Link
+                      to={card.link}
+                      className="group w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 hover:shadow-md"
+                      style={{
+                        backgroundColor: getButtonColor(),
+                        color: "#ffffff",
+                      }}
+                    >
+                      <span className="text-sm">{card.btn}</span>
+                      <FaArrowRight className="group-hover:translate-x-1 transition-transform duration-300 text-xs" />
+                    </Link>
                   </div>
                 </div>
               </motion.div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ⚡ Professional CTA Section */}
-      <section className="relative py-20 px-4 sm:px-6 bg-gradient-to-br from-[var(--button)] to-gray-900 overflow-hidden">
-        <motion.div
-          variants={morphingGradient}
-          animate="animate"
-          className="absolute inset-0"
-        />
-        
-        <div className="relative z-10 text-center max-w-3xl mx-auto">
-          <motion.h2
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="text-3xl sm:text-5xl font-black mb-6 text-white"
-          >
-            READY TO
-            <br />
-            <span className="text-white">
-              GET STARTED?
-            </span>
-          </motion.h2>
-          
-          <motion.p
-            variants={holographicFloat}
-            animate="holographic"
-            className="text-lg text-white/80 mb-10 max-w-xl mx-auto"
-          >
-            Join thousands of satisfied users experiencing modern commerce
-          </motion.p>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
-          >
-            <motion.button
-              whileHover={{ 
-                scale: 1.02,
-                boxShadow: "0 0 25px var(--button)"
-              }}
-              className="px-8 py-3 bg-white text-gray-900 font-semibold rounded-lg text-base relative overflow-hidden hover:bg-gray-50 transition-all duration-300"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 translate-x-[-100%] hover:translate-x-[100%] transition-transform duration-700" />
-              <Link to="/customer/home" className="relative z-10 flex items-center gap-2">
-                <FaShoppingBag />
-                GET STARTED
-              </Link>
-            </motion.button>
           </motion.div>
         </div>
-      </section>
+      </motion.section>
+
+      {/* 🛡️ Trust & Security Section */}
+      <motion.section
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        variants={staggerContainer}
+        className="py-16 px-6 max-w-5xl mx-auto"
+        style={{
+          backgroundColor: getColor('bg'),
+        }}
+      >
+        <div className="max-w-3xl mx-auto text-center">
+          <motion.div
+            variants={bounceIn}
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-lg border backdrop-blur-sm mb-10 transition-colors duration-300"
+            style={{
+              backgroundColor: getCardColor(),
+              borderColor: getBorderColor(),
+            }}
+          >
+            <FaShieldAlt style={{ color: getIconColor() }} className="text-lg" />
+            <span className="font-bold text-lg" style={{ color: getTextColor() }}>Trust & Security</span>
+          </motion.div>
+         
+          <motion.h2
+            variants={fadeInUp}
+            className="text-3xl md:text-4xl font-bold mb-6"
+            style={{ color: getTextColor() }}
+          >
+            Built on Trust & Innovation
+          </motion.h2>
+         
+          <motion.p
+            variants={fadeInUp}
+            className="text-lg mb-10 max-w-2xl mx-auto"
+            style={{ color: getLightGrayColor() }}
+          >
+            Our platform is built with cutting-edge technology and security measures to ensure your experience is safe, seamless, and exceptional.
+          </motion.p>
+         
+          <motion.div
+            variants={containerVariants}
+            className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12"
+          >
+            {[
+              {
+                icon: FaShieldAlt,
+                title: "Secure Transactions",
+                desc: "Bank-level encryption and secure payment processing for all your transactions with 24/7 monitoring",
+              },
+              {
+                icon: FaStar,
+                title: "Premium Experience",
+                desc: "Carefully crafted user experience that puts your needs and satisfaction first with intuitive design",
+              }
+            ].map((item, idx) => (
+              <motion.div
+                key={idx}
+                variants={cardVariants}
+                className="p-6 rounded-2xl text-center border backdrop-blur-sm h-full flex flex-col hover:shadow-lg transition-all duration-300 hover:border-opacity-70"
+                style={{
+                  backgroundColor: getCardColor(),
+                  borderColor: getBorderColor(),
+                }}
+              >
+                <div
+                  className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center border backdrop-blur-sm transition-colors duration-300"
+                  style={{
+                    backgroundColor: getInnerDivColor(),
+                    borderColor: getBorderColor()
+                  }}
+                >
+                  <item.icon className="text-2xl" style={{ color: getIconColor() }} />
+                </div>
+                <h3 
+                  className="text-xl font-bold mb-3 flex-1"
+                  style={{ color: getTextColor() }}
+                >
+                  {item.title}
+                </h3>
+                <p style={{ color: getLightGrayColor() }} className="text-sm leading-relaxed flex-1">
+                  {item.desc}
+                </p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </motion.section>
+
+      {/* 🚀 CTA Section */}
+      <motion.section
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.3 }}
+        variants={staggerContainer}
+        className="py-20 px-6 text-center relative overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${getButtonColor()} 0%, #014d34 50%, ${getButtonColor()} 100%)`,
+          backgroundSize: "200% 200%",
+        }}
+      >
+        <div className="max-w-3xl mx-auto relative z-10">
+          <motion.h2
+            variants={fadeInUp}
+            className="text-3xl md:text-4xl font-bold mb-6 text-white"
+          >
+            Ready to Get Started?
+          </motion.h2>
+          <motion.p
+            variants={fadeInUp}
+            className="text-lg mb-10 text-white/95 max-w-xl mx-auto leading-relaxed"
+          >
+            Join our community and transform your shopping and business experience today
+          </motion.p>
+          <motion.div
+            variants={containerVariants}
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+          >
+            <motion.div variants={itemVariants}>
+              <Link
+                to="/customer/home"
+                className="group px-8 py-4 bg-white text-[#026a4b] font-semibold rounded-xl transition-all duration-300 flex items-center gap-3 text-base hover:shadow-lg hover:scale-105"
+              >
+                <FaShoppingBag className="text-lg" />
+                Start Shopping Now
+                <FaArrowRight className="group-hover:translate-x-1 transition-transform duration-300" />
+              </Link>
+            </motion.div>
+            <motion.div variants={itemVariants}>
+              <Link
+                to="/vendor"
+                className="group px-8 py-4 border border-white text-white font-semibold rounded-xl transition-all duration-300 flex items-center gap-3 text-base hover:bg-white/15"
+              >
+                <FaStore className="text-lg" />
+                Start Selling Today
+                <FaArrowRight className="group-hover:translate-x-1 transition-transform duration-300" />
+              </Link>
+            </motion.div>
+          </motion.div>
+        </div>
+      </motion.section>
     </motion.div>
   );
 }

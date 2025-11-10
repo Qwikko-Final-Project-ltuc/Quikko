@@ -891,7 +891,7 @@ const Navbar = () => {
                                 console.error("Error marking notifications as read:", err);
                               }
                             }}
-                            className="text-[var(--button)] hover:text-[var(--primary)] font-medium text-sm transition-colors duration-200 px-3 py-1 rounded-lg hover:bg-opacity-10"
+                            className="text-[var(--primary)] hover:text-[var(--text)] font-medium text-sm transition-colors duration-200 px-3 py-1 rounded-lg hover:bg-opacity-10"
                           >
                             Mark all read
                           </button>
