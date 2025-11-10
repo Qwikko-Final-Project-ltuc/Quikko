@@ -214,12 +214,12 @@ export default function OrderManagement() {
   const visibleItems = items.slice(0, visibleCount);
 
   // ألوان
-  const pageBg = isDarkMode ? "#242625" : "#f0f2f1";
   const innerBg = isDarkMode ? "#313131" : "#ffffff";
   const textColor = isDarkMode ? "#ffffff" : "#242625";
   const borderColor = isDarkMode ? "#f9f9f9" : "#ccc";
   const inputBg = isDarkMode ? "#666666" : "#ffffff";
-    // Badge بسيطة حسب حالة الطلب
+
+  // Badge بسيطة حسب حالة الطلب
   const OrderBadge = ({ status }) => {
     const s = (status || "").toLowerCase();
     const base = "inline-block px-2 py-0.5 rounded text-xs font-semibold border";
@@ -252,221 +252,220 @@ export default function OrderManagement() {
     );
   };
 
-return (
-  <div
-    className="flex flex-col min-h-screen"
-    style={{
-      backgroundColor: isDarkMode ? "var(--bg-dark)" : "var(--bg)",
-      color: "var(--text)",
-    }}
-  >
-    {/* المحتوى الرئيسي */}
-    <main className="flex-grow">
-      <div className="max-w-screen-xl mx-4 sm:mx-8 lg:mx-12 mt-18 mb-18 px-4 sm:px-6 md:px-10 lg:px-12 py-6 md:py-10 space-y-10">
-        <h1 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-10 text-center sm:text-left" style={{ color: "#307A59" }}>
-          Order Management
-        </h1>
+  return (
+    <div
+      className="flex flex-col min-h-screen"
+      style={{
+        backgroundColor: isDarkMode ? "var(--bg-dark)" : "var(--bg)",
+        color: "var(--text)",
+      }}
+    >
+      {/* المحتوى الرئيسي */}
+      <main className="flex-grow">
+        <div className="max-w-screen-xl mx-4 sm:mx-8 lg:mx-12 mt-18 mb-18 px-4 sm:px-6 md:px-10 lg:px-12 py-6 md:py-10 space-y-10">
+          <h1 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-10 text-center sm:text-left" style={{ color: "#307A59" }}>
+            Order Management
+          </h1>
 
-        {/* أزرار الفلترة */}
-        <div className="mb-8 flex flex-wrap justify-center sm:justify-start gap-2 sm:gap-3">
-          {Object.keys(STATUS_LABELS).map((key) => (
-            <button
-              key={key}
-              onClick={() => {
-                setFilter(key);
-                setVisibleCount(5);
-                if (USE_ORDERS_ENDPOINT) {
-                  setItems((prev) =>
-                    key === ""
-                      ? prev
-                      : prev.filter((i) => i.vendor_status === key)
-                  );
-                  loadItems(key);
-                } else {
-                  loadItems(key);
-                }
-              }}
-              className={`px-3 sm:px-4 py-1 rounded-2xl border text-sm sm:text-base transition-all duration-300 ${
-                filter === key
-                  ? "bg-[#307A59] text-white border-[#307A59] shadow-md"
-                  : "bg-white text-gray-500 border-gray-300 hover:bg-gray-100"
-              }`}
-            >
-              {STATUS_LABELS[key]}
-            </button>
-          ))}
-        </div>
-
-        {/* جدول الطلبات */}
-        <div
-          className="p-4 sm:p-6 border border-[var(--border)] rounded-2xl shadow overflow-x-auto"
-          style={{ backgroundColor: innerBg, color: textColor }}
-        >
-          {loading ? (
-            <p className="text-center" style={{ color: textColor }}>
-              Loading items...
-            </p>
-          ) : (
-            <>
-              <table
-                className="w-full border-collapse text-sm sm:text-base"
-                style={{ color: textColor }}
+          {/* أزرار الفلترة */}
+          <div className="mb-8 flex flex-wrap justify-center sm:justify-start gap-2 sm:gap-3">
+            {Object.keys(STATUS_LABELS).map((key) => (
+              <button
+                key={key}
+                onClick={() => {
+                  setFilter(key);
+                  setVisibleCount(5);
+                  if (USE_ORDERS_ENDPOINT) {
+                    setItems((prev) =>
+                      key === ""
+                        ? prev
+                        : prev.filter((i) => i.vendor_status === key)
+                    );
+                    loadItems(key);
+                  } else {
+                    loadItems(key);
+                  }
+                }}
+                className={`px-3 sm:px-4 py-1 rounded-2xl border text-sm sm:text-base transition-all duration-300 ${
+                  filter === key
+                    ? "bg-[#307A59] text-white border-[#307A59] shadow-md"
+                    : "bg-white text-gray-500 border-gray-300 hover:bg-gray-100"
+                }`}
               >
-                <thead>
-                  <tr style={{ borderBottom: `1px solid ${borderColor}` }}>
-                    <th className="p-2">Item ID</th>
-                    <th className="p-2">Order ID</th>
-                    <th className="p-2">Product</th>
-                    <th className="p-2">Quantity</th>
-                    <th className="p-2">Vendor Status</th>
-                    <th className="p-2">Order Status</th>
-                    <th className="p-2">Reject Reason</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleItems.map((item) => {
-                    const isCancelled = (item.order_status || "") === "cancelled";
-                    return (
-                      <tr
-                        key={item.order_item_id}
-                        className="border-b text-center hover:bg-gray-50  transition"
-                        style={{
-                          borderBottom: `1px solid ${borderColor}`,
-                          color: textColor,
-                          backgroundColor: "transparent",
-                        }}
-                      >
-                        <td className="p-2">{item.order_item_id}</td>
-                        <td className="p-2">{item.order_id}</td>
-                        <td className="p-2">{item.product_name}</td>
-                        <td className="p-2">{item.quantity}</td>
-                        <td className="p-2">
-                          <select
-                            value={item.vendor_status || "pending"}
-                            onChange={(e) =>
-                              handleStatusChange(item, e.target.value)
-                            }
-                            className="p-1 rounded-md font-medium"
-                            style={{
-                              backgroundColor: inputBg,
-                              color: textColor,
-                              borderColor: borderColor,
-                              opacity: isCancelled ? 0.6 : 1,
-                              cursor: isCancelled ? "not-allowed" : "pointer",
-                            }}
-                            disabled={isCancelled}
-                            title={
-                              isCancelled
-                                ? "Order is cancelled. You can't change this item."
-                                : "Change vendor status"
-                            }
-                          >
-                            {["pending", "accepted", "rejected"].map((status) => (
-                              <option key={status} value={status}>
-                                {status.charAt(0).toUpperCase() + status.slice(1)}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="p-2">
-                          <OrderBadge status={item.order_status} />
-                        </td>
-                        <td className="p-2">
-                          {item.vendor_status === "rejected" ? (
-                            <span
-                              className="inline-block max-w-[220px] truncate"
-                              title={item.rejection_reason || "No reason"}
+                {STATUS_LABELS[key]}
+              </button>
+            ))}
+          </div>
+
+          {/* جدول الطلبات */}
+          <div
+            className="p-4 sm:p-6 border border-[var(--border)] rounded-2xl shadow overflow-x-auto"
+            style={{ backgroundColor: innerBg, color: textColor }}
+          >
+            {loading ? (
+              <p className="text-center" style={{ color: textColor }}>
+                Loading items...
+              </p>
+            ) : (
+              <>
+                <table
+                  className="w-full border-collapse text-sm sm:text-base"
+                  style={{ color: textColor }}
+                >
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${borderColor}` }}>
+                      <th className="p-2">Item ID</th>
+                      <th className="p-2">Order ID</th>
+                      <th className="p-2">Product</th>
+                      <th className="p-2">Quantity</th>
+                      <th className="p-2">Vendor Status</th>
+                      <th className="p-2">Order Status</th>
+                      <th className="p-2">Reject Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleItems.map((item) => {
+                      const isCancelled = (item.order_status || "") === "cancelled";
+                      return (
+                        <tr
+                          key={item.order_item_id}
+                          className="border-b text-center hover:bg-gray-50  transition"
+                          style={{
+                            borderBottom: `1px solid ${borderColor}`,
+                            color: textColor,
+                            backgroundColor: "transparent",
+                          }}
+                        >
+                          <td className="p-2">{item.order_item_id}</td>
+                          <td className="p-2">{item.order_id}</td>
+                          <td className="p-2">{item.product_name}</td>
+                          <td className="p-2">{item.quantity}</td>
+                          <td className="p-2">
+                            <select
+                              value={item.vendor_status || "pending"}
+                              onChange={(e) =>
+                                handleStatusChange(item, e.target.value)
+                              }
+                              className="p-1 rounded-md font-medium"
                               style={{
-                                color: isDarkMode ? "#ffdada" : "#a01818",
+                                backgroundColor: inputBg,
+                                color: textColor,
+                                borderColor: borderColor,
+                                opacity: isCancelled ? 0.6 : 1,
+                                cursor: isCancelled ? "not-allowed" : "pointer",
                               }}
+                              disabled={isCancelled}
+                              title={
+                                isCancelled
+                                  ? "Order is cancelled. You can't change this item."
+                                  : "Change vendor status"
+                              }
                             >
-                              {item.rejection_reason || "—"}
-                            </span>
-                          ) : (
-                            "—"
-                          )}
+                              {["pending", "accepted", "rejected"].map((status) => (
+                                <option key={status} value={status}>
+                                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="p-2">
+                            <OrderBadge status={item.order_status} />
+                          </td>
+                          <td className="p-2">
+                            {item.vendor_status === "rejected" ? (
+                              <span
+                                className="inline-block max-w-[220px] truncate"
+                                title={item.rejection_reason || "No reason"}
+                                style={{
+                                  color: isDarkMode ? "#ffdada" : "#a01818",
+                                }}
+                              >
+                                {item.rejection_reason || "—"}
+                              </span>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {items.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan="7"
+                          className="p-4 text-center italic"
+                          style={{ color: textColor }}
+                        >
+                          No items found
                         </td>
                       </tr>
-                    );
-                  })}
-                  {items.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan="7"
-                        className="p-4 text-center italic"
-                        style={{ color: textColor }}
-                      >
-                        No items found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
 
-              {visibleCount < items.length && (
-                <div className="mt-4 flex justify-center">
+                {visibleCount < items.length && (
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      onClick={() => setVisibleCount(items.length)}
+                      className="px-4 py-2 bg-gray-100 rounded-lg text-gray-700 hover:bg-gray-200 transition"
+                    >
+                      Show More
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* مودال سبب الرفض */}
+          {showRejectModal && (
+            <div
+              className="fixed inset-0 flex items-center justify-center z-50"
+              style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+            >
+              <div
+                className="w-full max-w-md rounded-2xl p-6 shadow-lg"
+                style={{ backgroundColor: innerBg, color: textColor }}
+              >
+                <h2 className="text-lg font-semibold mb-4">Rejection reason</h2>
+                <textarea
+                  className="w-full p-3 rounded-lg border"
+                  style={{
+                    backgroundColor: inputBg,
+                    color: textColor,
+                    borderColor: borderColor,
+                  }}
+                  rows={4}
+                  placeholder="Write the reason (optional)"
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                />
+                <div className="mt-6 flex items-center justify-end gap-3">
                   <button
-                    onClick={() => setVisibleCount(items.length)}
-                    className="px-4 py-2 bg-gray-100 rounded-lg text-gray-700 hover:bg-gray-200 transition"
+                    onClick={cancelReject}
+                    className="px-4 py-2 rounded-lg border"
+                    style={{ borderColor: borderColor }}
                   >
-                    Show More
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmReject}
+                    className="px-4 py-2 rounded-lg text-white"
+                    style={{ backgroundColor: "#307A59" }}
+                  >
+                    Save
                   </button>
                 </div>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* مودال سبب الرفض */}
-        {showRejectModal && (
-          <div
-            className="fixed inset-0 flex items-center justify-center z-50"
-            style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
-          >
-            <div
-              className="w-full max-w-md rounded-2xl p-6 shadow-lg"
-              style={{ backgroundColor: innerBg, color: textColor }}
-            >
-              <h2 className="text-lg font-semibold mb-4">Rejection reason</h2>
-              <textarea
-                className="w-full p-3 rounded-lg border"
-                style={{
-                  backgroundColor: inputBg,
-                  color: textColor,
-                  borderColor: borderColor,
-                }}
-                rows={4}
-                placeholder="Write the reason (optional)"
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-              />
-              <div className="mt-6 flex items-center justify-end gap-3">
-                <button
-                  onClick={cancelReject}
-                  className="px-4 py-2 rounded-lg border"
-                  style={{ borderColor: borderColor }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmReject}
-                  className="px-4 py-2 rounded-lg text-white"
-                  style={{ backgroundColor: "#307A59" }}
-                >
-                  Save
-                </button>
               </div>
             </div>
-          </div>
-        )}
-      </div>
-    </main>
+          )}
+        </div>
+      </main>
 
-    {/* Footer */}
-    <footer className="w-full bg-[var(--footer-bg)] mt-auto">
-      <Footer />
-    </footer>
-  </div>
-);
-
+      {/* Footer */}
+      <footer className="w-full bg-[var(--footer-bg)] mt-auto">
+        <Footer />
+      </footer>
+    </div>
+  );
 }

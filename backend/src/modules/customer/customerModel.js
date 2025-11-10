@@ -280,7 +280,7 @@ exports.placeOrderFromCart = async function ({
   addressId,
   paymentMethod,
   paymentData,
-  coupons,
+  coupon_code,
   use_loyalty_points = false,
 }) {
   const client = await pool.connect();
@@ -410,13 +410,13 @@ exports.placeOrderFromCart = async function ({
       total_amount += Number(item.price) * Number(item.quantity);
     }
 
-    let total_with_shipping = total_amount + delivery_fee;
+    // let total_with_shipping = total_amount + delivery_fee;
     let discount_amount = 0;
     let final_amount = total_amount;
     let applied_coupons = [];
 
-    if (Array.isArray(coupons) && coupons.length > 0) {
-      for (const c of coupons) {
+    if (Array.isArray(coupon_code) && coupon_code.length > 0) {
+      for (const c of coupon_code) {
         const vendor_id = Number(c.vendor_id);
         const coupon_code = c.coupon_code;
         if (!coupon_code) continue;
@@ -469,6 +469,8 @@ exports.placeOrderFromCart = async function ({
       
       const pointsToUse = Math.min(use_loyalty_points, loyaltyData.points_balance);
       console.log("📊 Points to use:", pointsToUse, "Available:", loyaltyData.points_balance);
+      
+
       
       if (pointsToUse > 0) {
         const discountPercent = Math.min((pointsToUse / 100) * 10, 50);
@@ -523,7 +525,7 @@ exports.placeOrderFromCart = async function ({
         total_amount,
         discount_amount_total,
         final_amount,
-        coupon_code_to_save || coupon_code || null,
+         coupon_code || null,
         delivery_fee,
         total_with_shipping,
         payment_status,

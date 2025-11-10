@@ -10,15 +10,15 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.2
+      staggerChildren: 0.15
     }
   }
 };
 
 const itemVariants = {
-  hidden: { 
-    opacity: 0, 
-    y: 40 
+  hidden: {
+    opacity: 0,
+    y: 30
   },
   visible: {
     opacity: 1,
@@ -27,16 +27,16 @@ const itemVariants = {
       type: "spring",
       stiffness: 120,
       damping: 14,
-      duration: 0.8
+      duration: 0.7
     }
   }
 };
 
 const cardVariants = {
-  hidden: { 
-    opacity: 0, 
-    scale: 0.9,
-    y: 50
+  hidden: {
+    opacity: 0,
+    scale: 0.95,
+    y: 30
   },
   visible: {
     opacity: 1,
@@ -46,17 +46,17 @@ const cardVariants = {
       type: "spring",
       stiffness: 100,
       damping: 16,
-      duration: 0.7
+      duration: 0.6
     }
   }
 };
 
 const floatingVariants = {
   floating: {
-    y: [-25, 25, -25],
-    rotate: [0, 3, 0],
+    y: [-20, 20, -20],
+    rotate: [0, 2, 0],
     transition: {
-      duration: 5,
+      duration: 6,
       repeat: Infinity,
       ease: "easeInOut"
     }
@@ -67,7 +67,7 @@ const gradientVariants = {
   animate: {
     backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
     transition: {
-      duration: 10,
+      duration: 12,
       repeat: Infinity,
       ease: "linear"
     }
@@ -75,36 +75,9 @@ const gradientVariants = {
 };
 
 const textRevealVariants = {
-  hidden: { 
-    opacity: 0, 
-    y: 100 
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      type: "spring",
-      stiffness: 100,
-      damping: 14,
-      duration: 1
-    }
-  }
-};
-
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.2
-    }
-  }
-};
-
-const fadeInUp = {
-  hidden: { 
-    opacity: 0, 
-    y: 60 
+  hidden: {
+    opacity: 0,
+    y: 80
   },
   visible: {
     opacity: 1,
@@ -118,10 +91,37 @@ const fadeInUp = {
   }
 };
 
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15
+    }
+  }
+};
+
+const fadeInUp = {
+  hidden: {
+    opacity: 0,
+    y: 50
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 14,
+      duration: 0.8
+    }
+  }
+};
+
 const scaleIn = {
-  hidden: { 
-    opacity: 0, 
-    scale: 0.85 
+  hidden: {
+    opacity: 0,
+    scale: 0.9
   },
   visible: {
     opacity: 1,
@@ -130,19 +130,19 @@ const scaleIn = {
       type: "spring",
       stiffness: 100,
       damping: 16,
-      duration: 0.8
+      duration: 0.7
     }
   }
 };
 
 const pulseGlow = {
-  initial: { 
-    boxShadow: "0 0 0 0 rgba(2, 106, 75, 0.6)" 
+  initial: {
+    boxShadow: "0 0 0 0 rgba(2, 106, 75, 0.5)"
   },
   pulse: {
     boxShadow: [
-      "0 0 0 0 rgba(2, 106, 75, 0.6)",
-      "0 0 0 20px rgba(2, 106, 75, 0)",
+      "0 0 0 0 rgba(2, 106, 75, 0.5)",
+      "0 0 0 15px rgba(2, 106, 75, 0)",
       "0 0 0 0 rgba(2, 106, 75, 0)"
     ],
     transition: {
@@ -154,10 +154,10 @@ const pulseGlow = {
 };
 
 const bounceIn = {
-  hidden: { 
-    opacity: 0, 
-    scale: 0.6,
-    rotate: -8
+  hidden: {
+    opacity: 0,
+    scale: 0.7,
+    rotate: -5
   },
   visible: {
     opacity: 1,
@@ -167,26 +167,52 @@ const bounceIn = {
       type: "spring",
       stiffness: 200,
       damping: 12,
-      duration: 0.8
+      duration: 0.7
     }
   }
 };
 
 export default function LandingPage() {
-  const isDarkMode = useSelector((state) => state.deliveryTheme.darkMode);
+  const themeMode = useSelector((state) => state.customerTheme.mode);
 
-  const colors = {
-    bg: isDarkMode ? "#0a0a0a" : "#ffffff",
-    textbox: "#ffffff",
-    text: isDarkMode ? "#f5f5f5" : "#1a1f1d",
-    textSecondary: isDarkMode ? "#a0a0a0" : "#5a6c65",
-    div: isDarkMode ? "#2a2a2a" : "#e8ecea",
-    border: isDarkMode ? "#404040" : "#d0d9d5",
-    button: "#026a4b",
-    buttonHover: "#015c40",
-    accent: "#026a4b",
-    gradientStart: "#026a4b",
-    gradientEnd: "#014d34"
+  // استخدام الألوان من CSS Variables فقط
+  const getColor = (colorName) => {
+    return `var(--${colorName})`;
+  };
+
+  // ألوان متوازنة للوضعين
+  const getCardColor = () => {
+    return themeMode === 'dark' 
+      ? 'rgba(0, 0, 0, 0.2)' // شفاف مع طبقة سوداء خفيفة
+      : 'rgba(226, 255, 212, 0.33)'; // شفاف مع طبقة بيضاء خفيفة
+  };
+
+  const getInnerDivColor = () => {
+    return themeMode === 'dark' 
+      ? 'rgba(0, 0, 0, 0.0)' // شفاف مع طبقة سوداء أخف
+      : 'rgba(255, 255, 255, 0.6)'; // شفاف مع طبقة بيضاء أخف
+  };
+
+  const getIconColor = () => {
+    return getColor('text');
+  };
+
+  const getBorderColor = () => {
+    return themeMode === 'dark' 
+      ? 'rgba(255, 255, 255, 0.1)' // حدود شفافة للداكن
+      : 'rgba(0, 0, 0, 0.1)'; // حدود شفافة للفاتح
+  };
+
+  const getTextColor = () => {
+    return getColor('text');
+  };
+
+  const getLightGrayColor = () => {
+    return getColor('light-gray');
+  };
+
+  const getButtonColor = () => {
+    return getColor('button');
   };
 
   return (
@@ -195,35 +221,35 @@ export default function LandingPage() {
       animate="visible"
       className="min-h-screen font-sans transition-colors duration-500 overflow-x-hidden"
       style={{
-        backgroundColor: colors.bg,
-        color: colors.text,
+        backgroundColor: getColor('bg'),
+        color: getTextColor(),
       }}
     >
       {/* 🌟 Hero Section */}
       <motion.section
         variants={gradientVariants}
         animate="animate"
-        className="relative text-center py-28 px-6 overflow-hidden cursor-pointer transform transition-all duration-500 hover:shadow-2xl"
+        className="relative text-center py-24 px-6 overflow-hidden"
         style={{
-          background: `linear-gradient(135deg, ${colors.gradientStart} 0%, ${colors.gradientEnd} 50%, ${colors.gradientStart} 100%)`,
+          background: `linear-gradient(135deg, ${getButtonColor()} 0%, #014d34 50%, ${getButtonColor()} 100%)`,
           backgroundSize: "400% 400%",
           color: "#ffffff",
         }}
       >
         <div className="absolute inset-0 overflow-hidden">
-          {[...Array(6)].map((_, i) => (
+          {[...Array(8)].map((_, i) => (
             <motion.div
               key={i}
               variants={floatingVariants}
               animate="floating"
-              transition={{ delay: i * 0.7 }}
+              transition={{ delay: i * 0.5 }}
               className="absolute bg-white/10 rounded-full backdrop-blur-sm"
               style={{
-                width: `${30 + i * 25}px`,
-                height: `${30 + i * 25}px`,
-                top: `${15 + i * 12}%`,
-                left: `${8 + i * 15}%`,
-                opacity: 0.1 + (i * 0.1)
+                width: `${20 + i * 20}px`,
+                height: `${20 + i * 20}px`,
+                top: `${10 + i * 10}%`,
+                left: `${5 + i * 12}%`,
+                opacity: 0.05 + (i * 0.05)
               }}
             />
           ))}
@@ -233,45 +259,45 @@ export default function LandingPage() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="relative max-w-6xl mx-auto"
+          className="relative max-w-5xl mx-auto"
         >
           <motion.div
             variants={bounceIn}
-            className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-12"
+            className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-10"
           >
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
             >
-              <FaRocket className="text-yellow-300 text-lg" />
+              <FaRocket className="text-yellow-300 text-base" />
             </motion.div>
-            <span className="text-base font-semibold tracking-wider">All-in-One Platform</span>
+            <span className="text-sm font-medium tracking-wider text-white">All-in-One Platform</span>
           </motion.div>
-          
+         
           <motion.h1
             variants={textRevealVariants}
-            className="text-4xl md:text-6xl font-black mb-8 leading-tight"
+            className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight"
           >
-            <span className="bg-gradient-to-r from-white to-green-200 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-white to-green-100 bg-clip-text text-transparent">
               Everything You Need
             </span>
             <br />
-            <span className="bg-gradient-to-r from-green-200 to-white bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-green-100 to-white bg-clip-text text-transparent">
               In One Place
             </span>
           </motion.h1>
-          
+         
           <motion.p
             variants={fadeInUp}
-            className="text-lg md:text-xl mb-16 max-w-3xl mx-auto opacity-95 leading-relaxed"
+            className="text-lg md:text-xl mb-12 max-w-2xl mx-auto opacity-95 leading-relaxed text-white"
           >
-            Discover amazing products, grow your business, or join our delivery network — 
+            Discover amazing products, grow your business, or join our delivery network —
             experience the future of commerce today.
           </motion.p>
-          
+         
           <motion.div
             variants={containerVariants}
-            className="flex flex-col sm:flex-row gap-6 justify-center items-center"
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
             <motion.div variants={itemVariants}>
               <motion.div
@@ -281,21 +307,21 @@ export default function LandingPage() {
               >
                 <Link
                   to="/customer/home"
-                  className="group px-10 py-5 bg-white text-[#026a4b] font-bold rounded-2xl shadow-xl transition-all duration-300 flex items-center gap-3 text-lg hover:shadow-2xl hover:scale-105"
+                  className="group px-8 py-4 bg-white text-[#026a4b] font-semibold rounded-xl transition-all duration-300 flex items-center gap-3 text-base hover:shadow-lg hover:scale-105"
                 >
-                  <FaShoppingBag className="text-xl" />
+                  <FaShoppingBag className="text-lg" />
                   <span>Start Shopping</span>
                   <FaArrowRight className="group-hover:translate-x-1 transition-transform duration-300" />
                 </Link>
               </motion.div>
             </motion.div>
-            
+           
             <motion.div variants={itemVariants}>
               <Link
                 to="/vendor"
-                className="group px-10 py-5 border-2 border-white/50 text-white font-bold rounded-2xl backdrop-blur-sm transition-all duration-300 flex items-center gap-3 text-lg hover:bg-white/20 hover:border-white/70"
+                className="group px-8 py-4 border border-white/50 text-white font-semibold rounded-xl backdrop-blur-sm transition-all duration-300 flex items-center gap-3 text-base hover:bg-white/10"
               >
-                <FaStore className="text-xl" />
+                <FaStore className="text-lg" />
                 Become a Vendor
                 <FaArrowRight className="group-hover:translate-x-1 transition-transform duration-300" />
               </Link>
@@ -309,28 +335,27 @@ export default function LandingPage() {
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.1 }}
-        className="relative py-20 px-6"
+        className="relative py-16 px-6"
         style={{
-          backgroundColor: colors.bg,
+          backgroundColor: getColor('bg'),
         }}
       >
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <motion.div
             variants={staggerContainer}
-            className="text-center mb-16"
+            className="text-center mb-12"
           >
             <motion.h2
               variants={fadeInUp}
-              className="text-3xl md:text-5xl font-black mb-8"
+              className="text-3xl md:text-4xl font-bold mb-6"
+              style={{ color: getTextColor() }}
             >
-              <span className="bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
-                Why Choose Qwikko?
-              </span>
+              Why Choose Qwikko?
             </motion.h2>
             <motion.p
               variants={fadeInUp}
-              className="text-lg md:text-xl max-w-3xl mx-auto"
-              style={{ color: colors.textSecondary }}
+              className="text-lg max-w-2xl mx-auto"
+              style={{ color: getLightGrayColor() }}
             >
               Experience the future of commerce with our all-in-one platform designed for everyone
             </motion.p>
@@ -338,7 +363,7 @@ export default function LandingPage() {
 
           <motion.div
             variants={containerVariants}
-            className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
           >
             {[
               {
@@ -352,11 +377,10 @@ export default function LandingPage() {
                 ],
                 link: "/customer/home",
                 btn: "Explore Products",
-                gradient: "from-green-600 to-green-800"
               },
               {
                 icon: FaStore,
-                title: "Vendor Excellence", 
+                title: "Vendor Excellence",
                 desc: "Powerful tools to grow your business and reach new customers worldwide",
                 features: [
                   { icon: FaChartLine, text: "Real-time Analytics" },
@@ -365,7 +389,6 @@ export default function LandingPage() {
                 ],
                 link: "/vendor",
                 btn: "Start Selling",
-                gradient: "from-blue-600 to-blue-800"
               },
               {
                 icon: FaTruck,
@@ -378,75 +401,77 @@ export default function LandingPage() {
                 ],
                 link: "/delivery",
                 btn: "Join as Driver",
-                gradient: "from-purple-600 to-purple-800"
               },
             ].map((card, i) => (
               <motion.div
                 key={i}
                 variants={cardVariants}
-                className="group relative rounded-3xl p-8 border-2 transition-all duration-500 h-full flex flex-col shadow-lg hover:shadow-2xl hover:border-green-300/50"
+                className="group relative rounded-2xl p-6 border backdrop-blur-sm transition-all duration-500 h-full flex flex-col hover:shadow-lg hover:border-opacity-70"
                 style={{
-                  backgroundColor: colors.textbox, 
-                  borderColor: colors.border,
+                  backgroundColor: getCardColor(),
+                  borderColor: getBorderColor(),
                 }}
               >
                 <div className="flex-1 flex flex-col">
-                  <div className="flex items-center gap-6 mb-8">
+                  <div className="flex items-center gap-4 mb-6">
                     <div
-                      className="p-5 rounded-2xl text-white shadow-lg"
-                      style={{ 
-                        background: `linear-gradient(135deg, ${colors.button}, ${colors.buttonHover})`,
+                      className="p-4 rounded-xl border backdrop-blur-sm transition-colors duration-300"
+                      style={{
+                        backgroundColor: getInnerDivColor(),
+                        borderColor: getBorderColor(),
                       }}
                     >
-                      <card.icon className="text-2xl" />
+                      <card.icon className="text-xl" style={{ color: getIconColor() }} />
                     </div>
                     <h3
-                      className={`text-2xl font-black flex-1 bg-gradient-to-r ${card.gradient} bg-clip-text text-transparent`}
+                      className="text-xl font-bold flex-1"
+                      style={{ color: getTextColor() }}
                     >
                       {card.title}
                     </h3>
                   </div>
-                  
-                  <p className="text-base mb-8 leading-relaxed flex-1" style={{ color: colors.textSecondary }}>
+                 
+                  <p className="text-base mb-6 leading-relaxed flex-1" style={{ color: getLightGrayColor() }}>
                     {card.desc}
                   </p>
-                  
-                  <div className="space-y-4 mb-8 flex-1">
+                 
+                  <div className="space-y-3 mb-6 flex-1">
                     {card.features.map((feature, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300"
+                        className="flex items-center gap-3 p-3 rounded-lg backdrop-blur-sm transition-all duration-300 hover:shadow-md border border-transparent hover:border-opacity-30"
                         style={{
-                          backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#f8faf9',
+                          backgroundColor: getInnerDivColor(),
+                          borderColor: getBorderColor(),
                         }}
                       >
                         <div
-                          className="w-12 h-12 rounded-xl flex items-center justify-center border shadow-sm"
-                          style={{ 
-                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#ffffff',
-                            borderColor: colors.border
+                          className="w-10 h-10 rounded-lg flex items-center justify-center border backdrop-blur-sm transition-colors duration-300"
+                          style={{
+                            backgroundColor: getCardColor(),
+                            borderColor: getBorderColor()
                           }}
                         >
-                          <feature.icon className="text-lg" style={{ color: colors.button }} />
+                          <feature.icon className="text-base" style={{ color: getIconColor() }} />
                         </div>
-                        <span style={{ color: colors.text }} className="font-semibold text-base">
+                        <span style={{ color: getTextColor() }} className="font-medium text-sm">
                           {feature.text}
                         </span>
                       </div>
                     ))}
                   </div>
-                  
+                 
                   <div className="mt-auto">
                     <Link
                       to={card.link}
-                      className="group w-full inline-flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+                      className="group w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 hover:shadow-md"
                       style={{
-                        backgroundColor: colors.button,
+                        backgroundColor: getButtonColor(),
                         color: "#ffffff",
                       }}
                     >
-                      <span className="text-base">{card.btn}</span>
-                      <FaArrowRight className="group-hover:translate-x-1 transition-transform duration-300" />
+                      <span className="text-sm">{card.btn}</span>
+                      <FaArrowRight className="group-hover:translate-x-1 transition-transform duration-300 text-xs" />
                     </Link>
                   </div>
                 </div>
@@ -462,79 +487,83 @@ export default function LandingPage() {
         whileInView="visible"
         viewport={{ once: true, amount: 0.2 }}
         variants={staggerContainer}
-        className="py-20 px-6 max-w-6xl mx-auto"
+        className="py-16 px-6 max-w-5xl mx-auto"
         style={{
-          backgroundColor: colors.bg,
+          backgroundColor: getColor('bg'),
         }}
       >
-        <div className="max-w-4xl mx-auto text-center">
+        <div className="max-w-3xl mx-auto text-center">
           <motion.div
             variants={bounceIn}
-            className="inline-flex items-center gap-3 px-6 py-3 rounded-xl border shadow-lg mb-12"
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-lg border backdrop-blur-sm mb-10 transition-colors duration-300"
             style={{
-              backgroundColor: colors.textbox, 
-              borderColor: colors.border
+              backgroundColor: getCardColor(),
+              borderColor: getBorderColor(),
             }}
           >
-            <FaShieldAlt style={{ color: colors.button }} className="text-xl" />
-            <span className="font-bold text-xl" style={{ color: colors.text }}>Trust & Security</span>
+            <FaShieldAlt style={{ color: getIconColor() }} className="text-lg" />
+            <span className="font-bold text-lg" style={{ color: getTextColor() }}>Trust & Security</span>
           </motion.div>
-          
+         
           <motion.h2
             variants={fadeInUp}
-            className="text-3xl md:text-5xl font-black mb-8"
+            className="text-3xl md:text-4xl font-bold mb-6"
+            style={{ color: getTextColor() }}
           >
-            <span className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-              Built on Trust & Innovation
-            </span>
+            Built on Trust & Innovation
           </motion.h2>
-          
+         
           <motion.p
             variants={fadeInUp}
-            className="text-lg md:text-xl mb-12 max-w-3xl mx-auto"
-            style={{ color: colors.textSecondary }}
+            className="text-lg mb-10 max-w-2xl mx-auto"
+            style={{ color: getLightGrayColor() }}
           >
             Our platform is built with cutting-edge technology and security measures to ensure your experience is safe, seamless, and exceptional.
           </motion.p>
-          
+         
           <motion.div
             variants={containerVariants}
-            className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-16"
+            className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12"
           >
             {[
               {
                 icon: FaShieldAlt,
                 title: "Secure Transactions",
                 desc: "Bank-level encryption and secure payment processing for all your transactions with 24/7 monitoring",
-                gradient: "from-green-600 to-blue-600"
               },
               {
                 icon: FaStar,
-                title: "Premium Experience", 
+                title: "Premium Experience",
                 desc: "Carefully crafted user experience that puts your needs and satisfaction first with intuitive design",
-                gradient: "from-purple-600 to-pink-600"
               }
             ].map((item, idx) => (
               <motion.div
                 key={idx}
                 variants={cardVariants}
-                className="p-8 rounded-3xl text-center border-2 h-full flex flex-col shadow-lg hover:shadow-2xl hover:border-green-300/50 transition-all duration-500"
-                style={{ 
-                  backgroundColor: colors.textbox,
-                  borderColor: colors.border
+                className="p-6 rounded-2xl text-center border backdrop-blur-sm h-full flex flex-col hover:shadow-lg transition-all duration-300 hover:border-opacity-70"
+                style={{
+                  backgroundColor: getCardColor(),
+                  borderColor: getBorderColor(),
                 }}
               >
                 <div
-                  className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center border shadow-lg"
-                  style={{ 
-                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#f8faf9',
-                    borderColor: colors.border
+                  className="w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center border backdrop-blur-sm transition-colors duration-300"
+                  style={{
+                    backgroundColor: getInnerDivColor(),
+                    borderColor: getBorderColor()
                   }}
                 >
-                  <item.icon className="text-3xl" style={{ color: colors.button }} />
+                  <item.icon className="text-2xl" style={{ color: getIconColor() }} />
                 </div>
-                <h3 className={`text-2xl font-black mb-4 flex-1 bg-gradient-to-r ${item.gradient} bg-clip-text text-transparent`}>{item.title}</h3>
-                <p style={{ color: colors.textSecondary }} className="text-base leading-relaxed flex-1">{item.desc}</p>
+                <h3 
+                  className="text-xl font-bold mb-3 flex-1"
+                  style={{ color: getTextColor() }}
+                >
+                  {item.title}
+                </h3>
+                <p style={{ color: getLightGrayColor() }} className="text-sm leading-relaxed flex-1">
+                  {item.desc}
+                </p>
               </motion.div>
             ))}
           </motion.div>
@@ -547,35 +576,35 @@ export default function LandingPage() {
         whileInView="visible"
         viewport={{ once: true, amount: 0.3 }}
         variants={staggerContainer}
-        className="py-24 px-6 text-center relative overflow-hidden"
+        className="py-20 px-6 text-center relative overflow-hidden"
         style={{
-          background: `linear-gradient(135deg, ${colors.gradientStart} 0%, ${colors.gradientEnd} 50%, ${colors.gradientStart} 100%)`,
+          background: `linear-gradient(135deg, ${getButtonColor()} 0%, #014d34 50%, ${getButtonColor()} 100%)`,
           backgroundSize: "200% 200%",
         }}
       >
-        <div className="max-w-4xl mx-auto relative z-10">
+        <div className="max-w-3xl mx-auto relative z-10">
           <motion.h2
             variants={fadeInUp}
-            className="text-3xl md:text-5xl font-black mb-8 text-white"
+            className="text-3xl md:text-4xl font-bold mb-6 text-white"
           >
             Ready to Get Started?
           </motion.h2>
           <motion.p
             variants={fadeInUp}
-            className="text-lg md:text-xl mb-12 text-white/90 max-w-2xl mx-auto leading-relaxed"
+            className="text-lg mb-10 text-white/95 max-w-xl mx-auto leading-relaxed"
           >
             Join our community and transform your shopping and business experience today
           </motion.p>
           <motion.div
             variants={containerVariants}
-            className="flex flex-col sm:flex-row gap-6 justify-center items-center"
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
             <motion.div variants={itemVariants}>
               <Link
                 to="/customer/home"
-                className="group px-10 py-5 bg-white text-[#026a4b] font-bold rounded-2xl shadow-xl transition-all duration-300 flex items-center gap-3 text-lg hover:shadow-2xl hover:scale-105"
+                className="group px-8 py-4 bg-white text-[#026a4b] font-semibold rounded-xl transition-all duration-300 flex items-center gap-3 text-base hover:shadow-lg hover:scale-105"
               >
-                <FaShoppingBag className="text-xl" />
+                <FaShoppingBag className="text-lg" />
                 Start Shopping Now
                 <FaArrowRight className="group-hover:translate-x-1 transition-transform duration-300" />
               </Link>
@@ -583,9 +612,9 @@ export default function LandingPage() {
             <motion.div variants={itemVariants}>
               <Link
                 to="/vendor"
-                className="group px-10 py-5 border-2 border-white text-white font-bold rounded-2xl transition-all duration-300 flex items-center gap-3 text-lg hover:bg-white/20 hover:border-white/70"
+                className="group px-8 py-4 border border-white text-white font-semibold rounded-xl transition-all duration-300 flex items-center gap-3 text-base hover:bg-white/15"
               >
-                <FaStore className="text-xl" />
+                <FaStore className="text-lg" />
                 Start Selling Today
                 <FaArrowRight className="group-hover:translate-x-1 transition-transform duration-300" />
               </Link>

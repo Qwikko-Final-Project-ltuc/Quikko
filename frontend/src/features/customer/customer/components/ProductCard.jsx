@@ -47,41 +47,34 @@ useEffect(() => {
 }, [product.id]);
 
 
-  // تحويل الصور إذا كانت نص JSON
   const images = Array.isArray(product.images)
     ? product.images
     : typeof product.images === "string"
     ? JSON.parse(product.images)
     : [];
 
-  // تحديد عدد النقاط المرئية (بحد أقصى 5)
   const MAX_DOTS = 5;
   const totalImages = images.length;
   
-  // حساب النقاط المرئية فقط
   const getVisibleDots = () => {
     if (totalImages <= MAX_DOTS) {
       return Array.from({ length: totalImages }, (_, i) => i);
     }
     
-    // إذا كان هناك أكثر من 5 صور، نعرض نقاط ذكية
     const dots = [];
     const halfMax = Math.floor(MAX_DOTS / 2);
     
     if (currentImage <= halfMax) {
-      // في البداية
       for (let i = 0; i < MAX_DOTS - 1; i++) {
         dots.push(i);
       }
       dots.push(totalImages - 1); // النقطة الأخيرة
     } else if (currentImage >= totalImages - 1 - halfMax) {
-      // في النهاية
       dots.push(0); // النقطة الأولى
       for (let i = totalImages - MAX_DOTS + 1; i < totalImages; i++) {
         dots.push(i);
       }
     } else {
-      // في المنتصف
       dots.push(0); // النقطة الأولى
       for (let i = currentImage - 1; i <= currentImage + 1; i++) {
         if (i > 0 && i < totalImages - 1) {
@@ -371,14 +364,14 @@ useEffect(() => {
             </p>
           )}
           {/* عرض التقييم بالنجوم */}
-{averageRating !== null && (
-  <div className="flex items-center space-x-1 mb-3">
-    <FaStar className="text-yellow-500" />
-    <span className="text-sm text-[var(--light-gray)]">
-      {averageRating.toFixed(1)} ({reviewsCount})
-    </span>
-  </div>
-)}
+          {averageRating !== null && (
+            <div className="flex items-center space-x-1 mb-3">
+              <FaStar className="text-yellow-500" />
+              <span className="text-sm text-[var(--light-gray)]">
+                {averageRating.toFixed(1)} ({reviewsCount})
+              </span>
+            </div>
+          )}
 
           <div className="flex items-center justify-between mt-auto">
             <p 
@@ -399,7 +392,7 @@ useEffect(() => {
                 onClick={handleAddToCart}
                 disabled={isAnimating}
               >
-                <FaShoppingCart className="text-xl" />
+                <FaShoppingCart className={`text-xl  ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}  `}/>
               </button>
               {/* Tooltip */}
               <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover/cart:opacity-100 transition-opacity duration-300 whitespace-nowrap pointer-events-none">
@@ -421,15 +414,13 @@ useEffect(() => {
           />
         )}
       </div>
-      
-      {/* Toast Notification */}
-      {toast && (
+      {/* {toast && (
         <Toast
           message={toast.message}
           type={toast.type}
           onClose={() => setToast(null)}
         />
-      )}
+      )} */}
     </>
   );
 };
