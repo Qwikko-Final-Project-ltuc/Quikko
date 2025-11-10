@@ -28,6 +28,8 @@ import ContactUs from "./customer/pages/ContactUs";
 //import ChatPage from "./customer/pages/ChatPage";
 import PasswordUpdated from "./auth/PasswordUpdated";
 import ChatPage from "./customer/pages/CustomerChat";
+import PrivacyPolicy from "../genral/PrivacyPolicy";
+import TermsOfService from "../genral/TermsOfService";
 
 
 
@@ -63,7 +65,8 @@ const CustomerRoutes = () => {
         <Route path="/customer/contact" element={<ContactUs />} />
         <Route path="/customer/chat" element={<ChatPage />} />
         <Route path="/customer/product/:id" element={<ProductDetails />} />
-
+        <Route path="/customer/privacy" element={<PrivacyPolicy />} />
+        <Route path="/customer/terms" element={<TermsOfService />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>

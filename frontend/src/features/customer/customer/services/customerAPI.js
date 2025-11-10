@@ -146,16 +146,32 @@ const customerAPI = {
     return res.data.data; 
   },
 
-  // Checkout
-  checkout: async (data) => {
-  console.log("🛒 Checkout request payload:", data); // البيانات اللي رح ترسل
-  console.log("🛒 Checkout request URL:", api.defaults.baseURL + "/checkout"); // URL
-  console.log("🛒 Checkout request method: POST"); // method
+// في customerAPI.js - استبدل دالة checkout بالكامل
+checkout: async (data) => {
+  try {
+    console.log("🛒 [API] Checkout request payload:", data); 
+    console.log("🛒 [API] Checkout request URL:", api.defaults.baseURL + "/checkout");
 
-  const res = await api.post("/checkout", data);
+    // 🔥 بناء البيانات بشكل صريح
+    const checkoutPayload = {
+      cart_id: data.cart_id,
+      address: data.address,
+      paymentMethod: data.paymentMethod,
+      paymentData: data.paymentData || {},
+      coupon_code: data.coupon_code || null,
+      use_loyalty_points: data.use_loyalty_points || 0
+    };
 
-  console.log("✅ Checkout response:", res.data); // الرد من السيرفر
-  return res.data;
+    console.log("🛒 [API] Final checkout payload:", checkoutPayload);
+
+    const res = await api.post("/checkout", checkoutPayload);
+    
+    console.log("🛒 [API] Checkout response:", res.data);
+    return res.data;
+  } catch (error) {
+    console.error("❌ [API] Checkout error:", error.response?.data || error.message);
+    throw error;
+  }
 },
 
   getOrCreateCart: async (cartId = null, userId = null, guestToken = null) => {

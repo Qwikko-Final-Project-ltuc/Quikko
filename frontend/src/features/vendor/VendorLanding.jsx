@@ -55,76 +55,74 @@ export default function VendorLanding() {
   const textColor = isDarkMode ? "#ffffff" : "#242625";
   const benefitIconColor = isDarkMode ? "#ffffff" : greenColor;
 
-  return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: pageBg, color: textColor }}>
-      
-      {/* Hero Section */}
-      {heroCMS && (
-        <section className="flex flex-col md:flex-row min-h-[400px] w-full">
-          {/* الصورة على اليسار */}
-          {/* الصورة على اليسار */}
-<div className="w-full md:w-1/2 h-full flex justify-start md:justify-center md:pl-8 pt-8">
-  <img
-    src={heroCMS.image_url}
-    alt={heroCMS.title}
-    className="h-full object-contain scale-105"
-    style={{ objectPosition: 'right' }}
-  />
-</div>
+return (
+  <div className="min-h-screen flex flex-col" style={{ backgroundColor: pageBg, color: textColor }}>
+    
+    {/* Hero Section */}
+    {heroCMS && (
+      <section className="flex flex-col md:flex-row min-h-[400px] w-full">
+        {/* الصورة على اليسار */}
+        <div className="w-full md:w-1/2 h-64 sm:h-96 md:h-full flex justify-center md:justify-center md:pl-4 lg:pl-8 pt-4 sm:pt-8">
+          <img
+            src={heroCMS.image_url}
+            alt={heroCMS.title}
+            className="h-full sm:h-auto object-contain scale-105"
+            style={{ objectPosition: 'right' }}
+          />
+        </div>
 
-
-
-          {/* النص على اليمين */}
-          <div
-            className="w-full md:w-1/2 flex flex-col justify-center items-start p-12 text-left"
-            style={{ backgroundColor: pageBg }}
+        {/* النص على اليمين */}
+        <div
+          className="w-full md:w-1/2 flex flex-col justify-center items-start p-6 sm:p-8 md:p-12 text-left"
+          style={{ backgroundColor: pageBg }}
+        >
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4" style={{ color: textColor }}>
+            {titleText || heroCMS.title}
+          </h1>
+          {subtitleText && (
+            <p className="text-lg sm:text-xl mb-6 sm:mb-8" style={{ color: textColor }}>
+              {subtitleText}
+            </p>
+          )}
+          <button
+            onClick={() => navigate("/vendor/login")}
+            className="px-6 sm:px-8 py-3 sm:py-4 rounded-lg text-base sm:text-lg font-semibold transition-colors"
+            style={{
+              backgroundColor: greenColor,
+              color: "#fff",
+            }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = "#285d45"}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = greenColor}
           >
-            <h1 className="text-5xl font-extrabold mb-4" style={{ color: textColor }}>
-              {titleText || heroCMS.title}
-            </h1>
-            {subtitleText && (
-              <p className="text-xl mb-8" style={{ color: textColor }}>
-                {subtitleText}
-              </p>
-            )}
-            <button
-              onClick={() => navigate("/vendor/login")}
-              className="px-8 py-4 rounded-lg text-lg font-semibold transition-colors"
-              style={{
-                backgroundColor: greenColor,
-                color: "#fff",
-              }}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = "#285d45"}
-              onMouseLeave={e => e.currentTarget.style.backgroundColor = greenColor}
-            >
-              Start Now
-            </button>
-          </div>
-        </section>
-      )}
-
-      {/* Benefits Section */}
-      <section className="py-20 px-6 flex-1">
-        <h2 className="text-3xl font-bold text-center mb-12" style={{ color: textColor }}>
-          Why Join Qwikko?
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 max-w-6xl mx-auto">
-          {benefits.map((b, index) => (
-            <div
-              key={index}
-              className="rounded-lg shadow p-6 flex flex-col items-center text-center"
-              style={{ backgroundColor: innerBg }}
-            >
-              {React.cloneElement(b.icon, { style: { color: benefitIconColor } })}
-              <h3 className="text-xl font-semibold mt-4" style={{ color: textColor }}>{b.title}</h3>
-              <p className="mt-2" style={{ color: textColor }}>{b.description}</p>
-            </div>
-          ))}
+            Start Now
+          </button>
         </div>
       </section>
+    )}
 
-      {/* Footer */}
-      <Footer />
-    </div>
-  );
+    {/* Benefits Section */}
+    <section className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 flex-1">
+      <h2 className="text-2xl sm:text-3xl md:text-3xl font-bold text-center mb-8 sm:mb-12" style={{ color: textColor }}>
+        Why Join Qwikko?
+      </h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10 max-w-6xl mx-auto">
+        {benefits.map((b, index) => (
+          <div
+            key={index}
+            className="rounded-lg shadow p-4 sm:p-6 flex flex-col items-center text-center"
+            style={{ backgroundColor: innerBg }}
+          >
+            {React.cloneElement(b.icon, { style: { color: benefitIconColor, fontSize: '2rem' } })}
+            <h3 className="text-lg sm:text-xl font-semibold mt-3 sm:mt-4" style={{ color: textColor }}>{b.title}</h3>
+            <p className="mt-1 sm:mt-2 text-sm sm:text-base" style={{ color: textColor }}>{b.description}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    {/* Footer */}
+    <Footer />
+  </div>
+);
+
 }

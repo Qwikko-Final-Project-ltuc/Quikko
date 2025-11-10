@@ -454,151 +454,155 @@ const VendorChatPage = ({ themeMode = "light" }) => {
   );
 
   /* ===== Return JSX with applied styles ===== */
-  return (
-    <div className="h-screen flex bg-[var(--bg)] rounded-2xl overflow-hidden">
+return (
+  <div className="h-screen flex flex-col md:flex-row bg-[var(--bg)] rounded-2xl overflow-hidden p-4 md:p-10">
+  {/* Sidebar */}
+  <aside
+    className="w-full md:w-80 flex flex-col min-h-0 border-r-0 md:border-r-3 p-2 md:p-3"
+    style={{
+      borderColor: themeMode === "dark" ? "var(--mid-dark)" : "var(--textbox)",
+    }}
+  >
+    <div className="p-2 flex-shrink-0">
+      <input
+        type="text"
+        placeholder="Search Contact..."
+        className={`w-full px-3 py-1.5 text-sm rounded-full ${
+          themeMode === "dark"
+            ? "bg-[var(--mid-dark)] text-[var(--text)]"
+            : "bg-[var(--div)] text-[var(--text)]"
+        } placeholder-gray-400 focus:outline-none`}
+      />
+    </div>
 
-      {/* Sidebar */}
-      <aside
-        className={`w-80 flex flex-col min-h-0 border-r-3 ${
-          themeMode === "dark" ? "border-[var(--mid-dark)]" : "border-[var(--textbox)]"
-        }`}
-      >
-        <div className="p-4 flex-shrink-0">
-          <input
-            type="text"
-            placeholder="Search Contact..."
-            className={`w-full px-4 py-2 rounded-full text-sm ${
-              themeMode === "dark"
-                ? "bg-[var(--div)] text-[var(--text)]"
-                : "bg-[var(--textbox)] text-[var(--text)]"
-            } placeholder-gray-400 focus:outline-none`}
-          />
+    <div className="flex-1 overflow-y-auto min-h-0 px-1 pb-2 messages-scroll">
+      {conversations.map((c) => (
+        <div
+          key={c.otherUserId}
+          onClick={() => handleSelectConversation(c)}
+          className={`cursor-pointer mb-1 rounded-xl p-2 transition-all ${
+            Number(activeOtherId) === Number(c.otherUserId)
+              ? themeMode === "dark"
+                ? "bg-[var(--hover)] border-l-4 border-[var(--button)]"
+                : "bg-[var(--div)] border-l-4 border-[var(--button)]"
+              : Number(c.unread) > 0
+              ? themeMode === "dark"
+                ? "bg-[var(--mid-dark)]"
+                : "bg-[var(--hover)]"
+              : themeMode === "dark"
+              ? "bg-[var(--mid-dark)] hover:bg-[var(--hover)]"
+              : "bg-[var(--div)] hover:bg-[var(--mid-dark)]"
+          }`}
+        >
+          <div className="flex justify-between items-start">
+            <div className="flex flex-col">
+              <p className="font-semibold truncate text-[var(--text)] mb-0.5">{c.otherUserName}</p>
+              <p className="text-xs truncate text-[var(--text)]">{c.lastMessage || "No messages yet"}</p>
+            </div>
+            <div className="flex flex-col items-end">
+              <span className="text-[0.6rem] text-[var(--text)] mb-0.5">{fmtLocal(c.updatedAt)}</span>
+              {Number(c.unread) > 0 && (
+                <span className="bg-[var(--button)] text-white text-[0.6rem] px-1 py-0.5 rounded-full min-w-[18px] text-center">
+                  {c.unread}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="flex-1 overflow-y-auto min-h-0 px-2 pb-4 messages-scroll">
-          {conversations.map((c) => (
-            <div
-              key={c.otherUserId}
-              onClick={() => handleSelectConversation(c)}
-              className={`cursor-pointer mb-2 rounded-xl p-3 transition-all ${
-                Number(activeOtherId) === Number(c.otherUserId)
-                  ? themeMode === "dark"
-                    ? "bg-[var(--light-gray)] border-l-4 border-[var(--button)]"
-                    : "bg-gray-100 border-l-4 border-[var(--button)]"
-                  : Number(c.unread) > 0
-                  ? themeMode === "dark"
-                    ? "bg-[var(--div)]"
-                    : "bg-[var(--textbox)]"
-                  : themeMode === "dark"
-                  ? "bg-[var(--div)] hover:bg-[var(--hover)]"
-                  : "bg-[var(--textbox)] hover:bg-[var(--div)]"
-              }`}
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex flex-col">
-                  <p className="font-semibold truncate text-[var(--text)] mb-1">{c.otherUserName}</p>
-                  <p className="text-sm truncate text-[var(--text)]">{c.lastMessage || "No messages yet"}</p>
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-xs text-[var(--text)] mb-1">{fmtLocal(c.updatedAt)}</span>
-                  {Number(c.unread) > 0 && (
-                    <span className="bg-[var(--button)] text-white text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
-                      {c.unread}
-                    </span>
-                  )}
+      ))}
+    </div>
+  </aside>
+
+  {/* Chat Area */}
+  <main
+    className="flex-1 flex flex-col min-h-0 rounded-lg border-2 mt-4 md:mt-0 md:ml-4 p-2"
+    style={{ borderColor: themeMode === "dark" ? "var(--div)" : "var(--textbox)" }}
+  >
+    {activeOtherId ? (
+      <>
+        {/* Header */}
+        <div className={`flex items-center justify-between px-4 py-2 border-b-2`}>
+          <h2 className="font-bold text-[var(--text)] text-base mt-1">{headerTitle}</h2>
+          <button
+            onClick={() => setActiveOtherId(null)}
+            className={`w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 hover:scale-110 ${
+              themeMode === "dark"
+                ? "text-gray-300 hover:text-white hover:bg-gray-600"
+                : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto min-h-0 px-4 py-2 space-y-2 messages-scroll">
+          {chat.map((msg) => {
+            const incoming = msg.sender !== "vendor";
+            return (
+              <div key={msg.clientId || msg.id} className={`flex ${incoming ? "justify-start" : "justify-end"}`}>
+                <div className="max-w-[70%]">
+                  <div
+                    className={`p-2 rounded-lg text-xs ${
+                      incoming
+                        ? themeMode === "dark"
+                          ? "bg-[var(--mid-dark)] border-[var(--button)] text-[var(--text)]"
+                          : "bg-[var(--div)] border-[var(--button)] text-[var(--text)]"
+                        : themeMode === "dark"
+                        ? "bg-[var(--button)] text-white"
+                        : "bg-[var(--button)] text-white"
+                    }`}
+                  >
+                    {msg.message}
+                  </div>
+                  <div className={`text-[0.6rem] mt-0.5 ${incoming ? "text-left" : "text-right"} text-[var(--text)]`}>
+                    {fmtLocal(msg.createdAt)}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
+          <div ref={messagesEndRef} />
         </div>
-      </aside>
 
-      {/* Chat Area */}
-      <main
-        className={`flex-1 flex flex-col min-h-0 rounded-lg border-2 ${
-          themeMode === "dark" ? "border-[var(--div)]" : "border-[var(--textbox)]"
-        }`}
-      >
-        {activeOtherId ? (
-          <>
-            {/* Header */}
-            <div
-              className={`flex items-center justify-between px-6 py-4 flex-shrink-0 border-b-2 ${
-                themeMode === "dark" ? "border-[var(--div)]" : "border-[var(--textbox)]"
-              }`}
-            >
-              <h2 className="font-bold text-[var(--text)] text-lg mt-2">{headerTitle}</h2>
-              <button onClick={() => setActiveOtherId(null)} className="text-gray-400 hover:text-[var(--button)] text-2xl">
-                ×
-              </button>
-            </div>
+        {/* Input */}
+        <div className={`px-4 py-2 flex items-center gap-2 border-t-2`}>
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            placeholder="Type a message here..."
+            className={`flex-1 px-3 py-1.5 rounded-full border-2 ${
+              themeMode === "dark"
+                ? "bg-[var(--mid-dark)] border-[var(--button)] text-[var(--text)]"
+                : "bg-[var(--div)] border-[var(--button)] text-[var(--text)]"
+            } placeholder-gray-500 focus:outline-none`}
+          />
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto min-h-0 px-6 py-4 space-y-3 messages-scroll">
-              {chat.map((msg) => {
-                const incoming = msg.sender !== "vendor";
-                return (
-                  <div key={msg.clientId || msg.id} className={`flex ${incoming ? "justify-start" : "justify-end"}`}>
-                    <div className="max-w-[70%]">
-                      <div
-                        className={`p-3 rounded-lg text-sm ${
-                          incoming
-                            ? themeMode === "dark"
-                              ? "bg-[var(--div)] border-[var(--button)] text-[var(--text)]"
-                              : "bg-[var(--textbox)] border-[var(--button)] text-[var(--text)]"
-                            : "bg-[var(--button)] text-white"
-                        }`}
-                      >
-                        {msg.message}
-                      </div>
-                      <div className={`text-xs mt-1 ${incoming ? "text-left" : "text-right"} text-[var(--text)]`}>
-                        {fmtLocal(msg.createdAt)}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              <div ref={messagesEndRef} />
-            </div>
+          <button
+            onClick={sendMessage}
+            disabled={!message.trim()}
+            className={`p-2 rounded-full ${
+              message.trim()
+                ? "bg-[var(--button)] text-white hover:scale-105 transition-transform"
+                : "bg-gray-400 cursor-not-allowed text-white"
+            }`}
+          >
+            ➤
+          </button>
+        </div>
+      </>
+    ) : (
+      <div className="flex-1 flex items-center justify-center text-gray-500 min-h-0 px-4">
+        Select a conversation to start chatting
+      </div>
+    )}
+  </main>
+</div>
 
-            {/* Input */}
-            <div
-              className={`px-6 py-4 flex items-center gap-3 flex-shrink-0 border-t-2 ${
-                themeMode === "dark" ? "border-[var(--div)]" : "border-[var(--textbox)]"
-              }`}
-            >
-              <input
-                type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                placeholder="Type a message here..."
-                className={`flex-1 px-4 py-2 rounded-full border-2 ${
-                  themeMode === "dark"
-                    ? "bg-[var(--bg)] border-[var(--div)] text-[var(--text)]"
-                    : "bg-white border-[var(--textbox)] text-[var(--text)]"
-                } placeholder-gray-500 focus:outline-none`}
-              />
-              <button
-                onClick={sendMessage}
-                disabled={!message.trim()}
-                className={`p-3 rounded-full ${
-                  message.trim()
-                    ? "bg-[var(--button)] text-white hover:scale-105 transition-transform"
-                    : "bg-gray-400 cursor-not-allowed text-white"
-                }`}
-              >
-                ➤
-              </button>
-            </div>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-500 min-h-0">
-            Select a conversation to start chatting
-          </div>
-        )}
-      </main>
-    </div>
-  );
+);
+
 };
 
 export default VendorChatPage;

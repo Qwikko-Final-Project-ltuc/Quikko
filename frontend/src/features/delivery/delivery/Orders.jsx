@@ -7,7 +7,7 @@ import {
   getTrackingOrder,
   getDeliveryEstimate,
 } from "./Api/DeliveryAPI";
-import { FaBox, FaTimes } from "react-icons/fa";
+import { FaBox, FaTimes, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { useSelector } from "react-redux";
 
 const STATUS_FLOW = {
@@ -118,6 +118,7 @@ export default function OrdersList() {
   const [showModal, setShowModal] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [filter, setFilter] = useState("all");
+  const [showFilters, setShowFilters] = useState(false);
 
   const PAGE_SIZE = 6;
   const [page, setPage] = useState(1);
@@ -137,7 +138,7 @@ export default function OrdersList() {
     setPayOrderId(null);
   };
 
-  // 🎯 شارة الحالة (ألوان محسّنة حسب طلبك)
+  // 🎯 شارة الحالة (ألوان محسّنة)
   const statusBadgeStyle = (status) => {
     const s = String(status || "").toLowerCase();
 
@@ -150,11 +151,11 @@ export default function OrdersList() {
       letterSpacing: "0.3px",
       boxShadow: "0 0 6px rgba(0,0,0,0.08)",
       transition: "all 0.3s ease",
+      fontSize: "0.75rem",
     };
 
     switch (s) {
       case "accepted":
-        // 💙 أزرق بارد
         return {
           ...base,
           background: "linear-gradient(135deg, #3b82f6, #2563eb)",
@@ -162,7 +163,6 @@ export default function OrdersList() {
         };
 
       case "processing":
-        // 💛 أصفر ناعم وهادي
         return {
           ...base,
           background: "linear-gradient(135deg, #fde047, #facc15)",
@@ -171,7 +171,6 @@ export default function OrdersList() {
         };
 
       case "out_for_delivery":
-        // 🧡 برتقالي دافئ بس رايق
         return {
           ...base,
           background: "linear-gradient(135deg, #fb923c, #f97316)",
@@ -179,7 +178,6 @@ export default function OrdersList() {
         };
 
       case "delivered":
-        // 💚 أخضر بارد ناعم زي وجهك 😌
         return {
           ...base,
           background: "linear-gradient(135deg, #10b981, #34d399)",
@@ -187,7 +185,6 @@ export default function OrdersList() {
         };
 
       default:
-        // رمادي افتراضي
         return {
           ...base,
           background: "linear-gradient(135deg, #cbd5e1, #e2e8f0)",
@@ -242,10 +239,10 @@ export default function OrdersList() {
 
       try {
         const resp = await fetchCompanyOrders(1, PAGE_SIZE);
-        console.log('📦 Orders response:', resp);
-        
+        console.log("📦 Orders response:", resp);
+
         const fetched = resp.orders || [];
-        
+
         if (fetched.length === 0) {
           setMessage("No orders found");
           setOrders([]);
@@ -257,16 +254,15 @@ export default function OrdersList() {
         setOrders(enriched);
         setPage(1);
         setHasMore(resp.pagination?.hasNext || false);
-        
       } catch (err) {
-        console.error('❌ Error loading orders:', err);
+        console.error("❌ Error loading orders:", err);
         setMessage("❌ " + (err?.message || "Failed to load orders"));
         setOrders([]);
       } finally {
         setLoading(false);
       }
     };
-    
+
     loadInitialOrders();
   }, [PAGE_SIZE]);
 
@@ -279,13 +275,13 @@ export default function OrdersList() {
   // Load More (مع الإثراء)
   const loadMore = async () => {
     if (!hasMore || loadingMore) return;
-    
+
     try {
       setLoadingMore(true);
       const nextPage = page + 1;
       const resp = await fetchCompanyOrders(nextPage, PAGE_SIZE);
       const fetched = resp.orders || [];
-      
+
       if (fetched.length === 0) {
         setHasMore(false);
         return;
@@ -295,24 +291,13 @@ export default function OrdersList() {
       setOrders((prev) => appendUniqueById(prev, enriched));
       setHasMore(resp.pagination?.hasNext || false);
       setPage(nextPage);
-      
     } catch (err) {
-      console.error('❌ Error loading more orders:', err);
+      console.error("❌ Error loading more orders:", err);
       setMessage("❌ " + err.message);
     } finally {
       setLoadingMore(false);
     }
   };
-
-  // Debug effect
-  useEffect(() => {
-    console.log('🔄 Orders state updated:', {
-      orders: orders,
-      filteredOrders: filteredOrders,
-      hasMore: hasMore,
-      page: page
-    });
-  }, [orders, filteredOrders, hasMore, page]);
 
   const openStatusModal = (orderId, status) => {
     setCurrentOrderId(orderId);
@@ -334,7 +319,10 @@ export default function OrdersList() {
         )
       );
       setShowModal(false);
-      showToast("success", `Order #${currentOrderId} status updated to ${newStatus}`);
+      showToast(
+        "success",
+        `Order #${currentOrderId} status updated to ${newStatus}`
+      );
     } catch (err) {
       showToast("error", err?.message || "Failed to update status");
     } finally {
@@ -367,7 +355,7 @@ export default function OrdersList() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)] p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--button)] mx-auto mb-4"></div>
           <p className="text-[var(--text)] text-lg">Loading Orders...</p>
@@ -378,16 +366,18 @@ export default function OrdersList() {
 
   if (!loading && orders.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
-        <div className="text-center">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)] p-4">
+        <div className="text-center max-w-md">
           <div className="w-20 h-20 bg-[var(--button)]/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <FaBox className="text-2xl text-[var(--button)]" />
           </div>
-          <h3 className="text-xl font-bold text-[var(--text)] mb-2">No Orders Found</h3>
+          <h3 className="text-xl font-bold text-[var(--text)] mb-2">
+            No Orders Found
+          </h3>
           <p className="text-[var(--light-gray)] mb-4">
             {message || "There are no accepted orders at the moment."}
           </p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="bg-[var(--button)] hover:bg-[#015c40] text-white font-semibold px-6 py-2 rounded-xl transition-all duration-300"
           >
@@ -415,7 +405,7 @@ export default function OrdersList() {
   });
 
   return (
-    <div className="w-full">
+    <div className="w-full px-3 sm:px-4 md:px-6">
       {/* Toast */}
       <div
         className={`fixed left-0 right-0 top-0 z-[1000] flex justify-center transition-all duration-300 ${
@@ -427,14 +417,14 @@ export default function OrdersList() {
         aria-atomic="true"
       >
         <div
-          className="mt-3 px-4 py-3 rounded-xl shadow-lg border flex items-center gap-3"
+          className="mt-3 px-4 py-3 rounded-xl shadow-lg border flex items-center gap-3 mx-3"
           style={{
             backgroundColor:
               toast.type === "success" ? "var(--success)" : "var(--error)",
             color: "#ffffff",
             borderColor: "var(--border)",
             maxWidth: "42rem",
-            width: "calc(100% - 2rem)",
+            width: "calc(100% - 1.5rem)",
           }}
           role="status"
         >
@@ -445,7 +435,9 @@ export default function OrdersList() {
           >
             {toast.type === "success" ? "✓" : "!"}
           </span>
-          <span className="font-semibold flex-1">{toast.text}</span>
+          <span className="font-semibold flex-1 text-sm sm:text-base">
+            {toast.text}
+          </span>
           <button
             onClick={() => setToast((t) => ({ ...t, show: false }))}
             className="ml-2"
@@ -466,74 +458,96 @@ export default function OrdersList() {
         </div>
       </div>
 
-      <h2
-        className="text-2xl md:text-3xl font-extrabold mb-4 px-6"
-        style={textCol}
-      >
-        <span className="inline-flex items-center gap-2">
-          <FaBox />
-          Company Orders
-        </span>
-      </h2>
+      {/* العنوان */}
+      <div className="px-2 sm:px-4 mb-6 mt-6">
+        <h2
+          className="text-xl sm:text-2xl md:text-3xl font-extrabold"
+          style={textCol}
+        >
+          <span className="inline-flex items-center gap-2">
+            <FaBox className="text-lg sm:text-xl md:text-2xl" />
+            Company Orders
+          </span>
+        </h2>
+      </div>
 
       <div
-        className="w-full mx-auto p-6 rounded-2xl"
+        className="w-full mx-auto p-4 sm:p-6 rounded-2xl"
         style={{ background: isDarkMode ? "#313131" : "#f5f6f5" }}
       >
-        {/* الفلاتر */}
-        <div className="mb-6 flex flex-wrap gap-3 justify-start">
-          {Object.keys(STATUS_LABELS).map((key) => {
-            const active = filter === key;
-            return (
-              <button
-                key={key}
-                onClick={() => setFilter(key)}
-                className={btnBase + " px-4 py-2 text-sm md:text-base"}
-                style={btnGhost(active)}
-              >
-                {STATUS_LABELS[key]}
-              </button>
-            );
-          })}
+        {/* الفلاتر - موبايل: قابلة للطي، ديسكتوب: ثابتة */}
+        <div className="mb-6">
+          {/* زر التبديل للموبايل */}
+          <div className="md:hidden mb-3">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`${btnBase} w-full px-4 py-3 justify-between`}
+              style={btnGhost(false)}
+            >
+              <span>Filter Orders</span>
+              {showFilters ? <FaChevronUp /> : <FaChevronDown />}
+            </button>
+          </div>
+
+          {/* قائمة الفلاتر */}
+          <div className={`${showFilters ? "block" : "hidden"} md:block`}>
+            <div className="flex flex-wrap gap-2 sm:gap-3 justify-start">
+              {Object.keys(STATUS_LABELS).map((key) => {
+                const active = filter === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      setFilter(key);
+                      if (window.innerWidth < 768) setShowFilters(false);
+                    }}
+                    className={`${btnBase} px-3 sm:px-4 py-2 text-xs sm:text-sm md:text-base flex-1 md:flex-none min-w-[80px] sm:min-w-[100px]`}
+                    style={btnGhost(active)}
+                  >
+                    {STATUS_LABELS[key]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
-        {/* الشبكة */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* الشبكة - موبايل: عمود واحد، تابلت: عمودين، ديسكتوب: 3 أعمدة */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredOrders.map((o) => {
             const isPaid = String(o.payment_status).toLowerCase() === "paid";
             return (
               <div
                 key={o.id}
-                className="p-5 rounded-2xl shadow-md flex flex-col justify-between border"
+                className="p-4 sm:p-5 rounded-2xl shadow-md flex flex-col justify-between border"
                 style={{
                   ...cardBg,
                   borderColor: "var(--border)",
                   color: "var(--text)",
                 }}
               >
-                <div>
-                  {/* ===== عنوان + زر Mark as Paid (مرفوع) ===== */}
-                  <div className="flex items-center justify-between gap-3 mb-2">
-                    <h3 className="text-lg md:text-xl font-bold m-0">
+                <div className="space-y-2 sm:space-y-3">
+                  {/* ===== عنوان + زر Mark as Paid ===== */}
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-base sm:text-lg md:text-xl font-bold flex-1 break-words">
                       Order #{o.id}
                     </h3>
-
                     <button
                       onClick={() => openPayModal(o.id, isPaid)}
                       disabled={isPaid}
                       aria-disabled={isPaid}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm md:text-base font-semibold transition-all duration-200 shadow-sm
-      ${
-        isPaid
-          ? "bg-[var(--button)]/80 text-white border-[var(--button)]/80 cursor-not-allowed"
-          : "bg-transparent text-[var(--button)] border-[var(--button)] hover:bg-[var(--button)] hover:text-white hover:shadow-md active:scale-[0.97]"
-      }`}
+                      className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg border text-xs sm:text-sm font-semibold transition-all duration-200 shadow-sm flex-shrink-0
+    ${
+      isPaid
+        ? "bg-[var(--button)]/60 text-white border-[var(--button)]/80 cursor-not-allowed"
+        : "bg-transparent text-[var(--button)] border-[var(--button)] hover:bg-[var(--button)] hover:text-white hover:shadow-md active:scale-[0.97]"
+    }`}
                     >
                       {isPaid ? (
                         <>
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            className="w-4 h-4 opacity-90"
+                            className="w-3 h-3 sm:w-4 sm:h-4 opacity-90"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -545,88 +559,120 @@ export default function OrdersList() {
                               d="M5 13l4 4L19 7"
                             />
                           </svg>
-                          <span>Paid</span>
+                          <span className="inline-block">Paid</span>
                         </>
                       ) : (
                         <>
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            className="w-4 h-4"
+                            className="w-3 h-3 sm:w-4 sm:h-4"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
                             strokeWidth={2}
                           >
+                            {/* الدائرة */}
                             <path
                               strokeLinecap="round"
                               strokeLinejoin="round"
-                              d="M12 8c-1.657 0-3 1.343-3 3 0 1.657 1.343 3 3 3m0 0v1m0-4V9m9 3a9 9 0 11-18 0 9 9 0 0118 0z"
+                              d="M12 3a9 9 0 100 18 9 9 0 000-18z"
+                            />
+                            {/* علامة الدولار */}
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M12 8.5c-.9 0-1.5.5-1.5 1.2 0 .7.5 1.1 1.4 1.3l.3.1c1 .2 1.8.7 1.8 1.7 0 1.1-.9 1.8-2.1 1.8-1 0-1.7-.4-2-.9"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M12 7v1.2m0 7v-1.2"
                             />
                           </svg>
-                          <span>Mark as Paid</span>
+
+                          <span className="inline-block">Mark Paid</span>
                         </>
                       )}
                     </button>
                   </div>
 
-                  <p className="text-sm mb-1">
-                    Customer: <strong>{o.customer_name}</strong>
-                  </p>
+                  {/* معلومات الطلب */}
+                  <div className="space-y-1 text-xs sm:text-sm">
+                    <p className="break-words">
+                      <span className="text-[var(--text-secondary)]">
+                        Customer:
+                      </span>{" "}
+                      <strong>{o.customer_name}</strong>
+                    </p>
 
-                  {/* المبلغ النهائي مع الشحن */}
-                  <p className="text-sm mb-1">
-                    Total Amount:{" "}
-                    <strong>
-                      {formatCurrency(
-                        Number(
-                          o._total_with_shipping ??
-                            Number(o.total_amount || 0) +
-                              Number(o._shipping_fee || 0)
-                        )
-                      )}
-                    </strong>
-                  </p>
+                    <p>
+                      <span className="text-[var(--text-secondary)]">
+                        Total:
+                      </span>{" "}
+                      <strong>
+                        {formatCurrency(
+                          Number(
+                            o._total_with_shipping ??
+                              Number(o.total_amount || 0) +
+                                Number(o._shipping_fee || 0)
+                          )
+                        )}
+                      </strong>
+                    </p>
 
-                  <p className="text-sm mb-1">
-                    Status:{" "}
-                    <span
-                      className="px-2 py-0.5 rounded-md font-semibold capitalize"
-                      style={statusBadgeStyle(o.order_status)}
-                    >
-                      {o.order_status.replace(/_/g, " ")}
-                    </span>
-                  </p>
+                    <p className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[var(--text-secondary)]">
+                        Status:
+                      </span>
+                      <span
+                        className="px-2 py-0.5 rounded-md font-semibold capitalize"
+                        style={statusBadgeStyle(o.order_status)}
+                      >
+                        {o.order_status.replace(/_/g, " ")}
+                      </span>
+                    </p>
 
-                  <p className="text-sm mb-1">
-                    Payment: <strong>{o.payment_status || "Pending"}</strong>
-                  </p>
-                  
-                  <p className="text-sm mb-1">
-                    Items: <strong>{o.items_count} items ({o.total_quantity} total)</strong>
-                  </p>
-                  
-                  <p className="text-sm mb-1">
-                    Address: <strong>{o.address_line1}, {o.city}</strong>
-                  </p>
-                  
-                  <p className="text-xs mt-2">
-                    Ordered At:{" "}
-                    {new Date(o.created_at).toLocaleString([], {
-                      dateStyle: "short",
-                      timeStyle: "short",
-                    })}
-                  </p>
+                    <p>
+                      <span className="text-[var(--text-secondary)]">
+                        Payment:
+                      </span>{" "}
+                      <strong>{o.payment_status || "Pending"}</strong>
+                    </p>
+
+                    <p>
+                      <span className="text-[var(--text-secondary)]">
+                        Items:
+                      </span>{" "}
+                      <strong>
+                        {o.items_count} items ({o.total_quantity} total)
+                      </strong>
+                    </p>
+
+                    <p className="break-words">
+                      <span className="text-[var(--text-secondary)]">
+                        Address:
+                      </span>{" "}
+                      <strong className="text-xs">
+                        {o.address_line1}, {o.city}
+                      </strong>
+                    </p>
+
+                    <p className="text-xs text-[var(--text-secondary)] pt-1">
+                      Ordered:{" "}
+                      {new Date(o.created_at).toLocaleString([], {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
+                    </p>
+                  </div>
                 </div>
 
-                {/* ===== الأزرار السفلية (بالعرض دائمًا، بدون لف) ===== */}
+                {/* ===== الأزرار السفلية ===== */}
                 <div className="mt-4 flex gap-2 flex-nowrap">
                   {(STATUS_FLOW[o.order_status] || []).length > 0 && (
                     <button
                       onClick={() => openStatusModal(o.id, o.order_status)}
-                      className={
-                        btnBase +
-                        " flex-1 px-4 py-2 text-sm md:text-base whitespace-nowrap"
-                      }
+                      className={`${btnBase} flex-1 px-3 py-2 text-xs sm:text-sm whitespace-nowrap`}
                       style={btnSolid}
                     >
                       {updating ? "Updating..." : "Update Status"}
@@ -637,10 +683,7 @@ export default function OrdersList() {
                     onClick={() =>
                       navigate(`/delivery/dashboard/tracking/${o.id}`)
                     }
-                    className={
-                      btnBase +
-                      " flex-1 px-4 py-2 text-sm md:text-base whitespace-nowrap"
-                    }
+                    className={`${btnBase} flex-1 px-3 py-2 text-xs sm:text-sm whitespace-nowrap`}
                     style={btnSolid}
                   >
                     Track
@@ -653,15 +696,18 @@ export default function OrdersList() {
 
         {/* Load More */}
         {hasMore && (
-          <div className="flex justify-center mt-8">
+          <div className="flex justify-center mt-6 sm:mt-8">
             <button
               onClick={loadMore}
               disabled={loadingMore}
-              className={btnBase + " px-6 py-2 text-sm md:text-base"}
+              className={`${btnBase} px-6 py-2 text-sm sm:text-base w-full sm:w-auto`}
               style={{
                 ...btnSolid,
-                backgroundColor: loadingMore ? "var(button)" : "var(--button)",
+                backgroundColor: loadingMore
+                  ? "var(--button)"
+                  : "var(--button)",
                 cursor: loadingMore ? "not-allowed" : "pointer",
+                maxWidth: "200px",
               }}
             >
               {loadingMore ? "Loading..." : "Load More"}
@@ -673,17 +719,18 @@ export default function OrdersList() {
       {/* Modal تغيير الحالة */}
       {showModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
         >
           <div
             style={{
               backgroundColor: "var(--bg)",
               color: "var(--text)",
-              padding: "1.5rem",
+              padding: "1.25rem",
               borderRadius: "1rem",
               boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
-              width: "24rem",
+              width: "100%",
+              maxWidth: "24rem",
               position: "relative",
             }}
           >
@@ -705,7 +752,7 @@ export default function OrdersList() {
 
             <h3
               style={{
-                fontSize: "1.25rem",
+                fontSize: "1.1rem",
                 fontWeight: "bold",
                 marginBottom: "1rem",
                 color: "var(--text)",
@@ -723,7 +770,7 @@ export default function OrdersList() {
               <button
                 onClick={handleUpdateStatus}
                 disabled={updating}
-                className={btnBase + " w-full px-4 py-2 text-sm md:text-base"}
+                className={`${btnBase} w-full px-4 py-3 text-sm sm:text-base`}
                 style={{
                   ...btnSolid,
                   backgroundColor: updating
@@ -751,7 +798,7 @@ export default function OrdersList() {
       {/* Modal تأكيد الدفع */}
       {showPayModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
         >
           <div
@@ -761,7 +808,8 @@ export default function OrdersList() {
               padding: "1.25rem",
               borderRadius: "1rem",
               boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
-              width: "22rem",
+              width: "100%",
+              maxWidth: "22rem",
               position: "relative",
             }}
           >
@@ -796,17 +844,17 @@ export default function OrdersList() {
               as <strong>PAID</strong>?
             </p>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-col sm:flex-row">
               <button
                 onClick={confirmMarkPaid}
-                className={btnBase + " flex-1 py-2"}
+                className={`${btnBase} flex-1 py-2 text-sm sm:text-base`}
                 style={btnSolid}
               >
                 Yes, Mark as Paid
               </button>
               <button
                 onClick={cancelMarkPaid}
-                className={btnBase + " flex-1 py-2"}
+                className={`${btnBase} flex-1 py-2 text-sm sm:text-base`}
                 style={{
                   backgroundColor: "var(--bg)",
                   color: "var(--text)",

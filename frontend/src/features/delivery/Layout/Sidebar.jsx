@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { NavLink, useNavigate, useLocation, Link } from "react-router-dom";
 import {
   FaUser,
   FaClipboardList,
   FaCog,
   FaChartPie,
   FaComments,
+  FaTruck,
 } from "react-icons/fa";
 import { FiLogOut } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
@@ -45,27 +46,27 @@ export default function Sidebar({ isOpen, toggleSidebar, logoSrc }) {
     };
   }, [isOpen, toggleSidebar]);
 
-  const navLinks = [
-    {
-      to: "home",
-      icon: <FaChartPie className="text-lg" />,
-      label: "Dashboard",
-    },
-    {
-      to: "getProfile",
-      icon: <FaUser className="text-lg" />,
-      label: "Profile",
-    },
-    {
-      to: "orders",
-      icon: <FaClipboardList className="text-lg" />,
-      label: "Orders",
-    },
-    { to: "chat", icon: <FaComments className="text-lg" />, label: "Chats" },
-    { to: "settings", icon: <FaCog className="text-lg" />, label: "Settings" },
-     { to: "DeliveryRequestedOrders", icon: <FaCog className="text-lg" />, label: "Delivery Requested Orders" },
-    
-  ];
+const navLinks = [
+  { to: "home", icon: <FaChartPie className="text-lg" />, label: "Dashboard" },
+  { to: "getProfile", icon: <FaUser className="text-lg" />, label: "Profile" },
+
+  // 👇 Requested Orders قبل Orders
+  {
+    to: "DeliveryRequestedOrders",
+    icon: <FaTruck className="text-lg" />,
+    label: "Requested Orders",
+  },
+  {
+    to: "orders",
+    icon: <FaClipboardList className="text-lg" />,
+    label: "Orders",
+  },
+
+  // { to: "chat", icon: <FaComments className="text-lg" />, label: "Chats" },
+  { to: "settings", icon: <FaCog className="text-lg" />, label: "Settings" },
+];
+
+
 
   // فعال لو المسار يبدأ به (لصفحات فرعية)
   const isActiveLink = (to) => {
@@ -84,7 +85,8 @@ export default function Sidebar({ isOpen, toggleSidebar, logoSrc }) {
       <aside
         ref={sidebarRef}
         className={`
-          fixed top-0 left-0 h-screen w-64
+          fixed top-0 left-0 h-screen 
+          w-[82vw] sm:w-64 
           z-[9999]                 /* أعلى من أي Navbar */
           transform transition-transform duration-200
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
@@ -100,24 +102,29 @@ export default function Sidebar({ isOpen, toggleSidebar, logoSrc }) {
         aria-modal="true"
         aria-label="Sidebar"
       >
-        {/* عمود كامل: الناف ياخذ المساحة، واللوج آوت مثبت تحت */}
-        <div className="h-full flex flex-col">
-          {/* Header بسيط (بدون تغيير لون مستقل) */}
+        <div className="h-full flex flex-col overflow-y-auto min-h-0 md:overflow-visible">
           <div
-            className="flex items-center gap-4 px-4 py-4 border-b"
+            className="flex items-center gap-4 px-8 h-14 "
             style={{ borderColor: "var(--border)" }}
           >
-            <img
-              src={effectiveLogo}
-              alt="Logo"
-              className="h-8 w-auto select-none"
-              draggable="false"
-            />
+            <NavLink
+              to="/delivery/dashboard/Home"
+              onClick={() => isOpen && toggleSidebar()}
+              className="flex items-center cursor-pointer"
+              aria-label="Go to dashboard home"
+            >
+              <img
+                src={effectiveLogo}
+                alt="Logo"
+                className="h-8 w-auto select-none"
+                draggable="false"
+              />
+            </NavLink>
           </div>
 
           {/* Navigation */}
           <nav
-            className="flex-1 px-4 mt-2 overflow-y-auto"
+            className="flex-1 px-4 mt-2 pb-24 md:pb-0"
             onClick={handleItemClick}
           >
             <div className="flex flex-col space-y-2">
@@ -147,19 +154,26 @@ export default function Sidebar({ isOpen, toggleSidebar, logoSrc }) {
             </div>
           </nav>
 
-          {/* Footer: Log out مثبت أسفل السايدبار */}
-          <div className="px-4 pb-4 pt-2 mt-auto">
+          <div
+            className="
+    px-8 pt-2 pb-6
+    mt-auto
+    sticky bottom-0  
+    z-10
+    bg-[var(--bg)]/95 backdrop-blur border-t
+    shadow-[0_-6px_12px_-6px_rgba(0,0,0,0.15)]
+    md:static md:bg-transparent md:backdrop-blur-0 md:border-t-0 md:shadow-none
+    pb-[env(safe-area-inset-bottom)]  /* ✅ لمسافة آمنة بالموبايل */
+  "
+            style={{ borderColor: "var(--border)" }}
+          >
             <button
               onClick={() => {
                 setShowLogoutModal(true);
-                handleItemClick();
+                isOpen && toggleSidebar();
               }}
-              className="group flex items-center gap-2 p-2 rounded w-full text-left font-semibold border transition-colors duration-150"
-              style={{
-                color: "var(--text)",
-                borderColor: "var(--border)",
-                backgroundColor: "transparent",
-              }}
+              className="group flex items-center gap-2 p-2 w-full rounded text-left font-semibold transition-colors duration-150"
+              style={{ color: "var(--text)", backgroundColor: "transparent" }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = "var(--error)";
                 e.currentTarget.style.color = "#fff";
@@ -174,6 +188,9 @@ export default function Sidebar({ isOpen, toggleSidebar, logoSrc }) {
               <FiLogOut className="text-lg" />
               <span>Log out</span>
             </button>
+
+            {/* سبايسر صغير إذا بدك زيادة فراغ تحت */}
+            <div className="h-3" />
           </div>
         </div>
       </aside>

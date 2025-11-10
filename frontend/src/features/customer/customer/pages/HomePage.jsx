@@ -6,6 +6,7 @@ import ProductCard from "../components/ProductCard";
 import LandingPage from "./LandingPage";
 import customerAPI from "../services/customerAPI";
 import { fetchCart, setCurrentCart } from "../cartSlice";
+import { Sparkles, Zap } from "lucide-react";
 
 const HomePage = () => {
   const [popularProducts, setPopularProducts] = useState([]);
@@ -190,9 +191,8 @@ const HomePage = () => {
       if (token) {
         await customerAPI.logInteraction(userId, product.id, "add_to_cart");
       }
-      alert("Added to cart!");
     } catch (err) {
-      alert(err.response?.data?.message || err.message);
+      console.log(err.response?.data?.message || err.message);
     }
   };
 
@@ -212,22 +212,73 @@ const HomePage = () => {
     visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
   };
 
-  if (loading)
+  // Loading State
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
-        <div className="flex flex-col items-center space-y-3">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[var(--button)]"></div>
-          <p className="text-[var(--text)]">Loading product details...</p>
+      <div className="min-h-screen bg-[var(--bg)] relative overflow-hidden flex items-center justify-center">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[var(--button)]/5 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[var(--primary)]/5 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '2s'}}></div>
         </div>
-      </div>
-    );
+        
+        <div className="text-center relative z-10">
+          <div className="relative">
+            <div className="w-20 h-20 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-2xl flex items-center justify-center mx-auto mb-6 animate-spin">
+              <Sparkles className="text-white" size={32} />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-2xl blur-lg opacity-50 animate-ping"></div>
+          </div>
+          <p className="text-[var(--text)] text-xl font-semibold bg-gradient-to-r from-[var(--text)] to-[var(--light-gray)] bg-clip-text text-transparent">
+            Loading Products...
+          </p>
+        </div>
 
-  if (error)
-    return (
-      <div className="min-h-screen flex items-center justify-center text-red-600">
-        Error: {error}
+        <style jsx>{`
+          @keyframes pulse-slow {
+            0%, 100% { opacity: 0.1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(1.1); }
+          }
+          .animate-pulse-slow { animation: pulse-slow 4s ease-in-out infinite; }
+        `}</style>
       </div>
     );
+  }
+
+  // Error State
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/3 left-1/3 w-64 h-64 bg-[var(--error)]/5 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute bottom-1/3 right-1/3 w-56 h-56 bg-[var(--button)]/5 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '1.5s'}}></div>
+        </div>
+
+        <div className="text-center max-w-md relative z-10">
+          <div className="w-28 h-28 bg-[var(--error)]/20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl transform hover:scale-110 transition-all duration-300">
+            <Zap className="w-14 h-14 text-[var(--error)]" />
+          </div>
+          <h3 className="text-3xl font-black mb-4 bg-gradient-to-r from-[var(--error)] to-red-600 bg-clip-text text-transparent">
+            Oops! Error Loading
+          </h3>
+          <p className="text-[var(--text)]/80 text-lg mb-8 leading-relaxed">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-[var(--button)] text-white px-8 py-4 rounded-xl hover:bg-[#015c40] transition-all duration-300 font-semibold hover:scale-105 hover:shadow-2xl"
+          >
+            Try Again
+          </button>
+        </div>
+
+        <style jsx>{`
+          @keyframes pulse-slow {
+            0%, 100% { opacity: 0.1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(1.1); }
+          }
+          .animate-pulse-slow { animation: pulse-slow 4s ease-in-out infinite; }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--bg)] transition-colors duration-500">
@@ -248,19 +299,19 @@ const HomePage = () => {
         { title: "New Arrivals", products: newestProducts },
         { title: "Recommended For You", products: recommendedProducts },
       ].map((section, idx) => (
-        <section className="max-w-7xl mx-auto px-6 py-20" key={idx}>
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20" key={idx}>
           <motion.div
             variants={titleVariant}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: false, amount: 0.5 }}
-            className="text-center mb-16"
+            className="text-center mb-8 sm:mb-12 lg:mb-16"
           >
-            <h2 className="text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
               {section.title}
             </h2>
           </motion.div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
             {section.products.length > 0
               ? section.products.map((product) => (
                   <div
@@ -277,11 +328,11 @@ const HomePage = () => {
               : Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)}
           </div>
           {section.title === "Recommended For You" && (
-            <div className="flex justify-center mt-16">
+            <div className="flex justify-center mt-8 sm:mt-12 lg:mt-16">
               <button
                 onClick={fetchRecommendations}
                 disabled={recLoading}
-                className="px-10 py-5 rounded-2xl font-bold text-lg bg-gradient-to-r to-gray-900 from-[var(--button)] text-white hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-500 hover:scale-110 flex items-center gap-4"
+                className="px-6 sm:px-8 lg:px-10 py-3 sm:py-4 lg:py-5 rounded-xl sm:rounded-2xl font-semibold sm:font-bold text-sm sm:text-base lg:text-lg bg-gradient-to-r to-gray-900 from-[var(--button)] text-white hover:shadow-xl sm:hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-300 hover:scale-105 flex items-center gap-2 sm:gap-4"
               >
                 {recLoading ? "Loading..." : "Load More Recommendations"}
               </button>
@@ -291,37 +342,37 @@ const HomePage = () => {
       ))}
 
       {/* CTA Section */}
-      <section className={`py-24 relative overflow-hidden transition-all duration-500 ${
+      <section className={`py-16 sm:py-20 lg:py-24 relative overflow-hidden transition-all duration-500 ${
         themeMode === 'dark' 
           ? "bg-gradient-to-br from-[var(--button)] to-gray-900 text-white" 
           : "bg-gradient-to-br from-[var(--button)] to-gray-900 text-white" 
       }`}>
         {/* Animated Background Elements */}
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-20 h-20 bg-white rounded-full animate-bounce"></div>
-          <div className="absolute top-32 right-20 w-16 h-16 bg-yellow-300 rounded-full animate-bounce" style={{animationDelay: '1s'}}></div>
-          <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-green-300 rounded-full animate-bounce" style={{animationDelay: '2s'}}></div>
+          <div className="absolute top-10 left-10 w-16 sm:w-20 h-16 sm:h-20 bg-white rounded-full animate-bounce"></div>
+          <div className="absolute top-32 right-20 w-12 sm:w-16 h-12 sm:h-16 bg-yellow-300 rounded-full animate-bounce" style={{animationDelay: '1s'}}></div>
+          <div className="absolute bottom-20 left-1/4 w-10 sm:w-12 h-10 sm:h-12 bg-green-300 rounded-full animate-bounce" style={{animationDelay: '2s'}}></div>
         </div>
 
-        <div className="max-w-4xl mx-auto text-center px-6 relative z-10">
-          <h3 className="text-5xl font-bold mb-8 bg-gradient-to-r from-white to-yellow-200 bg-clip-text text-transparent">
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 relative z-10">
+          <h3 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold mb-4 sm:mb-6 lg:mb-8 bg-gradient-to-r from-white to-yellow-200 bg-clip-text text-transparent">
             Ready to Explore More?
           </h3>
-          <p className="text-2xl opacity-90 mb-12 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg lg:text-xl xl:text-2xl opacity-90 mb-6 sm:mb-8 lg:mb-12 max-w-2xl mx-auto leading-relaxed">
             Discover our complete collection and find exactly what you're looking for
           </p>
           <button 
             onClick={() => navigate("/customer/products")}
-            className="px-12 py-6 rounded-2xl font-bold text-xl transition-all duration-300
-            hover:shadow-2xl transform hover:scale-110 bg-white text-gray-900 hover:bg-gray-100"
+            className="px-6 sm:px-8 lg:px-12 py-3 sm:py-4 lg:py-6 rounded-xl sm:rounded-2xl font-semibold sm:font-bold text-sm sm:text-base lg:text-xl transition-all duration-300
+            hover:shadow-xl sm:hover:shadow-2xl transform hover:scale-105 bg-white text-gray-900 hover:bg-gray-100"
           >
-             Browse All Products
+            Browse All Products
           </button>
         </div>
       </section>
 
       {/* Footer Spacer */}
-      <div className={`h-12 transition-colors duration-500 ${
+      <div className={`h-8 sm:h-10 lg:h-12 transition-colors duration-500 ${
         themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-gray-50'
       }`}></div>
     

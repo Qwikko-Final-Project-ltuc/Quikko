@@ -7,7 +7,10 @@ import { setUnreadCount } from '../components/chatUnreadSlice';
 import { fetchProfile } from "../profileSlice";
 import { 
   FaTimes,
+  FaBars,
+  FaArrowLeft
 } from "react-icons/fa";
+import { Sparkles, Zap, Star, MapPin, Phone, Mail, User, Edit3, CreditCard, ChevronDown } from "lucide-react";
 
 const roomKeyOf = (a, b) => [String(a), String(b)].sort().join(":");
 const safeText = (v) => (v == null ? "" : typeof v === "string" ? v : JSON.stringify(v));
@@ -125,6 +128,7 @@ const CustomerChatPage = () => {
   const [message, setMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [authError, setAuthError] = useState("");
+  const [mobileView, setMobileView] = useState('conversations'); // 'conversations' or 'chat'
 
   const socketRef = useRef(null);
   const socketInitRef = useRef(false);
@@ -175,6 +179,7 @@ const CustomerChatPage = () => {
     setActiveVendorId(Number(validInitialVendor));
     setActiveVendorName(safeText(location.state?.vendorName) || `Vendor #${validInitialVendor}`);
     loadMessages(Number(validInitialVendor));
+    setMobileView('chat');
   }, [validInitialVendor, customerId]);
 
   useEffect(() => {
@@ -352,12 +357,18 @@ const CustomerChatPage = () => {
     setActiveVendorName(safeText(v.vendorName) || (Number.isFinite(vid) ? `Vendor #${vid}` : ""));
     loadMessages(vid);
     setConversations((prev) => prev.map((c) => (Number(c.vendorId) === vid ? { ...c, unread: 0 } : c)));
+    setMobileView('chat');
   };
 
   const closeChat = () => {
     setActiveVendorId(null);
     setActiveVendorName("");
     setChat([]);
+    setMobileView('conversations');
+  };
+
+  const showConversations = () => {
+    setMobileView('conversations');
   };
 
   const sendMessage = async () => {
@@ -421,27 +432,55 @@ const CustomerChatPage = () => {
     return groups;
   }, [chat]);
 
-  // Loading state - نفس البروفايل
-  if (profileLoading) {
-    return (
-      <div className={`min-h-screen bg-[var(--bg)] flex items-center justify-center`}>
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--button)] mx-auto mb-4"></div>
-          <p className={`text-[var(--text)]`}>Loading chat...</p>
+if (profileLoading) {
+   return (
+        <div className="min-h-screen bg-[var(--bg)] relative overflow-hidden flex items-center justify-center">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[var(--button)]/5 rounded-full blur-3xl animate-pulse-slow"></div>
+            <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[var(--primary)]/5 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '2s'}}></div>
+          </div>
+          
+          <div className="text-center relative z-10">
+            <div className="relative">
+              <div className="w-20 h-20 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-2xl flex items-center justify-center mx-auto mb-6 animate-spin">
+                <Sparkles className="text-white" size={32} />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-2xl blur-lg opacity-50 animate-ping"></div>
+            </div>
+            <p className="text-[var(--text)] text-xl font-semibold bg-gradient-to-r from-[var(--text)] to-[var(--light-gray)] bg-clip-text text-transparent">
+              Loading Chats...
+            </p>
+          </div>
+  
+          <style jsx>{`
+            @keyframes pulse-slow {
+              0%, 100% { opacity: 0.1; transform: scale(1); }
+              50% { opacity: 0.3; transform: scale(1.1); }
+            }
+            .animate-pulse-slow { animation: pulse-slow 4s ease-in-out infinite; }
+          `}</style>
         </div>
-      </div>
-    );
-  }
+      );
+}
 
-  // Error state - نفس البروفايل
+  // Error state - مثل باقي الصفحات
   if (profileError) {
     return (
-      <div className={`min-h-screen bg-[var(--bg)] flex items-center justify-center`}>
+      <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-[var(--error)]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-[var(--error)] text-2xl">!</span>
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
           </div>
-          <p className={`text-[var(--error)]`}>Error: {profileError}</p>
+          <p className="text-red-600 text-lg mb-2">Error Loading Chat</p>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">{profileError}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-[var(--button)] hover:bg-[#015c40] text-white font-semibold px-6 py-2 rounded-xl transition-all"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
@@ -466,6 +505,7 @@ const CustomerChatPage = () => {
       </div>
     );
   }
+
   return (
     <div className="flex flex-col bg-[var(--bg)]" style={{ height: "calc(100vh - 243px)" }}>
       <style>
@@ -485,14 +525,126 @@ const CustomerChatPage = () => {
           border-radius: 4px;
           border: 2px solid var(--bg);
         }
+
+        /* Responsive height adjustments for iPad */
+        @media (max-width: 1024px) and (min-width: 768px) {
+          .chat-container {
+            height: calc(100vh - 280px) !important;
+          }
+        }
+
+        /* Mobile responsive styles */
+        @media (max-width: 767px) {
+          .chat-container {
+            height: calc(100vh - 200px) !important;
+          }
+          
+          .sidebar-mobile {
+            display: block;
+          }
+          
+          .chat-mobile {
+            display: block;
+          }
+          
+          .sidebar-desktop {
+            display: none;
+          }
+          
+          .chat-desktop {
+            display: none;
+          }
+
+          /* Fix scrolling for mobile */
+          .mobile-conversations-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+          }
+
+          .mobile-chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+          }
+
+          .conversations-header {
+            flex-shrink: 0;
+            position: sticky;
+            top: 0;
+            background: var(--bg);
+            z-index: 10;
+            border-bottom: 2px solid;
+            ${themeMode === "dark" ? "border-color: var(--div);" : "border-color: var(--textbox);"}
+          }
+
+          .conversations-list {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+          }
+
+          .chat-header {
+            flex-shrink: 0;
+            position: sticky;
+            top: 0;
+            background: var(--bg);
+            z-index: 10;
+            border-bottom: 2px solid;
+            ${themeMode === "dark" ? "border-color: var(--div);" : "border-color: var(--textbox);"}
+          }
+
+          .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+            padding: 1rem;
+          }
+
+          .input-area {
+            flex-shrink: 0;
+            position: sticky;
+            bottom: 0;
+            background: var(--bg);
+            z-index: 10;
+            border-top: 2px solid;
+            ${themeMode === "dark" ? "border-color: var(--div);" : "border-color: var(--textbox);"}
+          }
+
+          /* Ensure proper stacking */
+          .mobile-conversations-container,
+          .mobile-chat-container {
+            position: relative;
+          }
+        }
+
+        @media (min-width: 768px) {
+          .sidebar-mobile {
+            display: none !important;
+          }
+          
+          .chat-mobile {
+            display: none !important;
+          }
+          
+          .sidebar-desktop {
+            display: flex !important;
+          }
+          
+          .chat-desktop {
+            display: flex !important;
+          }
+        }
         `}
       </style>
 
-      <div className="flex-1 flex max-w-7xl mx-auto w-full min-h-0 gap-2">
+      <div className="flex-1 flex max-w-7xl mx-auto w-full min-h-0 gap-2 chat-container">
         <div className="flex w-full h-full bg-[var(--bg)] min-h-0">
-          {/* Sidebar */}
+          {/* Desktop Sidebar - shown only on desktop */}
           <aside
-            className={`w-80 flex flex-col min-h-0 border-r-3 ${
+            className={`sidebar-desktop w-80 flex flex-col min-h-0 border-r-3 ${
               themeMode === "dark" ? "border-[var(--mid-dark)]" : "border-[var(--textbox)]"
             }`}
           >
@@ -547,9 +699,67 @@ const CustomerChatPage = () => {
             </div>
           </aside>
 
-          {/* Chat Area */}
+          {/* Mobile Sidebar - shown only on mobile when in conversations view */}
+          {mobileView === 'conversations' && (
+            <div className="sidebar-mobile mobile-conversations-container w-full">
+              {/* Header with Search - Fixed */}
+              <div className="conversations-header p-4">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search Contact..."
+                  className={`w-full px-4 py-2 rounded-full text-sm ${
+                    themeMode === "dark"
+                      ? "bg-[var(--div)] text-[var(--text)]"
+                      : "bg-[var(--textbox)] text-[var(--text)]"
+                  } placeholder-gray-400 focus:outline-none`}
+                />
+              </div>
+              
+              {/* Conversations List - Scrollable */}
+              <div className="conversations-list overflow-y-auto min-h-0 px-2 pb-4 messages-scroll">
+                {filteredConversations.map((v) => (
+                  <div
+                    key={v.vendorId}
+                    onClick={() => handleSelectConversation(v)}
+                    className={`cursor-pointer mb-2 rounded-xl p-3 transition-all ${
+                      Number(activeVendorId) === Number(v.vendorId)
+                        ? themeMode === "dark"
+                          ? "bg-[var(--hover)] border-r-4 border-[var(--button)]"
+                          : "bg-gray-200 border-l-4 border-[var(--button)]"
+                        : Number(v.unread) > 0
+                        ? themeMode === "dark"
+                          ? "bg-[var(--div)]"
+                          : "bg-[var(--textbox)]"
+                        : themeMode === "dark"
+                        ? "bg-[var(--div)] hover:bg-[var(--hover)]"
+                        : "bg-[var(--textbox)] hover:bg-[var(--div)]"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex flex-col">
+                        <p className="font-semibold truncate text-[var(--text)] mb-1">{v.vendorName}</p>
+                        <p className="text-sm truncate text-[var(--text)]">{v.lastMessage || "No messages yet"}</p>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="text-xs text-[var(--text)] mb-1">{formatMessageTime(v.updatedAt)}</span>
+                        {Number(v.unread) > 0 && (
+                          <span className="bg-[var(--button)] text-white text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
+                            {v.unread}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Desktop Chat Area */}
           <main
-            className={`flex-1 flex flex-col min-h-0 ${
+            className={`chat-desktop flex-1 flex flex-col min-h-0 ${
               themeMode === "dark" ? "border-[var(--div)]" : "border-[var(--textbox)]"
             } rounded-lg`}
           >
@@ -647,6 +857,95 @@ const CustomerChatPage = () => {
               </div>
             )}
           </main>
+
+          {/* Mobile Chat Area - shown only on mobile when in chat view */}
+          {mobileView === 'chat' && activeVendorId && (
+            <div className="chat-mobile mobile-chat-container w-full">
+              {/* Header - Fixed */}
+              <div
+                className={`chat-header flex items-center justify-between px-4 py-3`}
+              >
+                <button 
+                  onClick={showConversations}
+                  className={`
+                    w-8 h-8 flex items-center justify-center rounded-full 
+                    transition-all duration-200
+                    ${themeMode === "dark" 
+                      ? "text-gray-300 hover:text-white hover:bg-gray-600" 
+                      : "text-gray-500 hover:text-gray-700 hover:bg-gray-200"
+                    }
+                  `}
+                >
+                  <FaArrowLeft className="mt-1 flex-shrink-0" />
+                </button>
+                <h2 className="font-bold text-[var(--text)] text-lg flex-1 text-center mr-8">{headerTitle}</h2>
+              </div>
+
+              {/* Messages - Scrollable */}
+              <div className="messages-area overflow-y-auto min-h-0 px-4 py-3 space-y-3 messages-scroll">
+                {groupedMessages.map((msg) =>
+                  msg.type === "date" ? (
+                    <div key={msg.id} className="text-center text-xs text-gray-400 my-2">
+                      {msg.date}
+                    </div>
+                  ) : (
+                    <div key={msg.clientId || msg.id} className={`flex ${msg.sender === "customer" ? "justify-end" : "justify-start"}`}>
+                      <div className="max-w-[80%]">
+                        <div
+                          className={`p-3 rounded-lg text-sm ${
+                            msg.sender === "customer"
+                              ? "bg-[var(--button)] text-white"
+                              : `${
+                                  themeMode === "dark" ? "bg-[var(--div)] border-[var(--button)]" : "bg-[var(--textbox)] border-[var(--button)]"
+                                } text-[var(--text)]`
+                          }`}
+                        >
+                          {msg.message}
+                        </div>
+                        <div
+                          className={`text-xs mt-1 ${
+                            msg.sender === "customer" ? "text-right text-[var(--text)]" : "text-left text-[var(--text)]"
+                          }`}
+                        >
+                          {formatChatTime(msg.createdAt)}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input - Fixed */}
+              <div
+                className={`input-area px-4 py-3 flex items-center gap-3 border-t-2 ${
+                  themeMode === "dark" ? "border-[var(--div)]" : "border-[var(--textbox)]"
+                }`}
+              >
+                <input
+                  type="text"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                  placeholder="Type a message here..."
+                  className={`flex-1 px-4 py-2 rounded-full border-2 ${
+                    themeMode === "dark" ? "bg-[var(--bg)] border-[var(--div)] text-[var(--text)]" : "bg-white text-[var(--text)] border-[var(--textbox)]"
+                  } placeholder-gray-500 focus:outline-none`}
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={!message.trim()}
+                  className={`p-3 rounded-full ${
+                    message.trim()
+                      ? "bg-[var(--button)] text-white hover:scale-105 transition-transform"
+                      : "bg-gray-400 cursor-not-allowed text-white"
+                  }`}
+                >
+                  ➤
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

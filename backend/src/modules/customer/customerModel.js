@@ -271,23 +271,34 @@ exports.calculateDeliveryPreview = async function (
  * @param {Object} addressData - Address details {address_line1, address_line2, city, state, postal_code, country}
  * @returns {Promise<Object>} Created order object
  */
+
 exports.placeOrderFromCart = async function ({
   userId,
   cartId,
+  
   address,
   addressId,
   paymentMethod,
   paymentData,
-  coupons,
+  coupon_code,
   use_loyalty_points = false,
 }) {
   const client = await pool.connect();
+  let order = null;
+  let points_used = 0;
+  let discount_from_points = 0;
+  let discount_amount_coupon = 0;
+  let discount_amount_total = 0;
 
   try {
     await client.query("BEGIN");
 
     // 1️⃣ Fetch cart items
-    console.log("Fetching cart items...");
+    
+    use_loyalty_points = parseInt(use_loyalty_points) || 0;
+    console.log(" Processing loyalty points (converted):", use_loyalty_points, "Type:", typeof use_loyalty_points);
+
+    // 1️⃣ جلب عناصر السلة
     const cartItemsResult = await client.query(
       `SELECT ci.product_id, ci.quantity, ci.variant, p.price, p.vendor_id
        FROM cart_items ci
@@ -296,43 +307,27 @@ exports.placeOrderFromCart = async function ({
        WHERE ci.cart_id = $1 AND c.user_id = $2`,
       [cartId, userId]
     );
-    console.log("Cart items result:", cartItemsResult.rows);
+    if (!cartItemsResult.rows.length) throw new Error("Cart is empty or not found");
 
-    if (cartItemsResult.rows.length === 0) {
-      console.error("❌ Cart is empty or not found");
-      throw new Error("Cart is empty or not found");
-    }
-
-    // 2️⃣ Get or Insert address
-    console.log("Processing address...");
+    // 2️⃣ التعامل مع العنوان
     let savedAddress;
     if (addressId) {
-      console.log("Fetching existing address with id:", addressId);
       const existingAddress = await client.query(
         `SELECT * FROM addresses WHERE id = $1 AND user_id = $2`,
         [addressId, userId]
       );
-      if (existingAddress.rows.length === 0) {
-        console.error("❌ Address not found for user:", userId);
-        throw new Error("Address not found");
-      }
+      if (!existingAddress.rows.length) throw new Error("Address not found");
       savedAddress = existingAddress.rows[0];
     } else {
       if (!address.latitude || !address.longitude) {
-        console.log("📍 Using geocodeAddress for:", address.address_line1);
-        const geo = await geocodeAddress(
-          `${address.address_line1}, ${address.city}`
-        );
-        console.log("Geocode result:", geo);
+        const geo = await geocodeAddress(`${address.address_line1}, ${address.city}`);
         if (geo) {
           address.latitude = geo.latitude;
           address.longitude = geo.longitude;
         }
       }
-
-      console.log("Inserting new address:", address);
       const addressResult = await client.query(
-        `INSERT INTO addresses (user_id, address_line1, address_line2, city, state, postal_code, country, latitude, longitude)
+        `INSERT INTO addresses (user_id,address_line1,address_line2,city,state,postal_code,country,latitude,longitude)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
         [
           userId,
@@ -343,54 +338,44 @@ exports.placeOrderFromCart = async function ({
           address.postal_code || "",
           address.country || "Jordan",
           address.latitude || null,
-          address.longitude || null,
+          address.longitude || null
         ]
       );
       savedAddress = addressResult.rows[0];
     }
-    console.log("Saved address:", savedAddress);
 
-    // 3️⃣ إيجاد جميع شركات التوصيل التي تغطي المنطقة
-    console.log("Fetching delivery companies for city:", savedAddress.city);
-    const deliveryCompaniesResult = await client.query(
+    // 3️⃣ شركات التوصيل المتاحة
+    let deliveryCompanies = (await client.query(
       `SELECT id, latitude, longitude, company_name
-      FROM delivery_companies
-      WHERE EXISTS (
-        SELECT 1 FROM unnest(coverage_areas) AS area WHERE LOWER(area) = LOWER($1)
-      ) AND status = 'approved'`,
+       FROM delivery_companies
+       WHERE EXISTS (
+         SELECT 1 FROM unnest(coverage_areas) AS area WHERE LOWER(area) = LOWER($1)
+       ) AND status = 'approved'`,
       [savedAddress.city]
-    );
+    )).rows;
 
-    let deliveryCompanies = deliveryCompaniesResult.rows;
-
-    // إذا لم توجد شركات تغطي المنطقة، نستخدم الشركة الافتراضية
-    if (deliveryCompanies.length === 0) {
-      console.log("No companies found for city, using fallback...");
-      const fallback = await client.query(
-        `SELECT id, latitude, longitude, company_name
-        FROM delivery_companies WHERE status='approved' LIMIT 1`
-      );
-      if (fallback.rows.length === 0)
-        throw new Error("No delivery companies available");
-      deliveryCompanies = fallback.rows;
+    if (!deliveryCompanies.length) {
+      const fallback = (await client.query(
+        `SELECT id, latitude, longitude, company_name FROM delivery_companies WHERE status='approved' LIMIT 1`
+      )).rows;
+      if (!fallback.length) throw new Error("No delivery companies available");
+      deliveryCompanies = fallback;
     }
-    console.log("Available delivery companies:", deliveryCompanies.length);
 
     // 4️⃣ حساب رسوم التوصيل
     let delivery_fee = 0.5;
     let minDistance = null;
-
     if (
       savedAddress.latitude &&
       savedAddress.longitude &&
       deliveryCompanies[0].latitude &&
       deliveryCompanies[0].longitude
     ) {
+
       try {
         const distanceUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${deliveryCompanies[0].latitude},${deliveryCompanies[0].longitude}&destinations=${savedAddress.latitude},${savedAddress.longitude}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
         const distanceResponse = await axios.get(distanceUrl);
         const element = distanceResponse.data.rows[0].elements[0];
-
         if (element.status === "OK") {
           minDistance = element.distance.value / 1000; // km
           delivery_fee += minDistance * 0.2;
@@ -417,7 +402,6 @@ exports.placeOrderFromCart = async function ({
         delivery_fee += minDistance * 0.2;
       }
     }
-
     delivery_fee = parseFloat(delivery_fee.toFixed(2));
 
     // 5️⃣ حساب المجموع الكلي
@@ -425,18 +409,16 @@ exports.placeOrderFromCart = async function ({
     for (let item of cartItemsResult.rows) {
       total_amount += Number(item.price) * Number(item.quantity);
     }
-    console.log("Total amount before discounts:", total_amount);
 
-    let total_with_shipping = total_amount + delivery_fee;
+    // let total_with_shipping = total_amount + delivery_fee;
     let discount_amount = 0;
     let final_amount = total_amount;
     let applied_coupons = [];
 
-    if (Array.isArray(coupons) && coupons.length > 0) {
-      for (const c of coupons) {
+    if (Array.isArray(coupon_code) && coupon_code.length > 0) {
+      for (const c of coupon_code) {
         const vendor_id = Number(c.vendor_id);
         const coupon_code = c.coupon_code;
-
         if (!coupon_code) continue;
 
         const vendorItems = cartItemsResult.rows.filter(
@@ -476,34 +458,57 @@ exports.placeOrderFromCart = async function ({
         }
       }
     } else {
-      console.log("No coupons provided");
+      console.log("No coupons provided");    
     }
 
-    // 5b. تطبيق نقاط الولاء
-    let points_used = 0;
-    let discount_from_points = 0;
-    if (use_loyalty_points) {
+    // خصم نقاط الولاء
+    console.log(" Processing loyalty points:", use_loyalty_points);
+    if (use_loyalty_points && use_loyalty_points > 0) {
       const loyaltyData = await exports.getPointsByUser(userId);
-      if (loyaltyData.points_balance >= 100) {
-        const discountPercent = Math.min(
-          Math.floor(loyaltyData.points_balance / 100) * 10,
-          50
-        );
-        discount_from_points = (total_amount * discountPercent) / 100;
+      console.log("📊 Loyalty data from DB:", loyaltyData);
+      
+      const pointsToUse = Math.min(use_loyalty_points, loyaltyData.points_balance);
+      console.log("📊 Points to use:", pointsToUse, "Available:", loyaltyData.points_balance);
+      
+
+      
+      if (pointsToUse > 0) {
+        const discountPercent = Math.min((pointsToUse / 100) * 10, 50);
+        discount_from_points = parseFloat(((total_amount * discountPercent) / 100).toFixed(2));
+        points_used = pointsToUse;
         final_amount -= discount_from_points;
-        points_used = (discountPercent / 10) * 100;
-        await exports.redeemPoints(
-          userId,
-          points_used,
-          `Used for ${discountPercent}% discount`
-        );
+        
+        console.log("✅ Points discount applied:", {
+          total_amount,
+          pointsToUse,
+          discountPercent: discountPercent + '%',
+          discount_from_points,
+          final_amount_before_shipping: final_amount
+        });
+      } else {
+        console.log("❌ Not enough points for discount. Need 100, have:", pointsToUse);
       }
     }
 
-    // التأكد من أن final_amount يتضمن delivery_fee
+    // إجمالي الخصم = كوبون + نقاط
+    discount_amount_total = discount_amount_coupon + discount_from_points;
+
+    // إضافة التوصيل
     final_amount += delivery_fee;
 
-    // 6️⃣ إنشاء الطلب مع الحالة "requested"
+    // total_with_shipping
+    const total_with_shipping = final_amount;
+
+    console.log("🎯 Final amounts before order creation:", {
+      total_amount,
+      discount_amount_coupon,
+      discount_from_points,
+      discount_amount_total,
+      delivery_fee,
+      final_amount
+    });
+
+    // 6️⃣ إنشاء الأوردر
     const payment_status = paymentMethod === "cod" ? "pending" : "paid";
     const orderResult = await client.query(
       `INSERT INTO orders (
@@ -518,39 +523,28 @@ exports.placeOrderFromCart = async function ({
         savedAddress.id,
         JSON.stringify(savedAddress),
         total_amount,
-        discount_amount + discount_from_points,
+        discount_amount_total,
         final_amount,
-        coupon_code_to_save || coupon_code || null,
+         coupon_code || null,
         delivery_fee,
         total_with_shipping,
         payment_status,
         minDistance || null,
+
       ]
     );
 
-    const order = orderResult.rows[0];
-    console.log("Order inserted:", order);
+    order = orderResult.rows[0];
 
-    // 7️⃣ إدراج عناصر الطلب
-    console.log("Inserting order items...");
+    // حفظ عناصر الطلب
     for (let item of cartItemsResult.rows) {
       await client.query(
         `INSERT INTO order_items (order_id, product_id, vendor_id, quantity, price, variant, distance_km, vendor_status)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,'pending')`,
-        [
-          order.id,
-          item.product_id,
-          item.vendor_id,
-          item.quantity,
-          item.price,
-          JSON.stringify(item.variant || {}),
-          minDistance || 0,
-        ]
+         VALUES ($1,$2,$3,$4,$5,$6,$7,'pending')`,
+        [order.id, item.product_id, item.vendor_id, item.quantity, item.price, JSON.stringify(item.variant || {}), minDistance || 0]
       );
     }
-
-    // 8️⃣ إنشاء طلبات التوصيل لجميع الشركات التي تغطي المنطقة
-    console.log("Creating delivery requests for all companies...");
+    // طلبات التوصيل
     for (let company of deliveryCompanies) {
       await client.query(
         `INSERT INTO delivery_requests (order_id, delivery_company_id, status)
@@ -558,15 +552,9 @@ exports.placeOrderFromCart = async function ({
         [order.id, company.id]
       );
     }
-    console.log(
-      "Delivery requests created for",
-      deliveryCompanies.length,
-      "companies"
-    );
 
-    // 9️⃣ تسجيل الدفع إذا لم يكن COD
+    // تسجيل الدفع إذا ليس COD
     if (paymentMethod !== "cod" && paymentData) {
-      console.log("Recording payment...");
       await client.query(
         `INSERT INTO payments (order_id, user_id, payment_method, status, transaction_id, card_last4, card_brand, expiry_month, expiry_year, amount, created_at)
          VALUES ($1,$2,$3,'paid',$4,$5,$6,$7,$8,$9,CURRENT_TIMESTAMP)`,
@@ -582,38 +570,66 @@ exports.placeOrderFromCart = async function ({
           final_amount,
         ]
       );
-      console.log("Payment recorded");
     }
 
-    // 🏆 Add loyalty points before commit
-    const pointsEarned = Math.floor(final_amount / 10);
-    if (pointsEarned > 0) {
-      console.log("Adding loyalty points:", pointsEarned);
-      await exports.addPoints(
-        userId,
-        pointsEarned,
-        `Earned ${pointsEarned} points from order #${order.id}`
-      );
-    }
-
-    // 🔟 Commit transaction
     await client.query("COMMIT");
-    console.log("✅ Transaction committed successfully");
 
-    return order;
   } catch (err) {
     await client.query("ROLLBACK");
-    console.error("❌ placeOrderFromCart error:", err);
+
     throw err;
   } finally {
     client.release();
   }
+
+  // 7️⃣ Post-commit: نقاط الولاء
+  try {
+    console.log("🔍 Post-commit data:", {
+      orderId: order?.id,
+      use_loyalty_points,
+      points_used,
+      discount_amount_total
+    });
+
+    if (order && use_loyalty_points && points_used > 0) {
+      // 🔥 التأكد من وجود نقاط كافية قبل الخصم
+      const currentLoyaltyData = await exports.getPointsByUser(userId);
+      console.log("📊 Current points balance before redemption:", currentLoyaltyData.points_balance);
+      
+      if (points_used > currentLoyaltyData.points_balance) {
+        points_used = currentLoyaltyData.points_balance;
+        console.log("⚠️ Adjusting points used to available balance:", points_used);
+      }
+      
+      if (points_used > 0) {
+        await exports.redeemPointsViaPool(userId, points_used, `Used ${points_used} points for order #${order.id}`);
+        console.log("✅ Points redeemed successfully");
+      }
+    }
+
+    // تسجيل النقاط المكتسبة
+    if (order) {
+      // 🔥 استخدام total_amount من order وليس من المتغير المحلي
+      const pointsEarned = Math.floor((parseFloat(order.total_amount) - discount_amount_total) / 10);
+      console.log("🎯 Calculating points earned:", {
+        orderTotal: order.total_amount,
+        discountTotal: discount_amount_total,
+        pointsEarned
+      });
+      
+      if (pointsEarned > 0) {
+        await exports.addPointsViaPool(userId, pointsEarned, `Earned ${pointsEarned} points from order #${order.id}`);
+        console.log("✅ Points earned added successfully");
+      }
+    }
+  } catch (postErr) {
+    console.warn("⚠️ Post-commit points failed:", postErr.message);
+  }
+  return order;
 };
 
-exports.acceptOrderByDeliveryCompany = async function (
-  orderId,
-  deliveryCompanyId
-) {
+
+exports.acceptOrderByDeliveryCompany = async function (orderId, deliveryCompanyId) {
   const client = await pool.connect();
 
   try {
@@ -653,7 +669,6 @@ exports.acceptOrderByDeliveryCompany = async function (
     throw err;
   } finally {
     client.release();
-    console.log("Client connection released");
   }
 };
 
@@ -1633,29 +1648,51 @@ exports.getCustomerOrders = async (customer_id) => {
       o.payment_status,
       o.shipping_address,
       o.created_at,
+      o.customer_action_required,
+      o.customer_decision,
+
       COALESCE(
         json_agg(
           json_build_object(
-            'product_id', p.id,
-            'name', p.name,
+            'item_id',        oi.id,
+            'product_id',     p.id,
+            'name',           p.name,
+            'unit_price',     oi.price, 
             'price', p.price,
-            'quantity', oi.quantity
+            'quantity',       oi.quantity,
+            'vendor_id',      p.vendor_id,
+            'vendor_status',  oi.vendor_status,
+            'rejection_reason', oi.rejection_reason,
+            'accepted_at',    oi.accepted_at,
+            'rejected_at',    oi.rejected_at
           )
-        ) FILTER (WHERE p.id IS NOT NULL), '[]'
+          ORDER BY oi.id
+        ) FILTER (WHERE oi.id IS NOT NULL),
+        '[]'
       ) AS items,
+
+      json_build_object(
+        'total',    COUNT(oi.*),
+        'accepted', COUNT(*) FILTER (WHERE oi.vendor_status = 'accepted'),
+        'rejected', COUNT(*) FILTER (WHERE oi.vendor_status = 'rejected'),
+        'pending',  COUNT(*) FILTER (
+                      WHERE oi.vendor_status IS NULL OR oi.vendor_status = 'pending'
+                    )
+      ) AS items_summary,
+
       COALESCE(
         (
           SELECT json_agg(
             json_build_object(
-              'id', pay.id,
-              'payment_method', pay.payment_method,
-              'amount', pay.amount,
-              'status', pay.status,
-              'transaction_id', pay.transaction_id,
-              'card_last4', pay.card_last4,
-              'card_brand', pay.card_brand,
-              'expiry_month', pay.expiry_month,
-              'expiry_year', pay.expiry_year
+              'id',            pay.id,
+              'payment_method',pay.payment_method,
+              'amount',        pay.amount,
+              'status',        pay.status,
+              'transaction_id',pay.transaction_id,
+              'card_last4',    pay.card_last4,
+              'card_brand',    pay.card_brand,
+              'expiry_month',  pay.expiry_month,
+              'expiry_year',   pay.expiry_year
             )
           )
           FROM payments pay
@@ -1663,9 +1700,10 @@ exports.getCustomerOrders = async (customer_id) => {
         ),
         '[]'
       ) AS payments
+
     FROM orders o
     LEFT JOIN order_items oi ON o.id = oi.order_id
-    LEFT JOIN products p ON oi.product_id = p.id
+    LEFT JOIN products p     ON oi.product_id = p.id
     WHERE o.customer_id = $1
     GROUP BY o.id
     ORDER BY o.created_at DESC
@@ -1675,6 +1713,7 @@ exports.getCustomerOrders = async (customer_id) => {
 
   return result.rows;
 };
+
 
 exports.getVendorProducts = async (vendorId) => {
   const query = `
@@ -1904,70 +1943,327 @@ exports.removeProductFromWishlist = async (wishlistId) => {
   return { success: true };
 };
 
-exports.getPointsByUser = async (userId) => {
-  const result = await pool.query(
-    "SELECT points_balance, points_history FROM loyalty_points WHERE user_id = $1",
-    [userId]
-  );
+exports.getPointsByUser = async function(userId) {
+  try {
+    const result = await pool.query(
+      `SELECT points_balance 
+       FROM loyalty_points 
+       WHERE user_id = $1`,
+      [userId]
+    );
+    
+    if (result.rows.length === 0) {
+      // إذا لم يكن للمستخدم سجل، أنشئ واحداً جديداً
+      await pool.query(
+        `INSERT INTO loyalty_points (user_id, points_balance, points_history) 
+         VALUES ($1, 0, '[]'::jsonb)`,
+        [userId]
+      );
+      return { points_balance: 0 };
+    }
+    
+    const points_balance = parseInt(result.rows[0].points_balance) || 0;
+    console.log("📊 getPointsByUser result:", { userId, points_balance });
+    
+    return { points_balance };
+  } catch (error) {
+    console.error("❌ Error in getPointsByUser:", error);
+    return { points_balance: 0 };
+  }
+};
+exports.addPointsViaPool = async function(userId, points, description) {
+  try {
+    // تحديث الرصيد وإضافة للسجل التاريخي
+    const result = await pool.query(
+      `UPDATE loyalty_points 
+       SET points_balance = points_balance + $1,
+           points_history = points_history || $2::jsonb,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE user_id = $3
+       RETURNING *`,
+      [
+        points, 
+        JSON.stringify([{
+          type: 'earn',
+          points: points,
+          description: description,
+          date: new Date().toISOString()
+        }]),
+        userId
+      ]
+    );
+    
+    console.log("✅ Points added:", { userId, points, description });
+    return result.rows[0];
+  } catch (error) {
+    console.error("❌ Error in addPointsViaPool:", error);
+    throw error;
+  }
+};
 
-  if (result.rows.length === 0)
-    return { points_balance: 0, points_history: [] };
 
-  const row = result.rows[0];
+exports.redeemPointsViaPool = async function(userId, points, description) {
+  try {
+    // تحديث الرصيد وإضافة للسجل التاريخي
+    const result = await pool.query(
+      `UPDATE loyalty_points 
+       SET points_balance = points_balance - $1,
+           points_history = points_history || $2::jsonb,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE user_id = $3
+       RETURNING *`,
+      [
+        points, 
+        JSON.stringify([{
+          type: 'redeem',
+          points: -points,
+          description: description,
+          date: new Date().toISOString()
+        }]),
+        userId
+      ]
+    );
+    
+    console.log("✅ Points redeemed:", { userId, points, description });
+    return result.rows[0];
+  } catch (error) {
+    console.error("❌ Error in redeemPointsViaPool:", error);
+    throw error;
+  }
+};
 
-  let history = row.points_history;
 
-  // ✅ تأكدي أنه نص قبل استخدام JSON.parse
-  if (typeof history === "string") {
-    history = JSON.parse(history || "[]");
+/**
+ * يعيد حساب حالة الطلب من آيتماته
+ * - نفس منطقك السابق بالضبط
+ */
+
+exports.recomputeOrderStatus = async function recomputeOrderStatus(orderId) {
+  const q = `
+    SELECT
+      COUNT(*)::int AS total,
+      COUNT(*) FILTER (WHERE LOWER(vendor_status) = 'accepted')::int AS accepted,
+      COUNT(*) FILTER (WHERE LOWER(vendor_status) = 'rejected')::int AS rejected,
+      COUNT(*) FILTER (
+        WHERE vendor_status IS NULL OR LOWER(vendor_status) = 'pending'
+      )::int AS pending
+    FROM order_items
+    WHERE order_id = $1
+  `;
+  const { rows } = await pool.query(q, [orderId]);
+  if (!rows.length) return null;
+  const c = rows[0];
+
+  let newStatus;
+  let customerActionRequired = false;
+
+  if (c.total > 0 && c.rejected === c.total) {
+    newStatus = "cancelled";
+  } else if (c.total > 0 && c.accepted === c.total) {
+    newStatus = "requested";
+  } else if (c.rejected > 0 && (c.accepted > 0 || c.pending > 0)) {
+    newStatus = "awaiting_customer_decision";
+    customerActionRequired = true;
+  } else {
+    // خليها "requested" إذا مافي حالات حاسمة
+    newStatus = "requested";
   }
 
-  return {
-    points_balance: row.points_balance,
-    points_history: history,
-  };
-};
-
-exports.addPoints = async (userId, points, description) => {
-  const data = await exports.getPointsByUser(userId);
-  const newBalance = data.points_balance + points;
-  const newHistory = [
-    ...data.points_history,
-    { type: "earn", points, description, date: new Date() },
-  ];
-
-  await pool.query(
-    `INSERT INTO loyalty_points (user_id, points_balance, points_history, created_at, updated_at)
-     VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-     ON CONFLICT (user_id) DO UPDATE
-       SET points_balance = loyalty_points.points_balance + $2,
-           points_history = loyalty_points.points_history || $3,
-           updated_at = CURRENT_TIMESTAMP`,
-    [userId, points, JSON.stringify(newHistory)]
-  );
-};
-
-exports.redeemPoints = async (userId, points, description) => {
-  const data = await exports.getPointsByUser(userId);
-
-  if (points > data.points_balance) throw new Error("Insufficient points");
-
-  const newBalance = data.points_balance - points;
-  const newHistory = [
-    ...data.points_history,
-    { type: "redeem", points, description, date: new Date() },
-  ];
-
-  await pool.query(
-    `UPDATE loyalty_points
-     SET points_balance = $1,
-         points_history = $2,
-         updated_at = CURRENT_TIMESTAMP
-     WHERE user_id = $3`,
-    [newBalance, JSON.stringify(newHistory), userId]
+  const up = await pool.query(
+    `
+      UPDATE orders
+      SET status = $1,
+          customer_action_required = $2,
+          updated_at = NOW()
+      WHERE id = $3
+      RETURNING *;
+    `,
+    [newStatus, customerActionRequired, orderId]
   );
 
-  // 100 نقطة = 10% خصم
-  const discountPercentage = Math.floor(points / 100) * 10;
-  return discountPercentage;
+  return up.rows[0];
 };
+
+exports.applyCustomerDecision = async ({ orderId, customerId, action }) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // 1) تأكيد ملكية الطلب + قفل الصف
+    const { rows: oRows } = await client.query(
+      `
+        SELECT *
+        FROM orders
+        WHERE id = $1 AND customer_id = $2
+        FOR UPDATE
+      `,
+      [orderId, customerId]
+    );
+    if (!oRows.length) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+    const order = oRows[0];
+
+    // لازم يكون بمرحلة انتظار قرار الزبون
+    if ((order.status || "").toLowerCase() !== "awaiting_customer_decision") {
+      await client.query("ROLLBACK");
+      return null;
+    }
+
+    // 2) إحضار العناصر
+    const { rows: items } = await client.query(
+      `SELECT * FROM order_items WHERE order_id = $1`,
+      [orderId]
+    );
+
+    // لو ما في عناصر لأي سبب → اعتبرها cancel
+    if (!items.length) {
+      const { rows: up } = await client.query(
+        `
+          UPDATE orders
+          SET status = 'cancelled',
+              customer_action_required = false,
+              customer_decision = 'cancel_order',
+              updated_at = NOW()
+          WHERE id = $1
+          RETURNING *;
+        `,
+        [orderId]
+      );
+
+      // رجّع بدون عناصر
+      await client.query("COMMIT");
+      return { ...up[0], items: [] };
+    }
+
+    if (action === "cancel_order") {
+      // 3-A) إلغاء كامل الطلب
+
+      // ✅ استرجاع المخزون لكل العناصر المقبولة قبل ما نغيّر حالة الطلب
+      //   - منرجّع quantity لكل منتج كانت حالته accepted
+      if (items.length) {
+        const { rows: acceptedItems } = await client.query(
+          `
+        SELECT oi.product_id, oi.quantity
+        FROM order_items oi
+        WHERE oi.order_id = $1
+          AND LOWER(oi.vendor_status) = 'accepted'
+      `,
+          [orderId]
+        );
+
+        if (acceptedItems.length) {
+          // نرجّع كميات المنتجات
+          // ممكن نعمله بواحدة واحدة (واضح وبسيط)
+          for (const it of acceptedItems) {
+            await client.query(
+              `
+            UPDATE products
+            SET stock_quantity = stock_quantity + $1,
+                updated_at = NOW()
+            WHERE id = $2
+          `,
+              [it.quantity, it.product_id]
+            );
+          }
+        }
+      }
+
+      // ✅ حدّث الطلب إلى cancelled
+      const { rows: up } = await client.query(
+        `
+      UPDATE orders
+      SET status = 'cancelled',
+          customer_action_required = false,
+          customer_decision = 'cancel_order',
+          updated_at = NOW()
+      WHERE id = $1
+      RETURNING *;
+    `,
+        [orderId]
+      );
+
+      await client.query("COMMIT");
+      return { ...up[0], items };
+    }
+
+    // 3-B) proceed_without_rejected: حذف العناصر المرفوضة (case-insensitive)
+    await client.query(
+      `
+        DELETE FROM order_items
+        WHERE order_id = $1
+          AND LOWER(vendor_status) = 'rejected'
+      `,
+      [orderId]
+    );
+
+    // العناصر المتبقية
+    const { rows: leftItems } = await client.query(
+      `SELECT * FROM order_items WHERE order_id = $1`,
+      [orderId]
+    );
+
+    if (!leftItems.length) {
+      // ما ظل ولا عنصر → ألغِ الطلب وصفر الإجمالي
+      const { rows: up } = await client.query(
+        `
+          UPDATE orders
+          SET status = 'cancelled',
+              customer_action_required = false,
+              customer_decision = 'proceed_without_rejected_but_empty',
+              total_amount = 0,
+              total_with_shipping = COALESCE(delivery_fee, 0),
+              updated_at = NOW()
+          WHERE id = $1
+          RETURNING *;
+        `,
+        [orderId]
+      );
+
+      await client.query("COMMIT");
+      return { ...up[0], items: [] };
+    }
+
+    // 4) إعادة حساب الإجماليات من العناصر المتبقية
+    const { rows: sumRows } = await client.query(
+      `
+        SELECT COALESCE(SUM(price * quantity), 0)::numeric AS subtotal
+        FROM order_items
+        WHERE order_id = $1
+      `,
+      [orderId]
+    );
+    const subtotal = sumRows[0].subtotal || 0;
+
+    // 5) تحديث الطلب: صار “requested” بعد قرار الزبون
+    const { rows: updatedOrderRows } = await client.query(
+      `
+        UPDATE orders
+        SET total_amount = $1,
+            total_with_shipping = $1 + COALESCE(delivery_fee, 0),
+            status = 'requested',
+            customer_action_required = false,
+            customer_decision = 'proceed_without_rejected',
+            updated_at = NOW()
+        WHERE id = $2
+        RETURNING *;
+      `,
+      [subtotal, orderId]
+    );
+    const updatedOrder = updatedOrderRows[0];
+
+    await client.query("COMMIT");
+
+    // رجّع الطلب + العناصر المتبقية ليتحدث الـ UI فورًا
+    return { ...updatedOrder, items: leftItems };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+
+

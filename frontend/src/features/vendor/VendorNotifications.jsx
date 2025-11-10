@@ -51,66 +51,80 @@ export default function VendorNotifications() {
   const buttonBg = "#307A59";
   const buttonHover = "#256d4c";
 
-  return (
-    <div className="min-h-screen p-8 flex flex-col items-center" style={{ backgroundColor: pageBg }}>
-      <div className="w-full max-w-3xl">
-        <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: textColor }}>
-          All Notifications
-        </h2>
+return (
+  <div
+    className="min-h-screen w-full"
+    style={{
+      backgroundColor: isDarkMode ? "var(--bg-dark)" : "var(--bg)",
+      color: "var(--text)",
+      padding: "3rem",
+    }}
+  >
+    <div className="w-full max-w-sm sm:max-w-xl md:max-w-3xl mx-auto">
+      <h2
+        className="text-lg sm:text-xl md:text-2xl font-bold mb-6 text-center"
+        style={{ color: textColor }}
+      >
+        All Notifications
+      </h2>
 
-        {notifications.length > 0 ? (
-          <>
-            <div className="space-y-4">
-              {visibleNotifications.map((notif) => (
-                <div
-                  key={notif.id}
-                  className="rounded-2xl shadow-md p-5 transition hover:shadow-lg"
-                  style={{ backgroundColor: cardBg }}
-                >
-                  <p className="font-semibold mb-1" style={{ color: textColor }}>
-                    {notif.title || "No Title"}
-                  </p>
-                  <p className="text-sm" style={{ color: textGray }}>
-                    {notif.message}
-                  </p>
-                  <p className="text-xs mt-2" style={{ color: textGray }}>
-                    {new Date(notif.created_at).toLocaleString()}
-                  </p>
+      {notifications.length > 0 ? (
+        <>
+          <div className="space-y-3 sm:space-y-4">
+            {visibleNotifications.map((notif) => (
+              <div
+                key={notif.id}
+                className="rounded-2xl shadow-md p-4 sm:p-5 transition hover:shadow-lg"
+                style={{ backgroundColor: cardBg }}
+              >
+                <p className="font-semibold mb-1" style={{ color: textColor }}>
+                  {notif.title || "No Title"}
+                </p>
+                <p className="text-xs sm:text-sm" style={{ color: textGray }}>
+                  {notif.message}
+                </p>
+                <p className="text-[10px] sm:text-xs mt-2" style={{ color: textGray }}>
+                  {new Date(notif.created_at).toLocaleString()}
+                </p>
 
-                  {/* زر Mark as Read */}
-                  {!notif.read_status && (
-                    <button
-                      onClick={() => handleMarkRead(notif.id)}
-                      className="text-xs font-medium mt-2 inline-flex items-center gap-1 px-2 py-1 rounded"
-                      style={{ color: "#000" }}
-                    >
-                      <FaCheck /> Mark as Read
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {visibleCount < notifications.length && (
-              <div className="mt-8 flex justify-center">
-                <button
-                  onClick={handleLoadMore}
-                  className="px-6 py-2 text-sm font-medium rounded-lg transition"
-                  style={{ backgroundColor: buttonBg, color: "#ffffff" }}
-                  onMouseEnter={(e) => (e.target.style.backgroundColor = buttonHover)}
-                  onMouseLeave={(e) => (e.target.style.backgroundColor = buttonBg)}
-                >
-                  Load More
-                </button>
+                {!notif.read_status && (
+                  <button
+                    onClick={() => handleMarkRead(notif.id)}
+                    className="text-[10px] sm:text-xs font-medium mt-2 inline-flex items-center gap-1 px-2 py-1 rounded"
+                    style={{ color: "#000" }}
+                  >
+                    <FaCheck /> Mark as Read
+                  </button>
+                )}
               </div>
-            )}
-          </>
-        ) : (
-          <div className="p-6 rounded-2xl shadow text-center" style={{ backgroundColor: cardBg, color: textGray }}>
-            No notifications available
+            ))}
           </div>
-        )}
-      </div>
+
+          {visibleCount < notifications.length && (
+            <div className="mt-6 sm:mt-8 flex justify-center">
+              <button
+                onClick={handleLoadMore}
+                className="px-4 sm:px-6 py-2 text-xs sm:text-sm font-medium rounded-lg transition"
+                style={{ backgroundColor: buttonBg, color: "#ffffff" }}
+                onMouseEnter={(e) => (e.target.style.backgroundColor = buttonHover)}
+                onMouseLeave={(e) => (e.target.style.backgroundColor = buttonBg)}
+              >
+                Load More
+              </button>
+            </div>
+          )}
+        </>
+      ) : (
+        <div
+          className="p-4 sm:p-6 rounded-2xl shadow text-center text-sm sm:text-base"
+          style={{ backgroundColor: cardBg, color: textGray }}
+        >
+          No notifications available
+        </div>
+      )}
     </div>
-  );
+  </div>
+);
+
+
 }

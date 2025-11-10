@@ -1,147 +1,307 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import StoreCard from "../components/StoreCard";
 import { fetchStoresWithReviews, setCurrentPage } from "../../review/reviewSlice";
+import { Sparkles, Zap, TrendingUp, Search, X } from "lucide-react";
 
 const StoresPage = () => {
   const dispatch = useDispatch();
   const { allStores, loading, error, currentPage, itemsPerPage } = useSelector(state => state.reviews);
   const themeMode = useSelector((state) => state.customerTheme?.mode || 'light');
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredStores, setFilteredStores] = useState([]);
 
   useEffect(() => {
     dispatch(fetchStoresWithReviews());
   }, [dispatch]);
 
+  // Filter stores based on search query
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredStores(allStores);
+    } else {
+      const filtered = allStores.filter(store =>
+        store.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        store.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        store.location?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredStores(filtered);
+    }
+    // Reset to first page when search changes
+    dispatch(setCurrentPage(1));
+  }, [searchQuery, allStores, dispatch]);
+
   const indexOfLastStore = currentPage * itemsPerPage;
   const indexOfFirstStore = indexOfLastStore - itemsPerPage;
-  const currentStores = allStores.slice(indexOfFirstStore, indexOfLastStore);
+  const currentStores = filteredStores.slice(indexOfFirstStore, indexOfLastStore);
 
-  const totalPages = Math.ceil(allStores.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredStores.length / itemsPerPage);
 
   const handlePageChange = (pageNumber) => {
     dispatch(setCurrentPage(pageNumber));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Loading State
-  if (loading) return (
-    <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-gray-50'} p-6`}>
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8">
-          <div className={`h-8 ${themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-white'} rounded-lg w-64 mx-auto mb-4 animate-pulse`}></div>
-          <div className={`h-4 ${themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-white'} rounded w-48 mx-auto animate-pulse`}></div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="animate-pulse">
-              <div className={`${themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-white'} rounded-2xl h-48 mb-4 shadow-lg border ${themeMode === 'dark' ? 'border-[var(--border)]' : 'border-gray-200'}`}></div>
-              <div className="space-y-3">
-                <div className={`h-4 ${themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-white'} rounded w-3/4`}></div>
-                <div className={`h-3 ${themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-white'} rounded w-1/2`}></div>
-                <div className={`h-10 ${themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-white'} rounded-lg mt-4 shadow-lg`}></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
 
-  // Error State
-  if (error) return (
-    <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-gray-50'} flex items-center justify-center p-6`}>
-      <div className="text-center max-w-md">
-        <div className={`w-20 h-20 ${themeMode === 'dark' ? 'bg-[var(--error)]/20' : 'bg-red-100'} rounded-full flex items-center justify-center mx-auto mb-4`}>
-          <svg className={`w-10 h-10 ${themeMode === 'dark' ? 'text-[var(--error)]' : 'text-red-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+  const clearSearch = () => {
+    setSearchQuery("");
+  };
+
+  // Pagination logic - show only 5 pages max (same as products page)
+  const getVisiblePages = () => {
+    const visiblePages = [];
+    const totalVisible = 5;
+    
+    if (totalPages <= totalVisible) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    
+    let start = Math.max(1, currentPage - 2);
+    let end = Math.min(totalPages, start + totalVisible - 1);
+    
+    if (end - start + 1 < totalVisible) {
+      start = Math.max(1, end - totalVisible + 1);
+    }
+    
+    for (let i = start; i <= end; i++) {
+      visiblePages.push(i);
+    }
+    
+    return visiblePages;
+  };
+
+  const visiblePages = getVisiblePages();
+
+  // Loading State - Same as products page
+  if (loading) {
+    return (
+      <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-white'} relative overflow-hidden`}>
+        {/* Animated Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[var(--button)]/5 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[var(--primary)]/5 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '2s'}}></div>
         </div>
-        <h3 className={`text-xl font-semibold ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-gray-800'} mb-2`}>Error Occurred</h3>
-        <p className={`${themeMode === 'dark' ? 'text-[var(--light-gray)]' : 'text-gray-600'} mb-6`}>{error}</p>
-        <button 
-          onClick={() => dispatch(fetchStoresWithReviews())}
-          className="bg-[var(--button)] text-white px-6 py-3 rounded-xl hover:bg-[#015c40] transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
-        >
-          Try Again
-        </button>
+        
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="relative">
+              <div className="w-20 h-20 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-2xl flex items-center justify-center mx-auto mb-6 animate-spin">
+                <Sparkles className="text-white" size={32} />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-2xl blur-lg opacity-50 animate-ping"></div>
+            </div>
+            <p className="text-[var(--text)] text-xl font-semibold bg-gradient-to-r from-[var(--text)] to-[var(--light-gray)] bg-clip-text text-transparent">
+              Loading Amazing Stores...
+            </p>
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // Error State - Same as products page
+  if (error) {
+    return (
+      <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-white'} flex items-center justify-center relative overflow-hidden`}>
+        {/* Animated Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/3 left-1/3 w-64 h-64 bg-[var(--error)]/5 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute bottom-1/3 right-1/3 w-56 h-56 bg-[var(--button)]/5 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '1.5s'}}></div>
+        </div>
+
+        <div className="text-center max-w-md relative z-10">
+          <div className="w-28 h-28 bg-[var(--error)]/20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl transform hover:scale-110 transition-all duration-300">
+            <Zap className="w-14 h-14 text-[var(--error)]" />
+          </div>
+          <h3 className="text-3xl font-black mb-4 bg-gradient-to-r from-[var(--error)] to-red-600 bg-clip-text text-transparent">
+            Oops! Error Loading
+          </h3>
+          <p className="text-[var(--text)]/80 text-lg mb-8 leading-relaxed">{error}</p>
+          <button 
+            onClick={() => dispatch(fetchStoresWithReviews())}
+            className="relative bg-gradient-to-r from-[var(--button)] to-[var(--primary)] text-white px-8 py-4 rounded-2xl hover:shadow-2xl transition-all duration-300 font-bold shadow-lg transform hover:scale-105 group overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+            <span className="relative z-10 flex items-center gap-3">
+              <Sparkles size={20} />
+              Try Again
+            </span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-gray-50'}`}>
-      {/* Header Section with Professional Gradient */}
-      <div 
-        className="pt-8 relative overflow-hidden"
-        style={{
-          background: themeMode === 'dark' 
-          ? `linear-gradient(to bottom, 
-              rgba(12, 12, 12, 0.3) 0%, 
-              var(--bg) 100%)`
-          : `linear-gradient(to bottom, 
-              rgba(83, 85, 84, 0.1) 0%, 
-              rgba(249, 250, 251, 1) 100%)`
-                }}
-              >
-        {/* Subtle Pattern Overlay */}
-        <div 
-          className="absolute inset-0 opacity-5"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23026a4b' fill-opacity='1'%3E%3Ccircle cx='30' cy='30' r='1.5'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-          }}
-        ></div>
-        
-        <div className="max-w-4xl mx-auto px-6 text-center relative z-10 pt-8">
-          <h1 className={`text-4xl font-bold  ${themeMode === 'dark' ? 'text-white' : 'text-gray-900'} tracking-tight`}>
-            Discover Stores
-          </h1>
-          <p className={`text-xl ${themeMode === 'dark' ? 'text-gray-300' : 'text-gray-600'} max-w-2xl mx-auto leading-relaxed`}>
-            Explore curated stores with exceptional products and customer experiences
-          </p>
+    <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-white'} transition-all duration-500`}>
+      {/* Empty Div for Top Padding */}
+      <div className="h-6"></div>
+
+      {/* Animated Background - Same as products page */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 left-0 w-96 h-96 bg-[var(--button)]/5 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute bottom-0 right-0 w-80 h-80 bg-[var(--primary)]/5 rounded-full blur-3xl animate-float" style={{animationDelay: '2s'}}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[var(--success)]/3 rounded-full blur-3xl animate-pulse-slow"></div>
+      </div>
+
+      {/* Enhanced Header Section - Same as products page */}
+      <div className="relative overflow-hidden">
+        <div className="pt-16 pb-6 relative">
+          {/* Animated Floating Circles */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-10 left-10 w-6 h-6 bg-[var(--button)]/20 rounded-full animate-float"></div>
+            <div className="absolute top-20 right-20 w-4 h-4 bg-[var(--primary)]/20 rounded-full animate-float" style={{animationDelay: '1s'}}></div>
+            <div className="absolute bottom-20 left-20 w-5 h-5 bg-[var(--success)]/20 rounded-full animate-float" style={{animationDelay: '2s'}}></div>
+            <div className="absolute bottom-10 right-10 w-3 h-3 bg-[var(--warning)]/20 rounded-full animate-float" style={{animationDelay: '1.5s'}}></div>
+            <div className="absolute top-1/2 left-1/4 w-4 h-4 bg-[var(--button)]/15 rounded-full animate-float" style={{animationDelay: '0.5s'}}></div>
+            <div className="absolute top-1/3 right-1/3 w-5 h-5 bg-[var(--primary)]/15 rounded-full animate-float" style={{animationDelay: '2.5s'}}></div>
+          </div>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center relative z-10">
+            <h3 className="text-4xl sm:text-5xl md:text-5xl font-black mb-2 tracking-tight bg-gradient-to-r from-[var(--text)] via-[var(--button)] to-[var(--primary)] bg-clip-text text-transparent animate-gradient-x-slow">
+              {searchQuery ? `"${searchQuery}"` : "Our Stores"}
+            </h3>
+            <p className={`text-lg sm:text-xl md:text-2xl font-medium mb-8 leading-relaxed max-w-3xl mx-auto ${themeMode === 'dark' ? 'text-[var(--light-gray)]' : 'text-gray-600'}`}>
+              {searchQuery 
+                ? "Discover amazing results for your search"
+                : "Explore our premium collection of curated stores"
+              }
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Stores Grid */}
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        {currentStores.length > 0 ? (
+      {/* Main Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pb-16">
+        {/* Enhanced Controls Section - With Search */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-12">
+          {/* Search Bar - Same style as products page controls */}
+          <div className="w-full lg:w-auto">
+            <div className="relative group">
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                <Search size={20} className="text-[var(--button)]" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search stores by name, description, or location..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                className={`w-full lg:w-80 border-2 border-[var(--border)] text-[var(--text)] rounded-xl pl-12 pr-10 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--button)]/30 focus:border-[var(--button)] transition-all font-medium shadow-sm hover:shadow-md ${
+                  themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-white'
+                }`}
+              />
+              {searchQuery && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[var(--light-gray)] hover:text-[var(--text)] transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Results Count */}
+          <div className="flex items-center gap-4 w-full lg:w-auto justify-between lg:justify-end">
+            <div className="flex items-center gap-3">
+              <div className={`text-sm ${themeMode === 'dark' ? 'text-[var(--light-gray)]' : 'text-gray-600'}`}>
+                {filteredStores.length} {filteredStores.length === 1 ? 'store' : 'stores'} found
+                {searchQuery && ` for "${searchQuery}"`}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Stores Grid - Same responsive layout as products page */}
+        {currentStores.length === 0 ? (
+          <div className={`text-center py-24 rounded-3xl border-2 border-[var(--border)] relative overflow-hidden group ${
+            themeMode === 'dark' 
+              ? 'bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] shadow-3xl' 
+              : 'bg-gradient-to-br from-gray-50 to-gray-100 shadow-xl'
+          }`}>
+            {/* Background Animation */}
+            <div className="absolute inset-0 opacity-5">
+              <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-[var(--button)] rounded-full animate-ping"></div>
+              <div className="absolute bottom-1/4 right-1/4 w-24 h-24 bg-[var(--primary)] rounded-full animate-ping" style={{animationDelay: '1s'}}></div>
+            </div>
+
+            <div className="max-w-md mx-auto relative z-10">
+              <div className="w-40 h-40 mx-auto mb-8 rounded-3xl bg-[var(--button)]/10 flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-all duration-500 border-2 border-[var(--button)]/20">
+                <Search className="w-20 h-20 text-[var(--button)]" />
+              </div>
+              <h3 className="text-4xl font-black mb-6 bg-gradient-to-r from-[var(--text)] to-[var(--light-gray)] bg-clip-text text-transparent">
+                {searchQuery ? "No Stores Found" : "No Stores Available"}
+              </h3>
+              <p className={`text-xl mb-10 leading-relaxed ${
+                themeMode === 'dark' ? 'text-[var(--light-gray)]' : 'text-gray-600'
+              }`}>
+                {searchQuery 
+                  ? `No results found for "${searchQuery}". Try different keywords.`
+                  : "We're curating amazing stores for you. Check back soon!"
+                }
+              </p>
+              {searchQuery && (
+                <button
+                  onClick={clearSearch}
+                  className="relative bg-gradient-to-r from-[var(--button)] to-[var(--primary)] text-white px-8 py-4 rounded-2xl hover:shadow-2xl transition-all duration-300 font-bold shadow-lg transform hover:scale-105 group overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                  <span className="relative z-10 flex items-center gap-3">
+                    <X size={20} />
+                    Clear Search
+                  </span>
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-12">
-              {currentStores.map(store => (
-                <StoreCard key={store.id} store={store} />
+            {/* Enhanced Stores Grid with same responsive layout as products */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5 md:gap-6 lg:gap-7 xl:gap-8 mb-16">
+              {currentStores.map((store, index) => (
+                <div 
+                  key={store.id}
+                  className="transform hover:-translate-y-2 transition-all duration-500"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <StoreCard store={store} />
+                </div>
               ))}
             </div>
 
-            {/* Enhanced Pagination */}
+            {/* Enhanced Pagination - Show only 5 pages max (same as products page) */}
             {totalPages > 1 && (
               <div className="flex flex-col items-center space-y-8">
-                {/* Page Info */}
-
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 sm:space-x-4">
                   {/* Previous Button */}
                   <button
                     onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className={`p-4 rounded-2xl border-2 transition-all duration-300 ${
+                    className={`p-3 sm:p-4 rounded-xl border-2 transition-all duration-300 group ${
                       currentPage === 1 
                         ? `opacity-50 cursor-not-allowed ${themeMode === 'dark' ? 'text-gray-600 border-[var(--border)]' : 'text-gray-400 border-gray-300'}`
-                        : `${themeMode === 'dark' ? 'text-white border-[var(--border)] hover:border-[var(--button)] hover:bg-[var(--button)]/10' : 'text-gray-700 border-gray-300 hover:border-[var(--button)] hover:bg-[var(--button)]/5'} hover:scale-105 hover:shadow-lg`
+                        : `${themeMode === 'dark' ? 'text-white border-[var(--border)] hover:border-[var(--button)] hover:bg-[var(--button)]/10' : 'text-gray-700 border-gray-300 hover:border-[var(--button)] hover:bg-[var(--button)]/5'} hover:scale-110 hover:shadow-xl`
                     }`}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
                   </button>
 
-                  {/* Page Numbers */}
-                  <div className="flex items-center space-x-2">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  {/* Page Numbers - Show only 5 pages max */}
+                  <div className="flex items-center space-x-1 sm:space-x-2">
+                    {visiblePages.map(page => (
                       <button
                         key={page}
                         onClick={() => handlePageChange(page)}
-                        className={`min-w-[52px] h-12 rounded-xl font-semibold transition-all duration-300 ${
+                        className={`min-w-[32px] sm:min-w-[40px] h-8 sm:h-10 rounded-lg font-bold text-xs sm:text-sm transition-all duration-300 transform hover:scale-110 ${
                           currentPage === page
-                            ? 'bg-[var(--button)] text-white shadow-xl scale-105'
-                            : `${themeMode === 'dark' ? 'text-white border border-[var(--border)] hover:bg-[var(--hover)]' : 'text-gray-700 border border-gray-300 hover:bg-gray-50'} hover:border-[var(--button)] hover:scale-105`
+                            ? 'bg-gradient-to-r from-[var(--button)] to-[var(--primary)] text-white shadow-xl scale-110'
+                            : `${themeMode === 'dark' ? 'text-white border border-[var(--border)] hover:border-[var(--button)] hover:bg-[var(--hover)]' : 'text-gray-700 border border-gray-300 hover:border-[var(--button)] hover:bg-gray-50'} hover:shadow-lg`
                         }`}
                       >
                         {page}
@@ -153,51 +313,70 @@ const StoresPage = () => {
                   <button
                     onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className={`p-4 rounded-2xl border-2 transition-all duration-300 ${
+                    className={`p-3 sm:p-4 rounded-xl border-2 transition-all duration-300 group ${
                       currentPage === totalPages
                         ? `opacity-50 cursor-not-allowed ${themeMode === 'dark' ? 'text-gray-600 border-[var(--border)]' : 'text-gray-400 border-gray-300'}`
-                        : `${themeMode === 'dark' ? 'text-white border-[var(--border)] hover:border-[var(--button)] hover:bg-[var(--button)]/10' : 'text-gray-700 border-gray-300 hover:border-[var(--button)] hover:bg-[var(--button)]/5'} hover:scale-105 hover:shadow-lg`
+                        : `${themeMode === 'dark' ? 'text-white border-[var(--border)] hover:border-[var(--button)] hover:bg-[var(--button)]/10' : 'text-gray-700 border-gray-300 hover:border-[var(--button)] hover:bg-[var(--button)]/5'} hover:scale-110 hover:shadow-xl`
                     }`}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </button>
-                  
                 </div>
-                <div className="text-center">
-                  <p className={`text-sm ${themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'} bg-gradient-to-r ${themeMode === 'dark' ? 'from-[var(--div)] to-[var(--mid-dark)]' : 'from-white to-gray-50'} px-6 py-3 rounded-2xl border ${themeMode === 'dark' ? 'border-[var(--border)]' : 'border-gray-200'} shadow-lg`}>
-                    Showing <span className="font-semibold text-[var(--button)]">{indexOfFirstStore + 1}-{Math.min(indexOfLastStore, allStores.length)}</span> of <span className="font-semibold">{allStores.length}</span> stores
-                  </p>
+                
+                {/* Page Info */}
+                <div className={`text-sm ${themeMode === 'dark' ? 'text-[var(--light-gray)]' : 'text-gray-600'}`}>
+                  Page {currentPage} of {totalPages}
                 </div>
               </div>
             )}
           </>
-        ) : (
-          // Enhanced Empty State
-          <div className={`text-center py-20 ${themeMode === 'dark' ? 'bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)]' : 'bg-white'} rounded-3xl shadow-2xl border-2 ${themeMode === 'dark' ? 'border-[var(--border)]' : 'border-gray-200'}`}>
-            <div className="max-w-md mx-auto">
-              <div className={`w-32 h-32 mx-auto mb-8 rounded-full ${themeMode === 'dark' ? 'bg-[var(--button)]/10' : 'bg-[var(--button)]/5'} flex items-center justify-center`}>
-                <svg className={`w-16 h-16 ${themeMode === 'dark' ? 'text-[var(--button)]' : 'text-[var(--button)]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </div>
-              <h3 className={`text-3xl font-bold mb-4 ${themeMode === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                No Stores Available
-              </h3>
-              <p className={`text-lg mb-8 ${themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                We're working on adding new stores to enhance your shopping experience.
-              </p>
-              <button
-                onClick={() => dispatch(fetchStoresWithReviews())}
-                className="bg-[var(--button)] text-white px-8 py-4 rounded-xl font-semibold hover:bg-[#015c40] transition-all duration-300 hover:scale-105 hover:shadow-2xl"
-              >
-                Refresh Stores
-              </button>
-            </div>
-          </div>
         )}
       </div>
+
+      <style jsx>{`
+        @keyframes gradient-x {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        @keyframes float {
+          0%, 100% { 
+            transform: translateY(0px) translateX(0px) rotate(0deg); 
+            opacity: 0.7;
+          }
+          33% { 
+            transform: translateY(-20px) translateX(10px) rotate(120deg); 
+            opacity: 1;
+          }
+          66% { 
+            transform: translateY(10px) translateX(-15px) rotate(240deg); 
+            opacity: 0.8;
+          }
+        }
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 0.1; transform: scale(1); }
+          50% { opacity: 0.3; transform: scale(1.1); }
+        }
+        @keyframes gradient-x-slow {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        .animate-gradient-x-slow { 
+          background-size: 200% 200%; 
+          animation: gradient-x-slow 8s ease infinite; 
+        }
+        .animate-gradient-x { 
+          background-size: 200% 200%; 
+          animation: gradient-x 3s ease infinite; 
+        }
+        .animate-float { 
+          animation: float 8s ease-in-out infinite; 
+        }
+        .animate-pulse-slow { 
+          animation: pulse-slow 4s ease-in-out infinite; 
+        }
+      `}</style>
     </div>
   );
 };

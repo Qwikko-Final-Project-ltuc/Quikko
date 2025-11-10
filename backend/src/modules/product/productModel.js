@@ -259,9 +259,6 @@ exports.addReview = async ({ user_id, product_id, rating, comment, sentiment }) 
   return result.rows[0];
 };
 
-/**
- * Get all reviews for a product (exclude deleted)
- */
 exports.getProductReviews = async (product_id) => {
   const result = await db.query(
     `SELECT r.*, u.name AS user_name
@@ -272,6 +269,19 @@ exports.getProductReviews = async (product_id) => {
     [product_id]
   );
   return result.rows;
+};
+
+/**
+ * Get average_rating and reviews_count from products table
+ */
+exports.getAverageRating = async (product_id) => {
+  const result = await db.query(
+    `SELECT average_rating, reviews_count
+     FROM products
+     WHERE id = $1`,
+    [product_id]
+  );
+  return result.rows[0]; // undefined لو المنتج مش موجود
 };
 
 /**

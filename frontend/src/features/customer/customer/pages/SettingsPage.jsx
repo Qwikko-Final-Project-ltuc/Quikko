@@ -18,12 +18,14 @@ import { useNavigate } from "react-router-dom";
 import { fetchProfile, deleteProfile } from "../profileSlice";
 import { fetchPayments, deletePayment } from "../paymentSlice";
 import { toggleTheme } from "../../themeSlice";
+import { Sparkles, Zap, Settings as SettingsIcon, Moon, Sun, CreditCard, Shield, AlertTriangle, Star } from "lucide-react";
 
 export default function SettingsPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [isThemeTransition, setIsThemeTransition] = useState(false);
 
   // profileSlice
   const { data: profile, loading: profileLoading } = useSelector(state => state.profile);
@@ -52,14 +54,20 @@ export default function SettingsPage() {
       setShowDeleteModal(false);
       navigate("/customer/home"); 
     } catch (err) {
-      alert("Failed to delete account: " + err.message);
+      console.log("Failed to delete account: " + err.message);
       setShowDeleteModal(false);
     }
   };
 
-  // handle theme toggle
+  // handle theme toggle with animation
   const handleThemeToggle = () => {
-    dispatch(toggleTheme());
+    setIsThemeTransition(true);
+    setTimeout(() => {
+      dispatch(toggleTheme());
+      setTimeout(() => {
+        setIsThemeTransition(false);
+      }, 300);
+    }, 200);
   };
 
   // handle password change
@@ -87,30 +95,439 @@ export default function SettingsPage() {
     }
   }, [showDeleteModal]);
 
-  if (profileLoading) return (
-    <div className="min-h-screen bg-[var(--bg)] p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-[var(--div)] rounded-lg w-48 mb-8"></div>
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-[var(--div)] rounded-2xl h-32"></div>
-          ))}
+  // Loading State - Same as other pages
+  if (profileLoading) {
+    return (
+      <div className={`min-h-screen ${theme === 'dark' ? 'bg-[var(--bg)]' : 'bg-white'} relative overflow-hidden`}>
+        {/* Animated Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[var(--button)]/5 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[var(--primary)]/5 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '2s'}}></div>
+        </div>
+        
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="relative">
+              <div className="w-20 h-20 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-2xl flex items-center justify-center mx-auto mb-6 animate-spin">
+                <Sparkles className="text-white" size={32} />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-2xl blur-lg opacity-50 animate-ping"></div>
+            </div>
+            <p className="text-[var(--text)] text-xl font-semibold bg-gradient-to-r from-[var(--text)] to-[var(--light-gray)] bg-clip-text text-transparent">
+              Loading Settings...
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] p-6">
+    <div className={`min-h-screen ${theme === 'dark' ? 'bg-[var(--bg)]' : 'bg-[var(--textbox)]'} transition-all duration-500 relative overflow-hidden`}>
+      
+      {/* Animated Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 left-0 w-96 h-96 bg-[var(--button)]/5 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute bottom-0 right-0 w-80 h-80 bg-[var(--primary)]/5 rounded-full blur-3xl animate-float" style={{animationDelay: '2s'}}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[var(--success)]/3 rounded-full blur-3xl animate-pulse-slow"></div>
+      </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        
+        {/* Enhanced Header Section */}
+        <div className="relative overflow-hidden mb-8">
+          
+        </div>
+
+        {/* Settings Content */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pb-12">
+          
+          {/* Profile Header Card */}
+          <div className={`rounded-3xl p-6 mb-6 shadow-2xl border-2 ${
+            theme === "dark" 
+              ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)]" 
+              : "bg-gradient-to-br from-white to-gray-50 border-gray-200"
+          } relative overflow-hidden group transform hover:-translate-y-1 transition-all duration-300`}>
+            
+            {/* Background Pattern */}
+            <div className="absolute inset-0 opacity-5">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--button)] rounded-full -translate-y-32 translate-x-32"></div>
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-[var(--primary)] rounded-full translate-y-24 -translate-x-24"></div>
+            </div>
+
+            <div className="relative flex flex-col md:flex-row items-center justify-between gap-6">
+              {/* User Info */}
+              <div className="flex items-center gap-6">
+                <div className="relative group/avatar">
+                  <div className="w-20 h-20 bg-gradient-to-br from-[var(--button)] to-[#02966a] rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-2xl transform group-hover/avatar:scale-110 transition-all duration-300 relative z-10">
+                    {profile?.name?.charAt(0)?.toUpperCase() || "U"}
+                  </div>
+                  {/* Glow Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-full blur-xl opacity-0 group-hover/avatar:opacity-30 transition-opacity duration-300"></div>
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-4 border-[var(--bg)] z-20"></div>
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-[var(--text)] to-[var(--button)] bg-clip-text text-transparent mb-2">
+                    {profile?.name}
+                  </h1>
+                  <p className={`text-base ${theme === 'dark' ? 'text-[var(--light-gray)]' : 'text-gray-600'} mb-3`}>
+                    {profile?.email}
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <span className="text-xs bg-[var(--button)]/10 text-[var(--button)] px-3 py-1 rounded-full font-medium">
+                      Premium Member
+                    </span>
+                    <span className="text-xs text-[var(--light-gray)]">
+                      Joined {new Date().getFullYear()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Edit Button */}
+              <button 
+                onClick={handleEditProfile} 
+                className="relative bg-gradient-to-r from-[var(--button)] to-[var(--primary)] text-white px-6 py-3 rounded-2xl hover:shadow-2xl transition-all duration-300 flex items-center gap-3 shadow-lg transform hover:scale-105 font-bold group/btn overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-1000"></div>
+                <FaEdit className="relative z-10 text-sm" />
+                <span className="relative z-10">Edit Profile</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Settings Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            
+            {/* Theme Toggle Section */}
+            <div className={`rounded-3xl p-6 shadow-2xl border-2 ${
+              theme === "dark" 
+                ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)]" 
+                : "bg-gradient-to-br from-white to-gray-50 border-gray-200"
+            } relative overflow-hidden group transform hover:-translate-y-1 transition-all duration-300`}>
+              
+              {/* Card Header */}
+              <div className="flex items-center justify-between mb-6 relative z-10">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[var(--primary)] to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <FaPalette className="text-white text-lg" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-[var(--text)]">Appearance</h2>
+                    <p className="text-[var(--light-gray)] text-sm">Customize your interface</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Innovative Theme Toggle */}
+              <div className={`rounded-2xl p-1 border-2 border-[var(--border)] ${
+                theme === 'dark' 
+                  ? 'bg-gradient-to-br from-gray-900 to-blue-900' 
+                  : 'bg-gradient-to-br from-blue-50 to-amber-50'
+              } relative overflow-hidden shadow-lg`}>
+                <div className="relative flex items-center justify-between p-4">
+                  {/* Current Theme Display */}
+                  <div className="flex items-center gap-4">
+                    <div className={`relative w-14 h-14 rounded-xl flex items-center justify-center shadow-2xl transform transition-all duration-500 ${
+                      theme === 'dark' 
+                        ? 'bg-gradient-to-br from-gray-800 to-blue-800 rotate-12' 
+                        : 'bg-gradient-to-br from-amber-200 to-yellow-100 -rotate-12'
+                    }`}>
+                      {theme === 'dark' ? (
+                        <>
+                          {/* Stars for Dark Mode */}
+                          <div className="absolute top-2 left-3 w-1 h-1 bg-white rounded-full animate-twinkle"></div>
+                          <div className="absolute top-4 right-2 w-0.5 h-0.5 bg-white rounded-full animate-twinkle" style={{animationDelay: '1s'}}></div>
+                          <div className="absolute bottom-3 left-2 w-0.5 h-0.5 bg-white rounded-full animate-twinkle" style={{animationDelay: '2s'}}></div>
+                          <Moon className="text-blue-300" size={20} />
+                        </>
+                      ) : (
+                        <>
+                          {/* Sun Rays */}
+                          <div className="absolute inset-0 rounded-xl bg-yellow-200/20 animate-pulse"></div>
+                          <Sun className="text-amber-600" size={20} />
+                        </>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <p className="font-bold text-[var(--text)] text-lg">
+                        {theme === 'dark' ? 'Dark Universe' : 'Light Horizon'}
+                      </p>
+                      <p className="text-sm text-[var(--light-gray)]">
+                        {theme === 'dark' ? 'Explore the cosmos' : 'Embrace the daylight'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Advanced Theme Toggle Switch */}
+                  <button 
+                    onClick={handleThemeToggle}
+                    disabled={isThemeTransition}
+                    className={`relative w-20 h-10 rounded-full transition-all duration-500 transform hover:scale-110 ${
+                      theme === 'dark' 
+                        ? 'bg-gradient-to-r from-blue-600 to-purple-600' 
+                        : 'bg-gradient-to-r from-amber-400 to-orange-400'
+                    } shadow-2xl border-2 ${
+                      theme === 'dark' ? 'border-blue-400' : 'border-amber-300'
+                    } group/switch overflow-hidden`}
+                  >
+                    {/* Animated Background */}
+                    <div className={`absolute inset-0 rounded-full transition-all duration-500 ${
+                      theme === 'dark' 
+                        ? 'bg-gradient-to-r from-blue-700 to-purple-700' 
+                        : 'bg-gradient-to-r from-amber-300 to-orange-300'
+                    }`}></div>
+                    
+                    {/* Cosmic/Light Effects */}
+                    <div className={`absolute inset-0 rounded-full opacity-0 group-hover/switch:opacity-100 transition-opacity duration-300 ${
+                      theme === 'dark' 
+                        ? 'bg-gradient-to-r from-blue-400/30 to-purple-400/30' 
+                        : 'bg-gradient-to-r from-amber-200/50 to-orange-200/50'
+                    }`}></div>
+
+                    {/* Toggle Knob */}
+                    <div className={`absolute top-1 w-8 h-8 rounded-full transition-all duration-500 transform ${
+                      theme === 'dark' 
+                        ? 'left-10 bg-gradient-to-br from-gray-300 to-white shadow-lg' 
+                        : 'left-2 bg-gradient-to-br from-yellow-100 to-amber-200 shadow-lg'
+                    } flex items-center justify-center`}>
+                      {/* Inner Icon */}
+                      <div className={`transition-all duration-300 ${
+                        theme === 'dark' 
+                          ? 'text-blue-600 scale-100' 
+                          : 'text-amber-600 scale-100'
+                      }`}>
+                        {theme === 'dark' ? (
+                          <Star size={12} className="animate-float" />
+                        ) : (
+                          <Sparkles size={12} className="animate-pulse" />
+                        )}
+                      </div>
+                      
+                      {/* Glow Effect */}
+                      <div className={`absolute inset-0 rounded-full animate-pulse ${
+                        theme === 'dark' 
+                          ? 'bg-blue-400/20' 
+                          : 'bg-amber-400/20'
+                      }`}></div>
+                    </div>
+
+                    {/* Background Elements */}
+                    <div className={`absolute inset-0 rounded-full overflow-hidden ${
+                      theme === 'dark' ? 'opacity-20' : 'opacity-10'
+                    }`}>
+                      {theme === 'dark' ? (
+                        <>
+                          {/* Stars */}
+                          <div className="absolute top-1 left-3 w-1 h-1 bg-white rounded-full animate-twinkle"></div>
+                          <div className="absolute bottom-2 right-4 w-0.5 h-0.5 bg-white rounded-full animate-twinkle" style={{animationDelay: '0.5s'}}></div>
+                          <div className="absolute top-3 right-2 w-0.5 h-0.5 bg-white rounded-full animate-twinkle" style={{animationDelay: '1s'}}></div>
+                        </>
+                      ) : (
+                        <>
+                          {/* Sun Flares */}
+                          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-transparent via-yellow-200/10 to-transparent animate-rotate"></div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Hover Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover/switch:translate-x-[100%] transition-transform duration-1000"></div>
+                  </button>
+                </div>
+
+                {/* Theme Description */}
+                <div className={`px-4 pb-3 text-center ${
+                  theme === 'dark' ? 'text-blue-200' : 'text-amber-600'
+                } text-xs font-medium`}>
+                  {theme === 'dark' 
+                    ? '🌙 Cosmic night mode activated' 
+                    : '☀️ Solar day mode active'
+                  }
+                </div>
+              </div>
+
+              {/* Theme Features */}
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <div className={`text-center p-3 rounded-xl border ${
+                  theme === 'dark' 
+                    ? 'bg-blue-500/10 border-blue-500/20 text-blue-300' 
+                    : 'bg-amber-500/10 border-amber-500/20 text-amber-600'
+                }`}>
+                  <div className="text-xs font-semibold">
+                    {theme === 'dark' ? '🌌 Easy on Eyes' : '☀️ Energy Boost'}
+                  </div>
+                </div>
+                <div className={`text-center p-3 rounded-xl border ${
+                  theme === 'dark' 
+                    ? 'bg-purple-500/10 border-purple-500/20 text-purple-300' 
+                    : 'bg-orange-500/10 border-orange-500/20 text-orange-600'
+                }`}>
+                  <div className="text-xs font-semibold">
+                    {theme === 'dark' ? '🚀 Focus Mode' : '🎯 Clarity'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Security Section */}
+            <div className={`rounded-3xl p-6 shadow-2xl border-2 ${
+              theme === "dark" 
+                ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)]" 
+                : "bg-gradient-to-br from-white to-gray-50 border-gray-200"
+            } relative overflow-hidden group transform hover:-translate-y-1 transition-all duration-300`}>
+              
+              {/* Card Header */}
+              <div className="flex items-center gap-3 mb-6 relative z-10">
+                <div className="w-12 h-12 bg-gradient-to-br from-[var(--success)] to-green-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Shield className="text-white text-lg" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-[var(--text)]">Security</h2>
+                  <p className="text-[var(--light-gray)] text-sm">Protect your account</p>
+                </div>
+              </div>
+
+              {/* Security Options */}
+              <div className="space-y-4 relative z-10">
+                <div 
+                  className={`flex items-center justify-between p-4 rounded-xl border-2 border-[var(--border)] hover:border-[var(--success)] transition-all duration-200 cursor-pointer group ${
+                    theme === 'dark' ? 'bg-[var(--div)]' : 'bg-[var(--textbox)]'
+                  } transform hover:-translate-y-1`}
+                  onClick={handleChangePassword}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-[var(--success)]/20 rounded-lg flex items-center justify-center">
+                      <FaKey className="text-[var(--success)]" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-[var(--text)]">Change Password</p>
+                      <p className="text-sm text-[var(--light-gray)]">Update your password regularly</p>
+                    </div>
+                  </div>
+                  <FaChevronRight className="text-[var(--light-gray)] group-hover:text-[var(--success)] group-hover:translate-x-1 transition-all duration-200" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Payment Methods Section */}
+          <div className={`rounded-3xl p-6 shadow-2xl border-2 ${
+            theme === "dark" 
+              ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)]" 
+              : "bg-gradient-to-br from-white to-gray-50 border-gray-200"
+          } relative overflow-hidden group transform hover:-translate-y-1 transition-all duration-300 mb-8`}>
+            
+            {/* Card Header */}
+            <div className="flex items-center justify-between mb-6 relative z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-[var(--primary)] to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <CreditCard className="text-white text-lg" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-[var(--text)]">Payment Methods</h2>
+                  <p className="text-[var(--light-gray)] text-sm">Manage your saved payment cards</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Cards */}
+            <div className="space-y-4 relative z-10">
+              {visaCards.length === 0 ? (
+                <div className={`text-center py-8 border-2 border-dashed border-[var(--border)] rounded-xl hover:border-[var(--button)] transition-colors duration-200 ${
+                  theme === 'dark' ? 'bg-[var(--div)]' : 'bg-[var(--textbox)]'
+                } transform hover:scale-105 transition-all duration-300`}>
+                  <CreditCard className="text-[var(--light-gray)] text-4xl mx-auto mb-4" />
+                  <p className="text-[var(--light-gray)] font-medium mb-2">No payment methods saved</p>
+                  <p className="text-sm text-[var(--light-gray)]">Add a card to get started</p>
+                </div>
+              ) : (
+                visaCards.map((p, idx) => (
+                  <div key={idx} className={`flex items-center justify-between p-4 rounded-xl border-2 border-[var(--border)] hover:border-[var(--button)] transition-all duration-200 group ${
+                    theme === 'dark' ? 'bg-[var(--div)]' : 'bg-[var(--textbox)]'
+                  } transform hover:-translate-y-1`}>
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-[var(--button)] to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <CreditCard className="text-white text-lg" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-[var(--text)] flex items-center gap-2">
+                          {p.card_brand} •••• {p.card_last4}
+                          <span className="text-xs bg-[var(--success)]/20 text-[var(--success)] px-2 py-1 rounded-full">Default</span>
+                        </p>
+                        <p className="text-sm text-[var(--light-gray)]">Expires 12/2025</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => dispatch(deletePayment(p.id))}
+                      className="flex items-center gap-2 px-3 py-2 text-[var(--error)] hover:bg-[var(--error)]/10 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100 transform hover:scale-105"
+                    >
+                      <FaTrash className="text-sm" /> Remove
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Delete Account Section */}
+          <div className={`rounded-3xl p-6 shadow-2xl border-2 ${
+            theme === "dark" 
+              ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--error)]/30" 
+              : "bg-gradient-to-br from-white to-gray-50 border-red-200"
+          } relative overflow-hidden group transform hover:-translate-y-1 transition-all duration-300`}>
+            
+            {/* Card Header */}
+            <div className="flex items-center gap-3 mb-6 relative z-10">
+              <div className="w-12 h-12 bg-gradient-to-br from-[var(--error)] to-red-600 rounded-xl flex items-center justify-center shadow-lg">
+                <AlertTriangle className="text-white text-lg" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-[var(--text)]">Danger Zone</h2>
+                <p className="text-[var(--light-gray)] text-sm">Irreversible actions</p>
+              </div>
+            </div>
+
+            {/* Delete Account Card */}
+            <div className={`rounded-xl p-5 border-2 border-[var(--error)]/30 ${
+              theme === 'dark' ? 'bg-[var(--error)]/5' : 'bg-red-50'
+            } hover:border-[var(--error)]/50 transition-colors duration-200 relative z-10`}>
+              <div className="flex items-start gap-3">
+                <FaUserSlash className="text-[var(--error)] mt-1 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="font-bold text-[var(--text)] mb-2">Delete Account</h3>
+                  <p className="text-[var(--light-gray)] text-sm mb-4 leading-relaxed">
+                    Once you delete your account, all your data will be permanently removed. This action cannot be undone.
+                  </p>
+                  <button 
+                    onClick={() => setShowDeleteModal(true)} 
+                    className="relative bg-gradient-to-br from-[var(--error)] to-red-600 text-white px-6 py-3 rounded-xl hover:shadow-xl transition-all duration-200 font-medium w-full flex items-center justify-center gap-3 transform hover:scale-105 group/delete overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover/delete:translate-x-[100%] transition-transform duration-1000"></div>
+                    <FaUserSlash className="relative z-10" />
+                    <span className="relative z-10">Delete My Account</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Delete Account Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-[var(--bg)] rounded-2xl shadow-2xl max-w-md w-full border border-[var(--error)]/30 animate-scale-in">
+          <div className={`rounded-2xl shadow-2xl max-w-md w-full border-2 ${
+            theme === 'dark' ? 'bg-[var(--bg)] border-[var(--error)]/30' : 'bg-white border-red-200'
+          } animate-scale-in`}>
+            
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-[var(--border)]">
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-[var(--error)] to-red-600 rounded-xl flex items-center justify-center">
-                  <FaExclamationTriangle className="text-white text-lg" />
+                  <AlertTriangle className="text-white text-lg" />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-[var(--text)]">Delete Account</h3>
@@ -127,8 +544,8 @@ export default function SettingsPage() {
 
             {/* Modal Body */}
             <div className="p-6">
-              <div className="flex items-start space-x-3 mb-6">
-                <FaExclamationTriangle className="text-[var(--error)] mt-1 flex-shrink-0 text-xl" />
+              <div className="flex items-start gap-3 mb-6">
+                <AlertTriangle className="text-[var(--error)] mt-1 flex-shrink-0 text-xl" />
                 <div>
                   <h4 className="font-semibold text-[var(--text)] mb-2">Are you absolutely sure?</h4>
                   <p className="text-[var(--light-gray)] text-sm leading-relaxed">
@@ -138,28 +555,20 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="bg-[var(--div)] border border-[var(--border)] rounded-xl p-4 mb-6">
+              <div className={`border border-[var(--border)] rounded-xl p-4 mb-6 ${
+                theme === 'dark' ? 'bg-[var(--div)]' : 'bg-gray-50'
+              }`}>
                 <h5 className="font-medium text-[var(--text)] mb-2 flex items-center">
-                  <FaExclamationTriangle className="text-[var(--error)] mr-2 text-sm" />
+                  <AlertTriangle className="text-[var(--error)] mr-2 text-sm" />
                   What will be deleted:
                 </h5>
                 <ul className="text-[var(--light-gray)] text-sm space-y-1">
-                  <li className="flex items-center">
-                    <div className="w-1 h-1 bg-[var(--error)] rounded-full mr-2"></div>
-                    Your profile information
-                  </li>
-                  <li className="flex items-center">
-                    <div className="w-1 h-1 bg-[var(--error)] rounded-full mr-2"></div>
-                    All your orders and order history
-                  </li>
-                  <li className="flex items-center">
-                    <div className="w-1 h-1 bg-[var(--error)] rounded-full mr-2"></div>
-                    Saved payment methods
-                  </li>
-                  <li className="flex items-center">
-                    <div className="w-1 h-1 bg-[var(--error)] rounded-full mr-2"></div>
-                    Wishlist and preferences
-                  </li>
+                  {["Your profile information", "All your orders and order history", "Saved payment methods", "Wishlist and preferences"].map((item, index) => (
+                    <li key={index} className="flex items-center">
+                      <div className="w-1 h-1 bg-[var(--error)] rounded-full mr-2"></div>
+                      {item}
+                    </li>
+                  ))}
                 </ul>
               </div>
 
@@ -173,22 +582,24 @@ export default function SettingsPage() {
                   placeholder="DELETE"
                   value={deleteConfirmation}
                   onChange={(e) => setDeleteConfirmation(e.target.value)}
-                  className="w-full p-3 border border-[var(--border)] rounded-lg bg-[var(--textbox)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--error)]/50 focus:border-[var(--error)] transition-all duration-200 font-mono text-center"
+                  className={`w-full p-3 border-2 border-[var(--border)] rounded-lg ${
+                    theme === 'dark' ? 'bg-[var(--textbox)]' : 'bg-white'
+                  } text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--error)]/50 focus:border-[var(--error)] transition-all duration-200 font-mono text-center`}
                 />
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="flex space-x-3 p-6 border-t border-[var(--border)]">
+            <div className="flex gap-3 p-6 border-t border-[var(--border)]">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 px-4 py-3 border border-[var(--border)] text-[var(--text)] rounded-xl hover:bg-[var(--hover)] transition-all duration-200 font-medium"
+                className="flex-1 px-4 py-3 border-2 border-[var(--border)] text-[var(--text)] rounded-xl hover:bg-[var(--hover)] transition-all duration-200 font-medium transform hover:scale-105"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteAccount}
-                className="flex-1 px-4 py-3 bg-gradient-to-br from-[var(--error)] to-red-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                className="flex-1 px-4 py-3 bg-gradient-to-br from-[var(--error)] to-red-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transform hover:scale-105 disabled:hover:scale-100"
                 disabled={deleteConfirmation !== 'DELETE'}
               >
                 <FaUserSlash />
@@ -199,207 +610,65 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* التغيير هنا: إزالة mb-20 */}
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <header className="mb-8 pt-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-[var(--button)] rounded-xl flex items-center justify-center">
-              <FaCog className="text-white text-lg" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-[var(--text)]">Settings</h1>
-              <p className="text-[var(--light-gray)] mt-1">Manage your account preferences and security</p>
-            </div>
-          </div>
-        </header>
-
-        {/* Profile Section */}
-        <section className="bg-[var(--bg)] border border-[var(--border)] rounded-2xl p-6 shadow-sm mb-6 hover:shadow-md transition-all duration-300 hover:border-[var(--button)]/30">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <div className="w-16 h-16 bg-gradient-to-br from-[var(--button)] to-emerald-700 rounded-2xl flex items-center justify-center shadow-lg">
-                  <FaUser className="text-white text-2xl" />
-                </div>
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-[var(--success)] rounded-full border-2 border-[var(--bg)] flex items-center justify-center">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                </div>
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-[var(--text)]">{profile?.name}</h2>
-                <p className="text-[var(--light-gray)]">{profile?.email}</p>
-                <div className="flex items-center gap-4 mt-2">
-                  <span className="text-xs bg-[var(--button)]/10 text-[var(--button)] px-2 py-1 rounded-full font-medium">
-                    Premium Member
-                  </span>
-                  <span className="text-xs text-[var(--light-gray)]">
-                    Joined {new Date().getFullYear()}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <button 
-              onClick={handleEditProfile} 
-              className="flex items-center gap-3 px-5 py-3 bg-[var(--button)] text-white rounded-xl hover:bg-[var(--button)]/90 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 group"
-            >
-              <FaEdit className="text-sm" /> 
-              Edit Profile
-              <FaChevronRight className="text-xs opacity-70 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-        </section>
-
-        {/* Settings Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Theme Toggle Section */}
-          <section className="bg-[var(--bg)] border border-[var(--border)] rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:border-[var(--primary)]/30">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-[var(--primary)] to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <FaPalette className="text-white text-lg" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-[var(--text)]">Appearance</h3>
-                  <p className="text-[var(--light-gray)] text-sm">Customize your interface</p>
-                </div>
-              </div>
-            </div>
-            <div className={`flex items-center justify-between p-4 rounded-xl border border-[var(--border)] ${
-              theme === 'dark' ? 'bg-[var(--div)]' : 'bg-[var(--textbox)]'
-            }`}>
-              <div>
-                <p className="font-medium text-[var(--text)]">Theme</p>
-                <p className="text-sm text-[var(--light-gray)]">{theme === 'light' ? 'Light Mode' : 'Dark Mode'}</p>
-              </div>
-              <button 
-                onClick={handleThemeToggle}
-                className="px-6 py-2 bg-[var(--bg)] text-[var(--text)] rounded-lg border border-[var(--border)] hover:bg-[var(--hover)] hover:border-[var(--primary)] transition-all duration-200 font-medium shadow-sm hover:shadow-md"
-              >
-                Switch
-              </button>
-            </div>
-          </section>
-
-          {/* Security Section */}
-          <section className="bg-[var(--bg)] border border-[var(--border)] rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:border-[var(--success)]/30">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-[var(--success)] to-green-600 rounded-xl flex items-center justify-center shadow-lg">
-                <FaShieldAlt className="text-white text-lg" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-[var(--text)]">Security</h2>
-                <p className="text-[var(--light-gray)]">Protect your account</p>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <div 
-                className={`flex items-center justify-between p-4 rounded-xl border border-[var(--border)] hover:border-[var(--success)] transition-all duration-200 cursor-pointer group ${
-                  theme === 'dark' ? 'bg-[var(--div)] hover:bg-[var(--div)]/80' : 'bg-[var(--textbox)] hover:bg-[var(--textbox)]/80'
-                }`}
-                onClick={handleChangePassword}
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-[var(--success)]/20 rounded-lg flex items-center justify-center">
-                    <FaKey className="text-[var(--success)]" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-[var(--text)]">Change Password</p>
-                    <p className="text-sm text-[var(--light-gray)]">Update your password regularly</p>
-                  </div>
-                </div>
-                <FaChevronRight className="text-[var(--light-gray)] group-hover:text-[var(--success)] group-hover:translate-x-1 transition-all duration-200" />
-              </div>
-            </div>
-          </section>
-        </div>
-
-        {/* Cards Section */}
-        <section className="bg-[var(--bg)] border border-[var(--border)] rounded-2xl p-6 shadow-sm mb-6 hover:shadow-md transition-all duration-300 hover:border-[var(--primary)]/30">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-[var(--primary)] to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                <FaCreditCard className="text-white text-lg" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-[var(--text)]">Payment Methods</h2>
-                <p className="text-[var(--light-gray)]">Manage your saved payment cards</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4 p-4">
-            {visaCards.length === 0 ? (
-              <div className={`text-center py-8 border-2 border-dashed border-[var(--border)] rounded-xl hover:border-[var(--button)] transition-colors duration-200 pt-4 ${
-                theme === 'dark' ? 'bg-[var(--div)]' : 'bg-[var(--textbox)]'
-              }`}>
-                <FaCreditCard className="text-[var(--light-gray)] text-6xl mx-auto m-4" />
-                <p className="text-[var(--light-gray)] mb-2">No payment methods saved</p>
-                <p className="text-sm text-[var(--light-gray)] mb-4">Add a card to get started</p>
-              </div>
-            ) : (
-              visaCards.map((p, idx) => (
-                <div key={idx} className={`flex items-center justify-between p-4 rounded-xl border border-[var(--border)] hover:border-[var(--button)] hover:shadow-sm transition-all duration-200 group ${
-                  theme === 'dark' ? 'bg-[var(--div)]' : 'bg-[var(--textbox)]'
-                }`}>
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-[var(--button)] to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
-                      <FaCreditCard className="text-white text-lg" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-[var(--text)] flex items-center gap-2">
-                        {p.card_brand} •••• {p.card_last4}
-                        <span className="text-xs bg-[var(--success)]/20 text-[var(--success)] px-2 py-1 rounded-full">Default</span>
-                      </p>
-                      <p className="text-sm text-[var(--light-gray)]">Expires 12/2025</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => dispatch(deletePayment(p.id))}
-                    className="flex items-center gap-2 px-3 py-2 text-[var(--error)] hover:bg-[var(--error)]/10 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100"
-                  >
-                    <FaTrash /> Remove
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-
-        {/* Delete Account Section */}
-        <section className="bg-[var(--bg)] border border-[var(--error)]/20 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:border-[var(--error)]/40">
-          <div className="flex items-center space-x-3 pb-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-[var(--error)] to-red-600 rounded-xl flex items-center justify-center shadow-lg">
-              <FaExclamationTriangle className="text-white text-lg" />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold text-[var(--text)]">Danger Zone</h2>
-              <p className="text-[var(--light-gray)]">Irreversible actions</p>
-            </div>
-          </div>
-          
-          <div className="bg-[var(--error)]/5 border border-[var(--error)]/20 rounded-xl p-5 pb-6 hover:border-[var(--error)]/40 transition-colors duration-200">
-            <div className="flex items-start space-x-3">
-              <FaUserSlash className="text-[var(--error)] mt-1 flex-shrink-0" />
-              <div className="flex-1">
-                <h3 className="font-semibold text-[var(--text)] mb-2">Delete Account</h3>
-                <p className="text-[var(--light-gray)] text-sm mb-4 leading-relaxed">
-                  Once you delete your account, all your data will be permanently removed. This action cannot be undone.
-                </p>
-                <button 
-                  onClick={() => setShowDeleteModal(true)} 
-                  className="flex items-center gap-3 bg-gradient-to-br from-[var(--error)] to-red-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-200 font-medium w-full justify-center hover:scale-105"
-                >
-                  <FaUserSlash /> Delete My Account
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-        <div className="h-20 bg-[var(--bg)]"></div>
-
-      </div>
+      <style jsx>{`
+        @keyframes gradient-x {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        @keyframes float {
+          0%, 100% { 
+            transform: translateY(0px) translateX(0px) rotate(0deg); 
+            opacity: 0.7;
+          }
+          33% { 
+            transform: translateY(-20px) translateX(10px) rotate(120deg); 
+            opacity: 1;
+          }
+          66% { 
+            transform: translateY(10px) translateX(-15px) rotate(240deg); 
+            opacity: 0.8;
+          }
+        }
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 0.1; transform: scale(1); }
+          50% { opacity: 0.3; transform: scale(1.1); }
+        }
+        @keyframes gradient-x-slow {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        @keyframes scale-in {
+          0% { transform: scale(0.9); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.2; }
+          50% { opacity: 1; }
+        }
+        @keyframes rotate {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .animate-gradient-x-slow { 
+          background-size: 200% 200%; 
+          animation: gradient-x-slow 8s ease infinite; 
+        }
+        .animate-float { 
+          animation: float 8s ease-in-out infinite; 
+        }
+        .animate-pulse-slow { 
+          animation: pulse-slow 4s ease-in-out infinite; 
+        }
+        .animate-scale-in { 
+          animation: scale-in 0.2s ease-out; 
+        }
+        .animate-twinkle { 
+          animation: twinkle 3s ease-in-out infinite; 
+        }
+        .animate-rotate { 
+          animation: rotate 10s linear infinite; 
+        }
+      `}</style>
     </div>
   );
 }

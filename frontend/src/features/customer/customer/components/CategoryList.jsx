@@ -2,47 +2,39 @@ import React from "react";
 import { useSelector } from "react-redux";
 
 const CategoryList = ({ categories, selectedCategories, onToggle }) => {
-  // جلب الثيم مباشرة من الـ Redux
   const themeMode = useSelector((state) => state.customerTheme.mode);
 
-  // دالة لتحديد الكلاسات حسب الثيم
   const getCategoryClasses = (isSelected) => {
     if (isSelected) {
-      return "bg-[var(--button)] text-white border-[var(--button)] shadow-md";
+      return "px-3 py-1.5 bg-[var(--button)] text-white rounded-md text-sm font-medium transition-colors border border-[var(--button)]";
     }
     
-    // حسب الثيم الحالي
-    if (themeMode === 'light') {
-      return "bg-[var(--textbox)] text-[var(--text)] border-[var(--border)] hover:bg-[var(--hover)] hover:border-[var(--button)]";
-    } else {
-      return "bg-[var(--div)] text-[var(--text)] border-[var(--border)] hover:bg-[var(--hover)] hover:border-[var(--button)]";
-    }
+    return `px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
+      themeMode === 'light' 
+        ? 'bg-white text-gray-700 border-gray-300 hover:border-[var(--button)] hover:bg-gray-50' 
+        : 'bg-[var(--div)] text-[var(--text)] border-[var(--border)] hover:border-[var(--button)] hover:bg-[var(--hover)]'
+    }`;
   };
 
-  if (!categories || categories.length === 0)
-    return (
-      <div className="text-center py-4">
-        <p className="text-[var(--light-gray)] text-sm">No categories found</p>
-      </div>
-    );
+  if (!categories || categories.length === 0) {
+    return null;
+  }
 
   return (
-    <div className="flex flex-wrap gap-2 justify-center">
-      {/* All Categories Button */}
+    <div className="flex flex-wrap gap-1.5 justify-center">
       <button
         key="all"
         onClick={() => onToggle({ id: "all" })}
-        className={`px-4 py-2 rounded-full border font-medium transition-all duration-200 hover:scale-102 relative z-10 ${getCategoryClasses(selectedCategories.length === 0)}`}
+        className={getCategoryClasses(selectedCategories.length === 0)}
       >
         All
       </button>
 
-      {/* Category Buttons */}
       {categories.map((cat) => (
         <button
           key={cat.id}
           onClick={() => onToggle(cat)}
-          className={`px-4 py-2 rounded-full  font-medium transition-all duration-200 hover:scale-102 relative z-10 ${getCategoryClasses(selectedCategories.includes(cat.id))}`}
+          className={getCategoryClasses(selectedCategories.includes(cat.id))}
         >
           {cat.name}
         </button>

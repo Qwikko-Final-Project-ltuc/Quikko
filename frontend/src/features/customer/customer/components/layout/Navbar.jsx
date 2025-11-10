@@ -57,12 +57,31 @@ const Navbar = () => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const themeMode = useSelector((state) => state.customerTheme.mode);
 
   const cities = [
     "Amman", "Zarqa", "Irbid", "Aqaba", "Mafraq", "Jerash", 
     "Madaba", "Karak", "Tafilah", "Ma'an", "Ajloun",
   ];
+
+  const handleSidebarLinkClick = () => {
+    setIsSidebarOpen(false);
+  };
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+      if (window.innerWidth >= 1024) {
+        setShowMobileSearch(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Fetch unread messages count when component mounts and user is logged in
   useEffect(() => {
@@ -164,6 +183,7 @@ const Navbar = () => {
     setSearchTerm(productName);
     setResults([]);
     setSearchOpen(false);
+    setShowMobileSearch(false);
     dispatch(setSearchQuery(productName));
     navigate("/customer/products");
   };
@@ -279,14 +299,14 @@ const Navbar = () => {
       {/* Sidebar */}
       <div
         ref={sidebarRef}
-        className={`fixed top-0 left-0 h-full w-64 bg-[var(--bg)] shadow-xl transform transition-transform duration-300 z-50 flex flex-col
-          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
-      >
+        className={`fixed top-0 left-0 h-full w-60 lg:w-64 bg-[var(--bg)] shadow-xl transform transition-transform duration-300 z-50 flex flex-col
+    ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+>
         <div className="px-6 py-4 flex items-center border-b border-[var(--border)]">
           <img 
             src={themeMode === "dark" ? "/LogoDark.png" : "/logo.png"} 
             alt="Qwikko Logo" 
-            className="h-9 mt-3" 
+            className="h-7 mt-3" 
           />
         </div>
 
@@ -294,64 +314,70 @@ const Navbar = () => {
         <nav className="flex-1 flex flex-col mt-4 space-y-1">
           <Link
             to="/customer/home"
-            className="flex font-medium items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200"
+            className="flex items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200 text-sm md:text-base"
+            onClick={handleSidebarLinkClick}
           >
-            <FaBars className="mr-3" /> Home
+            <FaBars className="mr-3 text-sm" /> Home
           </Link>
 
           {isLoggedIn && (
             <>
               <Link
                 to="/customer/profile"
-                className="flex font-medium items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200"
+                className="flex items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200 text-sm md:text-base"
+                onClick={handleSidebarLinkClick}
               >
-                <FaUser className="mr-3" /> Profile
+                <FaUser className="mr-3 text-sm" /> Profile
               </Link>
 
               <Link
                 to="/customer/orders"
-                className="flex font-medium items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200"
+                className="flex items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200 text-sm md:text-base"
+                onClick={handleSidebarLinkClick}
               >
-                <FaClipboardList className="mr-3" /> Orders
+                <FaClipboardList className="mr-3 text-sm" /> Orders
               </Link>
 
               <Link
                 to="/customer/wishlist"
-                className="flex font-medium items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200"
+                className="flex items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200 text-sm md:text-base"
+                onClick={handleSidebarLinkClick}
               >
-                <MdFavorite className="mr-3" /> Wishlist
+                <MdFavorite className="mr-3 text-sm" /> Wishlist
               </Link>
-
-              
             </>
           )}
 
           <Link
             to="/customer/products"
-            className="flex font-medium items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200"
+            className="flex items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200 text-sm md:text-base"
+            onClick={handleSidebarLinkClick}
           >
-            <FaBoxOpen className="mr-3" /> All Products
+            <FaBoxOpen className="mr-3 text-sm" /> All Products
           </Link>
 
           <Link
             to="/customer/stores"
-            className="flex font-medium items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200"
+            className="flex items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200 text-sm md:text-base"
+            onClick={handleSidebarLinkClick}
           >
-            <FaStore className="mr-3" /> Stores
+            <FaStore className="mr-3 text-sm" /> Stores
           </Link>
 
           <Link
             to="/customer/contact"
-            className="flex font-medium items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200"
+            className="flex items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200 text-sm md:text-base"
+            onClick={handleSidebarLinkClick}
           >
-            <FaPhone className="mr-3" /> Contact
+            <FaPhone className="mr-3 text-sm" /> Contact
           </Link>
 
           <Link
             to="/customer/about"
-            className="flex font-medium items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200"
+            className="flex items-center px-6 py-3 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200 text-sm md:text-base"
+            onClick={handleSidebarLinkClick}
           >
-            <FaInfoCircle className="mr-3" /> About
+            <FaInfoCircle className="mr-3 text-sm" /> About
           </Link>
         </nav>
 
@@ -359,23 +385,25 @@ const Navbar = () => {
           {!isLoggedIn ? (
             <Link
               to="/customer/login"
-              className="flex font-medium items-center px-4 py-2 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200"
+              className="flex items-center px-4 py-2 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200 text-sm md:text-base"
+              onClick={handleSidebarLinkClick}
             >
-              <FaSignOutAlt className="mr-3" /> Login
+              <FaSignOutAlt className="mr-3 text-sm" /> Login
             </Link>
           ) : (
             <>
               <Link
                 to="/customer/settings"
-                className="flex font-medium items-center px-4 py-2 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200"
+                className="flex items-center px-4 py-2 text-[var(--text)] hover:bg-[var(--hover)] rounded-lg transition-colors duration-200 text-sm md:text-base"
+                onClick={handleSidebarLinkClick}
               >
-                <FaCog className="mr-3" /> Settings
+                <FaCog className="mr-3 text-sm" /> Settings
               </Link>
               <button
                 onClick={handleLogout}
-                className="flex font-medium items-center w-full text-left px-4 py-2 text-[var(--error)] hover:bg-[var(--error)] hover:text-white rounded-lg transition-colors duration-200"
+                className="flex items-center w-full text-left px-4 py-2 text-[var(--error)] hover:bg-[var(--error)] hover:text-white rounded-lg transition-colors duration-200 text-sm md:text-base"
               >
-                <FaSignOutAlt className="mr-3" /> Logout
+                <FaSignOutAlt className="mr-3 text-sm" /> Logout
               </button>
             </>
           )}
@@ -383,33 +411,34 @@ const Navbar = () => {
       </div>
 
       {/* Navbar */}
-      <nav className={`w-full sticky shadow-md flex items-center px-6 py-3 z-40 relative ${
+      <nav className={`w-full sticky shadow-md flex items-center px-4 lg:px-6 py-3.5 z-40 relative ${
         themeMode === 'dark' ? 'bg-[var(--div)]' : "bg-gradient-to-br from-[var(--button)] to-gray-700" 
       }`}>
         <button
           onClick={toggleSidebar}
-          className="mr-6 text-[var(--textbox)] transition-colors duration-200 sidebar-toggle-button"
+          className="mr-4 lg:mr-6 text-[var(--textbox)] transition-colors duration-200 sidebar-toggle-button"
         >
-          <FaBars size={22} />
+          <FaBars size={isMobile ? 20 : 22} />
         </button>
 
         {/* Logo */}
-        <Link to="/customer/home" className="mr-8 flex items-center">
+        <Link to="/customer/home" className="mr-4 lg:mr-8 flex items-center">
           <img 
             src={themeMode === "dark" ? "/LogoDark.png" : "/LogoDark.png"} 
             alt="Qwikko Logo" 
-            className="h-9" 
+            className="h-7 lg:h-8" 
           />
         </Link>
 
-        {/* Deliver to */}
-        {isLoggedIn && (
-          <div className="relative flex items-center mr-8" ref={dropdownRef}>
+        {/* Deliver to - Hidden on mobile */}
+        {isLoggedIn && !isMobile && (
+          <div className="relative flex items-center mr-4 lg:mr-8" ref={dropdownRef}>
             <div
               className="flex items-center space-x-2 cursor-pointer select-none"
               onClick={() => setIsOpen(!isOpen)}
             >
               <FaMapMarkerAlt className="text-[var(--error)] text-lg" />
+              
               <div className="flex flex-col">
                 <span className="text-xs text-[var(--light-gray)] font-medium uppercase tracking-wide">
                   Deliver to
@@ -444,55 +473,67 @@ const Navbar = () => {
           </div>
         )}
 
-        {/* Search Bar */}
-        <div
-          ref={searchDropdownRef}
-          className="flex-1 flex items-center mr-8 relative"
-        >
-          <input
-            type="text"
-            placeholder="Search products..."
-            className="w-full border border-[var(--border)] rounded-lg px-4 py-2 bg-[var(--textbox)] text-[var(--mid-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--hover)]"
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setSearchOpen(true);
-            }}
-          />
-          <button
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[var(--mid-dark)] hover:text-[var(--hover)] transition-colors duration-200"
-            onClick={() => handleSearchSelect(searchTerm)}
+        {/* Search Bar - Desktop */}
+        {!isMobile && (
+          <div
+            ref={searchDropdownRef}
+            className="flex-1 flex items-center mr-4 lg:mr-8 relative"
           >
-            <FaSearch size={16} />
-          </button>
+            <input
+              type="text"
+              placeholder="Search products..."
+              className="w-full border border-[var(--border)] rounded-lg px-4 py-2 bg-[var(--textbox)] text-[var(--mid-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--hover)]"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setSearchOpen(true);
+              }}
+            />
+            <button
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[var(--mid-dark)] hover:text-[var(--hover)] transition-colors duration-200"
+              onClick={() => handleSearchSelect(searchTerm)}
+            >
+              <FaSearch size={16} />
+            </button>
 
-          {searchOpen && results.length > 0 && (
-            <div className="absolute top-full left-0 w-full bg-[var(--bg)] border border-[var(--border)] rounded-lg shadow-lg max-h-60 overflow-y-auto z-50 mt-1">
-              {results.map((item) => (
-                <div
-                  key={item.id}
-                  className="px-4 py-2 text-[var(--text)] hover:bg-[var(--hover)] cursor-pointer transition-colors duration-150"
-                  onClick={() => handleSearchSelect(item.name)}
-                >
-                  {item.name}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+            {searchOpen && results.length > 0 && (
+              <div className="absolute top-full left-0 w-full bg-[var(--bg)] border border-[var(--border)] rounded-lg shadow-lg max-h-60 overflow-y-auto z-50 mt-1">
+                {results.map((item) => (
+                  <div
+                    key={item.id}
+                    className="px-4 py-2 text-[var(--text)] hover:bg-[var(--hover)] cursor-pointer transition-colors duration-150"
+                    onClick={() => handleSearchSelect(item.name)}
+                  >
+                    {item.name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Right Icons */}
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-4 lg:space-x-6 ml-auto">
+          {/* Mobile Search Button */}
+          {isMobile && (
+            <button
+              onClick={() => setShowMobileSearch(!showMobileSearch)}
+              className="text-[var(--textbox)] transition-colors duration-200"
+            >
+              <FaSearch size={20} />
+            </button>
+          )}
+
           {isLoggedIn && (
             <>
               {/* Messages Icon */}
               <div className="relative">
                 <button
                   onClick={handleChatClick}
-                  className="text-[var(--textbox)] transition-colors duration-200 hover:text-[var(--primary)] relative"
+                  className="text-[var(--textbox)] transition-colors duration-200 relative"
                   title="Messages"
                 >
-                  <FaComments size={22} />
+                  <FaComments size={isMobile ? 20 : 22} />
                   {unreadMessagesCount > 0 && (
                     <span className="absolute -top-2 -right-2 bg-[var(--error)] text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
                       {unreadMessagesCount}
@@ -503,125 +544,261 @@ const Navbar = () => {
             </>
           )}
 
-          {/* Profile Dropdown - خارج الشرط علشان يظهر للكل */}
-          <div ref={profileDropdownRef} className="relative">
-            <button
-              className="flex items-center px-3 py-2 rounded-md text-[var(--textbox)] font-medium transition-all duration-200"
-              onClick={() => setProfileOpen((prev) => !prev)}
-            >
-              <FaUser className="mr-2" />
-              {isLoggedIn ? (loading ? "Loading..." : profile?.name || "User") : "Guest"}
-              <svg
-                className="ml-2 w-4 h-4 transition-transform duration-200"
-                style={{ transform: profileOpen ? "rotate(180deg)" : "rotate(0deg)" }}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+          {/* Profile Dropdown - Mobile */}
+          {isMobile ? (
+            <div className="relative" ref={profileDropdownRef}>
+              <button
+                className="text-[var(--textbox)] transition-colors duration-200"
+                onClick={() => setProfileOpen((prev) => !prev)}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
+                <FaUser size={20} />
+              </button>
 
-            {profileOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-[var(--bg)] border border-[var(--border)] rounded-lg shadow-lg overflow-hidden z-50">
-                {isLoggedIn ? (
-                  // للمستخدم المسجل
-                  <>
-                    <Link
-                      to="/customer/profile"
-                      className="flex items-center px-4 py-2 text-[var(--text)] transition-colors duration-200 hover:bg-[var(--hover)]"
-                      onClick={() => setProfileOpen(false)}
-                    >
-                      <FaUser className="mr-3 text-sm" />
-                      <span className="flex-1">View Profile</span>
-                    </Link>
+              {profileOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-[var(--bg)] border border-[var(--border)] rounded-lg shadow-lg overflow-hidden z-50 ">
+                  {isLoggedIn ? (
+                    // للمستخدم المسجل
+                    <>
+                      <div className="px-4 py-3 mt-3 border-b border-[var(--border)] text-[var(--text)] font-semibold bg-[var(--bg)]">
+                        {loading ? "Loading..." : profile?.name || "User"}
+                      </div>
+                      <Link
+                        to="/customer/profile"
+                        className="flex items-center px-4 py-3 text-[var(--text)] transition-colors duration-200 hover:bg-[var(--hover)]"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        <FaUser className="mr-3 text-sm" />
+                        <span className="flex-1 text-sm">View Profile</span>
+                      </Link>
 
-                    <Link
-                      to="/customer/chat"
-                      className="flex items-center px-4 py-2 text-[var(--text)] transition-colors duration-200 hover:bg-[var(--hover)] relative"
-                      onClick={() => {
-                        setProfileOpen(false);
-                        dispatch(resetUnreadCount());
-                      }}
-                    >
-                      <FaComments className="mr-3 text-sm" />
-                      <span className="flex-1">Messages</span>
-                      {unreadMessagesCount > 0 && (
-                        <span className="bg-[var(--error)] text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
-                          {unreadMessagesCount}
+                      <Link
+                        to="/customer/chat"
+                        className="flex items-center px-4 py-3 text-[var(--text)] transition-colors duration-200 hover:bg-[var(--hover)] relative"
+                        onClick={() => {
+                          setProfileOpen(false);
+                          dispatch(resetUnreadCount());
+                        }}
+                      >
+                        <FaComments className="mr-3 text-sm" />
+                        <span className="flex-1 text-sm">Messages</span>
+                        {unreadMessagesCount > 0 && (
+                          <span className="bg-[var(--error)] text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                            {unreadMessagesCount}
+                          </span>
+                        )}
+                      </Link>
+
+                      <button
+                        onClick={() => {
+                          dispatch(toggleTheme());
+                          setProfileOpen(false);
+                        }}
+                        className={`flex items-center w-full text-left px-4 py-3 transition-colors duration-200 ${
+                          themeMode === "dark"
+                            ? "bg-[var(--mid-dark)] text-[var(--text)] hover:bg-[var(--hover)]"
+                            : "bg-[var(--bg)] text-[var(--text)] hover:bg-[var(--hover)]"
+                        }`}
+                      >
+                        {themeMode === "dark" ? (
+                          <FaInfoCircle className="mr-3 text-sm" /> 
+                        ) : (
+                          <FaCog className="mr-3 text-sm" /> 
+                        )}
+                        <span className="flex-1 text-sm">
+                          {themeMode === "dark" ? "Light Mode" : "Dark Mode"}
                         </span>
-                      )}
-                    </Link>
+                      </button>
 
-                    <button
-                      onClick={() => dispatch(toggleTheme())}
-                      className={`flex items-center w-full text-left px-4 py-2 transition-colors duration-200 ${
-                        themeMode === "dark"
-                          ? "bg-[var(--mid-dark)] text-[var(--text)] hover:bg-[var(--hover)]"
-                          : "bg-[var(--bg)] text-[var(--text)] hover:bg-[var(--hover)]"
-                      }`}
-                    >
-                      {themeMode === "dark" ? (
-                        <FaInfoCircle className="mr-3 text-sm" /> 
-                      ) : (
-                        <FaCog className="mr-3 text-sm" /> 
-                      )}
-                      <span className="flex-1">
-                        {themeMode === "dark" ? "Light Mode" : "Dark Mode"}
-                      </span>
-                    </button>
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          setProfileOpen(false);
+                        }}
+                        className="flex items-center w-full text-left px-4 py-3 text-[var(--text)] transition-colors duration-200 hover:bg-[var(--error)] border-t border-[var(--border)]"
+                      >
+                        <FaSignOutAlt className="mr-3 text-sm" />
+                        <span className="flex-1 text-sm">Logout</span>
+                      </button>
+                    </>
+                  ) : (
+                    // للزائر (غير مسجل)
+                    <>
+                      <Link
+                        to="/customer/login"
+                        className="flex items-center px-4 py-3 text-[var(--text)] transition-colors duration-200 hover:bg-[var(--hover)]"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        <FaUser className="mr-3 text-sm" />
+                        <span className="flex-1 text-sm">Login</span>
+                      </Link>
 
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center w-full text-left px-4 py-2 text-[var(--text)] transition-colors duration-200 hover:bg-[var(--error)] border-t border-[var(--border)]"
-                    >
-                      <FaSignOutAlt className="mr-3 text-sm" />
-                      <span className="flex-1">Logout</span>
-                    </button>
-                  </>
-                ) : (
-                  // للزائر (غير مسجل)
-                  <>
-                    <Link
-                      to="/customer/login"
-                      className="flex items-center px-4 py-2 text-[var(--text)] transition-colors duration-200 hover:bg-[var(--hover)]"
-                      onClick={() => setProfileOpen(false)}
-                    >
-                      <FaUser className="mr-3 text-sm" />
-                      <span className="flex-1">Login</span>
-                    </Link>
+                      <Link
+                        to="/customer/signup"
+                        className="flex items-center px-4 py-3 text-[var(--text)] transition-colors duration-200 hover:bg-[var(--hover)]"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        <FaUser className="mr-3 text-sm" />
+                        <span className="flex-1 text-sm">Sign Up</span>
+                      </Link>
 
-                    <Link
-                      to="/customer/signup"
-                      className="flex items-center px-4 py-2 text-[var(--text)] transition-colors duration-200 hover:bg-[var(--hover)]"
-                      onClick={() => setProfileOpen(false)}
-                    >
-                      <FaUser className="mr-3 text-sm" />
-                      <span className="flex-1">Sign Up</span>
-                    </Link>
+                      <button
+                        onClick={() => {
+                          dispatch(toggleTheme());
+                          setProfileOpen(false);
+                        }}
+                        className={`flex items-center w-full text-left px-4 py-3 transition-colors duration-200 ${
+                          themeMode === "dark"
+                            ? "bg-[var(--mid-dark)] text-[var(--text)] hover:bg-[var(--hover)]"
+                            : "bg-[var(--bg)] text-[var(--text)] hover:bg-[var(--hover)]"
+                        }`}
+                      >
+                        {themeMode === "dark" ? (
+                          <FaInfoCircle className="mr-3 text-sm" /> 
+                        ) : (
+                          <FaCog className="mr-3 text-sm" /> 
+                        )}
+                        <span className="flex-1 text-sm">
+                          {themeMode === "dark" ? "Light Mode" : "Dark Mode"}
+                        </span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            // Desktop Profile Dropdown
+            <div className="relative" ref={profileDropdownRef}>
+              <button
+                className="flex items-center px-3 py-2 rounded-md text-[var(--textbox)] font-medium transition-all duration-200"
+                onClick={() => setProfileOpen((prev) => !prev)}
+              >
+                <FaUser className="mr-2" />
+                {isLoggedIn ? (loading ? "Loading..." : profile?.name || "User") : "Guest"}
+                <svg
+                  className="ml-2 w-4 h-4 transition-transform duration-200"
+                  style={{ transform: profileOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
 
-                    <button
-                      onClick={() => dispatch(toggleTheme())}
-                      className={`flex items-center w-full text-left px-4 py-2 transition-colors duration-200 ${
-                        themeMode === "dark"
-                          ? "bg-[var(--mid-dark)] text-[var(--text)] hover:bg-[var(--hover)]"
-                          : "bg-[var(--bg)] text-[var(--text)] hover:bg-[var(--hover)]"
-                      }`}
-                    >
-                      {themeMode === "dark" ? (
-                        <FaInfoCircle className="mr-3 text-sm" /> 
-                      ) : (
-                        <FaCog className="mr-3 text-sm" /> 
-                      )}
-                      <span className="flex-1">
-                        {themeMode === "dark" ? "Light Mode" : "Dark Mode"}
-                      </span>
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+              {profileOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-[var(--bg)] border border-[var(--border)] rounded-lg shadow-lg overflow-hidden z-50">
+                  {isLoggedIn ? (
+                    // للمستخدم المسجل
+                    <>
+                      <div className="px-4 py-3 border-b border-[var(--border)] text-[var(--text)] font-semibold bg-[var(--div)]">
+                        {loading ? "Loading..." : profile?.name || "User"}
+                      </div>
+                      <Link
+                        to="/customer/profile"
+                        className="flex items-center px-4 py-3 text-[var(--text)] transition-colors duration-200 hover:bg-[var(--hover)]"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        <FaUser className="mr-3 text-sm" />
+                        <span className="flex-1">View Profile</span>
+                      </Link>
+
+                      <Link
+                        to="/customer/chat"
+                        className="flex items-center px-4 py-3 text-[var(--text)] transition-colors duration-200 hover:bg-[var(--hover)] relative"
+                        onClick={() => {
+                          setProfileOpen(false);
+                          dispatch(resetUnreadCount());
+                        }}
+                      >
+                        <FaComments className="mr-3 text-sm" />
+                        <span className="flex-1">Messages</span>
+                        {unreadMessagesCount > 0 && (
+                          <span className="bg-[var(--error)] text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                            {unreadMessagesCount}
+                          </span>
+                        )}
+                      </Link>
+
+                      <button
+                        onClick={() => {
+                          dispatch(toggleTheme());
+                          setProfileOpen(false);
+                        }}
+                        className={`flex items-center w-full text-left px-4 py-3 transition-colors duration-200 ${
+                          themeMode === "dark"
+                            ? "bg-[var(--mid-dark)] text-[var(--text)] hover:bg-[var(--hover)]"
+                            : "bg-[var(--bg)] text-[var(--text)] hover:bg-[var(--hover)]"
+                        }`}
+                      >
+                        {themeMode === "dark" ? (
+                          <FaInfoCircle className="mr-3 text-sm" /> 
+                        ) : (
+                          <FaCog className="mr-3 text-sm" /> 
+                        )}
+                        <span className="flex-1">
+                          {themeMode === "dark" ? "Light Mode" : "Dark Mode"}
+                        </span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          setProfileOpen(false);
+                        }}
+                        className="flex items-center w-full text-left px-4 py-3 text-[var(--text)] transition-colors duration-200 hover:bg-[var(--error)] border-t border-[var(--border)]"
+                      >
+                        <FaSignOutAlt className="mr-3 text-sm" />
+                        <span className="flex-1">Logout</span>
+                      </button>
+                    </>
+                  ) : (
+                    // للزائر (غير مسجل)
+                    <>
+                      <Link
+                        to="/customer/login"
+                        className="flex items-center px-4 py-3 text-[var(--text)] transition-colors duration-200 hover:bg-[var(--hover)]"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        <FaUser className="mr-3 text-sm" />
+                        <span className="flex-1">Login</span>
+                      </Link>
+
+                      <Link
+                        to="/customer/signup"
+                        className="flex items-center px-4 py-3 text-[var(--text)] transition-colors duration-200 hover:bg-[var(--hover)]"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        <FaUser className="mr-3 text-sm" />
+                        <span className="flex-1">Sign Up</span>
+                      </Link>
+
+                      <button
+                        onClick={() => {
+                          dispatch(toggleTheme());
+                          setProfileOpen(false);
+                        }}
+                        className={`flex items-center w-full text-left px-4 py-3 transition-colors duration-200 ${
+                          themeMode === "dark"
+                            ? "bg-[var(--mid-dark)] text-[var(--text)] hover:bg-[var(--hover)]"
+                            : "bg-[var(--bg)] text-[var(--text)] hover:bg-[var(--hover)]"
+                        }`}
+                      >
+                        {themeMode === "dark" ? (
+                          <FaInfoCircle className="mr-3 text-sm" /> 
+                        ) : (
+                          <FaCog className="mr-3 text-sm" /> 
+                        )}
+                        <span className="flex-1">
+                          {themeMode === "dark" ? "Light Mode" : "Dark Mode"}
+                        </span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Cart */}
           <div className="relative">
@@ -630,7 +807,7 @@ const Navbar = () => {
               className="text-[var(--textbox)] transition-colors duration-200"
               data-cart-icon="true"
             >
-              <FaShoppingCart size={22} />
+              <FaShoppingCart size={isMobile ? 20 : 22} />
             </button>
             {cartItemCount > 0 && (
               <span className="absolute -top-2 -right-2 bg-[var(--error)] text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
@@ -651,7 +828,7 @@ const Navbar = () => {
                 }}
                 className="text-[var(--textbox)] transition-colors duration-200"
               >
-                <FaBell size={22} />
+                <FaBell size={isMobile ? 20 : 22} />
                 {unreadCount > 0 && (
                   <span className="absolute -top-2 -right-2 bg-[var(--error)] text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
                     {unreadCount}
@@ -665,7 +842,11 @@ const Navbar = () => {
                   onClick={() => setNotificationsOpen(false)}
                 >
                   <div
-                    className="bg-[var(--bg)] rounded-xl shadow-2xl w-96 max-h-[70vh] overflow-hidden absolute top-20 right-4 ml-4 border border-[var(--border)] transform transition-transform duration-300 scale-100"
+                    className={`bg-[var(--bg)] rounded-xl shadow-2xl ${
+                      isMobile ? "w-full h-full max-h-screen" : "w-96 max-h-[70vh]"
+                    } overflow-hidden ${
+                      isMobile ? "absolute top-0 left-0" : "absolute top-20 right-4 ml-4"
+                    } border border-[var(--border)] transform transition-transform duration-300 scale-100`}
                     onClick={(e) => e.stopPropagation()}
                   >
                     {/* Header */}
@@ -687,7 +868,6 @@ const Navbar = () => {
                                 .filter((n) => !n.read_status)
                                 .map((n) => n.id);
                               if (unreadIds.length === 0) return;
-
                               try {
                                 const res = await fetch(
                                   "http://localhost:3000/api/notifications/mark-read",
@@ -724,9 +904,8 @@ const Navbar = () => {
                         </div>
                       </div>
                     </div>
-
                     {/* Notifications List */}
-                    <div className="max-h-96 overflow-y-auto">
+                    <div className={`overflow-y-auto ${isMobile ? "h-[calc(100vh-120px)]" : "max-h-96"}`}>
                       {notifications.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
                           <FaBell className="text-[var(--light-gray)] text-4xl mb-4 opacity-50 pt-6" />
@@ -814,6 +993,47 @@ const Navbar = () => {
           )}
         </div>
       </nav>
+
+      {/* Mobile Search Bar - Appears when toggled */}
+      {isMobile && showMobileSearch && (
+        <div className="w-full bg-[var(--div)] px-4 py-3 border-b border-[var(--border)]">
+          <div
+            ref={searchDropdownRef}
+            className="flex items-center relative"
+          >
+            <input
+              type="text"
+              placeholder="Search products..."
+              className="w-full border border-[var(--border)] rounded-lg px-4 py-2 bg-[var(--textbox)] text-[var(--mid-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--hover)]"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setSearchOpen(true);
+              }}
+            />
+            <button
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[var(--mid-dark)] hover:text-[var(--hover)] transition-colors duration-200"
+              onClick={() => handleSearchSelect(searchTerm)}
+            >
+              <FaSearch size={16} />
+            </button>
+
+            {searchOpen && results.length > 0 && (
+              <div className="absolute top-full left-0 w-full bg-[var(--bg)] border border-[var(--border)] rounded-lg shadow-lg max-h-60 overflow-y-auto z-50 mt-1">
+                {results.map((item) => (
+                  <div
+                    key={item.id}
+                    className="px-4 py-2 text-[var(--text)] hover:bg-[var(--hover)] cursor-pointer transition-colors duration-150"
+                    onClick={() => handleSearchSelect(item.name)}
+                  >
+                    {item.name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 };
