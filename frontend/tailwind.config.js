@@ -43,3 +43,27 @@
 //     },
 //   ],
 // };
+
+
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      screens: {
+        // 📱 Mobile: 0px - 767px (default)
+        'sm': '640px',
+        // 📲 Tablet: 768px - 1023px
+        'md': '768px',
+        // 💻 Desktop: 1024px - 1279px
+        'lg': '1024px',
+        // 🖥️ Large Desktop: 1280px+
+        'xl': '1280px',
+      },
+    },
+  },
+  plugins: [],
+}

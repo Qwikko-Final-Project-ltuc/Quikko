@@ -46,29 +46,29 @@ export default function SideBar({ isOpen, onClose }) {
           isDark
             ? "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
             : "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
-        } w-65`}
+        } w-64 sm:w-65`}
     >
       {/* logo */}
       <div>
         <div
-          className={`mt-5 mr-8 px-6 py-6 flex items-center justify-center transition-colors`}
+          className={`mt-4 sm:mt-5 mr-6 sm:mr-8 px-4 sm:px-6 py-4 sm:py-6 flex items-center justify-center transition-colors`}
         >
           <img
             src={isDark ? "/LogoDark.png" : "/logo.png"}
             alt="Qwikko Logo"
-            className="h-12 w-auto"
+            className="h-10 sm:h-12 w-auto"
           />
         </div>
 
         {/* nav links */}
-        <nav className="flex flex-col space-y-2 px-4 py-4">
+        <nav className="flex flex-col space-y-1 sm:space-y-2 px-3 sm:px-4 py-2 sm:py-4">
           {links.map((link) => (
             <NavLink
               key={link.to}
               to={link.to}
               onClick={onClose}
               className={({ isActive }) =>
-                `relative group flex items-center p-2 rounded transition-colors duration-300
+                `relative group flex items-center p-2 sm:p-3 rounded-lg transition-colors duration-300
               ${
                 isActive
                   ? isDark
@@ -80,26 +80,26 @@ export default function SideBar({ isOpen, onClose }) {
               }`
               }
             >
-              <span className="text-xl">{link.icon}</span>
-              <span className="ml-3">{link.label}</span>
+              <span className="text-lg sm:text-xl">{link.icon}</span>
+              <span className="ml-2 sm:ml-3 text-sm sm:text-base">{link.label}</span>
             </NavLink>
           ))}
         </nav>
       </div>
 
       {/* logout */}
-      <div className="px-4 pb-4 mt-auto">
+      <div className="px-3 sm:px-4 pb-3 sm:pb-4 mt-auto">
         <NavLink
           to="/customer/login"
           onClick={() => {
             localStorage.removeItem("user");
             localStorage.removeItem("token");
           }}
-          className="relative group flex items-center p-2 rounded transition-colors duration-300 hover:bg-[var(--hover)]"
+          className="relative group flex items-center p-2 sm:p-3 rounded-lg transition-colors duration-300 hover:bg-[var(--hover)]"
         >
-          <FiLogOut className="text-xl" />
+          <FiLogOut className="text-lg sm:text-xl" />
           <span
-            className={`ml-3 
+            className={`ml-2 sm:ml-3 text-sm sm:text-base 
               ${isDark ? "text-[var(--text)]" : "text-[var(--text)]"}`}
           >
             Log out
