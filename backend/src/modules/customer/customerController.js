@@ -897,8 +897,9 @@ exports.submitOrderDecision = async (req, res) => {
     return res
       .status(500)
       .json({ success: false, message: err.message || "Server error" });
+  }
+};
 
-  }}
 exports.calculateDeliveryPreview = async function (req, res) {
   try {
     const userId = req.user.id;

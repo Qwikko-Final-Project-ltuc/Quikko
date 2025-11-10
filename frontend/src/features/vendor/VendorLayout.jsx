@@ -76,10 +76,10 @@ export default function VendorLayout() {
   }, [notificationsOpen, notifications]);
   
   useEffect(() => {
-  document.documentElement.classList.toggle("dark", isDarkMode);
-  localStorage.setItem("theme", isDarkMode ? "dark" : "light");
-}, [isDarkMode]);
-
+     document.documentElement.classList.toggle("dark", isDarkMode);
+     localStorage.setItem("theme", isDarkMode ? "dark" : "light");
+   }, [isDarkMode]);
+ 
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
@@ -152,7 +152,9 @@ export default function VendorLayout() {
             >
               <FaBars className={`text-2xl ${isDarkMode ? "text-white" : "text-white"}`} />
             </button>
+            <Link to="/vendor">
             <img src={logoSrc} alt="Qwikko" className="h-8" />
+            </Link>
           </div>
 
           <div className="flex items-center ml-auto space-x-1 sm:space-x-2 md:space-x-6 relative">

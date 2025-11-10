@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchOrders, fetchProducts } from "../VendorAPI2";
 import { DollarSign, ShoppingCart, Package, Bell } from "lucide-react";
+import Footer from "../Footer";
 
 const Dashboard = () => {
   const [report, setReport] = useState(null);
@@ -94,19 +95,19 @@ const Dashboard = () => {
   const iconColor = isDarkMode ? "#ffffff" : "#307A59";
 
   return (
-    <div
-      className="min-h-screen w-full"
-      style={{
-        backgroundColor: isDarkMode ? "var(--bg-dark)" : "var(--bg)",
-        color: "var(--text)",
-     padding: "3rem", }}
-    >
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-10 lg:px-12 py-6 md:py-10 space-y-10">
+  <div
+    className="flex flex-col min-h-screen"
+    style={{
+      backgroundColor: isDarkMode ? "var(--bg-dark)" : "var(--bg)",
+      color: "var(--text)",
+    }}
+  >
+    {/* المحتوى الرئيسي */}
+    <main className="flex-grow">
+      <div className="max-w-screen-xl mx-4 sm:mx-8 lg:mx-12 mt-18 mb-18 px-4 sm:px-6 md:px-10 lg:px-12 py-6 md:py-10 space-y-10">
         {/* Cards Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* كل كارد */}
-          {[
-            {
+        <div className="grid grid-cols-1  sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[{
               title: "Total Sales",
               value: `$${report?.total_sales || 0}`,
               icon: <DollarSign className="w-10 h-10" style={{ color: iconColor }} />,
@@ -129,7 +130,7 @@ const Dashboard = () => {
           ].map((card, idx) => (
             <div
               key={idx}
-              className="p-5 sm:p-6 rounded-2xl shadow flex flex-col sm:flex-row items-center justify-between gap-3"
+              className="p-5 sm:p-6 rounded-2xl border border-[var(--border)] shadow flex flex-col sm:flex-row items-center justify-between gap-3"
               style={{ backgroundColor: innerBg }}
             >
               <div className="text-center sm:text-left">
@@ -145,13 +146,13 @@ const Dashboard = () => {
 
         {/* Last Orders Table */}
         <div
-          className="p-4 sm:p-6 rounded-2xl shadow overflow-x-auto"
+          className="p-4 sm:p-6 border border-[var(--border)] rounded-2xl shadow overflow-x-auto"
           style={{ backgroundColor: innerBg, color: textColor }}
         >
           <h2 style={{ color: textColor }} className="text-lg font-bold mb-4">
             Latest Orders
           </h2>
-          <table className="w-full border-collapse text-sm sm:text-base text-center min-w-[600px]">
+          <table className="w-full border-collapse  text-sm sm:text-base text-center min-w-[600px]">
             <thead>
               <tr style={{ borderBottom: `1px solid ${tableLineColor}` }}>
                 <th className="p-2">Order ID</th>
@@ -209,8 +210,15 @@ const Dashboard = () => {
           </table>
         </div>
       </div>
-    </div>
-  );
+    </main>
+
+    {/* Footer */}
+    <footer className="w-full bg-[var(--footer-bg)] mt-auto">
+      <Footer />
+    </footer>
+  </div>
+);
+
 };
 
 export default Dashboard;

@@ -497,7 +497,7 @@ exports.placeOrderFromCart = async function ({
     final_amount += delivery_fee;
 
     // total_with_shipping
-    const total_with_shipping = final_amount;
+    total_with_shipping = final_amount;
 
     console.log("🎯 Final amounts before order creation:", {
       total_amount,
