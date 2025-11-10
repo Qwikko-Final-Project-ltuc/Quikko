@@ -64,146 +64,143 @@ export default function RegisterVendor() {
   const isDark = isDarkMode;
 
   return (
-    <div className={`flex min-h-screen transition-colors duration-500 ${isDark ? "bg-[var(--bg)] text-[var(--text)]" : "bg-[var(--bg)] text-[var(--text)]"}`}>
+  <div className={`flex flex-col md:flex-row min-h-screen transition-colors duration-500 ${isDark ? "bg-[var(--bg)] text-[var(--text)]" : "bg-[var(--bg)] text-[var(--text)]"}`}>
 
-      {/* Left Section - Register Form */}
-      <div className={`w-1/2 flex flex-col justify-center items-center p-12 transition-colors duration-500 ${isDark ? "bg-[var(--div)]" : "bg-[var(--bg)]"}`}>
-        <h2 className="text-3xl font-bold mb-6 transition-colors duration-500">Register Vendor</h2>
+    {/* Left Section - Register Form */}
+    <div className={`w-full md:w-1/2 flex flex-col justify-center items-center p-4 md:p-12 transition-colors duration-500 ${isDark ? "bg-[var(--div)]" : "bg-[var(--bg)]"}`}>
+      <h2 className="text-2xl sm:text-3xl font-bold mb-6 transition-colors duration-500">Register Vendor</h2>
 
-        {message && (
-          <div className={`w-full max-w-md p-3 rounded-lg mb-4 text-center transition-colors duration-300 ${isDark ? "bg-[var(--error)] bg-opacity-20 text-red-200" : "bg-[var(--error)] bg-opacity-20 text-red-700"}`}>
-            {message}
+      {message && (
+        <div className={`w-full max-w-md p-3 rounded-lg mb-4 text-center transition-colors duration-300 text-sm sm:text-base ${isDark ? "bg-[var(--error)] bg-opacity-20 text-red-200" : "bg-[var(--error)] bg-opacity-20 text-red-700"}`}>
+          {message}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
+        {/* Full Name */}
+        <div className="flex flex-col w-full relative">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Full Name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              className={`w-full border p-3 pr-12 rounded-lg focus:outline-none transition-all duration-300 text-sm sm:text-base ${isDark ? "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]" : "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]"}`}
+            />
+            <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none"><FaUser className="text-xl" /></span>
           </div>
-        )}
+          {errors.name && <p className="text-sm mt-1 text-[var(--error)]">{errors.name}</p>}
+        </div>
 
-        <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
-          {/* Full Name */}
-          <div className="flex flex-col w-full relative">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Full Name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className={`w-full border p-3 pr-12 rounded-lg focus:outline-none transition-all duration-300 ${isDark ? "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]" : "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]"}`}
-              />
-              <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none"><FaUser className="text-xl" /></span>
-            </div>
-            {errors.name && <p className="text-sm mt-1 text-[var(--error)]">{errors.name}</p>}
+        {/* Email */}
+        <div className="flex flex-col w-full relative">
+          <div className="relative">
+            <input
+              type="email"
+              placeholder="Email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              className={`w-full border p-3 pr-12 rounded-lg focus:outline-none transition-all duration-300 text-sm sm:text-base ${isDark ? "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]" : "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]"}`}
+            />
+            <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none"><FaEnvelope className="text-xl" /></span>
           </div>
+          {errors.email && <p className="text-sm mt-1 text-[var(--error)]">{errors.email}</p>}
+        </div>
 
-          {/* Email */}
-          <div className="flex flex-col w-full relative">
-            <div className="relative">
-              <input
-                type="email"
-                placeholder="Email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className={`w-full border p-3 pr-12 rounded-lg focus:outline-none transition-all duration-300 ${isDark ? "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]" : "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]"}`}
-              />
-              <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none"><FaEnvelope className="text-xl" /></span>
-            </div>
-            {errors.email && <p className="text-sm mt-1 text-[var(--error)]">{errors.email}</p>}
+        {/* Password */}
+        <div className="flex flex-col w-full relative">
+          <div className="relative">
+            <input
+              type="password"
+              placeholder="Password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className={`w-full border p-3 pr-12 rounded-lg focus:outline-none transition-all duration-300 text-sm sm:text-base ${isDark ? "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]" : "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]"}`}
+            />
+            <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none"><FaLock className="text-xl" /></span>
           </div>
+          {errors.password && <p className="text-sm mt-1 text-[var(--error)]">{errors.password}</p>}
+        </div>
 
-          {/* Password */}
-          <div className="flex flex-col w-full relative">
-            <div className="relative">
-              <input
-                type="password"
-                placeholder="Password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className={`w-full border p-3 pr-12 rounded-lg focus:outline-none transition-all duration-300 ${isDark ? "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]" : "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]"}`}
-              />
-              <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none"><FaLock className="text-xl" /></span>
-            </div>
-            {errors.password && <p className="text-sm mt-1 text-[var(--error)]">{errors.password}</p>}
+        {/* Store Name */}
+        <div className="flex flex-col w-full relative">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Store Name"
+              name="store_name"
+              value={formData.store_name}
+              onChange={handleChange}
+              className={`w-full border p-3 pr-12 rounded-lg focus:outline-none transition-all duration-300 text-sm sm:text-base ${isDark ? "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]" : "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]"}`}
+            />
+            <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none"><FaStore className="text-xl" /></span>
           </div>
+          {errors.store_name && <p className="text-sm mt-1 text-[var(--error)]">{errors.store_name}</p>}
+        </div>
 
-          {/* Store Name */}
-          <div className="flex flex-col w-full relative">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Store Name"
-                name="store_name"
-                value={formData.store_name}
-                onChange={handleChange}
-                className={`w-full border p-3 pr-12 rounded-lg focus:outline-none transition-all duration-300 ${isDark ? "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]" : "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]"}`}
-              />
-              <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none"><FaStore className="text-xl" /></span>
-            </div>
-            {errors.store_name && <p className="text-sm mt-1 text-[var(--error)]">{errors.store_name}</p>}
+        {/* Phone */}
+        <div className="flex flex-col w-full relative">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Phone (e.g. +9627...)"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              className={`w-full border p-3 pr-12 rounded-lg focus:outline-none transition-all duration-300 text-sm sm:text-base ${isDark ? "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]" : "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]"}`}
+            />
+            <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none"><FaPhone className="text-xl" /></span>
           </div>
+          {errors.phone && <p className="text-sm mt-1 text-[var(--error)]">{errors.phone}</p>}
+        </div>
 
-          {/* Phone */}
-          <div className="flex flex-col w-full relative">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Phone (e.g. +9627...)"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className={`w-full border p-3 pr-12 rounded-lg focus:outline-none transition-all duration-300 ${isDark ? "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]" : "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]"}`}
-              />
-              <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none"><FaPhone className="text-xl" /></span>
-            </div>
-            {errors.phone && <p className="text-sm mt-1 text-[var(--error)]">{errors.phone}</p>}
+        {/* Description */}
+        <div className="flex flex-col w-full relative">
+          <div className="relative">
+            <textarea
+              name="description"
+              placeholder="Store Description"
+              value={formData.description}
+              onChange={handleChange}
+              rows="3"
+              className={`w-full border p-3 pr-12 rounded-lg focus:outline-none transition-all duration-300 resize-none text-sm sm:text-base
+                ${isDark ? "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]" : "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]"}`}
+            />
+            <span className="absolute inset-y-0 right-3 flex items-start pt-3 pointer-events-none">
+              <FaAlignLeft className={`text-xl transition-colors duration-500 ${isDark ? "text-[var(--mid-dark)]" : "text-[var(--light-gray)]"}`} />
+            </span>
           </div>
+        </div>
 
-          {/* Description */}
-<div className="flex flex-col w-full relative">
-  <div className="relative">
-    <textarea
-      name="description"
-      placeholder="Store Description"
-      value={formData.description}
-      onChange={handleChange}
-      rows="3"
-      className={`w-full border p-3 pr-12 rounded-lg focus:outline-none transition-all duration-300 resize-none
-        ${isDark ? 
-          "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]" :
-          "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)]"
-        }`}
-    />
-    <span className="absolute inset-y-0 right-3 flex items-start pt-3 pointer-events-none">
-      <FaAlignLeft className={`text-xl transition-colors duration-500 ${isDark ? "text-[var(--mid-dark)]" : "text-[var(--light-gray)]"}`} />
-    </span>
-  </div>
-</div>
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full p-3 rounded-lg font-semibold transition-all duration-300 bg-[var(--button)] text-white hover:shadow-lg"
+        >
+          {loading ? "Registering..." : "Register"}
+        </button>
+      </form>
 
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full p-3 rounded-lg font-semibold transition-all duration-300 bg-[var(--button)] text-white hover:shadow-lg"
-          >
-            {loading ? "Registering..." : "Register"}
-          </button>
-        </form>
-
-        <p className="text-center mt-6 text-[var(--light-gray)]">
-          Already have an account?{" "}
-          <span className="cursor-pointer font-medium text-[var(--primary)] hover:underline" onClick={() => navigate("/vendor/login")}>
-            Login here
-          </span>
-        </p>
-      </div>
-
-      {/* Right Section - Welcome */}
-      <div className={`w-1/2 flex flex-col justify-center items-center p-12 transition-colors duration-500 ${isDark ? "bg-[var(--mid-dark)] text-[var(--text)]" : "bg-[var(--div)] text-[var(--text)]"}`}>
-        <img src={isDark ? "/LogoDark.png" : "/logo.png"} alt="Qwikko Logo" className="h-25 w-80 mb-6 transition-all duration-500" />
-        <p className="text-xl max-w-md text-center leading-relaxed">
-          Welcome to Qwikko! Start your vendor journey with us and grow your business. Join our marketplace and reach thousands of customers today.
-        </p>
-      </div>
+      <p className="text-center mt-6 text-[var(--light-gray)] text-sm sm:text-base">
+        Already have an account?{" "}
+        <span className="cursor-pointer font-medium text-[var(--primary)] hover:underline" onClick={() => navigate("/vendor/login")}>
+          Login here
+        </span>
+      </p>
     </div>
-  );
+
+    {/* Right Section - Welcome */}
+    <div className={`w-full md:w-1/2 flex flex-col justify-center items-center p-4 md:p-12 transition-colors duration-500 ${isDark ? "bg-[var(--mid-dark)] text-[var(--text)]" : "bg-[var(--div)] text-[var(--text)]"}`}>
+      <img src={isDark ? "/LogoDark.png" : "/logo.png"} alt="Qwikko Logo" className="h-20 sm:h-25 w-64 sm:w-80 mb-6 transition-all duration-500" />
+      <p className="text-base sm:text-xl max-w-md text-center leading-relaxed">
+        Welcome to Qwikko! Start your vendor journey with us and grow your business. Join our marketplace and reach thousands of customers today.
+      </p>
+    </div>
+  </div>
+);
+
 }

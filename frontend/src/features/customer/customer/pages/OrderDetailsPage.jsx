@@ -7,12 +7,12 @@ import { fetchOrders } from "../ordersSlice";
 import { deleteCart, fetchCart, setCurrentCart } from "../cartSlice";
 
 // Importing icons
-import { 
-  FiShoppingCart, 
-  FiHome, 
-  FiFileText, 
-  FiTag, 
-  FiStar, 
+import {
+  FiShoppingCart,
+  FiHome,
+  FiFileText,
+  FiTag,
+  FiStar,
   FiCreditCard,
   FiTruck,
   FiCheckCircle,
@@ -75,6 +75,19 @@ const OrderDetailsPage = () => {
   const dispatch = useDispatch();
   const location = useLocation();
 
+  const readJSON = (key) => {
+    try {
+      const v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : null;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const couponFromLocation = location.state?.appliedCoupon;
+  const savedCoupon = readJSON("appliedCoupon");
+  const appliedCouponFromState = couponFromLocation || savedCoupon;
+
   const cartFromState = location.state?.cart;
   const { data: profile } = useSelector((state) => state.profile);
   const { currentCart, status, error } = useSelector((state) => state.cart);
@@ -100,6 +113,9 @@ const OrderDetailsPage = () => {
   const [subtotal, setSubtotal] = useState(0);
   const [totalWithShipping, setTotalWithShipping] = useState(0);
   const [finalTotal, setFinalTotal] = useState(0);
+  const [appliedCoupon, setAppliedCoupon] = useState(
+    appliedCouponFromState || { discount_amount: 0, code: null }
+  );
 
   // Toast state
   const [toast, setToast] = useState(null);
@@ -121,7 +137,11 @@ const OrderDetailsPage = () => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
-      body: JSON.stringify({ coupon_code: couponCode, userId: preparedUserId, cartItems }),
+      body: JSON.stringify({
+        coupon_code: couponCode,
+        userId: preparedUserId,
+        cartItems,
+      }),
       credentials: "include",
     });
     if (!res.ok) {
@@ -141,7 +161,6 @@ const OrderDetailsPage = () => {
   });
   const [cardError, setCardError] = useState("");
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [usePointsChecked, setUsePointsChecked] = useState(false);
   const [userPointsToUse, setUserPointsToUse] = useState(0);
   const [pointsDiscount, setPointsDiscount] = useState(0);
@@ -164,27 +183,7 @@ const OrderDetailsPage = () => {
     }
   }, [profile]);
 
-  useEffect(() => {
-    console.log("Cart from state:", cartFromState);
-    if (cartFromState) {
-      dispatch(setCurrentCart(cartFromState));
-    } else if (orderId) {
-      console.log("Fetching cart for orderId:", orderId);
-      dispatch(fetchCart(orderId));
-    }
-  }, [cartFromState, orderId, dispatch]);
-
-  useEffect(() => {
-    console.log("🔄 Order Summary:", {
-      subtotal,
-      deliveryFee,
-      totalWithShipping,
-      appliedCoupon: appliedCoupon?.discount_amount,
-      pointsDiscount,
-      finalTotal
-    });
-  }, [subtotal, deliveryFee, totalWithShipping, appliedCoupon, pointsDiscount, finalTotal]);
-
+  
   // حساب نقاط الولاء مرة واحدة عند التحميل
   useEffect(() => {
     const fetchLoyaltyPoints = async () => {
@@ -206,12 +205,47 @@ const OrderDetailsPage = () => {
     fetchLoyaltyPoints();
   }, []);
 
+
+  useEffect(() => {
+    if (cartFromState) {
+      dispatch(setCurrentCart(cartFromState));
+    } else if (orderId) {
+      dispatch(fetchCart(orderId));
+    }
+
+    if (appliedCouponFromState) {
+      let totalDiscount = 0;
+
+      if (typeof appliedCouponFromState === "object") {
+        Object.values(appliedCouponFromState).forEach((c) => {
+          totalDiscount += Number(c.discount || 0);
+        });
+      } else {
+        totalDiscount = Number(appliedCouponFromState.discount_amount || 0);
+      }
+
+      setAppliedCoupon({
+        discount_amount: totalDiscount,
+        code: null,
+      });
+
+      localStorage.setItem(
+        "appliedCoupon",
+        JSON.stringify({
+          discount_amount: totalDiscount,
+          code: null,
+        })
+      );
+    }
+  }, [cartFromState, appliedCouponFromState, orderId, dispatch]);
+
   // Calculate pricing breakdown
   useEffect(() => {
-    const cartSubtotal = currentCart?.items?.reduce(
-      (sum, item) => sum + Number(item.price || 0) * (item.quantity || 1),
-      0
-    ) || 0;
+    const cartSubtotal =
+      currentCart?.items?.reduce(
+        (sum, item) => sum + Number(item.price || 0) * (item.quantity || 1),
+        0
+      ) || 0;
 
     setSubtotal(cartSubtotal);
     setDeliveryFee(null);
@@ -247,26 +281,18 @@ const OrderDetailsPage = () => {
 
   // Calculate final total after discounts
   useEffect(() => {
-    console.log("🔄 Recalculating final total...", {
-      totalWithShipping,
-      appliedCoupon: appliedCoupon?.discount_amount,
-      pointsDiscount,
-      usePointsChecked
-    });
+    let totalAfterDiscount = totalWithShipping || 0;
 
-    let totalAfterDiscount = totalWithShipping;
-    
     if (appliedCoupon?.discount_amount) {
-      totalAfterDiscount -= appliedCoupon.discount_amount;
+      totalAfterDiscount -= Number(appliedCoupon.discount_amount);
     }
-    
+
     if (usePointsChecked && pointsDiscount > 0) {
       totalAfterDiscount -= pointsDiscount;
     }
-    
+
     if (totalAfterDiscount < 0) totalAfterDiscount = 0;
-    
-    console.log("✅ Final total calculated:", totalAfterDiscount);
+
     setFinalTotal(totalAfterDiscount);
   }, [totalWithShipping, appliedCoupon, usePointsChecked, pointsDiscount]);
 
@@ -277,6 +303,44 @@ const OrderDetailsPage = () => {
     state: address.state || address.city,
     postal_code: address.postal_code || "0000",
     country: address.country,
+  };
+
+  const handleCalculateDelivery = async () => {
+    if (!address.address_line1 || !address.city) {
+      setDeliveryFee(null);
+      setTotalWithShipping(subtotal);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        "http://localhost:3000/api/customers/calculate-delivery-preview",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            cart_id: currentCart?.id,
+            address: fullAddress,
+          }),
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to calculate delivery fee");
+
+      const data = await res.json();
+      const fee = data.order?.delivery_fee || 0;
+
+      setDeliveryFee(fee);
+      setTotalWithShipping(subtotal + fee);
+    } catch (err) {
+      console.error("Error calculating delivery:", err);
+      setDeliveryFee(0);
+      setTotalWithShipping(subtotal);
+    }
   };
 
   const detectBrand = (num) => {
@@ -295,6 +359,7 @@ const OrderDetailsPage = () => {
       showToast("Invalid card number (min 12 digits for testing).", "error");
       return "Invalid card number (min 12 digits for testing).";
     }
+
     const m = parseInt(card.expiryMonth, 10);
     const y = parseInt(card.expiryYear, 10);
     if (!m || m < 1 || m > 12) {
@@ -315,6 +380,7 @@ const OrderDetailsPage = () => {
       showToast("Cardholder name required", "error");
       return "Cardholder name required";
     }
+
     return "";
   };
 
@@ -340,8 +406,15 @@ const OrderDetailsPage = () => {
     });
 
     try {
-      const response = await validateCoupon(couponCode, profile.id, preparedItems);
-      setAppliedCoupon(response);
+      const response = await validateCoupon(
+        couponCode,
+        profile.id,
+        preparedItems
+      );
+      setAppliedCoupon({
+        discount_amount: Number(response.discount_amount || 0),
+        code: response.code || null,
+      });
       setCouponResult({
         message: response.message,
         discount: response.discount_amount,
@@ -467,6 +540,17 @@ const OrderDetailsPage = () => {
         }
       }
 
+
+      // لا ترسل deliveryFee محسوبة مسبقاً - دع الباك إند يحسبها
+      const checkoutPayload = {
+        cart_id: currentCart.id,
+        address: fullAddress,
+        paymentMethod: paymentMethod === "card" ? "credit_card" : paymentMethod,
+        paymentData,
+        coupon_code: appliedCouponFromState?.code || null,
+        use_loyalty_points: usePointsChecked ? userPointsToUse : 0,
+        cartItems: itemsForServer,
+      };
       const newOrder = await customerAPI.checkout(checkoutPayload);
       
       console.log("✅ Order created:", newOrder);
@@ -497,6 +581,7 @@ const OrderDetailsPage = () => {
         navigate("/customer/orders");
       }, 1500);
       
+
     } catch (err) {
       console.error("❌ Checkout failed:", err);
       const errorMessage = err.response?.data?.error || err.message;
@@ -535,7 +620,7 @@ const OrderDetailsPage = () => {
                 coupon_code: appliedCoupon?.code || null,
                 use_loyalty_points: loyaltyPointsToUse,
               });
-              
+
               await dispatch(deleteCart(currentCart.id)).unwrap();
               dispatch(fetchOrders());
               setOrderSuccess({ method: "PayPal", transactionId, order: newOrder.order });
@@ -548,6 +633,8 @@ const OrderDetailsPage = () => {
               setTimeout(() => {
                 navigate("/customer/orders");
               }, 1500);
+             
+
             } catch (err) {
               console.error("Checkout failed:", err);
               const errorMessage = err.response?.data?.error || err.message;
@@ -603,36 +690,55 @@ const OrderDetailsPage = () => {
         <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
           <FiAlertCircle className="text-2xl text-red-500" />
         </div>
-        <h3 className="text-xl font-bold mb-2">Error Loading Order</h3>
-        <p className="mb-6 opacity-90">{error}</p>
-        <button 
-          onClick={() => navigate(-1)}
-          className={`${buttonClass} px-6 py-3 rounded-xl flex items-center justify-center mx-auto`}
-        >
-          <FiArrowLeft className="mr-2" />
-          Go Back
-        </button>
       </div>
-    </div>
-  );
-  
-  if (!currentCart) return (
-    <div className={`min-h-screen flex items-center justify-center ${containerClass}`}>
-      <div className="text-center max-w-md p-8 animate-fade-in">
-        <div className="w-20 h-20 bg-[var(--div)] rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-          <FiShoppingCart className="text-2xl text-[var(--text)]" />
+    );
+
+  if (error)
+    return (
+      <div
+        className={`min-h-screen flex items-center justify-center ${containerClass}`}
+      >
+        <div
+          className={`text-center max-w-md p-8 rounded-2xl border-2 ${errorClass} animate-fade-in-up backdrop-blur-sm`}
+        >
+          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+            <FiAlertCircle className="text-2xl text-red-500" />
+          </div>
+          <h3 className="text-xl font-bold mb-2">Error Loading Order</h3>
+          <p className="mb-6 opacity-90">{error}</p>
+          <button
+            onClick={() => navigate(-1)}
+            className={`${buttonClass} px-6 py-3 rounded-xl flex items-center justify-center mx-auto`}
+          >
+            <FiArrowLeft className="mr-2" />
+            Go Back
+          </button>
         </div>
-        <h3 className="text-xl font-bold mb-4">Cart Not Found</h3>
-        <p className="text-[var(--light-gray)] mb-6">We couldn't find the cart you're looking for.</p>
-        <button 
-          onClick={() => navigate("/")}
-          className={`${buttonClass} px-6 py-3 rounded-xl`}
-        >
-          Continue Shopping
-        </button>
       </div>
-    </div>
-  );
+    );
+
+  if (!currentCart)
+    return (
+      <div
+        className={`min-h-screen flex items-center justify-center ${containerClass}`}
+      >
+        <div className="text-center max-w-md p-8 animate-fade-in">
+          <div className="w-20 h-20 bg-[var(--div)] rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+            <FiShoppingCart className="text-2xl text-[var(--text)]" />
+          </div>
+          <h3 className="text-xl font-bold mb-4">Cart Not Found</h3>
+          <p className="text-[var(--light-gray)] mb-6">
+            We couldn't find the cart you're looking for.
+          </p>
+          <button
+            onClick={() => navigate("/")}
+            className={`${buttonClass} px-6 py-3 rounded-xl`}
+          >
+            Continue Shopping
+          </button>
+        </div>
+      </div>
+    );
 
   const { discountPercent } = calculatePointsDiscount(userPointsToUse);
 
@@ -834,6 +940,14 @@ const OrderDetailsPage = () => {
                         ))}
                       </select>
                     </div>
+                    <div className="md:col-span-2 flex justify-end mt-4">
+                    <button
+                      onClick={handleCalculateDelivery}
+                      className={`${buttonClass} px-6 py-3 rounded-xl text-sm font-semibold backdrop-blur-sm transition-all duration-200 hover:scale-105`}
+                    >
+                      Calculate Delivery
+                    </button>
+                  </div>
                   </div>
                 </div>
               </div>
@@ -879,17 +993,18 @@ const OrderDetailsPage = () => {
                     </div>
                     
                     {/* Coupon Discount */}
-                    {appliedCoupon && (
-                      <div className="flex justify-between items-center py-3 border-b border-[var(--border)]">
-                        <span className="text-green-600 dark:text-green-400 flex items-center text-sm">
-                          <FiPercent className="mr-2" />
-                          Coupon Discount
-                        </span>
-                        <span className="font-semibold text-green-600 dark:text-green-400 text-sm">
-                          -${appliedCoupon.discount_amount.toFixed(2)}
-                        </span>
-                      </div>
-                    )}
+                  {appliedCoupon?.discount_amount > 0 && (
+                    <div className="flex justify-between items-center py-3 border-b border-[var(--border)]">
+                      <span className="text-green-600 dark:text-green-400 flex items-center text-sm">
+                        <FiPercent className="mr-2" />
+                        Coupon Discount
+                      </span>
+                      <span className="font-semibold text-green-600 dark:text-green-400 text-sm">
+                        -$
+                        {Number(appliedCoupon.discount_amount || 0).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
                     
                     {/* Points Discount */}
                     {usePointsChecked && pointsDiscount > 0 && (
@@ -913,41 +1028,41 @@ const OrderDetailsPage = () => {
                     </div>
                   </div>
 
-                  {/* Coupon Section */}
-                  <div className="mb-6">
-                    <h3 className="font-semibold mb-3 flex items-center text-base text-[var(--text)] tracking-tight">
-                      <FiGift className={`mr-2 text-[var(--button)]`} />
-                      Apply Coupon
-                    </h3>
-                    <div className="flex flex-col sm:flex-row gap-2 mb-3">
-                      <input
-                        type="text"
-                        placeholder="Enter coupon code"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                        className={`flex-1 p-3 rounded-xl border-2 ${inputClass} focus:shadow-lg min-w-0 backdrop-blur-sm text-sm`}
-                      />
-                      <button
-                        onClick={handleValidateCoupon}
-                        className={`${buttonClass} px-4 py-3 rounded-xl whitespace-nowrap sm:w-auto w-full backdrop-blur-sm text-sm`}
-                      >
-                        Apply
-                      </button>
-                    </div>
-                    {couponResult && (
-                      <div className={`p-3 rounded-xl border-2 backdrop-blur-sm text-sm ${
-                        couponResult.discount > 0 ? successClass : errorClass
-                      } animate-fade-in`}>
-                        <p className="font-semibold tracking-tight">{couponResult.message}</p>
-                        {couponResult.discount > 0 && (
-                          <div className="mt-2 text-xs space-y-1">
-                            <p className="text-[var(--text)]">Discount: <strong>${couponResult.discount.toFixed(2)}</strong></p>
-                            <p className="text-[var(--text)]">New Total: <strong>${couponResult.final.toFixed(2)}</strong></p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+//                   {/* Coupon Section */}
+//                   <div className="mb-6">
+//                     <h3 className="font-semibold mb-3 flex items-center text-base text-[var(--text)] tracking-tight">
+//                       <FiGift className={`mr-2 text-[var(--button)]`} />
+//                       Apply Coupon
+//                     </h3>
+//                     <div className="flex flex-col sm:flex-row gap-2 mb-3">
+//                       <input
+//                         type="text"
+//                         placeholder="Enter coupon code"
+//                         value={couponCode}
+//                         onChange={(e) => setCouponCode(e.target.value)}
+//                         className={`flex-1 p-3 rounded-xl border-2 ${inputClass} focus:shadow-lg min-w-0 backdrop-blur-sm text-sm`}
+//                       />
+//                       <button
+//                         onClick={handleValidateCoupon}
+//                         className={`${buttonClass} px-4 py-3 rounded-xl whitespace-nowrap sm:w-auto w-full backdrop-blur-sm text-sm`}
+//                       >
+//                         Apply
+//                       </button>
+//                     </div>
+//                     {couponResult && (
+//                       <div className={`p-3 rounded-xl border-2 backdrop-blur-sm text-sm ${
+//                         couponResult.discount > 0 ? successClass : errorClass
+//                       } animate-fade-in`}>
+//                         <p className="font-semibold tracking-tight">{couponResult.message}</p>
+//                         {couponResult.discount > 0 && (
+//                           <div className="mt-2 text-xs space-y-1">
+//                             <p className="text-[var(--text)]">Discount: <strong>${couponResult.discount.toFixed(2)}</strong></p>
+//                             <p className="text-[var(--text)]">New Total: <strong>${couponResult.final.toFixed(2)}</strong></p>
+//                           </div>
+//                         )}
+//                       </div>
+//                     )}
+//                   </div>
 
                   {/* Loyalty Points */}
                   <div className="mb-6">

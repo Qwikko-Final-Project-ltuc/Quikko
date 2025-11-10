@@ -81,7 +81,6 @@ export default function EditProfile() {
     toastTimerRef.current = setTimeout(() => {
       setToast((t) => ({ ...t, show: false }));
     }, 3000);
-    // نضمن يكون ظاهر فورًا على أعلى الصفحة
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -90,9 +89,9 @@ export default function EditProfile() {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     };
   }, []);
+
   // ============================================
 
-  // ===================== تحميل البيانات =====================
   useEffect(() => {
     const loadProfile = async () => {
       try {
@@ -139,7 +138,6 @@ export default function EditProfile() {
     loadProfile();
   }, [location.state?.company, location.state?.coverageAreas]);
 
-  // ===================== تغييرات الحقول =====================
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -163,7 +161,6 @@ export default function EditProfile() {
     return changed;
   };
 
-  // ===================== حذف مدينة =====================
   const handleDeleteCity = async (city) => {
     try {
       const token = localStorage.getItem("token");
@@ -178,7 +175,6 @@ export default function EditProfile() {
       await deleteCoverageCity(token, city);
       showToast("success", `Deleted ${city} successfully`);
     } catch (err) {
-      // رجوع في حال الفشل
       setFormData((p) => {
         const set = new Set(p.coverage_areas);
         set.add(city);
@@ -190,11 +186,10 @@ export default function EditProfile() {
     }
   };
 
-  // ===================== حفظ التغييرات =====================
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
 
+    setLoading(true); // نظل لودينغ لحدّ ما ننتقل
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Unauthorized");
@@ -204,35 +199,34 @@ export default function EditProfile() {
       const tasks = [];
 
       if (Array.isArray(coverage_areas)) {
-        tasks.push(addCoverage(token, uniq(coverage_areas)));
+        tasks.push(addCoverage(token, Array.from(new Set(coverage_areas))));
       }
-
       if (Object.keys(profileChanges).length > 0) {
         tasks.push(updateDeliveryProfile(token, profileChanges));
       }
-
       if (tasks.length === 0) {
         showToast("info", "No changes detected.");
-        setLoading(false);
+        setLoading(false); // ما في تنقّل، رجّع الحالة
         return;
       }
 
       await Promise.all(tasks);
 
-      // ✅ Toast بدل أي message
+      // Toast سريع (اختياري)
       showToast("success", "Profile updated successfully!");
-      // انتقال بعد لحظة صغيرة
-      setTimeout(() => {
-        navigate("/delivery/dashboard/getprofile");
-      }, 1200);
+
+      // ننتظر شوي (قصيرة) عشان المستخدم يشوف التوست، بعدها ننتقل مباشرة
+      await new Promise((r) => setTimeout(r, 600));
+
+      // أهم سطرين: انتقال نهائي بدون فلاش، وباستبدال الصفحة
+      navigate("/delivery/dashboard/getprofile", { replace: true });
+      return; // ما ننزل لـ setLoading(false) أبداً
     } catch (err) {
       showToast("error", err.message || "Failed to update profile");
-    } finally {
-      setLoading(false);
+      setLoading(false); 
     }
   };
 
-  // ===================== واجهة الانتظار =====================
   if (!formData) {
     return (
       <div
@@ -263,12 +257,15 @@ export default function EditProfile() {
 
   return (
     <>
-      {/* ✅ Toast (Top Center) */}
       {toast.show && (
         <div
-          className={`fixed top-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-xl shadow-lg text-white font-semibold text-center z-[9999] transition-all duration-500 ${
-            toast.show ? "opacity-100" : "opacity-0 -translate-y-4"
-          }`}
+          className={`
+      fixed top-20 left-1/2 -translate-x-1/2
+      px-6 py-3 rounded-xl shadow-lg text-white font-semibold
+      z-[9999] transition-all duration-500
+      flex items-center justify-center gap-2   // 👈 هذول أهم شي
+      ${toast.show ? "opacity-100" : "opacity-0 -translate-y-4"}
+    `}
           style={{
             minWidth: "280px",
             boxShadow: "0 6px 20px rgba(0,0,0,0.25)",
@@ -282,57 +279,62 @@ export default function EditProfile() {
           role="status"
           aria-live="polite"
         >
-          {toast.type === "success"
-            ? "✅ "
-            : toast.type === "error"
-            ? "❌ "
-            : "ℹ️ "}
-          {toast.text}
+          <span>
+            {toast.type === "success"
+              ? "✔️"
+              : toast.type === "error"
+              ? "❌"
+              : "ℹ️"}
+          </span>
+          <span>{toast.text}</span>
         </div>
       )}
 
-      {/* العنوان */}
-      <div className="max-w-5xl mx-auto px-6 pt-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8 mt-6 sm:mt-8">
         <h2
-          className="text-3xl font-extrabold mb-6"
+          className="text-2xl sm:text-3xl font-extrabold mb-4 sm:mb-6"
           style={{ color: "var(--text)" }}
         >
           Update My Profile
         </h2>
       </div>
 
-      {/* الفورم مباشرة بدون ديف خارجي */}
+      {/* الفورم — نفس عرض/بادينغ الديسكتوب (sm فأعلى)، موبايل أخف */}
       <form
         onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto p-6"
+        className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-8 max-w-5xl mx-auto px-4 sm:px-6 py-5 sm:py-6"
         style={{
           color: "var(--text)",
           backgroundColor: isDarkMode ? "#313131" : "#f5f6f5",
-          border: `1px solid var(--border)`,
-          borderRadius: "1.5rem",
+          // border: `1px solid var(--border)`,
+          // borderRadius: "1.5rem",
           boxShadow: "0 6px 15px rgba(0,0,0,0.1)",
         }}
       >
         {/* Personal Info */}
         <div
-          className="p-6 rounded-2xl "
+          className="p-4 sm:p-6 rounded-2xl"
           style={{
             backgroundColor: isDarkMode ? "#313131" : "#ffffff",
             border: `1px solid var(--border)`,
           }}
         >
-          <h3 className="text-2xl font-bold mb-4">Personal Info</h3>
+          <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">
+            Personal Info
+          </h3>
 
           {/* User Name */}
           <div className="mb-4">
-            <label className="block font-semibold mb-1">User Name</label>
+            <label className="block font-semibold mb-1 text-sm sm:text-base">
+              User Name
+            </label>
             <input
               type="text"
               name="user_name"
               value={formData.user_name}
               placeholder={originalData.user_name || "User name"}
               onChange={handleChange}
-              className="w-full p-2 rounded-lg focus:outline-none transition-all duration-150"
+              className="w-full p-2 sm:p-3 text-sm sm:text-base rounded-lg focus:outline-none transition-all duration-150"
               style={{
                 backgroundColor: "transparent",
                 color: isDarkMode ? "#ffffff" : "#000000",
@@ -349,14 +351,16 @@ export default function EditProfile() {
 
           {/* Phone Number */}
           <div>
-            <label className="block font-semibold mb-1">Phone Number</label>
+            <label className="block font-semibold mb-1 text-sm sm:text-base">
+              Phone Number
+            </label>
             <input
               type="text"
               name="user_phone"
               value={formData.user_phone}
               placeholder={originalData.user_phone || "Phone number"}
               onChange={handleChange}
-              className="w-full p-2 rounded-lg focus:outline-none transition-all duration-150"
+              className="w-full p-2 sm:p-3 text-sm sm:text-base rounded-lg focus:outline-none transition-all duration-150"
               style={{
                 backgroundColor: "transparent",
                 color: isDarkMode ? "#ffffff" : "#000000",
@@ -374,24 +378,28 @@ export default function EditProfile() {
 
         {/* Company Info */}
         <div
-          className="p-6 rounded-2xl "
+          className="p-4 sm:p-6 rounded-2xl"
           style={{
             backgroundColor: isDarkMode ? "#313131" : "#ffffff",
             border: `1px solid var(--border)`,
           }}
         >
-          <h3 className="text-2xl font-bold mb-4">Company Info</h3>
+          <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">
+            Company Info
+          </h3>
 
           {/* Company Name */}
           <div className="mb-4">
-            <label className="block font-semibold mb-1">Company Name</label>
+            <label className="block font-semibold mb-1 text-sm sm:text-base">
+              Company Name
+            </label>
             <input
               type="text"
               name="company_name"
               value={formData.company_name}
               placeholder={originalData.company_name || "Company name"}
               onChange={handleChange}
-              className="w-full p-2 rounded-lg focus:outline-none transition-all duration-150"
+              className="w-full p-2 sm:p-3 text-sm sm:text-base rounded-lg focus:outline-none transition-all duration-150"
               style={{
                 backgroundColor: "transparent",
                 color: isDarkMode ? "#ffffff" : "#000000",
@@ -407,9 +415,11 @@ export default function EditProfile() {
           </div>
 
           {/* Coverage Areas */}
-          <label className="block font-semibold mb-2">Coverage Areas</label>
+          <label className="block font-semibold mb-2 text-sm sm:text-base">
+            Coverage Areas
+          </label>
           <select
-            className="w-full p-2 rounded mb-4 focus:outline-none transition-all duration-150"
+            className="w-full p-2 sm:p-3 text-sm sm:text-base rounded-md mb-4 focus:outline-none transition-all duration-150"
             style={{
               backgroundColor: "transparent",
               color: isDarkMode ? "#ffffff" : "#000000",
@@ -452,7 +462,7 @@ export default function EditProfile() {
             {formData.coverage_areas.map((area) => (
               <span
                 key={area}
-                className="flex items-center px-3 py-1 rounded-2xl"
+                className="flex items-center px-2.5 py-1 rounded-2xl text-xs sm:text-sm"
                 style={{
                   color: isDarkMode ? "#ffffff" : "#292e2c",
                   border: `1px solid var(--border)`,
@@ -478,14 +488,14 @@ export default function EditProfile() {
           </div>
         </div>
 
-        {/* Buttons */}
-        <div className="md:col-span-2 flex items-center justify-end gap-3 mt-4">
+        {/* Buttons — عمودي بالموبايل، أفقي من sm+ (بدون تغيير ديسكتوب) */}
+        <div className="md:col-span-2 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 mt-2 sm:mt-4">
           <button
             type="button"
             onClick={() => navigate("/delivery/dashboard/getprofile")}
-            className="rounded-lg text-sm font-semibold"
+            className="rounded-lg text-sm font-semibold w-full sm:w-auto"
             style={{
-              padding: "8px 14px",
+              padding: "10px 14px",
               backgroundColor: "var(--bg)",
               color: isDarkMode ? "#ffffff" : "#292e2c",
               border: `1px solid var(--border)`,
@@ -497,9 +507,9 @@ export default function EditProfile() {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg text-sm font-semibold"
+            className="rounded-lg text-sm font-semibold w-full sm:w-auto"
             style={{
-              padding: "8px 14px",
+              padding: "10px 14px",
               backgroundColor: "var(--button)",
               color: "#ffffff",
               border: `1px solid var(--border)`,

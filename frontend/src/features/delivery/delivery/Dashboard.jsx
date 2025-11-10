@@ -42,100 +42,108 @@ export default function DashboardLayout() {
   const toggleSidebar = () => setIsSidebarOpen((v) => !v);
   const toggleChat = () => setIsChatOpen((v) => !v);
 
-  return (
-    <div className={isDarkMode ? "dark" : ""}>
+return (
+  <div className={isDarkMode ? "dark" : ""}>
+    <div
+      className="flex min-h-screen w-full"
+      style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}
+    >
+      {/* سايدبار */}
+      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+
+      {/* صفحة كاملة — عليها السكول */}
       <div
-        className="flex min-h-screen w-full"
+        id="page"
+        className="flex-1 flex flex-col transition-all duration-300  overscroll-contain"
         style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}
       >
-        {/* سايدبار يطفو فوق المحتوى بدون ما يزحزحو */}
-        <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+        {/* نافبار */}
+        <Navbar
+          toggleSidebar={toggleSidebar}
+          isSidebarOpen={isSidebarOpen}
+          user={user || { name: "Guest" }}
+        />
 
-        {/* محتوى الصفحة الطبيعي: ما في ml-64 أبداً */}
-        <div
-          className="flex-1 flex flex-col transition-all duration-300"
+        {/* المحتوى */}
+        <main
+          className="flex-1 p-6 "
           style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}
         >
-          {/* نافبار عادي ضمن الفلو (مش sticky / مش fixed) */}
-          <Navbar
-            toggleSidebar={toggleSidebar}
-            isSidebarOpen={isSidebarOpen}
-            user={user || { name: "Guest" }}
-          />
+          <Outlet />
+        </main>
 
-          {/* المحتوى */}
-          <main
-            className="flex-1 p-6 overflow-auto"
-            style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}
-          >
-            <Outlet />
-          </main>
-
-          {/* فوتر عادي ضمن الفلو */}
+        {/* الفوتر */}
+        <div className="relative z-10 mt-auto">
           <Footer />
+        </div>
 
-          {/* زر الشات */}
-          <button
-            onClick={toggleChat}
-            className="fixed bottom-16 right-6 p-4 rounded-full shadow-lg transition flex items-center justify-center z-50"
+        {/* زر الشاتبوت */}
+        <button
+          onClick={toggleChat}
+          className="fixed right-4 md:right-6 p-4 rounded-full shadow-lg transition flex items-center justify-center z-[9998] md:bottom-6"
+          style={{
+            bottom: "calc(env(safe-area-inset-bottom, 0px) + 90px)", // موبايل أعلى شوي
+            backgroundColor: "var(--button)",
+            color: "#fff",
+          }}
+          title="Open Qwikko Chatbot"
+          aria-label="Open Qwikko Chatbot"
+        >
+          <FaRobot size={28} />
+        </button>
+
+        {/* نافذة الشات */}
+        {isChatOpen && (
+          <div
+            className="
+      fixed
+      inset-x-0 bottom-0 top-auto
+      md:inset-auto md:top-6 md:right-6
+      w-full md:w-96
+      h-[75vh] sm:h-[80vh] md:h-[85vh]
+      rounded-t-2xl md:rounded-2xl
+      shadow-2xl flex flex-col overflow-hidden
+      z-[9999]
+    "
             style={{
-              backgroundColor: "var(--button)",
-              color: "#ffffff",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
-              border: "none",
+              backgroundColor: "var(--div)",
+              color: "var(--text)",
+              marginBottom: "env(safe-area-inset-bottom, 0px)",
             }}
-            title="Open Qwikko Chatbot"
-            aria-label="Open Qwikko Chatbot"
           >
-            <FaRobot size={28} />
-          </button>
+            <button
+              onClick={toggleChat}
+              className="absolute top-3 right-3 md:top-4 md:right-4 z-10"
+              style={{ color: "var(--light-gray)" }}
+              aria-label="Close chatbot"
+            >
+              <X size={24} />
+            </button>
 
-          {/* نافذة الشات */}
-          {isChatOpen && (
-            <div
-              className="fixed top-4 right-4 sm:right-6 z-50 w-full sm:w-96 h-[90vh] sm:h-[90vh] rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            <h2
+              className="text-sm sm:text-base font-semibold flex items-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3"
               style={{
-                backgroundColor: "var(--div)",
-                color: "var(--text)",
+                backgroundColor: isDarkMode ? "var(--mid-dark)" : "var(--textbox)",
               }}
             >
-              <button
-                onClick={toggleChat}
-                className="absolute top-4 right-4 z-10"
-                style={{ color: "var(--light-gray)" }}
-                title="Close"
-                aria-label="Close chatbot"
-              >
-                <X size={24} />
-              </button>
+              <FaRobot size={22} />
+              Qwikko Chatbot
+            </h2>
 
-              <h2
-                className="text-base font-semibold flex items-center gap-2 px-4 py-3"
-                style={{
-                  backgroundColor: isDarkMode
-                    ? "var(--mid-dark)"
-                    : "var(--textbox)",
-                  color: "var(--text)",
-                  boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
-                }}
-              >
-                <FaRobot
-                  size={26}
-                  style={{ color: isDarkMode ? "#ffffff" : "#292e2c" }}
-                />
-                Qwikko Chatbot
-              </h2>
-
-              <div
-                className="flex-grow overflow-auto p-2"
-                style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}
-              >
-                <ChatBot userId={currentUser?.id || "guest"} />
-              </div>
+            <div
+              className="flex-grow overflow-auto p-2 sm:p-3"
+              style={{
+                backgroundColor: "var(--bg)",
+                overscrollBehavior: "contain",
+              }}
+            >
+              <ChatBot userId={currentUser?.id || "guest"} />
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
-  );
+  </div>
+);
+
 }

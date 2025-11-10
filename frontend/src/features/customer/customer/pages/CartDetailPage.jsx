@@ -30,6 +30,9 @@ const CartDetailPage = () => {
       navigate("/customer/login");
     }
   };
+  const storedUser = JSON.parse(localStorage.getItem("user"));
+  const [appliedCoupons, setAppliedCoupons] = useState({});
+  const [totalDiscount, setTotalDiscount] = useState(0);
 
   // Fetch cart from server
   useEffect(() => {
@@ -45,7 +48,7 @@ const CartDetailPage = () => {
         const vendor = item.vendor_name || "Unknown Vendor";
         if (!acc[vendor]) {
           acc[vendor] = {
-            items: []
+            items: [],
           };
         }
         acc[vendor].items.push(item);
@@ -64,15 +67,15 @@ const CartDetailPage = () => {
     }
   };
 
-  const total = currentCart?.items?.reduce(
-    (sum, item) => sum + Number(item.price || 0) * (item.quantity || 0),
-    0
-  ) || 0;
+  const total =
+    currentCart?.items?.reduce(
+      (sum, item) => sum + Number(item.price || 0) * (item.quantity || 0),
+      0
+    ) || 0;
 
-  const totalItemsCount = currentCart?.items?.reduce(
-    (sum, item) => sum + (item.quantity || 0),
-    0
-  ) || 0;
+  const totalItemsCount =
+    currentCart?.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) ||
+    0;
 
   const handleCheckout = async () => {
     try {
@@ -82,10 +85,93 @@ const CartDetailPage = () => {
       }
       if (!currentCart?.id) return showModal("Cart not loaded yet");
       navigate(`/customer/order-details/${currentCart.id}`, { state: { cartId: currentCart.id } });
+
+      try {
+        localStorage.setItem("currentCart", JSON.stringify(currentCart));
+        localStorage.setItem(
+          "appliedCoupon",
+          JSON.stringify(appliedCoupons || null)
+        );
+      } catch (e) {
+        console.warn("Failed to persist cart/coupon to localStorage", e);
+      }
+      navigate(`/customer/order-details/${currentCart.id}`, {
+        state: { cart: currentCart, appliedCoupon: appliedCoupons || null },
+      });
     } catch (err) {
       console.error("Checkout failed", err);
     }
   };
+
+  const handleApplyCoupon = async (couponCode, couponVendorId) => {
+    if (!currentCart?.id) {
+      alert("Cart not loaded yet");
+      return;
+    }
+
+    const itemsFromVendor = currentCart.items.filter(
+      (item) => item.vendor_id === couponVendorId
+    );
+
+    if (itemsFromVendor.length === 0) {
+      alert("No items from this vendor found in the cart.");
+      return;
+    }
+
+    const itemsForServer = itemsFromVendor.map((item) => ({
+      id: item.id,
+      cart_id: item.cart_id,
+      price: Number(item.price),
+      quantity: item.quantity,
+      vendor_id: item.vendor_id,
+      coupons: item.coupons || [],
+    }));
+
+    try {
+      const res = await fetch(`http://localhost:3000/api/coupons/validate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          coupon_code: couponCode,
+          userId: storedUser?.id,
+          cartItems: itemsForServer,
+          cartId: currentCart.id,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.valid) {
+        setAppliedCoupons((prev) => ({
+          ...prev,
+          [couponVendorId]: {
+            code: couponCode,
+            discount: Number(data.discount_amount),
+          },
+        }));
+
+        setTotalDiscount(
+          (prevTotal) => prevTotal + Number(data.discount_amount)
+        );
+
+        alert(
+          `Coupon "${couponCode}" applied! Discount: $${data.discount_amount}`
+        );
+      } else {
+        alert(data.message || "Invalid coupon");
+      }
+    } catch (err) {
+      console.error("Failed to apply coupon", err);
+    }
+  };
+
+  const discountedTotal = total - totalDiscount;
+  console.log("Total discount from all coupons:", totalDiscount);
+  console.log("Final total:", discountedTotal);
+
 
   return (
     <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-[var(--textbox)]'} transition-colors duration-300`}>
@@ -120,6 +206,38 @@ const CartDetailPage = () => {
           <p className={`${
             themeMode === 'dark' ? 'text-gray-300' : 'text-gray-600'
           } max-w-2xl text-base sm:text-lg`}>
+    <div
+      className={`min-h-screen ${
+        themeMode === "dark" ? "bg-[var(--bg)]" : "bg-white"
+      } transition-colors duration-300`}
+    >
+      {/* Header Section with Gradient */}
+      <div
+        className="w-full text-left pt-4"
+        style={{
+          background:
+            themeMode === "dark"
+              ? `linear-gradient(to bottom, 
+                rgba(0, 0, 0, 0.21) 0%, 
+                var(--bg) 100%)`
+              : `linear-gradient(to bottom, 
+                rgba(113, 117, 116, 0.12) 0%, 
+                var(--bg) 100%)`,
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h1
+            className={`text-4xl font-bold mb-3 pt-8 ${
+              themeMode === "dark" ? "text-white" : "text-gray-900"
+            }`}
+          >
+            Shopping Cart
+          </h1>
+          <p
+            className={`${
+              themeMode === "dark" ? "text-gray-300" : "text-gray-600"
+            } max-w-2xl text-lg`}
+          >
             Review your items and proceed to checkout
           </p>
         </div>
@@ -146,7 +264,7 @@ const CartDetailPage = () => {
               </div>
             )}
           </div>
-          
+
           <button
             onClick={handleAddProduct}
             className="bg-[var(--button)] text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl hover:bg-[#015c40] transition-all duration-300 flex items-center gap-2 sm:gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 font-semibold text-sm sm:text-base w-full sm:w-auto justify-center"
@@ -172,29 +290,47 @@ const CartDetailPage = () => {
                 }`}>
                   {currentCart.items.length}
                 </span>
-                <span className={`${themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Products</span>
+                <span
+                  className={`${
+                    themeMode === "dark" ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  Products
+                </span>
               </div>
-              
+
               <div className="w-px h-4 bg-gray-400/30"></div>
-              
+
               <div className="flex items-center gap-2">
                 <span className={`font-semibold ${
                   themeMode === 'dark' ? 'text-[var(--text)]' : 'text-gray-800'
                 }`}>
                   {totalItemsCount}
                 </span>
-                <span className={`${themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Items</span>
+                <span
+                  className={`${
+                    themeMode === "dark" ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  Items
+                </span>
               </div>
-              
+
               <div className="w-px h-4 bg-gray-400/30"></div>
-              
+
               <div className="flex items-center gap-2">
                 <span className={`font-semibold ${
                   themeMode === 'dark' ? 'text-[var(--text)]' : 'text-gray-800'
                 }`}>
                   {Object.keys(groupedItems).length}
                 </span>
-                <span className={`${themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Vendors</span>
+                <span
+                  className={`${
+                    themeMode === "dark" ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  Vendors
+                </span>
               </div>
             </div>
           </div>
@@ -243,33 +379,102 @@ const CartDetailPage = () => {
           <div className="space-y-4 sm:space-y-6">
             {/* Vendors Sections */}
             {Object.entries(groupedItems).map(([vendor, vendorData]) => (
-              <div 
-                key={vendor} 
-                className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border-2 transition-all duration-300 ${
-                  themeMode === 'dark' 
-                    ? 'bg-[var(--div)] border-[var(--border)] hover:border-[var(--button)]/50' 
-                    : 'bg-white border-gray-200 hover:border-[var(--button)]/30 hover:shadow-xl'
+              <div
+                key={vendor}
+                className={`rounded-2xl p-6 shadow-lg border-2 transition-all duration-300 ${
+                  themeMode === "dark"
+                    ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)] hover:border-[var(--button)]/50"
+                    : "bg-[var(--textbox)] border-gray-200 hover:border-[var(--button)]/30 hover:shadow-xl"
                 }`}
               >
                 {/* Vendor Header */}
-                <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-[var(--border)]">
-                  <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl ${
-                    themeMode === 'dark' 
-                      ? 'bg-[var(--button)]/10 text-[var(--button)]' 
-                      : 'bg-[var(--button)]/5 text-[var(--button)]'
-                  }`}>
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                <div className="flex items-center gap-4 mb-6 pb-4 border-b border-[var(--border)]">
+                  <div
+                    className={`p-3 rounded-xl ${
+                      themeMode === "dark"
+                        ? "bg-[var(--button)]/10 text-[var(--button)]"
+                        : "bg-[var(--button)]/5 text-[var(--button)]"
+                    }`}
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                      />
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h2 className={`text-lg sm:text-xl font-bold ${
-                      themeMode === 'dark' ? 'text-white' : 'text-gray-900'
-                    }`}>{vendor}</h2>
-                    <p className={`text-xs sm:text-sm ${
-                      themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                    }`}>
-                      {vendorData.items.length} product{vendorData.items.length !== 1 ? 's' : ''} • {vendorData.items.reduce((sum, item) => sum + (item.quantity || 0), 0)} items
+                    <h2
+                      className={`text-xl font-bold ${
+                        themeMode === "dark" ? "text-white" : "text-gray-900"
+                      }`}
+                    >
+                      {vendor}
+                    </h2>
+
+                    {vendorData.items[0]?.coupons?.length > 0 && (
+                      <div className="mt-2 space-y-2">
+                        {vendorData.items[0].coupons.map((coupon, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between bg-[var(--button)]/10 px-3 py-2 rounded-xl text-sm"
+                          >
+                            <div className="flex items-center gap-2">
+                              <svg
+                                className="w-4 h-4 text-[var(--button)]"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 14l2-2 4 4m0 0l4-4m-4 4V3"
+                                />
+                              </svg>
+                              <span className="font-semibold text-[var(--text)]">
+                                Coupon available:
+                                <span className="text-[var(--button)] ml-1">
+                                  {coupon.code} ({coupon.discount_value}%)
+                                </span>
+                              </span>
+                            </div>
+                            <button
+                              onClick={() =>
+                                handleApplyCoupon(
+                                  coupon.code,
+                                  vendorData.items[0].vendor_id
+                                )
+                              }
+                              className="bg-[var(--button)] text-white px-4 py-2 rounded-lg hover:bg-[#015c40] transition-all duration-300 text-xs font-semibold"
+                            >
+                              Apply
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <p
+                      className={`text-sm ${
+                        themeMode === "dark" ? "text-gray-400" : "text-gray-600"
+                      }`}
+                    >
+                      {vendorData.items.length} product
+                      {vendorData.items.length !== 1 ? "s" : ""} •{" "}
+                      {vendorData.items.reduce(
+                        (sum, item) => sum + (item.quantity || 0),
+                        0
+                      )}{" "}
+                      items
                     </p>
                   </div>
                 </div>
@@ -284,23 +489,60 @@ const CartDetailPage = () => {
             ))}
 
             {/* Enhanced Checkout Section */}
-            <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-2xl border-2 sticky bottom-4 sm:bottom-6 ${
-              themeMode === 'dark' 
-                ? 'bg-[var(--div)] border-[var(--border)]' 
-                : 'bg-white border-gray-200'
-            }`}>
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6">
+            <div
+              className={`rounded-2xl p-6 shadow-2xl border-2 sticky bottom-6 ${
+                themeMode === "dark"
+                  ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)]"
+                  : "bg-[var(--textbox)] border-gray-200"
+              }`}
+            >
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                 {/* Total Price */}
                 <div className="text-center lg:text-left">
-                  <p className={`text-2xl sm:text-3xl font-bold ${
-                    themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'
-                  }`}>
+                  {/* المجموع قبل الخصم */}
+                  <p
+                    className={`text-lg font-semibold line-through ${
+                      totalDiscount > 0
+                        ? themeMode === "dark"
+                          ? "text-gray-500"
+                          : "text-gray-400"
+                        : "hidden"
+                    }`}
+                  >
                     ${total.toFixed(2)}
                   </p>
-                  <p className={`text-xs sm:text-sm ${
-                    themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
-                    Total for {totalItemsCount} item{totalItemsCount !== 1 ? 's' : ''}
+
+                  {/* الخصم */}
+                  {totalDiscount > 0 && (
+                    <p
+                      className={`text-green-600 font-medium ${
+                        themeMode === "dark"
+                          ? "text-green-400"
+                          : "text-green-600"
+                      }`}
+                    >
+                      -${totalDiscount.toFixed(2)} discount applied
+                    </p>
+                  )}
+
+                  {/* المجموع بعد الخصم */}
+                  <p
+                    className={`text-3xl font-bold ${
+                      themeMode === "dark"
+                        ? "text-[var(--text)]"
+                        : "text-[var(--button)]"
+                    }`}
+                  >
+                    ${discountedTotal.toFixed(2)}
+                  </p>
+
+                  <p
+                    className={`text-sm ${
+                      themeMode === "dark" ? "text-gray-400" : "text-gray-600"
+                    }`}
+                  >
+                    Total for {totalItemsCount} item
+                    {totalItemsCount !== 1 ? "s" : ""}
                   </p>
                 </div>
 
@@ -319,7 +561,7 @@ const CartDetailPage = () => {
                     </svg>
                     Add More Items
                   </button>
-                  
+
                   <button
                     onClick={handleCheckout}
                     className="bg-[var(--button)] text-white px-4 sm:px-6 lg:px-8 py-2 sm:py-3 rounded-xl hover:bg-[#015c40] transition-all duration-300 font-semibold flex items-center gap-2 sm:gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 text-sm sm:text-base justify-center"

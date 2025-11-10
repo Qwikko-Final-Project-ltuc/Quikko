@@ -25,15 +25,15 @@ export default function SideBar({ isOpen, onClose }) {
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+      if (
+        isOpen &&
+        sidebarRef.current &&
+        !sidebarRef.current.contains(event.target)
+      ) {
         onClose();
       }
     }
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
-    }
+    document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen, onClose]);
 

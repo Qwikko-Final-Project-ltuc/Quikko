@@ -26,6 +26,48 @@ const OrdersPage = () => {
   const [productImages, setProductImages] = useState({});
   const [imagesLoading, setImagesLoading] = useState(false);
 
+  // ----------------------------------------------
+  const [decisionLoading, setDecisionLoading] = useState(false);
+  const [decisionError, setDecisionError] = useState("");
+
+  // نفس أسلوبك: هيدر التوكن محلي
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("token");
+    return {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
+
+  // نداء PATCH لاتخاذ القرار
+  const submitCustomerDecision = async (orderId, action) => {
+    setDecisionError("");
+    setDecisionLoading(true);
+    try {
+      const res = await fetch(
+        `http://localhost:3000/api/customers/orders/${orderId}/decision`,
+        {
+          method: "PATCH",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ action }), // "cancel_order" | "proceed_without_rejected"
+        }
+      );
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json?.success === false) {
+        throw new Error(json?.message || "Failed to submit decision");
+      }
+
+      // رجّع الأوردارات محدّثة
+      dispatch(fetchOrders());
+    } catch (err) {
+      setDecisionError(err.message || "Server error");
+    } finally {
+      setDecisionLoading(false);
+    }
+  };
+  // ------------------------------------------------------------
+
   const fetchProductImages = async (productIds) => {
     setImagesLoading(true);
     try {
@@ -43,7 +85,6 @@ const OrdersPage = () => {
               image: firstImage
             };
           } else {
-            console.error(`Failed to fetch product ${productId}:`, response.status);
             return { productId, image: null };
           }
         } catch (error) {
@@ -51,7 +92,7 @@ const OrdersPage = () => {
           return { productId, image: null };
         }
       });
-      
+
       const results = await Promise.all(imagePromises);
       
       results.forEach(({ productId, image }) => {
@@ -85,7 +126,7 @@ const OrdersPage = () => {
           setProductImages(images);
         }
       };
-      
+
       loadProductImages();
     }
   }, [items]);
@@ -138,6 +179,7 @@ const OrdersPage = () => {
           <button 
             onClick={() => dispatch(fetchOrders())}
             className="relative bg-gradient-to-r from-[var(--button)] to-[var(--primary)] text-white px-8 py-4 rounded-2xl hover:shadow-2xl transition-all duration-300 font-bold shadow-lg transform hover:scale-105 group overflow-hidden"
+
           >
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
             <span className="relative z-10 flex items-center gap-3">
@@ -329,32 +371,53 @@ const OrdersPage = () => {
             </button>
           </div>
         ) : (
-          <>
-            {/* Responsive Orders Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-12">
-              {currentOrders.map((order, index) => {
-                const shippingAddress = order.shipping_address
-                  ? JSON.parse(order.shipping_address)
-                  : null;
+          <div className="space-y-8 animate-fade-in-up">
+            {currentOrders.map((order, index) => {
+              const shippingAddress = order.shipping_address
+                ? JSON.parse(order.shipping_address)
+                : null;
 
-                return (
-                  <div
-                    key={order.id}
-                    className={`border-2 rounded-3xl p-4 sm:p-6 lg:p-8 transition-all duration-300 hover:shadow-2xl hover:border-[var(--button)]/50 transform hover:-translate-y-1 flex flex-col min-h-[550px] sm:min-h-[600px] ${
-                      themeMode === "dark" 
-                        ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)]" 
-                        : "bg-gradient-to-br from-white to-gray-50 border-gray-200"
-                    }`}
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
-                    {/* Order Header */}
-                    <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
-                      {/* Order ID */}
-                      <div className="text-center">
-                        <div className="text-xs font-semibold uppercase tracking-wider text-[var(--light-gray)] mb-1 sm:mb-2">Order ID</div>
-                        <div className="text-base sm:text-lg font-bold bg-gradient-to-r from-[var(--text)] to-[var(--button)] bg-clip-text text-transparent">
-                          #{order.id}
-                        </div>
+              // ✅ يظهر بلوك القرار فقط لو الأوردر بإنتظار قرار الزبون + فيه آيتم مرفوض
+              const hasRejected =
+                Array.isArray(order.items) &&
+                order.items.some(
+                  (it) => (it.vendor_status || "").toLowerCase() === "rejected"
+                );
+              const showDecisionPanel =
+                order.status === "awaiting_customer_decision" && hasRejected;
+
+              return (
+                <div
+                  key={order.id}
+                  className={`border-2 border-[var(--border)] rounded-2xl p-8 transition-all duration-300 hover:shadow-2xl hover:border-[var(--button)]/50 ${
+                    themeMode === "dark"
+                      ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)]"
+                      : "bg-gradient-to-br from-white to-[var(--textbox)]"
+                  }`}
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  {/* Order Header */}
+                  <div className="grid grid-cols-1 lg:grid-cols-7 gap-6 mb-8 items-center">
+                    {/* Order ID */}
+                    <div className="text-center">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-[var(--light-gray)] mb-2">
+                        Order ID
+                      </div>
+                      <div className="text-lg font-bold bg-gradient-to-r from-[var(--text)] to-[var(--button)] bg-clip-text text-transparent">
+                        #{order.id}
+                      </div>
+                    </div>
+
+                    {/* Order Date */}
+                    <div className="text-center">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-[var(--light-gray)] mb-2">
+                        Order Date
+                      </div>
+                      <div className="text-[var(--text)] font-semibold">
+                        {new Date(order.created_at).toLocaleDateString(
+                          "en-US",
+                          { year: "numeric", month: "short", day: "numeric" }
+                        )}
                       </div>
 
                       {/* Order Date */}
@@ -433,73 +496,253 @@ const OrdersPage = () => {
                       </div>
                     </div>
 
-                    {/* Order Items with Custom Scrollbar - Same style as reviews */}
-                    <div className="border-t border-[var(--border)]/50 pt-4 sm:pt-6 mb-4 sm:mb-6 flex-1">
-                      <h3 className={`font-bold text-base sm:text-lg mb-3 sm:mb-4 flex items-center gap-2 ${
-                        themeMode === 'dark' ? "text-[var(--textbox)]" : "text-gray-800"
-                      }`}>
-                        <Package size={18} className="text-[var(--button)]" />
-                        Order Items
-                        {imagesLoading && (
-                          <span className="text-xs sm:text-sm text-[var(--light-gray)] ml-2">
-                            (Loading images...)
-                          </span>
-                        )}
-                      </h3>
-                      <div 
-                        className="space-y-2 sm:space-y-3 max-h-40 sm:max-h-48 overflow-y-auto pr-2 custom-scrollbar"
+                  {/* 💡 Customer Decision Panel (يظهر فقط إذا فيه مرفوض) */}
+                  {showDecisionPanel && (
+                    <div
+                      className="mb-6 p-4 rounded-2xl border-2"
+                      style={{
+                        borderColor: "rgba(234,179,8,0.4)", // أصفر هادئ
+                        background:
+                          themeMode === "dark"
+                            ? "linear-gradient(180deg, rgba(161,98,7,0.10), transparent)"
+                            : "linear-gradient(180deg, rgba(253,230,138,0.25), white)",
+                      }}
+                    >
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <div>
+                          <div
+                            className="font-bold mb-1"
+                            style={{
+                              color:
+                                themeMode === "dark"
+                                  ? "var(--textbox)"
+                                  : "#854d0e",
+                            }}
+                          >
+                            Some items were rejected by vendors
+                          </div>
+                          <div
+                            className="text-sm"
+                            style={{
+                              color:
+                                themeMode === "dark"
+                                  ? "var(--text)"
+                                  : "#7c6f57",
+                            }}
+                          >
+                            You can cancel the entire order, or proceed without
+                            the rejected items.
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <button
+                            disabled={decisionLoading}
+                            onClick={async () => {
+                              const ok = window.confirm(
+                                "Are you sure you want to cancel the entire order?"
+                              );
+                              if (!ok) return;
+                              await submitCustomerDecision(
+                                order.id,
+                                "cancel_order"
+                              );
+                            }}
+                            className="px-4 py-2 rounded-xl text-sm font-semibold border transition-all duration-200"
+                            style={{
+                              borderColor: "rgba(239,68,68,0.35)",
+                              color: "#b91c1c",
+                              backgroundColor: "rgba(239,68,68,0.08)",
+                              opacity: decisionLoading ? 0.7 : 1,
+                            }}
+                          >
+                            Cancel Order
+                          </button>
+
+                          <button
+                            disabled={decisionLoading}
+                            onClick={async () => {
+                              const ok = window.confirm(
+                                "Proceed without rejected items?"
+                              );
+                              if (!ok) return;
+                              await submitCustomerDecision(
+                                order.id,
+                                "proceed_without_rejected"
+                              );
+                            }}
+                            className="px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200"
+                            style={{
+                              backgroundColor: "var(--button)",
+                              color: "white",
+                              opacity: decisionLoading ? 0.7 : 1,
+                            }}
+                          >
+                            Proceed Without Rejected
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* خطأ السيرفر إن وجد */}
+                      {decisionError && (
+                        <div
+                          className="mt-3 text-xs px-3 py-2 rounded-lg"
+                          style={{
+                            border: "1px solid rgba(239,68,68,0.35)",
+                            backgroundColor: "rgba(239,68,68,0.06)",
+                            color: "#b91c1c",
+                          }}
+                        >
+                          {decisionError}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Order Items with Images */}
+                  <div className="border-t border-[var(--border)] pt-6">
+                    <h3
+                      className={`font-bold text-lg mb-4 flex items-center gap-2 ${
+                        themeMode === "dark"
+                          ? "text-[var(--textbox)]"
+                          : "text-gray-800"
+                      }`}
+                    >
+                      <svg
+                        className="w-5 h-5 text-[var(--button)]"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                       >
-                        {order.items.map((item) => {
-                          const imageUrl = productImages[item.product_id];
-                          
-                          return (
-                            <div
-                              key={item.product_id}
-                              className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border border-[var(--border)] hover:border-[var(--button)]/50 transition-all duration-200 cursor-pointer group/item"
-                              onClick={() => navigate(`/customer/product/${item.product_id}`)}
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                        />
+                      </svg>
+                      Order Items
+                      {imagesLoading && (
+                        <span className="text-sm text-[var(--light-gray)] ml-2">
+                          (Loading images...)
+                        </span>
+                      )}
+                    </h3>
+
+                    <div className="space-y-4">
+                      {order.items.map((item) => {
+                        const imageUrl = productImages[item.product_id];
+
+                        // شارة الحالة (بدون تغيير على الألوان العامة)
+                        const status = (item.vendor_status || "").toLowerCase(); // pending | accepted | rejected
+                        const statusLabel =
+                          status === "accepted"
+                            ? "Accepted"
+                            : status === "rejected"
+                            ? "Rejected"
+                            : "Pending";
+
+                        const statusClass =
+                          status === "accepted"
+                            ? "bg-green-500/15 text-green-600 border border-green-500/25"
+                            : status === "rejected"
+                            ? "bg-red-500/15 text-red-600 border border-red-500/25"
+                            : "bg-yellow-500/15 text-yellow-600 border border-yellow-500/25";
+
+                        return (
+                          <div
+                            key={item.product_id}
+                            className="relative flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] hover:border-[var(--button)]/50 transition-all duration-200 cursor-pointer"
+                            onClick={() => handleProductClick(item.product_id)}
+                          >
+                            {/* شارة الحالة أعلى يمين الكارد */}
+                            <span
+                              className={`absolute top-3 right-3 px-2 py-0.5 rounded-full text-xs font-semibold ${statusClass}`}
                             >
-                              {/* Product Image */}
-                              <div className="flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 border-[var(--border)] group-hover/item:border-[var(--button)] transition-all duration-300">
-                                {imageUrl ? (
-                                  <img 
-                                    src={imageUrl} 
-                                    alt={item.name}
-                                    className="w-full h-full object-cover transform group-hover/item:scale-110 transition-transform duration-300"
-                                    onError={(e) => {
-                                      e.target.style.display = 'none';
-                                    }}
-                                  />
-                                ) : null}
-                                <div className={`w-full h-full flex items-center justify-center rounded-xl ${
-                                  imageUrl ? 'hidden' : 'flex'
-                                } ${themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-gray-100'}`}>
-                                  {imagesLoading ? (
-                                    <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-[var(--button)]"></div>
-                                  ) : (
-                                    <Package size={16} className="text-[var(--light-gray)]" />
-                                  )}
-                                </div>
+                              {statusLabel}
+                            </span>
+
+                            {/* صورة المنتج */}
+                            <div className="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 border-[var(--border)]">
+                              {imageUrl ? (
+                                <img
+                                  src={imageUrl}
+                                  alt={item.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.target.style.display = "none";
+                                  }}
+                                />
+                              ) : null}
+                              <div
+                                className={`w-full h-full flex items-center justify-center rounded-xl ${
+                                  imageUrl ? "hidden" : "flex"
+                                } ${
+                                  themeMode === "dark"
+                                    ? "bg-[var(--div)]"
+                                    : "bg-gray-100"
+                                }`}
+                              >
+                                {imagesLoading ? (
+                                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--button)]"></div>
+                                ) : (
+                                  <span className="text-[var(--light-gray)] text-xs">
+                                    No Image
+                                  </span>
+                                )}
                               </div>
-                              
-                              {/* Product Details */}
-                              <div className="flex-1 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-2 min-w-0">
-                                <div className="flex-1 min-w-0">
-                                  <span className={`font-bold text-sm sm:text-base block mb-1 truncate ${
-                                    themeMode === 'dark' ? "text-[var(--text)]" : "text-gray-800"
-                                  }`}>
-                                    {item.name}
-                                  </span>
-                                  <span className={`text-xs sm:text-sm ${
-                                    themeMode === 'dark' ? "text-gray-400" : "text-gray-500"
-                                  }`}>
-                                    {item.quantity} × ${parseFloat(item.price).toFixed(2)}
-                                  </span>
-                                </div>
-                                <span className={`font-bold text-base sm:text-lg whitespace-nowrap ${
-                                  themeMode === 'dark' ? "text-[var(--textbox)]" : "text-gray-700"
-                                }`}>
-                                  ${(parseFloat(item.price) * item.quantity).toFixed(2)}
+                            </div>
+
+                            {/* تفاصيل المنتج */}
+                            <div className="flex-1 flex justify-between items-center">
+                              <div>
+                                <span
+                                  className={`font-bold text-lg block mb-1 ${
+                                    themeMode === "dark"
+                                      ? "text-[var(--text)]"
+                                      : "text-gray-800"
+                                  }`}
+                                >
+                                  {item.name}
                                 </span>
+
+                                {/* سطر الكمية والسعر (يبقى كما هو) */}
+                                <span
+                                  className={`text-sm ${
+                                    themeMode === "dark"
+                                      ? "text-gray-400"
+                                      : "text-gray-500"
+                                  }`}
+                                >
+                                  Quantity: {item.quantity} × $
+                                  {parseFloat(item.price).toFixed(2)}
+                                </span>
+
+                                {/* سبب الرفض إن وُجد */}
+                                {status === "rejected" && (
+                                  <div className="mt-1 text-xs flex items-center gap-1 text-red-600">
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                      />
+                                    </svg>
+                                    <span>
+                                      Reason:{" "}
+                                      {item.rejection_reason &&
+                                      item.rejection_reason.trim()
+                                        ? item.rejection_reason
+                                        : "No reason provided"}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           );

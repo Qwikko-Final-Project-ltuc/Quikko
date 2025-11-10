@@ -62,6 +62,8 @@ const ProductDetails = () => {
   const [displayedIds, setDisplayedIds] = useState(new Set());
   const [toast, setToast] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [averageRating, setAverageRating] = useState(null);
+  const [reviewsCount, setReviewsCount] = useState(0);
 
   const user = useSelector((state) => state.cart.user);
   const themeMode = useSelector((state) => state.customerTheme.mode);
@@ -236,11 +238,16 @@ const handleAddToCartWithAnimation = (e) => {
     const fetchReviews = async () => {
       try {
         const res = await axios.get(`http://localhost:3000/api/products/review/${id}`);
-        setReviews(res.data);
-        
-        // Check if current user has already reviewed this product
+        console.log("✅ Reviews API response:", res.data);
+
+        // نقرأ المصفوفة والبيانات الأخرى بشكل صحيح
+        const reviewsData = Array.isArray(res.data.reviews) ? res.data.reviews : [];
+        setReviews(reviewsData);
+        setAverageRating(res.data.average_rating);
+        setReviewsCount(res.data.reviews_count);
+
         if (user?.id) {
-          const userReview = res.data.find(review => review.user_id === user.id);
+          const userReview = reviewsData.find((review) => review.user_id === user.id);
           setHasUserReviewed(!!userReview);
         }
       } catch (err) {
@@ -373,13 +380,12 @@ const handleAddToCartWithAnimation = (e) => {
 
   const handleAddReview = async (e) => {
     e.preventDefault();
-    
-    // Validation
+
     if (rating === 0) {
       showToast("Please select a rating before submitting your review", "warning");
       return;
     }
-    
+
     if (!comment.trim()) {
       showToast("Please write a comment before submitting your review", "warning");
       return;
@@ -411,7 +417,9 @@ const handleAddToCartWithAnimation = (e) => {
 
       // Refresh reviews
       const res = await axios.get(`http://localhost:3000/api/products/review/${id}`);
-      setReviews(res.data);
+      setReviews(res.data.reviews || []);
+      setAverageRating(res.data.average_rating);
+      setReviewsCount(res.data.reviews_count);
     } catch (err) {
       console.error("Error adding review:", err);
       if (err.response?.status === 409) {
@@ -423,25 +431,24 @@ const handleAddToCartWithAnimation = (e) => {
     }
   };
 
-  // Function to render stars
   const renderStars = (rating) => {
     const stars = [];
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 >= 0.5;
-    
+
     for (let i = 0; i < fullStars; i++) {
       stars.push(<FaStar key={`full-${i}`} className="text-yellow-400" />);
     }
-    
+
     if (hasHalfStar) {
       stars.push(<FaStarHalfAlt key="half" className="text-yellow-400" />);
     }
-    
+
     const emptyStars = 5 - stars.length;
     for (let i = 0; i < emptyStars; i++) {
       stars.push(<FaRegStar key={`empty-${i}`} className="text-yellow-400" />);
     }
-    
+
     return stars;
   };
 
@@ -482,9 +489,6 @@ const handleAddToCartWithAnimation = (e) => {
   }
 
   const images = Array.isArray(product.images) ? product.images : [];
-  const averageRating = reviews.length > 0 
-    ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length 
-    : 0;
 
   return (
     <>
@@ -512,6 +516,39 @@ const handleAddToCartWithAnimation = (e) => {
                       className="w-full h-96 object-contain rounded-2xl cursor-pointer"
                       onClick={() => setIsOpen(true)}
                     />
+    <div className="min-h-screen bg-[var(--bg)] py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Product Details */}
+        <div className="flex flex-col lg:flex-row gap-8 mb-4 p-12">
+          {/* Product Images */}
+          <div className="w-full lg:w-1/2">
+            {images.length > 0 && (
+              <>
+                <div className="relative rounded-2xl overflow-hidden mb-4 bg-[var(--div)] p-4">
+                  <img
+                    src={images[currentImage]}
+                    alt={product.name}
+                    className="w-full h-96 object-contain rounded-2xl cursor-pointer"
+                    onClick={() => setIsOpen(true)}
+                  />
+                </div>
+
+                {images.length > 1 && (
+                  <div className="flex gap-2 overflow-x-auto">
+                    {images.map((img, index) => (
+                      <div key={index} className="bg-[var(--div)] p-2 rounded-lg">
+                        <img
+                          src={img}
+                          alt={`${product.name} ${index + 1}`}
+                          className={`w-20 h-20 object-cover rounded-lg cursor-pointer border-2 ${
+                            currentImage === index
+                              ? "border-[var(--button)]"
+                              : "border-transparent"
+                          }`}
+                          onClick={() => setCurrentImage(index)}
+                        />
+                      </div>
+                    ))}
                   </div>
                   
                   {/* Thumbnail Images */}
@@ -619,30 +656,50 @@ const handleAddToCartWithAnimation = (e) => {
             </div>
           </div>
 
-          {/* Reviews Section مع سكرول أقصر */}
-          <div className={`rounded-2xl overflow-hidden ${
-            themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-[var(--textbox)]'
-          } shadow-sm`}>
-            <div className="p-6">
-              <h2 className="text-xl font-bold text-[var(--text)] mb-4">
-                Customer Reviews ({reviews.length})
-              </h2>
+        {/* Reviews Section */}
+        <div
+          className={`rounded-2xl overflow-hidden ${
+            themeMode === "dark" ? "bg-[var(--div)]" : "bg-[var(--textbox)]"
+          } shadow-sm`}
+        >
+          <div className="p-6">
+            <h2 className="text-xl font-bold text-[var(--text)] mb-4">
+              Customer Reviews ({reviewsCount})
+            </h2>
 
-              {reviews.length === 0 ? (
-                <p className="text-[var(--light-gray)] text-center py-6">
-                  No reviews yet. Be the first to review this product!
-                </p>
-              ) : (
-                <div className="space-y-4 max-h-34 overflow-y-auto pr-2 custom-scrollbar">
-                  {reviews.map((review) => (
-                    <div key={review.id} className="border-b border-[var(--border)] pb-4 last:border-b-0">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-[var(--button)] rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                          {review.user_name?.charAt(0)?.toUpperCase() || 'U'}
-                        </div>
-                        <div>
-                          <span className="font-semibold text-[var(--text)] text-sm block">
-                            {review.user_name || 'Anonymous'}
+            {averageRating && (
+              <div className="mb-3">
+                <h4 className="font-semibold text-lg">
+                  ⭐ Average Rating: {averageRating}
+                </h4>
+              </div>
+            )}
+
+            {reviews.length === 0 ? (
+              <p className="text-[var(--light-gray)] text-center py-6">
+                No reviews yet. Be the first to review this product!
+              </p>
+            ) : (
+              <div className="space-y-4 max-h-34 overflow-y-auto pr-2 custom-scrollbar">
+                {reviews.map((review) => (
+                  <div
+                    key={review.id}
+                    className="border-b border-[var(--border)] pb-4 last:border-b-0"
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-8 h-8 bg-[var(--button)] rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                        {review.user_name?.charAt(0)?.toUpperCase() || "U"}
+                      </div>
+                      <div>
+                        <span className="font-semibold text-[var(--text)] text-sm block">
+                          {review.user_name || "Anonymous"}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            {renderStars(review.rating)}
+                          </div>
+                          <span className="text-xs text-[var(--light-gray)]">
+                            {new Date(review.created_at).toLocaleDateString()}
                           </span>
                           <div className="flex items-center gap-2">
                             <div className="flex items-center gap-1">
@@ -695,25 +752,41 @@ const handleAddToCartWithAnimation = (e) => {
                   </div>
                 </div>
 
-                <div className="mb-4">
-                  <label className="block text-sm text-[var(--text)] mb-2">Your Review *</label>
-                  <textarea
-                    placeholder="Share your thoughts about this product..."
-                    className={`w-full rounded-lg p-3 border transition-all duration-200 focus:ring-2 focus:ring-[var(--button)] focus:border-transparent text-[var(--light-gray)] text-sm ${
-                      themeMode === 'dark' 
-                        ? 'bg-[var(--bg)] border-[var(--border)]' 
-                        : 'bg-white border-gray-300'
-                    } ${hasUserReviewed ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    rows="3"
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    required
-                    disabled={hasUserReviewed}
-                  />
+              <div className="mb-4">
+                <label className="block text-sm text-[var(--text)] mb-2">
+                  Your Rating *
+                </label>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      className={`text-xl transition-transform duration-200 hover:scale-110 ${
+                        rating >= num ? "text-yellow-400" : "text-gray-300"
+                      }`}
+                      onClick={() => setRating(num)}
+                      disabled={hasUserReviewed}
+                    >
+                      <FaStar />
+                    </button>
+                  ))}
                 </div>
 
-                <button
-                  type="submit"
+              <div className="mb-4">
+                <label className="block text-sm text-[var(--text)] mb-2">
+                  Your Review *
+                </label>
+                <textarea
+                  placeholder="Share your thoughts about this product..."
+                  className={`w-full rounded-lg p-3 border transition-all duration-200 focus:ring-2 focus:ring-[var(--button)] focus:border-transparent text-[var(--light-gray)] text-sm ${
+                    themeMode === "dark"
+                      ? "bg-[var(--bg)] border-[var(--border)]"
+                      : "bg-white border-gray-300"
+                  } ${hasUserReviewed ? "opacity-50 cursor-not-allowed" : ""}`}
+                  rows="3"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  required
                   disabled={hasUserReviewed}
                   className={`px-6 py-2 rounded-lg font-semibold transition-all duration-300 hover:scale-105 text-sm ${
                     hasUserReviewed 

@@ -9,7 +9,7 @@ const Dashboard = () => {
   const [isDarkMode, setIsDarkMode] = useState(
     localStorage.getItem("theme") === "dark"
   );
-  const [status, setStatus] = useState("loading"); // ✅ حالة التحميل
+  const [status, setStatus] = useState("loading");
 
   const calculateTotalSales = (orders) => {
     return orders.reduce(
@@ -31,7 +31,6 @@ const Dashboard = () => {
       if (json.success) {
         const ordersData = await fetchOrders();
         const totalSales = calculateTotalSales(ordersData);
-
         setReport({
           ...json.data,
           total_sales: totalSales.toFixed(2),
@@ -65,9 +64,9 @@ const Dashboard = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      setStatus("loading"); // ✅ بدء التحميل
+      setStatus("loading");
       await Promise.all([fetchReport(), fetchProductsCount(), fetchLastOrders()]);
-      setStatus("idle"); // ✅ انتهاء التحميل
+      setStatus("idle");
     };
     loadData();
 
@@ -78,7 +77,6 @@ const Dashboard = () => {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  // ✅ شاشة التحميل
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
@@ -90,7 +88,6 @@ const Dashboard = () => {
     );
   }
 
-  const pageBg = isDarkMode ? "#242625" : "#f0f2f1";
   const innerBg = isDarkMode ? "#313131" : "#ffffff";
   const textColor = isDarkMode ? "#ffffff" : "#242625";
   const tableLineColor = isDarkMode ? "#f9f9f9" : "#ccc";
@@ -98,110 +95,119 @@ const Dashboard = () => {
 
   return (
     <div
-      className="p-6 space-y-6 min-h-screen"
-      style={{ backgroundColor: pageBg, color: textColor }}
+      className="min-h-screen w-full"
+      style={{
+        backgroundColor: isDarkMode ? "var(--bg-dark)" : "var(--bg)",
+        color: "var(--text)",
+     padding: "3rem", }}
     >
-      {/* Cards Section */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div
-          className="p-6 rounded-2xl shadow flex items-center justify-between"
-          style={{ backgroundColor: innerBg }}
-        >
-          <div>
-            <p style={{ color: textColor }}>Total Sales</p>
-            <h2 style={{ color: textColor }} className="text-2xl font-bold">
-              ${report?.total_sales || 0}
-            </h2>
-          </div>
-          <DollarSign className="w-10 h-10" style={{ color: iconColor }} />
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-10 lg:px-12 py-6 md:py-10 space-y-10">
+        {/* Cards Section */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* كل كارد */}
+          {[
+            {
+              title: "Total Sales",
+              value: `$${report?.total_sales || 0}`,
+              icon: <DollarSign className="w-10 h-10" style={{ color: iconColor }} />,
+            },
+            {
+              title: "Orders Count",
+              value: report?.total_orders || 0,
+              icon: <ShoppingCart className="w-10 h-10" style={{ color: iconColor }} />,
+            },
+            {
+              title: "Active Products",
+              value: productsCount,
+              icon: <Package className="w-10 h-10" style={{ color: iconColor }} />,
+            },
+            {
+              title: "New Notifications",
+              value: 0,
+              icon: <Bell className="w-10 h-10" style={{ color: iconColor }} />,
+            },
+          ].map((card, idx) => (
+            <div
+              key={idx}
+              className="p-5 sm:p-6 rounded-2xl shadow flex flex-col sm:flex-row items-center justify-between gap-3"
+              style={{ backgroundColor: innerBg }}
+            >
+              <div className="text-center sm:text-left">
+                <p style={{ color: textColor }}>{card.title}</p>
+                <h2 style={{ color: textColor }} className="text-2xl font-bold">
+                  {card.value}
+                </h2>
+              </div>
+              {card.icon}
+            </div>
+          ))}
         </div>
 
+        {/* Last Orders Table */}
         <div
-          className="p-6 rounded-2xl shadow flex items-center justify-between"
-          style={{ backgroundColor: innerBg }}
+          className="p-4 sm:p-6 rounded-2xl shadow overflow-x-auto"
+          style={{ backgroundColor: innerBg, color: textColor }}
         >
-          <div>
-            <p style={{ color: textColor }}>Orders Count</p>
-            <h2 style={{ color: textColor }} className="text-2xl font-bold">
-              {report?.total_orders || 0}
-            </h2>
-          </div>
-          <ShoppingCart className="w-10 h-10" style={{ color: iconColor }} />
-        </div>
-
-        <div
-          className="p-6 rounded-2xl shadow flex items-center justify-between"
-          style={{ backgroundColor: innerBg }}
-        >
-          <div>
-            <p style={{ color: textColor }}>Active Products</p>
-            <h2 style={{ color: textColor }} className="text-2xl font-bold">
-              {productsCount}
-            </h2>
-          </div>
-          <Package className="w-10 h-10" style={{ color: iconColor }} />
-        </div>
-
-        <div
-          className="p-6 rounded-2xl shadow flex items-center justify-between"
-          style={{ backgroundColor: innerBg }}
-        >
-          <div>
-            <p style={{ color: textColor }}>New Notifications</p>
-            <h2 style={{ color: textColor }} className="text-2xl font-bold">
-              0
-            </h2>
-          </div>
-          <Bell className="w-10 h-10" style={{ color: iconColor }} />
-        </div>
-      </div>
-
-      {/* Last Orders Table */}
-      <div
-        className="p-6 rounded-2xl shadow"
-        style={{ backgroundColor: innerBg, color: textColor }}
-      >
-        <h2 style={{ color: textColor }} className="text-lg font-bold mb-4">
-          Latest Orders
-        </h2>
-        <table className="w-full border-collapse text-center">
-          <thead>
-            <tr style={{ borderBottom: `1px solid ${tableLineColor}` }}>
-              <th className="p-2">Order ID</th>
-              <th className="p-2">Status</th>
-              <th className="p-2">Total</th>
-              <th className="p-2">Address</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((order) => (
-              <tr
-                key={order.order_id}
-                style={{
-                  borderBottom: `1px solid ${tableLineColor}`,
-                  color: textColor,
-                  backgroundColor: "transparent",
-                }}
-              >
-                <td className="p-2">{order.order_id}</td>
-                <td className="p-2">{order.status}</td>
-                <td className="p-2">${order.total_amount}</td>
-                <td className="p-2">{order.shipping_address}</td>
+          <h2 style={{ color: textColor }} className="text-lg font-bold mb-4">
+            Latest Orders
+          </h2>
+          <table className="w-full border-collapse text-sm sm:text-base text-center min-w-[600px]">
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${tableLineColor}` }}>
+                <th className="p-2">Order ID</th>
+                <th className="p-2">Status</th>
+                <th className="p-2">Total</th>
+                <th className="p-2">Address</th>
               </tr>
-            ))}
-            {orders.length === 0 && (
-              <tr>
-                <td
-                  colSpan="4"
-                  className="p-4 text-center italic"
-                  style={{ color: textColor }}
+            </thead>
+            <tbody>
+              {orders.map((order) => (
+                <tr
+                  key={order.order_id}
+                  style={{
+                    borderBottom: `1px solid ${tableLineColor}`,
+                    color: textColor,
+                    backgroundColor: "transparent",
+                  }}
                 >
-                  No recent orders
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  <td className="p-2">{order.order_id}</td>
+                  <td className="p-2">{order.status}</td>
+                  <td className="p-2">${order.total_amount}</td>
+                  <td className="p-2">
+                    {(() => {
+                      try {
+                        const addr =
+                          typeof order.shipping_address === "string"
+                            ? JSON.parse(order.shipping_address)
+                            : order.shipping_address;
+                        return (
+                          <>
+                            {addr.address_line1},{" "}
+                            {addr.address_line2 && addr.address_line2 + ", "}
+                            {addr.city}, {addr.country}
+                          </>
+                        );
+                      } catch {
+                        return order.shipping_address;
+                      }
+                    })()}
+                  </td>
+                </tr>
+              ))}
+              {orders.length === 0 && (
+                <tr>
+                  <td
+                    colSpan="4"
+                    className="p-4 text-center italic"
+                    style={{ color: textColor }}
+                  >
+                    No recent orders
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

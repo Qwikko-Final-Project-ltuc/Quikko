@@ -67,7 +67,7 @@ router.post("/review", protect, productController.addReview);
 
 // عرض التعليقات لأي شخص
 router.get("/review/:product_id", productController.getProductReviews);
-
+router.get("/review/average/:product_id", productController.getAverageRating);
 // الأدمن فقط يمكنه حذف تعليق
 router.delete("/review/:review_id", protect, authorizeRole("admin"), productController.deleteReview);
 router.post("/upload", protect, productController.uploadProductImages);

@@ -57,18 +57,27 @@ export default function CouponsManagement() {
   }
 
   return (
-    <div
-      className="p-6 space-y-6 min-h-screen transition-colors duration-300"
-      style={{ color: "var(--text)" }}
-    >
-      {/* ✅ العنوان والزر */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Coupon Management</h1>
+  <div
+    className="min-h-screen w-full"
+    style={{
+      backgroundColor: isDarkMode ? "var(--bg-dark)" : "var(--bg)",
+      color: "var(--text)",
+      padding: "3rem",
+    }}
+  >
+    {/* ✅ الحاوية العامة المتجاوبة */}
+    <div className="max-w-screen-xl mx-auto px-4 sm:px-8 lg:px-12 py-8 sm:py-12 lg:py-16">
+      
+      {/* ✅ العنوان والزر متجاوب */}
+      <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-4 mb-10 sm:mb-16">
+        <h1 className="text-xl sm:text-2xl font-bold text-center sm:text-left">
+          Coupon Management
+        </h1>
 
         {!showAddForm && !editingCoupon && (
           <button
             onClick={() => setShowAddForm(true)}
-            className="px-4 py-2 rounded-lg font-semibold transition"
+            className="px-4 py-2 rounded-lg font-semibold text-sm sm:text-base transition"
             style={{
               backgroundColor: "var(--button)",
               color: "#fff",
@@ -82,11 +91,9 @@ export default function CouponsManagement() {
       {/* ✅ كارد الفورم */}
       {(showAddForm || editingCoupon) && (
         <div
-          className="p-6 rounded-2xl shadow-md transition-colors duration-300 mb-4 relative"
+          className="p-4 sm:p-6 rounded-2xl shadow-md transition-colors duration-300 mb-6 relative"
           style={{
-            backgroundColor: isDarkMode
-              ? "var(--mid-dark)"
-              : "var(--bg)",
+            backgroundColor: isDarkMode ? "var(--mid-dark)" : "var(--bg)",
           }}
         >
           {!editingCoupon && (
@@ -99,9 +106,10 @@ export default function CouponsManagement() {
             </button>
           )}
 
-          <h2 className="text-lg font-semibold mb-4">
+          <h2 className="text-base sm:text-lg font-semibold mb-4">
             {editingCoupon ? "Edit Coupon" : "Add New Coupon"}
           </h2>
+
           <div className="space-y-4">
             {editingCoupon ? (
               <CouponEdit
@@ -124,17 +132,18 @@ export default function CouponsManagement() {
         </div>
       )}
 
-      {/* ✅ قائمة الكوبونات */}
+      {/* ✅ جدول الكوبونات */}
       <div
-        className="p-6 rounded-2xl shadow-md transition-colors duration-300"
+        className="p-4 sm:p-6 rounded-2xl shadow-md transition-colors duration-300 overflow-x-auto"
         style={{
-          backgroundColor: isDarkMode
-            ? "var(--mid-dark)"
-            : "var(--bg)",
+          backgroundColor: isDarkMode ? "var(--mid-dark)" : "var(--bg)",
         }}
       >
-        <h2 className="text-lg font-semibold mb-4">Coupon List</h2>
-        <table className="w-full border-collapse">
+        <h2 className="text-base sm:text-lg font-semibold mb-4">
+          Coupon List
+        </h2>
+
+        <table className="w-full border-collapse text-sm sm:text-base">
           <thead>
             <tr
               className="text-left border-b"
@@ -149,6 +158,7 @@ export default function CouponsManagement() {
               <th className="p-2 text-center">Actions</th>
             </tr>
           </thead>
+
           <tbody>
             {(coupons || []).slice(0, visibleCount).map((c) => (
               <tr
@@ -162,7 +172,8 @@ export default function CouponsManagement() {
                 <td className="p-2">{c.code}</td>
                 <td className="p-2">{c.discount_value}</td>
                 <td className="p-2">{c.is_active ? "Active" : "Inactive"}</td>
-                <td className="p-2 flex gap-3 justify-center items-center">
+
+                <td className="p-2 flex flex-col sm:flex-row gap-3 justify-center items-center">
                   <button
                     onClick={() => handleEditClick(c)}
                     style={{ color: "var(--text)" }}
@@ -178,7 +189,7 @@ export default function CouponsManagement() {
                       await toggleCouponStatus(c.id, newStatus);
                       loadCoupons();
                     }}
-                    className="rounded-lg px-2 py-1 text-sm"
+                    className="rounded-lg px-2 py-1 text-sm sm:text-base"
                     style={{
                       backgroundColor: isDarkMode
                         ? "var(--mid-dark)"
@@ -192,6 +203,7 @@ export default function CouponsManagement() {
                 </td>
               </tr>
             ))}
+
             {coupons.length === 0 && (
               <tr>
                 <td
@@ -206,11 +218,12 @@ export default function CouponsManagement() {
           </tbody>
         </table>
 
+        {/* ✅ زر عرض المزيد */}
         {visibleCount < coupons.length && (
           <div className="text-center mt-4">
             <button
               onClick={() => setVisibleCount(visibleCount + 5)}
-              className="px-4 py-2 rounded-lg"
+              className="px-4 py-2 rounded-lg text-sm sm:text-base"
               style={{
                 backgroundColor: "var(--button)",
                 color: "#ffffff",
@@ -222,5 +235,7 @@ export default function CouponsManagement() {
         )}
       </div>
     </div>
-  );
+  </div>
+);
+
 }

@@ -1,18 +1,13 @@
-// src/api/cms.js
+// src/api/cms.js أو ./Api/LandingAPI.js حسب ملفّك
 export async function fetchLandingCMS(type, title) {
   try {
     const query = `http://localhost:3000/api/cms?type=${encodeURIComponent(
       type
-    )}&title=${encodeURIComponent(title)}`;
-
-    const res = await fetch(query);
-
-    if (!res.ok) {
-      throw new Error("Failed to fetch CMS content");
-    }
-
+    )}&title=${encodeURIComponent(title)}&_=${Date.now()}`;
+    const res = await fetch(query, { cache: "no-store" });
+    if (!res.ok) throw new Error("Failed to fetch CMS content");
     const data = await res.json();
-    return data?.[0] || {}; // لأنه بيرجع صف واحد عادة
+    return data?.[0] || {};
   } catch (err) {
     console.error("❌ Error fetching CMS:", err);
     return {};

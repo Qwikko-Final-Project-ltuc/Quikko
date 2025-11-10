@@ -243,16 +243,45 @@ exports.addReview = async (req, res) => {
   }
 };
 
-/**
- * Get reviews for a product
- */
 exports.getProductReviews = async (req, res) => {
   try {
     const product_id = req.params.product_id;
     const reviews = await productModel.getProductReviews(product_id);
-    res.json(reviews);
+
+    // اجلب المتوسط والعدد مباشرة من جدول products (أسرع لو خزنتيهم)
+    const avgData = await productModel.getAverageRating(product_id);
+
+    res.json({
+      average_rating: (avgData && avgData.average_rating) || 0,
+      reviews_count: (avgData && avgData.reviews_count) || reviews.length,
+      total_reviews: reviews.length,
+      reviews
+    });
   } catch (err) {
     console.error("Get reviews error:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * Get average rating (اختياري: endpoint مخصص للكارد)
+ */
+exports.getAverageRating = async (req, res) => {
+  try {
+    const product_id = req.params.product_id;
+    const avgData = await productModel.getAverageRating(product_id);
+
+    if (!avgData) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    res.json({
+      product_id: Number(product_id),
+      average_rating: avgData.average_rating || 0,
+      reviews_count: avgData.reviews_count || 0
+    });
+  } catch (err) {
+    console.error("Get average rating error:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 };

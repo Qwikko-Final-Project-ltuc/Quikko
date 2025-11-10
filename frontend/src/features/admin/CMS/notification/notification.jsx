@@ -88,7 +88,9 @@ export default function NotificationsForm() {
             value={form.role}
             onChange={(e) => setForm({ ...form, role: e.target.value })}
             disabled={!!form.userId}
-            className={`w-full p-3 rounded border focus:outline-none focus:ring-2 transition-colors duration-300 cursor-pointer ${
+            className={`w-full p-3 rounded border focus:outline-none focus:ring-2 transition-colors duration-300 ${
+              !!form.userId ? "opacity-45 cursor-not-allowed" : "cursor-pointer"
+            } ${
               isDark
                 ? "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"
                 : "bg-[var(--bg)] text-[var(--text)] border-[var(--border)]"

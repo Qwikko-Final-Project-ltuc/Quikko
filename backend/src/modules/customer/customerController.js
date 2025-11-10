@@ -104,8 +104,8 @@ exports.postOrderFromCart = async function (req, res) {
       addressId, 
       paymentMethod, 
       paymentData,
-      coupon_code,          // ⚠️ هذا مفقود!
-      use_loyalty_points    // ⚠️ وهذا مفقود!
+      coupon_code,          
+      use_loyalty_points    
     } = req.body;
 
     const parsedCartId = Number(cart_id);
@@ -130,7 +130,6 @@ exports.postOrderFromCart = async function (req, res) {
         }
       : {};
 
-    // 🔥 أضف coupon_code و use_loyalty_points هنا
     const order = await customerModel.placeOrderFromCart({
       userId,
       cartId: parsedCartId,
@@ -138,8 +137,10 @@ exports.postOrderFromCart = async function (req, res) {
       addressId,
       paymentMethod, // "cod" ,"paypal"/"credit_card"
       paymentData: normalizedPaymentData,
-      coupon_code: coupon_code || null,           // ✅ أضف هذا
-      use_loyalty_points: use_loyalty_points || 0 // ✅ وهذا أهم شيء!
+
+      coupon_code: req.body.coupon_code || null,
+      
+      use_loyalty_points: use_loyalty_points || 0
     });
 
     console.log("🔍 [CONTROLLER] Sent to model:", {
@@ -811,7 +812,6 @@ exports.sendContactMessage = async (req, res) => {
   }
 };
 
-
 exports.getLoyaltyPoints = async (req, res) => {
   try {
     const userId = req.user?.id;
@@ -819,10 +819,12 @@ exports.getLoyaltyPoints = async (req, res) => {
 
     const data = await customerModel.getPointsByUser(userId);
 
-    // حتى لو ما في نقاط، نرجع رسالة واضحة
     res.json({
-      message: data.points_balance === 0 ? "No loyalty points yet" : "Loyalty points fetched successfully",
-      points: data
+      message:
+        data.points_balance === 0
+          ? "No loyalty points yet"
+          : "Loyalty points fetched successfully",
+      points: data,
     });
   } catch (error) {
     console.error("Error getting loyalty points:", error);
@@ -830,8 +832,6 @@ exports.getLoyaltyPoints = async (req, res) => {
   }
 };
 
-
-// 🔹 Add loyalty points after completing an order
 exports.addLoyaltyPoints = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -844,6 +844,7 @@ exports.addLoyaltyPoints = async (req, res) => {
   }
 };
 
+
 // 🔹 Redeem loyalty points for discount
 exports.redeemLoyaltyPoints = async (req, res) => {
   try {
@@ -854,5 +855,86 @@ exports.redeemLoyaltyPoints = async (req, res) => {
   } catch (error) {
     console.error("Error redeeming loyalty points:", error);
     res.status(500).json({ message: error.message || "Server error" });
+  }
+};
+
+
+exports.submitOrderDecision = async (req, res) => {
+  try {
+    const customerId = req.user.id;
+    const { orderId } = req.params;
+    const { action } = req.body; // "cancel_order" | "proceed_without_rejected"
+
+    if (!["cancel_order", "proceed_without_rejected"].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "action must be 'cancel_order' or 'proceed_without_rejected'",
+      });
+    }
+
+    const result = await customerModel.applyCustomerDecision({
+      orderId: Number(orderId),
+      customerId,
+      action,
+    });
+
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Order not found / not eligible / or nothing changed",
+      });
+    }
+
+    // رجّع الطلب بعد التعديل + عناصره ليحدث الـ UI فورًا
+    return res.json({ success: true, data: result });
+  } catch (err) {
+    console.error("submitOrderDecision error:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: err.message || "Server error" });
+
+
+exports.calculateDeliveryPreview = async function (req, res) {
+  try {
+    const userId = req.user.id;
+    const { cart_id, address, addressId } = req.body;
+
+    const parsedCartId = Number(cart_id);
+    if (!cart_id || Number.isNaN(parsedCartId)) {
+      return res.status(400).json({ error: "cart_id must be a valid number" });
+    }
+
+    if (!addressId && (!address || !address.address_line1 || !address.city)) {
+      return res.status(400).json({
+        error: "Please provide a valid address or select a saved address.",
+      });
+    }
+
+    const orderPreview = await customerModel.calculateDeliveryPreview(
+      parsedCartId,
+      userId,
+      address,
+      addressId
+    );
+
+    res.status(201).json({
+      order: {
+        total_amount: orderPreview.total_amount,
+        delivery_fee: orderPreview.delivery_fee,
+        total_with_shipping: orderPreview.total_with_shipping,
+        distance_km: orderPreview.distance_km,
+        vendors: orderPreview.vendors,
+        deliveryCompany: orderPreview.deliveryCompany,
+        customer_location: orderPreview.customer_location,
+      },
+    });
+  } catch (err) {
+    console.error("Error placing order from cart:", err.message);
+    console.error("STACK TRACE:", err.stack);
+    return res
+      .status(500)
+      .json({ error: "Failed to place order. Please try again." });
   }
 };

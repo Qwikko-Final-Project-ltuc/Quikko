@@ -78,33 +78,40 @@ export default function ProductManagement() {
   }
 
   return (
-   <div
-  className="p-6 space-y-6 min-h-screen transition-colors duration-300"
-  style={{ backgroundColor: colors.background, color: colors.text }}
->
-  {/* ✅ العنوان والزر بنفس السطر */}
-  <div className="flex items-center justify-between mb-6">
-    <h1 className="text-2xl font-bold">Product Management</h1>
+  <div
+    className="min-h-screen w-full"
+    style={{
+      backgroundColor: isDarkMode ? "var(--bg-dark)" : "var(--bg)",
+      color: "var(--text)",
+      padding: "3rem",
+    }}
+  >
+    {/* ✅ حاوية متجاوبة */}
+    <div className="max-w-screen-xl mx-auto px-4 sm:px-8 lg:px-12 py-8 sm:py-12 lg:py-16">
+      
+      {/* ✅ العنوان والزر بنفس السطر ومتجاوب */}
+      <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-4 mb-10 sm:mb-16">
+        <h1 className="text-xl sm:text-2xl font-bold text-center sm:text-left">
+          Product Management
+        </h1>
 
-    {!showAddForm && !editingProduct && (
-      <button
-        onClick={() => setShowAddForm(true)}
-        className="px-4 py-2 rounded-lg font-semibold"
-        style={{ backgroundColor: colors.button, color: "#ffffff" }}
-      >
-        Add New Product
-      </button>
-    )}
-  </div>
+        {!showAddForm && !editingProduct && (
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="px-4 py-2 rounded-lg font-semibold text-sm sm:text-base"
+            style={{ backgroundColor: colors.button, color: "#ffffff" }}
+          >
+            Add New Product
+          </button>
+        )}
+      </div>
 
-
-      {/* كارد الفورم يظهر عند الضغط على الزر أو عند التعديل */}
+      {/* ✅ كارد الفورم يظهر عند الضغط على الزر أو عند التعديل */}
       {(showAddForm || editingProduct) && (
         <div
-          className="p-6 rounded-2xl shadow-md transition-colors duration-300 mb-4 relative"
+          className="p-4 sm:p-6 rounded-2xl shadow-md transition-colors duration-300 mb-6 relative"
           style={{ backgroundColor: colors.cardBg }}
         >
-          {/* زر X لإغلاق الفورم */}
           {!editingProduct && (
             <button
               onClick={() => setShowAddForm(false)}
@@ -115,9 +122,10 @@ export default function ProductManagement() {
             </button>
           )}
 
-          <h2 className="text-lg font-semibold mb-4">
+          <h2 className="text-base sm:text-lg font-semibold mb-4">
             {editingProduct ? "Edit Product" : "Add New Product"}
           </h2>
+
           <div className="space-y-4">
             {editingProduct ? (
               <ProductEdit
@@ -141,13 +149,16 @@ export default function ProductManagement() {
         </div>
       )}
 
-      {/* جدول المنتجات */}
+      {/* ✅ جدول المنتجات */}
       <div
-        className="p-6 rounded-2xl shadow-md transition-colors duration-300"
+        className="p-4 sm:p-6 rounded-2xl shadow-md transition-colors duration-300 overflow-x-auto"
         style={{ backgroundColor: colors.cardBg }}
       >
-        <h2 className="text-lg font-semibold mb-4">Product List</h2>
-        <table className="w-full border-collapse">
+        <h2 className="text-base sm:text-lg font-semibold mb-4">
+          Product List
+        </h2>
+
+        <table className="w-full border-collapse text-sm sm:text-base">
           <thead>
             <tr
               className="text-left border-b"
@@ -163,6 +174,7 @@ export default function ProductManagement() {
               <th className="p-2 text-center">Actions</th>
             </tr>
           </thead>
+
           <tbody>
             {(products || []).slice(0, visibleCount).map((p) => (
               <tr
@@ -184,7 +196,7 @@ export default function ProductManagement() {
                             }`
                       }
                       alt={p.name}
-                      className="w-12 h-12 object-cover rounded-md"
+                      className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded-md"
                     />
                   ) : (
                     <span
@@ -202,18 +214,14 @@ export default function ProductManagement() {
                 <td className="p-2 flex gap-3 justify-center">
                   <button
                     onClick={() => handleEditClick(p)}
-                    style={{
-                      color: colors.text,
-                    }}
+                    style={{ color: colors.text }}
                     className="hover:opacity-80 transition"
                   >
                     <Edit size={18} />
                   </button>
                   <button
                     onClick={() => handleDelete(p.id)}
-                    style={{
-                      color: colors.text,
-                    }}
+                    style={{ color: colors.text }}
                     className="hover:opacity-80 transition"
                   >
                     <Trash2 size={18} />
@@ -221,6 +229,7 @@ export default function ProductManagement() {
                 </td>
               </tr>
             ))}
+
             {products.length === 0 && (
               <tr>
                 <td
@@ -239,7 +248,7 @@ export default function ProductManagement() {
           <div className="text-center mt-4">
             <button
               onClick={() => setVisibleCount(visibleCount + 5)}
-              className="px-4 py-2 rounded-lg"
+              className="px-4 py-2 rounded-lg text-sm sm:text-base"
               style={{
                 backgroundColor: colors.button,
                 color: "#ffffff",
@@ -251,5 +260,7 @@ export default function ProductManagement() {
         )}
       </div>
     </div>
-  );
+  </div>
+);
+
 }

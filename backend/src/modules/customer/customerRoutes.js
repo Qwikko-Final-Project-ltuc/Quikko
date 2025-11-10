@@ -452,19 +452,117 @@ router.post('/:orderId/accept', protect, async (req, res) => {
 });
 
 
-router.get('/delivery/accepted-orders', protect, async (req, res) => {
-  try {
-    console.log('🔐 Getting accepted orders...');
+// router.get('/delivery/accepted-orders', protect, async (req, res) => {
+//   try {
+//     console.log('🔐 Getting accepted orders...');
     
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 20;
+//     const offset = (page - 1) * limit;
+    
+//     const companyResult = await pool.query(
+//       'SELECT id FROM delivery_companies WHERE user_id = $1',
+//       [req.user.id]
+//     );
+    
+//     if (companyResult.rows.length === 0) {
+//       return res.json({
+//         success: true,
+//         data: [],
+//         pagination: {
+//           currentPage: page,
+//           totalPages: 0,
+//           totalItems: 0,
+//           hasNext: false,
+//           hasPrev: false
+//         }
+//       });
+//     }
+    
+//     const deliveryCompanyId = companyResult.rows[0].id;
+
+//     const countResult = await pool.query(
+//       `SELECT COUNT(DISTINCT o.id) as total_count
+//        FROM orders o
+//        WHERE o.delivery_company_id = $1 
+//          AND o.status IN ('accepted', 'processing', 'out_for_delivery')`,
+//       [deliveryCompanyId]
+//     );
+
+//     const totalItems = parseInt(countResult.rows[0].total_count);
+//     const totalPages = Math.ceil(totalItems / limit);
+
+//     const orders = await pool.query(
+//       `SELECT 
+//         o.id,
+//         o.status as order_status,
+//         o.total_amount,
+//         o.final_amount,
+//         o.delivery_fee,
+//         o.total_with_shipping,
+//         o.created_at,
+//         a.address_line1, 
+//         a.city, 
+//         a.state,
+//         u.name as customer_name, 
+//         u.phone as customer_phone,
+//         COUNT(oi.id) as items_count,
+//         SUM(oi.quantity) as total_quantity
+//       FROM orders o
+//       JOIN addresses a ON o.address_id = a.id
+//       JOIN users u ON o.customer_id = u.id
+//       LEFT JOIN order_items oi ON o.id = oi.order_id
+//       WHERE o.delivery_company_id = $1 
+//         AND o.status IN ('accepted', 'processing', 'out_for_delivery')
+//       GROUP BY o.id, a.id, u.id
+//       ORDER BY 
+//         CASE o.status 
+//           WHEN 'out_for_delivery' THEN 1
+//           WHEN 'processing' THEN 2
+//           WHEN 'accepted' THEN 3
+//         END, o.created_at ASC
+//       LIMIT $2 OFFSET $3`,
+//       [deliveryCompanyId, limit, offset]
+//     );
+
+//     console.log('📦 Accepted orders found:', orders.rows.length);
+    
+//     res.json({
+//       success: true,
+//       data: orders.rows,
+//       pagination: {
+//         currentPage: page,
+//         totalPages: totalPages,
+//         totalItems: totalItems,
+//         hasNext: page < totalPages,
+//         hasPrev: page > 1,
+//         limit: limit
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error('❌ Get accepted orders error:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Internal server error'
+//     });
+//   }
+// });
+
+router.get("/delivery/accepted-orders", protect, async (req, res) => {
+  try {
+    console.log("🔐 Getting accepted orders...");
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
-    
+
+    // 1) نجيب شركة التوصيل تبعت اليوزر
     const companyResult = await pool.query(
-      'SELECT id FROM delivery_companies WHERE user_id = $1',
+      "SELECT id FROM delivery_companies WHERE user_id = $1",
       [req.user.id]
     );
-    
+
     if (companyResult.rows.length === 0) {
       return res.json({
         success: true,
@@ -474,13 +572,14 @@ router.get('/delivery/accepted-orders', protect, async (req, res) => {
           totalPages: 0,
           totalItems: 0,
           hasNext: false,
-          hasPrev: false
-        }
+          hasPrev: false,
+        },
       });
     }
-    
+
     const deliveryCompanyId = companyResult.rows[0].id;
 
+    // 2) نعدّ الطلبات
     const countResult = await pool.query(
       `SELECT COUNT(DISTINCT o.id) as total_count
        FROM orders o
@@ -492,10 +591,12 @@ router.get('/delivery/accepted-orders', protect, async (req, res) => {
     const totalItems = parseInt(countResult.rows[0].total_count);
     const totalPages = Math.ceil(totalItems / limit);
 
+    // 3) نجيب الطلبات نفسها
     const orders = await pool.query(
       `SELECT 
         o.id,
-        o.status as order_status,
+        o.status AS order_status,
+        o.payment_status,               
         o.total_amount,
         o.final_amount,
         o.delivery_fee,
@@ -504,10 +605,10 @@ router.get('/delivery/accepted-orders', protect, async (req, res) => {
         a.address_line1, 
         a.city, 
         a.state,
-        u.name as customer_name, 
-        u.phone as customer_phone,
-        COUNT(oi.id) as items_count,
-        SUM(oi.quantity) as total_quantity
+        u.name AS customer_name, 
+        u.phone AS customer_phone,
+        COUNT(oi.id) AS items_count,
+        SUM(oi.quantity) AS total_quantity
       FROM orders o
       JOIN addresses a ON o.address_id = a.id
       JOIN users u ON o.customer_id = u.id
@@ -515,18 +616,13 @@ router.get('/delivery/accepted-orders', protect, async (req, res) => {
       WHERE o.delivery_company_id = $1 
         AND o.status IN ('accepted', 'processing', 'out_for_delivery')
       GROUP BY o.id, a.id, u.id
-      ORDER BY 
-        CASE o.status 
-          WHEN 'out_for_delivery' THEN 1
-          WHEN 'processing' THEN 2
-          WHEN 'accepted' THEN 3
-        END, o.created_at ASC
+      ORDER BY o.created_at DESC  -- 👈 هون بس غيرنا لترتيب حسب التاريخ تنازلي
       LIMIT $2 OFFSET $3`,
       [deliveryCompanyId, limit, offset]
     );
 
-    console.log('📦 Accepted orders found:', orders.rows.length);
-    
+    console.log("📦 Accepted orders found:", orders.rows.length);
+
     res.json({
       success: true,
       data: orders.rows,
@@ -536,19 +632,17 @@ router.get('/delivery/accepted-orders', protect, async (req, res) => {
         totalItems: totalItems,
         hasNext: page < totalPages,
         hasPrev: page > 1,
-        limit: limit
-      }
+        limit: limit,
+      },
     });
-
   } catch (error) {
-    console.error('❌ Get accepted orders error:', error);
+    console.error("❌ Get accepted orders error:", error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: "Internal server error",
     });
   }
 });
-
 router.patch('/:orderId/status',  async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -583,7 +677,20 @@ router.patch('/:orderId/status',  async (req, res) => {
   }
 });
 
+router.patch(
+  "/orders/:orderId/decision",
+  protect,
+  authorizeRole("customer"),
+  customerController.submitOrderDecision
+);
 
+
+router.post(
+  "/calculate-delivery-preview",
+  protect,
+  authorizeRole('customer'),
+  customerController.calculateDeliveryPreview
+);
 
 module.exports = router;
 

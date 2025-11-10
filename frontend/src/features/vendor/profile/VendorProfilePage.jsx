@@ -89,171 +89,222 @@ const VendorProfilePage = () => {
   const borderColor = isDarkMode ? "#444" : "#d1d5db";
 
   return (
-    <div className="min-h-screen w-full p-6" style={{ backgroundColor: pageBg }}>
-      <h1 className="text-2xl font-bold mb-6 " style={{ color: textColor }}>
-        Vendor Profile
-      </h1>
+   <div
+      className="min-h-screen w-full"
+      style={{
+        backgroundColor: isDarkMode ? "var(--bg-dark)" : "var(--bg)",
+        color: "var(--text)",
+     padding: "3rem", }}
+    >
+    <h1
+      className="text-2xl font-bold mb-8 text-center sm:text-left"
+      style={{ color: textColor }}
+    >
+      Vendor Profile
+    </h1>
 
-      <div
-        className="rounded-2xl p-6 shadow-md max-w-4xl mx-auto space-y-6 w-full"
-        style={{ backgroundColor: cardBg }}
-      >
-        {!editing ? (
-          <>
-            {/* صورة واسم المتجر / Avatar Text */}
-            <div className="flex flex-col items-center space-y-4 text-center">
-              {profile.store_logo ? (
-                <img
-                  src={profile.store_logo}
-                  alt="Store"
-                  className="w-32 h-32 rounded-full object-cover"
-                />
-              ) : (
-                <div
-                  className="w-32 h-32 rounded-full flex items-center justify-center text-3xl font-extrabold "
-                  style={{
-                    backgroundColor: isDarkMode ? "#5f6e68ff" : "#d1d5db",
-                    color: isDarkMode ? "#ffffff" : "#242625",
-                  }}
-                >
-                  {profile.store_name
-                    ? profile.store_name
-                        .split(" ")
-                        .filter(Boolean)
-                        .slice(0, 2)
-                        .map((word) => word[0].toUpperCase())
-                        .join("")
-                    : "??"}
-                </div>
-              )}
-
-              <h2 className="text-xl font-semibold" style={{ color: textColor }}>
-                {profile.store_name}
-              </h2>
-            </div>
-
-            {/* Address */}
-            <div className="flex flex-col items-center text-center space-y-1">
-              <label className="font-medium" style={{ color: textColor }}>
-                Address
-              </label>
-              <p style={{ color: textColor }}>{profile.address}</p>
-            </div>
-
-            {/* Description */}
-            <div className="flex flex-col items-center text-center space-y-1">
-              <label className="font-medium" style={{ color: textColor }}>
-                Description
-              </label>
-              <p style={{ color: textColor }}>{profile.description}</p>
-            </div>
-
-            <div className="flex justify-center">
-              <button
-                onClick={() => {
-                  setTempProfile({
-                    store_name: profile.store_name,
-                    address: profile.address,
-                    description: profile.description,
-                    store_logo: profile.store_logo,
-                  });
-                  setEditing(true);
-                }}
-                className="px-6 py-2 rounded-lg transition"
-                style={{ backgroundColor: "#307A59", color: "#ffffff" }}
-              >
-                Edit Profile
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            {/* فورم التعديل */}
-            <div className="flex flex-col items-center space-y-4 text-center">
+    <div
+      className="rounded-2xl p-6 sm:p-10 md:p-12 shadow-md max-w-4xl mx-auto space-y-4 w-full"
+      style={{ backgroundColor: cardBg }}
+    >
+      {!editing ? (
+        <>
+          {/* 🖼️ صورة واسم المتجر */}
+          <div className="flex flex-col items-center space-y-6 text-center">
+            {profile.store_logo ? (
               <img
-                src={tempProfile.store_logo || "/placeholder.png"}
+                src={profile.store_logo}
                 alt="Store"
-                className="w-32 h-32 rounded-full object-cover "
+                className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover"
               />
+            ) : (
+              <div
+                className="w-28 h-28 sm:w-32 sm:h-32 rounded-full flex items-center justify-center text-2xl sm:text-3xl font-extrabold"
+                style={{
+                  backgroundColor: isDarkMode ? "#5f6e68ff" : "#d1d5db",
+                  color: isDarkMode ? "#ffffff" : "#242625",
+                }}
+              >
+                {profile.store_name
+                  ? profile.store_name
+                      .split(" ")
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((word) => word[0].toUpperCase())
+                      .join("")
+                  : "??"}
+              </div>
+            )}
+
+            <h2
+              className="text-lg sm:text-xl font-semibold"
+              style={{ color: textColor }}
+            >
+              {profile.store_name}
+            </h2>
+          </div>
+
+          {/* 🏠 Address */}
+          <div className="flex flex-col items-center text-center space-y-1 px-2">
+            <label className="font-medium" style={{ color: textColor }}>
+              Address
+            </label>
+            <p className="break-words" style={{ color: textColor }}>
+              {profile.address}
+            </p>
+          </div>
+
+          {/* 📝 Description */}
+          <div className="flex flex-col items-center text-center space-y-1 px-2">
+            <label className="font-medium" style={{ color: textColor }}>
+              Description
+            </label>
+            <p className="break-words" style={{ color: textColor }}>
+              {profile.description}
+            </p>
+          </div>
+
+          <div className="flex justify-center">
+            <button
+              onClick={() => {
+                setTempProfile({
+                  store_name: profile.store_name,
+                  address: profile.address,
+                  description: profile.description,
+                  store_logo: profile.store_logo,
+                });
+                setEditing(true);
+              }}
+              className="px-6 py-2 rounded-lg transition text-sm sm:text-base"
+              style={{ backgroundColor: "#307A59", color: "#ffffff" }}
+            >
+              Edit Profile
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* ✏️ فورم التعديل */}
+          <div className="flex flex-col items-center space-y-4 text-center">
+            <img
+              src={tempProfile.store_logo || "/placeholder.png"}
+              alt="Store"
+              className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover"
+            />
+            <input
+              type="text"
+              name="store_logo"
+              value={tempProfile.store_logo || ""}
+              onChange={handleChange}
+              placeholder="Enter image URL"
+              className="p-2 rounded-lg border text-center w-full sm:w-64"
+              style={{
+                backgroundColor: inputBg,
+                color: textColor,
+                borderColor: borderColor,
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-4">
+            {/* 🏪 Store Name */}
+            <div
+              className="flex flex-col p-3 sm:p-4 rounded-lg"
+              style={{ backgroundColor: inputBg }}
+            >
+              <label
+                className="font-medium mb-1 text-center"
+                style={{ color: textColor }}
+              >
+                Store Name
+              </label>
               <input
                 type="text"
-                name="store_logo"
-                value={tempProfile.store_logo || ""}
+                name="store_name"
+                value={tempProfile.store_name}
                 onChange={handleChange}
-                placeholder="Enter image URL"
-                className="p-2 rounded-lg border text-center w-64"
-                style={{ backgroundColor: inputBg, color: textColor, borderColor: borderColor }}
+                className="p-2 rounded-lg border focus:ring-2 outline-none text-center text-sm sm:text-base"
+                style={{
+                  backgroundColor: inputBg,
+                  color: textColor,
+                  borderColor: borderColor,
+                }}
               />
             </div>
 
-            <div className="flex flex-col gap-4">
-              {/* Store Name */}
-              <div className="flex flex-col p-4 rounded-lg" style={{ backgroundColor: inputBg }}>
-                <label className="font-medium mb-1 text-center" style={{ color: textColor }}>
-                  Store Name
-                </label>
-                <input
-                  type="text"
-                  name="store_name"
-                  value={tempProfile.store_name}
-                  onChange={handleChange}
-                  className="p-2 rounded-lg border focus:ring-2 outline-none text-center"
-                  style={{ backgroundColor: inputBg, color: textColor, borderColor: borderColor }}
-                />
-              </div>
-
-              {/* Address */}
-              <div className="flex flex-col p-4 rounded-lg" style={{ backgroundColor: inputBg }}>
-                <label className="font-medium mb-1 text-center" style={{ color: textColor }}>
-                  Address
-                </label>
-                <input
-                  type="text"
-                  name="address"
-                  value={tempProfile.address}
-                  onChange={handleChange}
-                  className="p-2 rounded-lg border focus:ring-2 outline-none text-center"
-                  style={{ backgroundColor: inputBg, color: textColor, borderColor: borderColor }}
-                />
-              </div>
-
-              {/* Description */}
-              <div className="flex flex-col p-4 rounded-lg" style={{ backgroundColor: inputBg }}>
-                <label className="font-medium mb-1 text-center" style={{ color: textColor }}>
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  value={tempProfile.description}
-                  onChange={handleChange}
-                  rows={4}
-                  className="p-2 rounded-lg border focus:ring-2 outline-none text-center"
-                  style={{ backgroundColor: inputBg, color: textColor, borderColor: borderColor }}
-                />
-              </div>
+            {/* 📍 Address */}
+            <div
+              className="flex flex-col p-3 sm:p-4 rounded-lg"
+              style={{ backgroundColor: inputBg }}
+            >
+              <label
+                className="font-medium mb-1 text-center"
+                style={{ color: textColor }}
+              >
+                Address
+              </label>
+              <input
+                type="text"
+                name="address"
+                value={tempProfile.address}
+                onChange={handleChange}
+                className="p-2 rounded-lg border focus:ring-2 outline-none text-center text-sm sm:text-base"
+                style={{
+                  backgroundColor: inputBg,
+                  color: textColor,
+                  borderColor: borderColor,
+                }}
+              />
             </div>
 
-            <div className="flex gap-4 mt-2 justify-center">
-              <button
-                onClick={handleSave}
-                className="px-6 py-2 rounded-lg transition"
-                style={{ backgroundColor: "#307A59", color: "#ffffff" }}
+            {/* 🧾 Description */}
+            <div
+              className="flex flex-col p-3 sm:p-4 rounded-lg"
+              style={{ backgroundColor: inputBg }}
+            >
+              <label
+                className="font-medium mb-1 text-center"
+                style={{ color: textColor }}
               >
-                Save
-              </button>
-              <button
-                onClick={() => setEditing(false)}
-                className="px-6 py-2 rounded-lg transition"
-                style={{ backgroundColor: "#d1d5db", color: "#242625" }}
-              >
-                Cancel
-              </button>
+                Description
+              </label>
+              <textarea
+                name="description"
+                value={tempProfile.description}
+                onChange={handleChange}
+                rows={4}
+                className="p-2 rounded-lg border focus:ring-2 outline-none text-center text-sm sm:text-base"
+                style={{
+                  backgroundColor: inputBg,
+                  color: textColor,
+                  borderColor: borderColor,
+                }}
+              />
             </div>
-          </>
-        )}
-      </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 mt-4 justify-center">
+            <button
+              onClick={handleSave}
+              className="px-6 py-2 rounded-lg transition text-sm sm:text-base w-full sm:w-auto"
+              style={{ backgroundColor: "#307A59", color: "#ffffff" }}
+            >
+              Save
+            </button>
+            <button
+              onClick={() => setEditing(false)}
+              className="px-6 py-2 rounded-lg transition text-sm sm:text-base w-full sm:w-auto"
+              style={{ backgroundColor: "#d1d5db", color: "#242625" }}
+            >
+              Cancel
+            </button>
+          </div>
+        </>
+      )}
     </div>
-  );
+  </div>
+);
+
 };
 
 export default VendorProfilePage;

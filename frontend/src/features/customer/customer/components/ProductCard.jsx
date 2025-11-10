@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "yet-another-react-lightbox/styles.css";
 import Lightbox from "yet-another-react-lightbox";
 import { ImHeart } from "react-icons/im";
 import { FaShoppingCart } from "react-icons/fa";
+import { FaStar } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import { AddWishlist, RemoveWishlist } from "../../wishlist/wishlistApi";
 import customerAPI from "../services/customerAPI";
@@ -22,6 +23,29 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
   const userId = useSelector((state) => state.cart.user?.id);
   const navigate = useNavigate();
   const themeMode = useSelector((state) => state.customerTheme.mode); 
+  const [averageRating, setAverageRating] = useState(null);
+const [reviewsCount, setReviewsCount] = useState(0);
+
+useEffect(() => {
+  const fetchAverageRating = async () => {
+    try {
+      const productId = product.id || product.product_id;
+      if (!productId) return;
+
+      const response = await fetch(`http://localhost:3000/api/products/review/average/${productId}`);
+      if (!response.ok) throw new Error("Failed to fetch average rating");
+
+      const data = await response.json();
+      setAverageRating(parseFloat(data.average_rating));
+      setReviewsCount(data.reviews_count);
+    } catch (error) {
+      console.error("Error fetching average rating:", error);
+    }
+  };
+
+  fetchAverageRating();
+}, [product.id]);
+
 
   const images = Array.isArray(product.images)
     ? product.images
@@ -339,7 +363,16 @@ const ProductCard = ({ product, onAddToCart, onToggleWishlistFromPage, isLoggedI
               {product.description}
             </p>
           )}
-          
+          {/* عرض التقييم بالنجوم */}
+{averageRating !== null && (
+  <div className="flex items-center space-x-1 mb-3">
+    <FaStar className="text-yellow-500" />
+    <span className="text-sm text-[var(--light-gray)]">
+      {averageRating.toFixed(1)} ({reviewsCount})
+    </span>
+  </div>
+)}
+
           <div className="flex items-center justify-between mt-auto">
             <p 
               className="font-bold text-lg"
