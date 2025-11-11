@@ -26,6 +26,25 @@ const OrdersPage = () => {
   const [productImages, setProductImages] = useState({});
   const [imagesLoading, setImagesLoading] = useState(false);
 
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalConfig, setModalConfig] = useState({
+    title: "",
+    message: "",
+    type: "info", // 'cancel' أو 'proceed'
+    onConfirm: null,
+  });
+
+  const openModal = (title, message, type, onConfirm) => {
+  setModalConfig({
+    title,
+    message,
+    type,
+    onConfirm,
+  });
+  setModalOpen(true);
+};
+
   // ----------------------------------------------
 
 
@@ -531,13 +550,14 @@ const OrdersPage = () => {
                           <button
                             disabled={decisionLoading}
                             onClick={async () => {
-                              const ok = window.confirm(
-                                "Are you sure you want to cancel the entire order?"
-                              );
-                              if (!ok) return;
-                              await submitCustomerDecision(
-                                order.id,
-                                "cancel_order"
+                              openModal(
+                                "Cancel Order",
+                                "Are you sure you want to cancel the entire order?",
+                                "cancel",
+                                async () => {
+                                  await submitCustomerDecision(order.id, "cancel_order");
+                                  setModalOpen(false);
+                                }
                               );
                             }}
                             className="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-200 flex-1"
@@ -554,13 +574,14 @@ const OrdersPage = () => {
                           <button
                             disabled={decisionLoading}
                             onClick={async () => {
-                              const ok = window.confirm(
-                                "Proceed without rejected items?"
-                              );
-                              if (!ok) return;
-                              await submitCustomerDecision(
-                                order.id,
-                                "proceed_without_rejected"
+                              openModal(
+                                "Proceed Without Rejected Items",
+                                "Are you sure you want to proceed without the rejected items?",
+                                "proceed",
+                                async () => {
+                                  await submitCustomerDecision(order.id, "proceed_without_rejected");
+                                  setModalOpen(false);
+                                }
                               );
                             }}
                             className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex-1"
@@ -861,10 +882,126 @@ const OrdersPage = () => {
             </button>
           </div>
         )}
+
+      {/* Custom Modal */}
+      {modalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div 
+            className={`relative max-w-sm w-full rounded-xl p-5 transform transition-all duration-300 animate-scale-in ${
+              themeMode === "dark" 
+                ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border border-[var(--border)]" 
+                : "bg-gradient-to-br from-white to-gray-50 border border-gray-200"
+            } shadow-xl`}  // تغيير من shadow-2xl إلى shadow-xl
+          >
+            {/* Header Icon - تصغير الأيقونة */}
+            <div className="flex justify-center mb-3">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                modalConfig.type === "cancel" 
+                  ? "bg-red-500/20 border border-red-500/30" 
+                  : "bg-[var(--button)]/20 border border-[var(--button)]/30"
+              }`}>
+                {modalConfig.type === "cancel" ? (
+                  <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 text-[var(--button)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+              </div>
+            </div>
+
+            {/* Title - تصغير الخط */}
+            <h3 className={`text-lg font-bold text-center mb-2 ${
+              themeMode === "dark" ? "text-white" : "text-gray-900"
+            }`}>
+              {modalConfig.title}
+            </h3>
+
+            {/* Message - تصغير الخط */}
+            <p className={`text-center mb-4 text-sm leading-relaxed ${
+              themeMode === "dark" ? "text-gray-300" : "text-gray-600"
+            }`}>
+              {modalConfig.message}
+            </p>
+
+            {/* Action Buttons - تصغير الأزرار */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setModalOpen(false)}
+                className={`flex-1 py-2 px-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 text-sm ${
+                  themeMode === "dark" 
+                    ? "bg-[var(--bg)] text-[var(--text)] border border-[var(--border)] hover:bg-[var(--hover)]" 
+                    : "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200"
+                }`}
+              >
+                No, Go Back
+              </button>
+              <button
+                onClick={modalConfig.onConfirm}
+                disabled={decisionLoading}
+                className={`flex-1 py-2 px-3 rounded-lg font-semibold text-white transition-all duration-300 transform hover:scale-105 text-sm ${
+                  modalConfig.type === "cancel" 
+                    ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700" 
+                    : "bg-gradient-to-r from-[var(--button)] to-[var(--primary)] hover:from-[#015c40] hover:to-[var(--button)]"
+                } ${decisionLoading ? "opacity-70 cursor-not-allowed" : ""}`}
+              >
+                {decisionLoading ? (
+                  <div className="flex items-center justify-center gap-1">
+                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Processing...
+                  </div>
+                ) : (
+                  "Yes, Confirm"
+                )}
+              </button>
+            </div>
+
+            {/* Close Button - تصغير */}
+            <button
+              onClick={() => setModalOpen(false)}
+              className={`absolute top-2 right-2 p-1 rounded-full transition-colors duration-200 ${
+                themeMode === "dark" 
+                  ? "hover:bg-white/10 text-gray-400" 
+                  : "hover:bg-gray-200 text-gray-500"
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
       </div>
 
       {/* Custom Scrollbar Styles */}
       <style jsx>{`
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        
+        @keyframes scale-in {
+          from { 
+            opacity: 0;
+            transform: scale(0.9) translateY(-10px);
+          }
+          to { 
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+        
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
+        }
+        
+        .animate-scale-in {
+          animation: scale-in 0.3s ease-out;
+        }
+        
         @keyframes pulse-slow {
           0%, 100% { opacity: 0.1; transform: scale(1); }
           50% { opacity: 0.3; transform: scale(1.1); }

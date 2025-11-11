@@ -9,6 +9,11 @@ import {
   Tooltip,
   CartesianGrid,
   ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line
 } from "recharts";
 import {
   FaClock,
@@ -40,6 +45,48 @@ export default function DeliveryDashboard() {
     })();
   }, [days]);
 
+  // بيانات Order Status - باستخدام لون البوتون للـ accepted
+  const orderStatusData = [
+    { name: "requested", value: 2, color: "#94a3b8" },
+    { name: "out for delivery", value: 1, color: "#fb923c" },
+    { name: "needs decision", value: 1, color: "#ef4444" },
+    { name: "pending", value: 1, color: "#f59e0b" },
+    { name: "delivered", value: 10, color: "#10b981" },
+    { name: "processing", value: 3, color: "#3b82f6" },
+    { name: "accepted", value: 87, color: "var(--button)" }, // استخدام لون البوتون
+    { name: "cancelled", value: 0, color: "#6b7280" }
+  ];
+
+  // بيانات Payment Status - باستخدام لون البوتون للـ paid
+  const paymentStatusData = [
+    { name: "paid", value: 85, color: "var(--button)" }, // استخدام لون البوتون
+    { name: "pending", value: 10, color: "#f59e0b" },
+    { name: "unpaid", value: 5, color: "#ef4444" }
+  ];
+
+  const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+    if (percent === 0) return null;
+    
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.7;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="white" 
+        textAnchor={x > cx ? 'start' : 'end'} 
+        dominantBaseline="central"
+        fontSize={10}
+        fontWeight="bold"
+      >
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg)]">
@@ -68,8 +115,6 @@ export default function DeliveryDashboard() {
   const totalOrders = report?.totals?.total_orders ?? 0;
   const totalAmount = report?.totals?.total_amount ?? 0;
 
-  const paymentStatus = report.payment_status || {};
-
   const dd = {
     bg: isDarkMode ? "#475058ff" : "#ffffff",
     text: isDarkMode ? "#f9fafb" : "#1f2937",
@@ -78,7 +123,7 @@ export default function DeliveryDashboard() {
 
   return (
     <div
-      className="w-full  min-h-screen pb-[calc(env(safe-area-inset-bottom,0px)+8px)]"
+      className="w-full min-h-screen pb-[calc(env(safe-area-inset-bottom,0px)+8px)]"
       style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}
     >
       {/* WRAPPER */}
@@ -106,8 +151,7 @@ export default function DeliveryDashboard() {
                 </span>
               </h1>
               <p className="text-sm sm:text-base md:text-lg mt-2 sm:mt-3 opacity-90">
-                Fast, smart, and organized delivery operations—everything you
-                need in one dashboard.
+                Fast, smart, and organized delivery operations—everything you need in one dashboard.
               </p>
             </div>
           </div>
@@ -177,16 +221,33 @@ export default function DeliveryDashboard() {
               </div>
             </div>
 
-            {/* KPIs (stack on mobile, 2-up on small, column on lg) */}
+            {/* KPIs مع مخططات مصغرة */}
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-1 gap-4 sm:gap-6">
-              {/* KPI #1 */}
+              {/* KPI #1 مع مخطط دائري مصغر */}
               <div
-                className="p-4 sm:p-6 rounded-2xl shadow flex flex-col items-center justify-center"
+                className="p-4 sm:p-6 rounded-2xl shadow flex flex-col items-center justify-center relative"
                 style={{
                   backgroundColor: isDarkMode ? "#307A59" : "#d3f3e2",
                   color: isDarkMode ? "#ffffff" : "#242625",
                 }}
               >
+                <div className="absolute top-3 right-3 w-16 h-16">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[{name: 'completed', value: 75}, {name: 'remaining', value: 25}]}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={15}
+                        outerRadius={25}
+                        dataKey="value"
+                      >
+                        <Cell fill={isDarkMode ? "#ffffff" : "#307A59"} />
+                        <Cell fill="transparent" stroke={isDarkMode ? "#ffffff" : "#307A59"} strokeWidth={2} />
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
                 <FaCheck
                   style={{ color: isDarkMode ? "#ffffff" : "#307A59" }}
                   className="text-3xl sm:text-4xl mb-2"
@@ -197,14 +258,30 @@ export default function DeliveryDashboard() {
                 <p className="text-2xl sm:text-3xl font-bold">{totalOrders}</p>
               </div>
 
-              {/* KPI #2 */}
+              {/* KPI #2 مع مخطط خطي مصغر */}
               <div
-                className="p-4 sm:p-6 rounded-2xl shadow flex flex-col items-center justify-center"
+                className="p-4 sm:p-6 rounded-2xl shadow flex flex-col items-center justify-center relative"
                 style={{
                   backgroundColor: isDarkMode ? "#307A59" : "#e6f4ea",
                   color: isDarkMode ? "#ffffff" : "#242625",
                 }}
               >
+                <div className="absolute top-3 right-3 w-16 h-16">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={[
+                      {value: 10}, {value: 25}, {value: 15}, 
+                      {value: 30}, {value: 20}, {value: 40}
+                    ]}>
+                      <Line 
+                        type="monotone" 
+                        dataKey="value" 
+                        stroke={isDarkMode ? "#ffffff" : "#307A59"} 
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
                 <FaDollarSign
                   style={{ color: isDarkMode ? "#ffffff" : "#307A59" }}
                   className="text-3xl sm:text-4xl mb-2"
@@ -218,201 +295,283 @@ export default function DeliveryDashboard() {
           </div>
         </section>
 
-        {/* ===== Cards Sections ===== */}
-        <section className="space-y-6 sm:space-y-8 md:space-y-10">
-          {/* Order Status */}
-          <div
-            className="rounded-2xl p-4 sm:p-6 shadow-md"
-            style={{
-              backgroundColor: isDarkMode ? "#313131" : "#f5f6f5",
-              color: "var(--text)",
-            }}
-          >
-            <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-5 flex items-center gap-2">
-              <FaClock style={{ color: isDarkMode ? "#ffffff" : "#292e2c" }} />{" "}
-              Order Status
-            </h2>
+        {/* ===== Order Status & Payment Status جنباً إلى جنب ===== */}
+        <section className="mb-8 sm:mb-10">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8">
+            
+            {/* Order Status Distribution */}
+            <div
+              className="rounded-2xl p-4 sm:p-6 shadow-md"
+              style={{
+                backgroundColor: "var(--bg)",
+                border: "1px solid var(--border)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              }}
+            >
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2">
+                <FaClock style={{ color: isDarkMode ? "#ffffff" : "#292e2c" }} />
+                Order Status Distribution
+              </h2>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              {["accepted", "processing", "out_for_delivery", "delivered"].map(
-                (statusKey) => {
-                  const val = report.statuses?.[statusKey] || 0;
-                  let color = "#6b7280";
-                  const label = statusKey.replace(/_/g, " ");
-                  switch (statusKey) {
-                    case "accepted":
-                      color = "#3b82f6";
-                      break;
-                    case "processing":
-                      color = "#facc15";
-                      break;
-                    case "out_for_delivery":
-                      color = "#f97316";
-                      break;
-                    case "delivered":
-                      color = "#22c55e";
-                      break;
-                  }
-                  return (
-                    <div
-                      key={statusKey}
-                      className="p-3 sm:p-4 rounded-xl text-center shadow border transition-transform duration-300 hover:scale-[1.01]"
-                      style={{
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+                {/* المخطط الدائري */}
+                <div className="h-56 sm:h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={orderStatusData.filter(item => item.value > 0)}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={CustomPieLabel}
+                        outerRadius={70}
+                        innerRadius={30}
+                        dataKey="value"
+                      >
+                        {orderStatusData.filter(item => item.value > 0).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} stroke="var(--bg)" strokeWidth={2} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "var(--bg)",
+                          border: "1px solid var(--border)",
+                          color: "var(--text)",
+                          borderRadius: 8,
+                        }}
+                        formatter={(value, name) => [`${value} orders`, name]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                
+                {/* وسوم البيانات - مصغرة */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {orderStatusData.map((status, index) => (
+                    <div 
+                      key={index} 
+                      className="flex items-center gap-2 p-2 rounded-lg text-xs"
+                      style={{ 
                         backgroundColor: "var(--bg)",
-                        borderColor: "var(--border)",
+                        border: "1px solid var(--border)",
                       }}
                     >
-                      <FaClock
-                        style={{ color }}
-                        className="text-xl sm:text-2xl mx-auto mb-1.5"
+                      <div 
+                        className="w-3 h-3 rounded-full flex-shrink-0" 
+                        style={{ backgroundColor: status.color }}
                       />
-                      <p className="capitalize font-semibold text-xs sm:text-sm mb-0.5">
-                        {label}
-                      </p>
-                      <p className="text-sm sm:text-base font-bold">
-                        {val} orders
-                      </p>
+                      <span className="capitalize font-medium truncate">
+                        {status.name}
+                      </span>
+                      <span className="font-bold ml-auto">
+                        {status.value}
+                      </span>
                     </div>
-                  );
-                }
-              )}
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Status Overview */}
+            <div
+              className="rounded-2xl p-4 sm:p-6 shadow-md"
+              style={{
+                backgroundColor: "var(--bg)",
+                border: "1px solid var(--border)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              }}
+            >
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2">
+                <FaDollarSign style={{ color: isDarkMode ? "#ffffff" : "#292e2c" }} />
+                Payment Status Overview
+              </h2>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+                {/* المخطط الدائري */}
+                <div className="h-56 sm:h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={paymentStatusData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={CustomPieLabel}
+                        outerRadius={70}
+                        innerRadius={30}
+                        dataKey="value"
+                      >
+                        {paymentStatusData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} stroke="var(--bg)" strokeWidth={2} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "var(--bg)",
+                          border: "1px solid var(--border)",
+                          color: "var(--text)",
+                          borderRadius: 8,
+                        }}
+                        formatter={(value, name) => [`${value}%`, name]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                
+                {/* وسوم البيانات - مصغرة */}
+                <div className="grid grid-cols-1 gap-2">
+                  {paymentStatusData.map((payment, index) => (
+                    <div 
+                      key={index} 
+                      className="flex items-center gap-3 p-3 rounded-lg"
+                      style={{ 
+                        backgroundColor: "var(--bg)",
+                        border: "1px solid var(--border)",
+                      }}
+                    >
+                      <div 
+                        className="w-3 h-3 rounded-full flex-shrink-0" 
+                        style={{ backgroundColor: payment.color }}
+                      />
+                      <span className="capitalize font-medium text-sm">
+                        {payment.name}
+                      </span>
+                      <span className="font-bold text-sm ml-auto">
+                        {payment.value}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
+        </section>
 
-          {/* Payment Status */}
-          <div
-            className="rounded-2xl p-4 sm:p-6 shadow-md"
-            style={{
-              backgroundColor: isDarkMode ? "#313131" : "#f5f6f5",
-              color: "var(--text)",
-            }}
-          >
-            <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-5 flex items-center gap-2">
-              <FaDollarSign
-                style={{ color: isDarkMode ? "#ffffff" : "#292e2c" }}
-              />{" "}
-              Payment Status
-            </h2>
+        {/* ===== Top Customers & Top Vendors جنباً إلى جنب ===== */}
+        <section className="mb-8 sm:mb-10">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8">
+            
+            {/* Top Customers مع مخطط أعمدة بالطول */}
+            <div
+              className="rounded-2xl p-4 sm:p-6 shadow-md"
+              style={{ 
+                backgroundColor: "var(--bg)",
+                border: "1px solid var(--border)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              }}
+            >
+              <h2
+                className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2"
+                style={{ color: "var(--text)" }}
+              >
+                <FaUsers style={{ color: isDarkMode ? "#ffffff" : "#292e2c" }} />{" "}
+                Top Customers
+              </h2>
 
-            {/* موبايل: عمودين / ديسكتوب: 3 أعمدة، والكارد الثالث بالموبايل يمتد عمودين ليصير بالنص */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {["paid", "pending", "unpaid"].map((key, i) => {
-                const val = paymentStatus?.[key] ?? 0;
-                let iconColor = "#22c55e";
-                if (key === "pending") iconColor = "#facc15";
-                if (key === "unpaid") iconColor = "#ef4444";
-                const label = key.replace(/_/g, " ");
-
-                // لو هو الكارد الثالث (i === 2): خلِّيه يمتد عمودين على الموبايل ويتوسّط
-                const spanCenterMobile =
-                  i === 2
-                    ? "col-span-2 justify-self-center lg:col-span-1 lg:justify-self-stretch"
-                    : "";
-
-                return (
-                  <div
-                    key={key}
-                    className={`p-4 sm:p-5 rounded-xl text-center shadow border ${spanCenterMobile}`}
-                    style={{
-                      backgroundColor: "var(--bg)",
-                      borderColor: "var(--border)",
-                      // اختيارياً: حددي أقصى عرض للكارد الثالث عشان ما يصير أعرض من اللازم وهو بالنص
-                      maxWidth: i === 2 ? "22rem" : "unset",
-                      width: "100%",
-                    }}
+              <div className="h-64 sm:h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart 
+                    data={report.top_customers?.slice(0, 5) || []}
+                    layout="vertical"
+                    margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
                   >
-                    <FaDollarSign
-                      style={{ color: iconColor }}
-                      className="text-2xl sm:text-3xl mx-auto mb-2"
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis 
+                      type="number" 
+                      stroke="var(--light-gray)"
+                      tick={{ fontSize: 12 }}
                     />
-                    <p className="capitalize font-semibold mb-1 text-sm sm:text-base">
-                      {label}
-                    </p>
-                    <p className="text-base sm:text-lg font-bold">
-                      {val} orders
-                    </p>
-                  </div>
-                );
-              })}
+                    <YAxis 
+                      type="category" 
+                      dataKey="customer_email" 
+                      stroke="var(--light-gray)"
+                      tick={{ fontSize: 12 }}
+                      width={90}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "var(--bg)",
+                        border: "1px solid var(--border)",
+                        color: "var(--text)",
+                        borderRadius: 8,
+                      }}
+                      formatter={(value, name) => {
+                        if (name === "orders_count") return [`${value} orders`, 'Orders'];
+                        if (name === "total_amount") return [`$${value}`, 'Total Spent'];
+                        return [value, name];
+                      }}
+                    />
+                    <Bar 
+                      dataKey="orders_count" 
+                      fill="var(--button)" 
+                      radius={[0, 4, 4, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-          </div>
 
-          {/* Top Customers */}
-          <div
-            className="rounded-2xl p-4 sm:p-6 shadow-md"
-            style={{ backgroundColor: isDarkMode ? "#313131" : "#f5f6f5" }}
-          >
-            <h2
-              className="text-xl sm:text-2xl font-bold mb-4 sm:mb-5 flex items-center gap-2"
-              style={{ color: "var(--text)" }}
+            {/* Top Vendors */}
+            <div
+              className="rounded-2xl p-4 sm:p-6 shadow-md"
+              style={{ 
+                backgroundColor: "var(--bg)",
+                border: "1px solid var(--border)",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              }}
             >
-              <FaUsers style={{ color: isDarkMode ? "#ffffff" : "#292e2c" }} />{" "}
-              Top Customers
-            </h2>
+              <h2
+                className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2"
+                style={{ color: "var(--text)" }}
+              >
+                <FaStore style={{ color: isDarkMode ? "#ffffff" : "#292e2c" }} />{" "}
+                Top Vendors
+              </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-              {report.top_customers?.slice(0, 3).map((c) => (
-                <div
-                  key={c.customer_id}
-                  className="p-4 rounded-xl text-center"
-                  style={{
-                    backgroundColor: "var(--bg)",
-                    border: "1px solid var(--border)",
-                    color: "var(--text)",
-                  }}
-                >
-                  <p className="font-semibold mb-2 text-sm sm:text-base">
-                    {c.customer_email}
-                  </p>
-                  <p className="text-sm sm:text-base">
-                    Orders: {c.orders_count}
-                  </p>
-                  <p className="text-sm sm:text-base">
-                    Total Spent: ${c.total_amount}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Top Vendors */}
-          <div
-            className="rounded-2xl p-4 sm:p-6 shadow-md"
-            style={{ backgroundColor: isDarkMode ? "#313131" : "#f5f6f5" }}
-          >
-            <h2
-              className="text-xl sm:text-2xl font-bold mb-4 sm:mb-5 flex items-center gap-2"
-              style={{ color: "var(--text)" }}
-            >
-              <FaStore style={{ color: isDarkMode ? "#ffffff" : "#292e2c" }} />{" "}
-              Top Vendors
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-              {report.top_vendors?.slice(0, 3).map((v) => (
-                <div
-                  key={v.vendor_id}
-                  className="p-4 rounded-xl text-center"
-                  style={{
-                    backgroundColor: "var(--bg)",
-                    border: "1px solid var(--border)",
-                    color: isDarkMode ? "#ffffff" : "#292e2c",
-                  }}
-                >
-                  <p className="font-semibold mb-1 text-sm sm:text-base">
-                    {v.store_name}
-                  </p>
-                  <p className="text-sm sm:text-base">
-                    Orders: {v.orders_count}
-                  </p>
-                  <p className="text-sm sm:text-base">Revenue: ${v.revenue}</p>
-                </div>
-              ))}
+              <div className="h-64 sm:h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart 
+                    data={report.top_vendors?.slice(0, 5) || []}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis 
+                      dataKey="store_name" 
+                      stroke="var(--light-gray)"
+                      tick={{ fontSize: 12 }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                    />
+                    <YAxis 
+                      stroke="var(--light-gray)"
+                      tick={{ fontSize: 12 }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "var(--bg)",
+                        border: "1px solid var(--border)",
+                        color: "var(--text)",
+                        borderRadius: 8,
+                      }}
+                      formatter={(value, name) => {
+                        if (name === "revenue") return [`$${value}`, 'Revenue'];
+                        if (name === "orders_count") return [`${value} orders`, 'Orders'];
+                        return [value, name];
+                      }}
+                    />
+                    <Bar 
+                      dataKey="revenue" 
+                      fill="var(--button)" 
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
         </section>
       </div>
-      {/* /WRAPPER */}
     </div>
   );
 }

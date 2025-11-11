@@ -215,6 +215,13 @@ export default function LandingPage() {
     return getColor('button');
   };
 
+  // لون خاص للعناوين في الوضع الفاتح فقط
+  const getTitleColor = () => {
+    return themeMode === 'dark' 
+      ? getColor('text') // في الوضع المظلم يستخدم اللون العادي
+      : '#259050ff'; // لون أخضر داكن جميل للوضع الفاتح
+  };
+
   return (
     <motion.div
       initial="hidden"
@@ -347,8 +354,8 @@ export default function LandingPage() {
           >
             <motion.h2
               variants={fadeInUp}
-              className="text-3xl md:text-4xl font-bold mb-6"
-              style={{ color: getTextColor() }}
+              className="text-4xl md:text-5xl font-bold mb-6"
+              style={{ color: getTitleColor() }} 
             >
               Why Choose Qwikko?
             </motion.h2>
@@ -425,7 +432,7 @@ export default function LandingPage() {
                     </div>
                     <h3
                       className="text-xl font-bold flex-1"
-                      style={{ color: getTextColor() }}
+                      style={{ color: getTitleColor() }}
                     >
                       {card.title}
                     </h3>
@@ -502,13 +509,13 @@ export default function LandingPage() {
             }}
           >
             <FaShieldAlt style={{ color: getIconColor() }} className="text-lg" />
-            <span className="font-bold text-lg" style={{ color: getTextColor() }}>Trust & Security</span>
+            <span className="font-bold text-lg" style={{ color: getTitleColor() }}>Trust & Security</span> {/* استخدام اللون الجديد */}
           </motion.div>
          
           <motion.h2
             variants={fadeInUp}
-            className="text-3xl md:text-4xl font-bold mb-6"
-            style={{ color: getTextColor() }}
+            className="text-4xl md:text-5xl font-bold mb-6"
+            style={{ color: getTitleColor() }} 
           >
             Built on Trust & Innovation
           </motion.h2>
@@ -557,7 +564,7 @@ export default function LandingPage() {
                 </div>
                 <h3 
                   className="text-xl font-bold mb-3 flex-1"
-                  style={{ color: getTextColor() }}
+                  style={{ color: getTitleColor() }} 
                 >
                   {item.title}
                 </h3>

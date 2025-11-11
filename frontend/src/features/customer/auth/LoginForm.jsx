@@ -373,7 +373,7 @@ const LoginForm = () => {
                     isDark ? "text-[var(--light-gray)]" : "text-gray-500"
                   }`}>
                     <button
-                      onClick={() => navigate("/privacy-policy")}
+                      onClick={() => navigate("/privacy")}
                       className={`transition-all duration-300 hover:scale-105 flex items-center gap-1 ${
                         isDark ? "hover:text-[var(--button)]" : "hover:text-blue-600"
                       }`}
@@ -383,7 +383,7 @@ const LoginForm = () => {
                     </button>
                     <span className={isDark ? "text-[var(--border)]" : "text-gray-300"}>•</span>
                     <button
-                      onClick={() => navigate("/terms-of-service")}
+                      onClick={() => navigate("/terms")}
                       className={`transition-all duration-300 hover:scale-105 flex items-center gap-1 ${
                         isDark ? "hover:text-[var(--button)]" : "hover:text-blue-600"
                       }`}

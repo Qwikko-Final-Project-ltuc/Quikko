@@ -15,6 +15,7 @@ import {
   FaSearch,
   FaBell,
   FaComments,
+  FaSun, FaMoon,
 } from "react-icons/fa";
 import { MdFavorite } from "react-icons/md";
 import { fetchProfile, updateProfile } from "../../profileSlice";
@@ -600,9 +601,9 @@ const Navbar = () => {
                         }`}
                       >
                         {themeMode === "dark" ? (
-                          <FaInfoCircle className="mr-3 text-sm" /> 
+                          <FaSun className="mr-3 text-sm" /> 
                         ) : (
-                          <FaCog className="mr-3 text-sm" /> 
+                          <FaMoon className="mr-3 text-sm" /> 
                         )}
                         <span className="flex-1 text-sm">
                           {themeMode === "dark" ? "Light Mode" : "Dark Mode"}
@@ -691,7 +692,7 @@ const Navbar = () => {
                   {isLoggedIn ? (
                     // للمستخدم المسجل
                     <>
-                      <div className="px-4 py-3 border-b border-[var(--border)] text-[var(--text)] font-semibold bg-[var(--div)]">
+                      <div className="px-4 py-3 border-b border-[var(--border)] text-[var(--text)] font-semibold bg-[var(--div)] lg:hidden">
                         {loading ? "Loading..." : profile?.name || "User"}
                       </div>
                       <Link
@@ -732,9 +733,9 @@ const Navbar = () => {
                         }`}
                       >
                         {themeMode === "dark" ? (
-                          <FaInfoCircle className="mr-3 text-sm" /> 
+                           <FaSun className="mr-3 text-sm" />
                         ) : (
-                          <FaCog className="mr-3 text-sm" /> 
+                          <FaMoon className="mr-3 text-sm" />
                         )}
                         <span className="flex-1">
                           {themeMode === "dark" ? "Light Mode" : "Dark Mode"}

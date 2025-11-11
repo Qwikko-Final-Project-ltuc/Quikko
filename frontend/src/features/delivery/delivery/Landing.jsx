@@ -6,45 +6,66 @@ import {
   FaUsers,
   FaDollarSign,
   FaRobot,
+  FaArrowRight,
+  FaPlay,
+  FaRocket,
+  FaShieldAlt,
+  FaLightbulb,
 } from "react-icons/fa";
 import { fetchLandingCMS } from "./Api/LandingAPI";
 import { useSelector, useDispatch } from "react-redux";
 import { setTheme } from "./deliveryThemeSlice";
 import ChatBot from "../Layout/ChatBot";
-import { X } from "lucide-react";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { X, Star, TrendingUp, Target, Zap } from "lucide-react";
+import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.18 } },
+  visible: { opacity: 1, transition: { staggerChildren: 0.15 } },
 };
+
 const itemUp = {
-  hidden: { opacity: 0, y: 38 },
+  hidden: { opacity: 0, y: 50 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { type: "spring", stiffness: 120, damping: 16 },
+    transition: { type: "spring", stiffness: 120, damping: 14 },
   },
 };
-const textReveal = {
-  hidden: { opacity: 0, y: 80 },
+
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.8 },
   visible: {
     opacity: 1,
-    y: 0,
-    transition: { type: "spring", stiffness: 110, damping: 14, duration: 0.9 },
+    scale: 1,
+    transition: { type: "spring", stiffness: 130, damping: 15 },
   },
 };
-const gradientVariants = {
-  animate: {
-    backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-    transition: { duration: 10, repeat: Infinity, ease: "linear" },
+
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { duration: 0.8, ease: "easeOut" },
   },
 };
-const floatingBubble = {
+
+const floatingAnimation = {
   floating: {
-    y: [-22, 22, -22],
-    rotate: [0, 3, 0],
-    transition: { duration: 5, repeat: Infinity, ease: "easeInOut" },
+    y: [-15, 15, -15],
+    rotate: [0, 2, 0],
+    transition: { duration: 6, repeat: Infinity, ease: "easeInOut" },
+  },
+};
+
+const pulseGlow = {
+  pulse: {
+    boxShadow: [
+      "0 0 0 0 rgba(2, 106, 75, 0.4)",
+      "0 0 0 15px rgba(2, 106, 75, 0)",
+      "0 0 0 0 rgba(2, 106, 75, 0)",
+    ],
+    transition: { duration: 2, repeat: Infinity },
   },
 };
 
@@ -52,6 +73,7 @@ export default function LandingPage() {
   const [cmsContent, setCmsContent] = useState(null);
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
+  const [activeBenefit, setActiveBenefit] = useState(0);
   const isDark = useSelector((s) => s.deliveryTheme.darkMode);
   const dispatch = useDispatch();
 
@@ -59,28 +81,35 @@ export default function LandingPage() {
   const toggleChat = () => setIsChatOpen((v) => !v);
 
   const colors = {
-    bg: isDark ? "#323232" : "#ffffff", // ✅ خلفية الصفحة بالكامل
+    bg: isDark ? "#1a1f1d" : "#ffffff",
     textbox: "#ffffff",
     text: isDark ? "#f5f5f5" : "#1a1f1d",
     textSecondary: isDark ? "#a0a0a0" : "#5a6c65",
-    div: isDark ? "#2a2a2a" : "#e8ecea",
-    border: isDark ? "#404040" : "#d0d9d5",
+    div: isDark ? "#2a2a2a" : "#f8faf9",
+    border: isDark ? "#404040" : "#e0e6e3",
     button: "#026a4b",
     buttonHover: "#015c40",
     gradientStart: "#026a4b",
     gradientEnd: "#014d34",
+    accent: "#00d4aa",
   };
 
-  // 3D tilt
+  // Auto-rotate benefits
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveBenefit((prev) => (prev + 1) % 4);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // 3D tilt effect
   const cardRef = useRef(null);
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
   const smx = useSpring(mx, { stiffness: 150, damping: 20 });
   const smy = useSpring(my, { stiffness: 150, damping: 20 });
-  const rotateX = useTransform(smy, [-0.5, 0.5], [10, -10]);
-  const rotateY = useTransform(smx, [-0.5, 0.5], [-10, 10]);
-  const floatY = useMotionValue(0);
-  const sFloatY = useSpring(floatY, { stiffness: 60, damping: 15 });
+  const rotateX = useTransform(smy, [-0.5, 0.5], [8, -8]);
+  const rotateY = useTransform(smx, [-0.5, 0.5], [-8, 8]);
 
   function handleMouseMove(e) {
     const el = cardRef.current;
@@ -91,6 +120,7 @@ export default function LandingPage() {
     mx.set(px - 0.5);
     my.set(py - 0.5);
   }
+
   function handleMouseLeave() {
     mx.set(0);
     my.set(0);
@@ -129,446 +159,564 @@ export default function LandingPage() {
     dispatch(setTheme(savedTheme === "dark"));
   }, [dispatch]);
 
-  // ---------- BODY SCROLL LOCK ----------
+  // Scroll lock for chat
   useEffect(() => {
-    let scrollY = 0;
-
     if (isChatOpen) {
-      scrollY = window.scrollY || document.documentElement.scrollTop;
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.left = "0";
-      document.body.style.right = "0";
-      document.body.style.width = "100%";
       document.body.style.overflow = "hidden";
-      document.body.setAttribute("data-locked-scroll", String(scrollY));
     } else {
-      const stored = document.body.getAttribute("data-locked-scroll");
-      const prev = stored ? parseInt(stored, 10) : 0;
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.left = "";
-      document.body.style.right = "";
-      document.body.style.width = "";
-      document.body.style.overflow = "";
-      document.body.removeAttribute("data-locked-scroll");
-      setTimeout(() => {
-        window.scrollTo({ top: prev, left: 0, behavior: "auto" });
-      }, 10);
+      document.body.style.overflow = "unset";
     }
-
     return () => {
-      const stored = document.body.getAttribute("data-locked-scroll");
-      const prev = stored ? parseInt(stored, 10) : 0;
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.left = "";
-      document.body.style.right = "";
-      document.body.style.width = "";
-      document.body.style.overflow = "";
-      document.body.removeAttribute("data-locked-scroll");
-      setTimeout(() => {
-        window.scrollTo({ top: prev, left: 0, behavior: "auto" });
-      }, 10);
+      document.body.style.overflow = "unset";
     };
   }, [isChatOpen]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (
-        window.innerHeight + window.scrollY >=
-        document.body.offsetHeight - 100
-      ) {
-        document.documentElement.style.overflowY = "auto";
-      }
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   return (
-    // ✅ خلفية الصفحة كلها حسب الثيم (لايت/دارك)
     <div
       style={{
         backgroundColor: colors.bg,
         color: colors.text,
         minHeight: "100vh",
         width: "100%",
+        overflowX: "hidden",
       }}
     >
-      {/* الهيدر بجرادينت كامل-عرض */}
+      {/* Enhanced Hero Section - Reduced Height */}
       <motion.section
-        variants={gradientVariants}
-        animate="animate"
-        className="relative overflow-hidden"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className="relative overflow-hidden min-h-[90vh] flex items-center"
         style={{
           background: `linear-gradient(135deg, ${colors.gradientStart} 0%, ${colors.gradientEnd} 50%, ${colors.gradientStart} 100%)`,
           backgroundSize: "400% 400%",
-          color: "#ffffff",
+          animation: "gradientShift 15s ease infinite",
         }}
       >
-        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-          {[...Array(6)].map((_, i) => (
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(12)].map((_, i) => (
             <motion.div
               key={i}
-              variants={floatingBubble}
+              variants={floatingAnimation}
               animate="floating"
-              transition={{ delay: i * 0.6 }}
+              transition={{ delay: i * 0.5 }}
               className="absolute bg-white/10 rounded-full backdrop-blur-sm"
               style={{
-                width: `${26 + i * 24}px`,
-                height: `${26 + i * 24}px`,
-                top: `${12 + i * 12}%`,
-                left: `${6 + i * 15}%`,
-                opacity: 0.08 + i * 0.09,
+                width: `${20 + i * 15}px`,
+                height: `${20 + i * 15}px`,
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                opacity: 0.05 + i * 0.02,
               }}
             />
           ))}
         </div>
 
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-          className="relative max-w-screen-xl mx-auto px-4 sm:px-6 md:px-12 py-16 sm:py-20 md:py-24"
-        >
-          <motion.div variants={itemUp}></motion.div>
+        {/* Grid Pattern Overlay */}
+        <div 
+          className="absolute inset-0 opacity-10"
+          style={{
+            backgroundImage: `linear-gradient(${colors.button} 1px, transparent 1px),
+                             linear-gradient(90deg, ${colors.button} 1px, transparent 1px)`,
+            backgroundSize: '50px 50px',
+          }}
+        />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-center">
-            <div className="order-2 md:order-1 text-center md:text-left relative z-30">
-              <motion.h1
-                variants={textReveal}
-                className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight tracking-tight"
-                style={{ lineHeight: "1.2" }}
-              >
-                <span className="bg-gradient-to-r from-white to-green-200 bg-clip-text text-transparent">
-                  {title || "Welcome to Qwikko Delivery"}
-                </span>
-              </motion.h1>
-              <motion.h6
-                variants={itemUp}
-                className="mt-4 text-sm sm:text-base md:text-lg leading-relaxed max-w-2xl mx-auto md:mx-0"
-                style={{
-                  color: "rgba(255,255,255,0.98)",
-                  position: "relative",
-                  zIndex: 40,
-                  textShadow: "0 2px 6px rgba(0,0,0,0.45)",
-                }}
-              >
-                {subtitle && subtitle.trim().length > 0
-                  ? subtitle
-                  : "Loading..."}
-              </motion.h6>
-
-              <motion.div
-                variants={containerVariants}
-                className="flex items-center justify-center md:justify-start gap-3 sm:gap-4 pt-4"
-              >
-                <motion.div
-                  variants={itemUp}
-                  whileHover={{ y: -2, scale: 1.04 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="relative"
-                  style={{ zIndex: 40 }}
-                >
-                  <Link
-                    to="/delivery/login"
-                    aria-label="Start Now"
-                    className="inline-flex items-center justify-center px-6 sm:px-8 md:px-10 py-3 sm:py-3.5 md:py-4 rounded-lg text-base sm:text-lg font-semibold shadow-lg transition-all duration-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/70"
-                    style={{
-                      backgroundColor: "#ffffff",
-                      color: "#026a4b",
-                      boxShadow: "0 8px 20px rgba(0,0,0,0.18)",
-                    }}
-                  >
-                    Start Now
-                  </Link>
-                </motion.div>
-              </motion.div>
-            </div>
-
-            <div className="order-1 md:order-2 w-full flex items-center justify-center">
-              <motion.div
-                ref={cardRef}
-                onMouseMove={handleMouseMove}
-                onMouseLeave={handleMouseLeave}
-                style={{
-                  rotateX,
-                  rotateY,
-                  y: sFloatY,
-                  transformStyle: "preserve-3d",
-                }}
-                className="w-full flex items-center justify-center bg-transparent"
-              >
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Image moved to left side */}
+            <motion.div
+              ref={cardRef}
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseLeave}
+              style={{
+                rotateX,
+                rotateY,
+                transformStyle: "preserve-3d",
+              }}
+              className="relative order-2 lg:order-1"
+            >
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl h-full flex items-center">
                 {cmsContent?.image_url ? (
                   <motion.img
                     src={cmsContent.image_url}
-                    alt="Landing visual"
-                    className="w-full h-auto max-h-64 sm:max-h-80 md:max-h-[420px] lg:max-h-[480px] object-contain rounded-2xl"
-                    whileHover={{ scale: 1.015 }}
-                    transition={{ type: "spring", stiffness: 120, damping: 18 }}
-                    style={{ willChange: "transform" }}
+                    alt="Delivery Platform Dashboard"
+                    className="w-full h-auto max-h-[400px] object-cover"
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ type: "spring", stiffness: 100, damping: 15 }}
                   />
                 ) : (
-                  <div className="w-full h-[280px] sm:h-[320px] md:h-[420px] lg:h-[480px] flex items-center justify-center bg-transparent">
-                    <span className="text-white/80">Loading image...</span>
+                  <div 
+                    className="w-full aspect-video flex items-center justify-center rounded-3xl"
+                    style={{ backgroundColor: colors.button + '20' }}
+                  >
+                    <div className="text-center space-y-4">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                        className="w-16 h-16 mx-auto border-4 border-white/30 border-t-white rounded-full"
+                      />
+                      <p className="text-white/80 font-medium">Loading Preview</p>
+                    </div>
                   </div>
                 )}
+                
+                {/* Floating elements overlay */}
+                <motion.div
+                  variants={floatingAnimation}
+                  animate="floating"
+                  className="absolute top-8 right-8 w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 flex items-center justify-center"
+                >
+                  <TrendingUp className="text-white" size={32} />
+                </motion.div>
+              </div>
+            </motion.div>
+
+            {/* Content Side - now on right */}
+            <motion.div
+              variants={containerVariants}
+              className="text-center lg:text-left space-y-6 order-1 lg:order-2"
+            >
+              <motion.div variants={itemUp} className="space-y-2">
+                <motion.div
+                  variants={pulseGlow}
+                  animate="pulse"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/30 bg-white/10 backdrop-blur-sm"
+                >
+                  <Zap size={16} className="text-white" />
+                  <span className="text-white/90 text-sm font-medium">
+                    Enterprise Delivery Platform
+                  </span>
+                </motion.div>
               </motion.div>
-            </div>
+
+              <motion.h1
+                variants={itemUp}
+                className="text-2xl sm:text-4xl lg:text-5xl xl:text-6xl font-black leading-tight"
+              >
+                <span className="bg-gradient-to-r from-white via-green-100 to-white bg-clip-text text-transparent">
+                  {title || "Qwikko Delivery"}
+                </span>
+              </motion.h1>
+
+              <motion.p
+                variants={itemUp}
+                className="text-lg sm:text-xl text-white/90 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-light"
+              >
+                {subtitle && subtitle.trim().length > 0
+                  ? subtitle
+                  : "Transform your delivery operations with intelligent logistics solutions"}
+              </motion.p>
+
+              <motion.div
+                variants={containerVariants}
+                className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
+              >
+                <motion.div
+                  variants={itemUp}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Link
+                    to="/delivery/login"
+                    className="group inline-flex items-center gap-3 px-6 py-3 rounded-xl text-base font-semibold shadow-xl transition-all duration-300 hover:shadow-2xl"
+                    style={{
+                      backgroundColor: "#ffffff",
+                      color: colors.button,
+                    }}
+                  >
+                    <span>Get Started</span>
+                    <FaArrowRight className="group-hover:translate-x-1 transition-transform duration-300" />
+                  </Link>
+                </motion.div>
+              </motion.div>
+            </motion.div>
           </div>
+        </div>
+
+        {/* Scroll Indicator */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 2 }}
+          className="absolute bottom-6 left-1/2 transform -translate-x-1/2"
+        >
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="w-5 h-8 border-2 border-white/50 rounded-full flex justify-center"
+          >
+            <motion.div
+              animate={{ y: [0, 10, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="w-1 h-2 bg-white/70 rounded-full mt-2"
+            />
+          </motion.div>
         </motion.div>
       </motion.section>
 
-      {/* ✅ مساحة المحتوى السفلي بخلفية الصفحة نفسها (لا ألوان خلف الكاردات) */}
-      <div className="w-full">
-        {/* How It Works */}
-        <section className="w-full max-w-6xl px-4 sm:px-6 md:p-10 mt-6 md:mt-10 text-center mx-auto">
-          <motion.h2
-            variants={itemUp}
+      {/* Process Section - Reduced Padding */}
+      <section className="relative py-12 lg:py-16"> {/* تم تقليل الـ padding بشكل أكبر */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, amount: 0.2 }}
-            className="text-2xl sm:text-3xl md:text-4xl font-bold mb-8 sm:mb-12 md:mb-16"
-            style={{ color: isDark ? "#ffffff" : colors.button }}
+            viewport={{ once: true, amount: 0.3 }}
+            variants={containerVariants}
+            className="text-center mb-12" /* تم تقليل الـ margin */
           >
-            How It Works
-          </motion.h2>
+            <motion.div variants={itemUp} className="inline-flex items-center gap-2 mb-4">
+              <Target className={isDark ? "text-white" : "text-[#026a4b]"} />
+              <span className={`text-sm font-semibold uppercase tracking-wider ${
+                isDark ? "text-white/70" : "text-[#026a4b]/70"
+              }`}>
+                Process
+              </span>
+            </motion.div>
+            <motion.h2
+              variants={itemUp}
+              className="text-3xl sm:text-4xl lg:text-5xl font-black mb-6"
+              style={{ color: isDark ? "#ffffff" : colors.button }}
+            >
+              How It Works
+            </motion.h2>
+            <motion.p
+              variants={itemUp}
+              className={`text-lg max-w-3xl mx-auto leading-relaxed ${
+                isDark ? "text-white/80" : "text-gray-600"
+              }`}
+            >
+              Streamline your delivery operations in three simple steps
+            </motion.p>
+          </motion.div>
 
-          <div
-            className="hidden md:block absolute left-0 right-0 h-[3px]"
-            style={{
-              top: "28px",
-              backgroundColor: isDark ? "#ffffff" : colors.button,
-              opacity: 0.25,
-            }}
-          />
-
-          <div className="hidden md:grid grid-cols-3 gap-6 sm:gap-10 md:gap-16 mb-4 sm:mb-6">
-            {["1", "2", "3"].map((step, idx) => (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 relative">
+            {/* Connection Line */}
+            <div className="hidden lg:block absolute top-20 left-1/2 transform -translate-x-1/2 w-2/3 h-1">
               <motion.div
-                key={idx}
-                className="flex justify-center"
-                variants={itemUp}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.2 }}
-              >
-                <motion.div
-                  className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full text-sm sm:text-base md:text-lg font-bold z-10 shadow-md"
-                  style={{ backgroundColor: colors.button, color: "#fff" }}
-                  animate={{ scale: [1, 1.06, 1] }}
-                  transition={{
-                    duration: 1.8,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: idx * 0.2,
-                  }}
-                >
-                  {step}
-                </motion.div>
-              </motion.div>
-            ))}
-          </div>
+                initial={{ scaleX: 0 }}
+                whileInView={{ scaleX: 1 }}
+                transition={{ duration: 1.5, ease: "easeOut" }}
+                className="w-full h-full"
+                style={{ backgroundColor: colors.button + '40' }}
+              />
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10 md:gap-16 justify-items-center">
             {[
               {
-                title: "Register your company",
-                desc: "Sign up quickly and create your business account.",
+                step: "01",
+                title: "Register Your Company",
+                description: "Quick setup with automated verification process",
+                icon: FaRocket,
+                color: "#026a4b",
               },
               {
-                title: "Set up your delivery zones",
-                desc: "Define the areas where your company will operate and deliver.",
+                step: "02",
+                title: "Define Delivery Zones",
+                description: "Smart mapping with real-time coverage optimization",
+                icon: FaShieldAlt,
+                color: "#028a6b",
               },
               {
-                title: "Start receiving orders",
-                desc: "Track and deliver orders smoothly and grow your business.",
+                step: "03",
+                title: "Manage Orders & Grow",
+                description: "Advanced analytics and automated dispatch system",
+                icon: FaLightbulb,
+                color: "#02aa8b",
               },
-            ].map((item, i) => (
+            ].map((item, index) => (
               <motion.div
-                key={i}
-                variants={itemUp}
+                key={index}
                 initial="hidden"
                 whileInView="visible"
-                viewport={{ once: true, amount: 0.2 }}
-                whileHover={{ y: -6, rotate: 0.25 }}
-                transition={{ type: "spring", stiffness: 140, damping: 12 }}
-                className="flex flex-col items-center text-center w-full relative"
-                style={{ maxWidth: "22rem" }}
+                viewport={{ once: true, amount: 0.5 }}
+                variants={scaleIn}
+                whileHover={{ y: -8, scale: 1.02 }}
+                className="relative group"
               >
-                <div className="md:hidden flex justify-center -mb-3">
-                  <motion.div
-                    className="w-10 h-10 flex items-center justify-center rounded-full text-base font-bold shadow-md"
-                    style={{ backgroundColor: colors.button, color: "#fff" }}
-                    animate={{ scale: [1, 1.06, 1] }}
-                    transition={{
-                      duration: 1.8,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                      delay: i * 0.2,
-                    }}
-                  >
-                    {i + 1}
-                  </motion.div>
-                </div>
-
                 <div
-                  className="w-full"
+                  className="relative rounded-2xl p-6 backdrop-blur-sm border transition-all duration-500 group-hover:shadow-xl"
                   style={{
-                    backgroundColor: isDark ? "#424242" : "#f8faf9", // خلفية الكارد فقط
-                    color: isDark ? "#ffffff" : colors.button,
-                    borderRadius: "1rem",
-                    border: `1px solid ${isDark ? "#555555" : colors.button}`,
-                    boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
-                    padding: "1.5rem",
-                    transition: "all 0.3s ease",
+                    backgroundColor: isDark ? "#2a2a2a" : "#ffffff",
+                    borderColor: isDark ? "#404040" : colors.border,
+                    background: isDark 
+                      ? "linear-gradient(145deg, #2a2a2a, #1f1f1f)"
+                      : "linear-gradient(145deg, #ffffff, #f8faf9)",
                   }}
                 >
-                  <p className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">
-                    {item.title}
-                  </p>
-                  <p
-                    className="text-sm leading-relaxed opacity-90"
-                    style={{ color: isDark ? "#eaeaea" : colors.button }}
+                  {/* Step Number */}
+                  <motion.div
+                    className="absolute -top-3 -left-3 w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-base shadow-lg"
+                    style={{ backgroundColor: item.color }}
+                    whileHover={{ rotate: 360 }}
+                    transition={{ duration: 0.6 }}
                   >
-                    {item.desc}
+                    {item.step}
+                  </motion.div>
+
+                  {/* Icon */}
+                  <motion.div
+                    className="w-14 h-14 rounded-xl flex items-center justify-center mb-4"
+                    style={{ backgroundColor: item.color + '20' }}
+                    whileHover={{ scale: 1.1 }}
+                  >
+                    <item.icon className="text-xl" style={{ color: item.color }} />
+                  </motion.div>
+
+                  {/* Content */}
+                  <h3 className={`text-xl font-bold mb-3 ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}>
+                    {item.title}
+                  </h3>
+                  <p className={`leading-relaxed text-sm ${
+                    isDark ? "text-white/70" : "text-gray-600"
+                  }`}>
+                    {item.description}
                   </p>
+
+                  {/* Hover Effect */}
+                  <motion.div
+                    className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                    style={{
+                      background: `linear-gradient(135deg, ${item.color}20, transparent)`,
+                    }}
+                  />
                 </div>
               </motion.div>
             ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Benefits */}
-        <section className="w-full max-w-6xl px-4 sm:px-6 md:p-10 mt-6 mb-20 md:mb-24 text-center mx-auto">
-          <motion.h2
-            variants={itemUp}
+      {/* Benefits Section - Reduced Padding */}
+      <section className="relative py-12 lg:py-16 overflow-hidden"> {/* تم تقليل الـ padding بشكل أكبر */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, amount: 0.2 }}
-            className="text-2xl sm:text-3xl md:text-4xl font-bold mb-10 sm:mb-12 md:mb-16"
-            style={{ color: isDark ? "#ffffff" : colors.button }}
+            viewport={{ once: true, amount: 0.3 }}
+            variants={containerVariants}
+            className="text-center mb-12" /* تم تقليل الـ margin */
           >
-            Benefits
-          </motion.h2>
+            <motion.div variants={itemUp} className="inline-flex items-center gap-2 mb-4">
+              <Star className={isDark ? "text-white" : "text-[#026a4b]"} />
+              <span className={`text-sm font-semibold uppercase tracking-wider ${
+                isDark ? "text-white/70" : "text-[#026a4b]/70"
+              }`}>
+                Benefits
+              </span>
+            </motion.div>
+            <motion.h2
+              variants={itemUp}
+              className="text-3xl sm:text-4xl lg:text-5xl font-black mb-6"
+              style={{ color: isDark ? "#ffffff" : colors.button }}
+            >
+              Why Choose Us
+            </motion.h2>
+          </motion.div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-6 sm:gap-y-12 md:gap-y-14 justify-items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
-              { Icon: FaClipboardList, text: "Manage orders easily" },
-              { Icon: FaChartLine, text: "Accurate reports and statistics" },
-              { Icon: FaUsers, text: "Reach thousands of customers & stores" },
-              { Icon: FaDollarSign, text: "Guaranteed and fast payments" },
-            ].map(({ Icon, text }, i) => (
+              {
+                Icon: FaClipboardList,
+                title: "Smart Order Management",
+                description: "AI-powered dispatch and real-time tracking",
+                stats: "95% faster processing",
+              },
+              {
+                Icon: FaChartLine,
+                title: "Advanced Analytics",
+                description: "Deep insights with predictive analytics",
+                stats: "30% cost reduction",
+              },
+              {
+                Icon: FaUsers,
+                title: "Market Expansion",
+                description: "Access to thousands of potential customers",
+                stats: "3x growth potential",
+              },
+              {
+                Icon: FaDollarSign,
+                title: "Financial Security",
+                description: "Guaranteed payments and financial transparency",
+                stats: "24h payments",
+              },
+            ].map((benefit, index) => (
               <motion.div
-                key={i}
-                variants={itemUp}
+                key={index}
                 initial="hidden"
                 whileInView="visible"
-                viewport={{ once: true, amount: 0.2 }}
-                whileHover={{ y: -8, rotate: -0.25 }}
-                transition={{ type: "spring", stiffness: 140, damping: 12 }}
-                className="flex flex-col items-center justify-center w-full"
+                viewport={{ once: true, amount: 0.5 }}
+                variants={itemUp}
+                whileHover={{ y: -6, scale: 1.02 }}
+                onHoverStart={() => setActiveBenefit(index)}
+                className={`relative rounded-2xl p-6 border-2 transition-all duration-500 cursor-pointer ${
+                  activeBenefit === index ? 'shadow-xl' : 'shadow-lg'
+                }`}
                 style={{
-                  maxWidth: "18rem",
-                  backgroundColor: isDark ? "#424242" : "#f8faf9", // خلفية الكارد فقط
-                  color: colors.text,
-                  borderRadius: "1rem",
-                  border: `1px solid ${isDark ? "#555555" : colors.button}`,
-                  boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
-                  padding: "1.5rem",
-                  minHeight: "13rem",
-                  transition: "all 0.3s ease",
+                  backgroundColor: isDark ? "#2a2a2a" : "#ffffff",
+                  borderColor: activeBenefit === index ? colors.button : (isDark ? "#404040" : colors.border),
+                  transformStyle: "preserve-3d",
                 }}
               >
+                {/* Background Glow */}
+                {activeBenefit === index && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="absolute inset-0 rounded-2xl"
+                    style={{
+                      background: `radial-gradient(circle at center, ${colors.button}15, transparent 70%)`,
+                    }}
+                  />
+                )}
+
+                {/* Icon */}
                 <motion.div
-                  className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center mb-4 sm:mb-5 shadow-md"
-                  style={{ backgroundColor: colors.button, color: "#fff" }}
-                  animate={{ scale: [1, 1.08, 1] }}
-                  transition={{
-                    duration: 1.9,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: i * 0.15,
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-colors duration-500 ${
+                    activeBenefit === index ? 'scale-105' : ''
+                  }`}
+                  style={{
+                    backgroundColor: activeBenefit === index ? colors.button : colors.button + '20',
+                    color: activeBenefit === index ? '#ffffff' : colors.button,
                   }}
+                  whileHover={{ rotate: 360 }}
+                  transition={{ duration: 0.6 }}
                 >
-                  <Icon className="text-xl sm:text-2xl md:text-3xl" />
+                  <benefit.Icon className="text-lg" />
                 </motion.div>
-                <p className="text-sm sm:text-base font-semibold leading-relaxed opacity-95">
-                  {text}
+
+                {/* Content */}
+                <h3 className={`text-lg font-bold mb-2 transition-colors duration-500 ${
+                  activeBenefit === index ? 'text-[#026a4b]' : (isDark ? 'text-white' : 'text-gray-900')
+                }`}>
+                  {benefit.title}
+                </h3>
+                <p className={`mb-3 leading-relaxed text-sm transition-colors duration-500 ${
+                  activeBenefit === index ? 'text-[#026a4b]/90' : (isDark ? 'text-white/70' : 'text-gray-600')
+                }`}>
+                  {benefit.description}
                 </p>
+                <div className={`text-xs font-semibold transition-colors duration-500 ${
+                  activeBenefit === index ? 'text-[#026a4b]' : (isDark ? 'text-white/50' : 'text-gray-500')
+                }`}>
+                  {benefit.stats}
+                </div>
+
+                {/* Indicator */}
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: activeBenefit === index ? 1 : 0 }}
+                  className="absolute top-3 right-3 w-2 h-2 rounded-full"
+                  style={{ backgroundColor: colors.button }}
+                />
               </motion.div>
             ))}
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
 
-      {/* FAB */}
-      <button
+      {/* Enhanced Chat FAB - Circular */}
+      <motion.button
         onClick={toggleChat}
-        className="fixed bottom-4 right-4 md:bottom-6 md:right-6 p-3 md:p-4 rounded-full shadow-lg flex items-center justify-center z-50 transition-all duration-300 hover:scale-105 active:scale-95"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center z-50 transition-all duration-300 group"
         style={{
           backgroundColor: colors.button,
           color: "#fff",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
-          border: "none",
-          width: "56px",
-          height: "56px",
+          boxShadow: `0 8px 32px ${colors.button}40`,
         }}
         title="Open Qwikko Chatbot"
         aria-label="Open Qwikko Chatbot"
       >
-        <FaRobot className="text-xl md:text-2xl" />
-      </button>
-
-      {/* Chat panel */}
-      {isChatOpen && (
-        <div
-          className="fixed inset-0 md:inset-auto md:top-4 md:right-4 md:bottom-4 w-full md:w-96 h-full md:h-[calc(100vh-2rem)] rounded-none md:rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50"
-          style={{
-            backgroundColor: colors.div,
-            color: colors.text,
-            maxHeight: "100vh",
-          }}
+        <motion.div
+          animate={{ rotate: [0, 10, -10, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
         >
-          <div
-            className="flex items-center justify-between px-4 py-3 sm:py-4"
+          <FaRobot className="text-xl" />
+        </motion.div>
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: isChatOpen ? 1 : 0 }}
+          className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"
+        />
+      </motion.button>
+
+      {/* Enhanced Chat Panel */}
+      <AnimatePresence>
+        {isChatOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="fixed inset-4 md:inset-auto md:top-8 md:right-8 md:bottom-8 md:left-auto w-full md:w-96 h-full md:h-[calc(100vh-4rem)] rounded-3xl shadow-2xl flex flex-col overflow-hidden z-50"
             style={{
-              backgroundColor: colors.bg,
+              backgroundColor: colors.div,
               color: colors.text,
-              boxShadow: "0 1px 8px rgba(0,0,0,0.1)",
             }}
           >
-            <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-3">
-              <FaRobot style={{ color: colors.button }} />
-              Qwikko Chatbot
-            </h2>
-            <button
-              onClick={toggleChat}
-              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              style={{ color: colors.textSecondary }}
-              title="Close"
-              aria-label="Close chatbot"
+            {/* Header */}
+            <motion.div
+              initial={{ y: -20 }}
+              animate={{ y: 0 }}
+              className="flex items-center justify-between px-6 py-4"
+              style={{
+                backgroundColor: colors.bg,
+                boxShadow: "0 2px 20px rgba(0,0,0,0.1)",
+              }}
             >
-              <X size={24} />
-            </button>
-          </div>
+              <div className="flex items-center gap-3">
+                <motion.div
+                  animate={{ rotate: [0, 360] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: colors.button }}
+                >
+                  <FaRobot className="text-white text-sm" />
+                </motion.div>
+                <div>
+                  <h2 className="text-lg font-semibold">Qwikko Assistant</h2>
+                  <p className="text-xs opacity-70">Always here to help</p>
+                </div>
+              </div>
+              <motion.button
+                onClick={toggleChat}
+                whileHover={{ scale: 1.1, rotate: 90 }}
+                whileTap={{ scale: 0.9 }}
+                className="p-2 rounded-full transition-colors"
+                style={{
+                  backgroundColor: colors.bg,
+                  color: colors.textSecondary,
+                }}
+              >
+                <X size={20} />
+              </motion.button>
+            </motion.div>
 
-          <div
-            className="flex-grow overflow-auto p-3 sm:p-4"
-            style={{
-              backgroundColor: colors.bg,
-              overscrollBehavior: "contain",
-              WebkitOverflowScrolling: "touch",
-            }}
-          >
-            <ChatBot userId="guest" />
-          </div>
-        </div>
-      )}
+            {/* Chat Content */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="flex-grow overflow-hidden"
+              style={{ backgroundColor: colors.bg }}
+            >
+              <ChatBot userId="guest" />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <div style={{ height: "50px" }}></div>
+      {/* Custom Styles */}
+      <style jsx>{`
+        @keyframes gradientShift {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+      `}</style>
     </div>
   );
 }

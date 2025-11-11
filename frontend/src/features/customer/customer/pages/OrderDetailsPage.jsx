@@ -888,7 +888,7 @@ const OrderDetailsPage = () => {
                 {/* Shipping Address Card */}
                 <div className={`rounded-2xl border-2 ${cardClass} p-6 transition-all duration-300 hover:shadow-xl animate-fade-in-up shadow-lg backdrop-blur-sm`}>
                   <h2 className="text-xl font-bold mb-6 flex items-center text-[var(--text)] tracking-tight">
-                    <FiMapPin  className={`mr-3 ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}`}  />
+                    <FiMapPin className={`mr-3 ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}`} />
                     Shipping Address
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -918,33 +918,47 @@ const OrderDetailsPage = () => {
                         }
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-semibold mb-2 text-[var(--text)] tracking-tight">
-                        City *
-                      </label>
-                      <select
-                        className={`w-full p-3 rounded-xl border-2 ${inputClass} transition-all duration-200 focus:shadow-lg backdrop-blur-sm text-sm`}
-                        value={address.city}
-                        onChange={(e) => setAddress({ ...address, city: e.target.value })}
-                      >
-                        <option value="">Select a city</option>
-                        {cities.map((city) => (
-                          <option key={city} value={city}>
-                            {city}
-                          </option>
-                        ))}
-                      </select>
+                    
+                    {/* City and Calculate Delivery Button in the same row */}
+                    <div className="md:col-span-2">
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
+                        {/* City Field - takes 2/3 of the row */}
+                        <div className="lg:col-span-2">
+                          <label className="block text-sm font-semibold mb-2 text-[var(--text)] tracking-tight">
+                            City *
+                          </label>
+                          <select
+                            className={`w-full p-3 rounded-xl border-2 ${inputClass} transition-all duration-200 focus:shadow-lg backdrop-blur-sm text-sm`}
+                            value={address.city}
+                            onChange={(e) => setAddress({ ...address, city: e.target.value })}
+                          >
+                            <option value="">Select a city</option>
+                            {cities.map((city) => (
+                              <option key={city} value={city}>
+                                {city}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        
+                        {/* Calculate Delivery Button - takes 1/3 of the row */}
+                        <div className="lg:col-span-1">
+                          <button
+                            onClick={handleCalculateDelivery}
+                            className={`w-full ${buttonClass} px-4 py-3 rounded-xl text-sm font-semibold backdrop-blur-sm transition-all duration-200 hover:scale-105 h-[50px]`}
+                          >
+                            Calculate Delivery
+                          </button>
+                        </div>
+                      </div>
+                      
                     </div>
-                    <div className="md:col-span-2 flex justify-end mt-4">
-                      <button
-                        onClick={handleCalculateDelivery}
-                        className={`${buttonClass} px-6 py-3 rounded-xl text-sm font-semibold backdrop-blur-sm transition-all duration-200 hover:scale-105`}
-                      >
-                        Calculate Delivery
-                      </button>
-                    </div>
+                    
+                    
                   </div>
                 </div>
+                <div className="h-4 md:h-6 lg:h-8 xl:h-8"></div>
+
               </div>
 
               {/* Right Column - Order Summary & Payment */}
