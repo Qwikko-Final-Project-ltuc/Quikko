@@ -13,8 +13,12 @@ export default function CMSPage() {
   const tabClasses = (tab) =>
     `pb-2 px-3 sm:px-4 rounded-t-md transition-colors duration-300 text-sm sm:text-base ${
       activeTab === tab
-        ? "font-semibold border-b-2 border-[#307A59]"
-        : "opacity-80 hover:opacity-100 text-gray-600 hover:text-gray-800"
+        ? isDark
+            ? "font-semibold border-b-2 border-[#307A59] text-[var(--text)]"
+            : "font-semibold border-b-2 border-[#307A59] text-[var(--text)]" 
+        : isDark
+            ? "hover:text-[var(--button)] text-[var(--text)]"
+            : "hover:text-[var(--button)] text-[var(--text)]"
     }`;
 
   return (
