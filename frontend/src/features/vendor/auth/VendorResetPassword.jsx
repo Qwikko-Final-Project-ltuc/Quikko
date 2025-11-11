@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import { FaLock, FaArrowLeft, FaRocket } from "react-icons/fa";
 
 export default function VendorResetPassword() {
   const [password, setPassword] = useState("");
@@ -44,163 +45,131 @@ export default function VendorResetPassword() {
   }, []);
 
   return (
-    <div
-      className={`flex min-h-screen transition-colors duration-500
-        ${isDark ? "bg-[var(--bg)] text-[var(--text)]" : "bg-[var(--bg)] text-[var(--text)]"}`}
-    >
-      {/* Left Section - Reset Password Form */}
-      <div
-        className={`w-full lg:w-1/2 flex flex-col justify-center items-center p-6 md:p-12 transition-colors duration-500 relative
-          ${isDark ? "bg-[var(--div)]" : "bg-[var(--bg)]"}`}
-      >
-        {/* Decorative Top Border */}
-        <div
-          className={`absolute top-0 left-0 w-full h-1 transition-colors duration-500
-            ${isDark ? "bg-[var(--button)]" : "bg-[var(--button)]"}`}
-        ></div>
-
-        <div className="w-full max-w-md">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold mb-2 transition-colors duration-500">
-              Reset Password
-            </h2>
-            <p
-              className={`text-lg transition-colors duration-500 ${
-                isDark ? "text-[var(--light-gray)]" : "text-[var(--light-gray)]"
-              }`}
-            >
-              Enter your new password to access your account
-            </p>
-          </div>
-
-          {/* Success Message */}
-          {message && (
-            <div
-              className={`w-full p-4 rounded-lg mb-6 text-center transition-colors duration-300 ${
-                isDark
-                  ? "bg-[var(--success)] bg-opacity-20 text-green-200 border border-green-800"
-                  : "bg-[var(--success)] bg-opacity-20 text-green-700 border border-green-200"
-              }`}
-            >
-              {message}
-            </div>
-          )}
-
-          {/* Error Message */}
-          {error && (
-            <div
-              className={`w-full p-4 rounded-lg mb-6 text-center transition-colors duration-300 ${
-                isDark
-                  ? "bg-red-900 bg-opacity-20 text-red-200 border border-red-800"
-                  : "bg-red-100 text-red-700 border border-red-200"
-              }`}
-            >
-              {error}
-            </div>
-          )}
-
-          {/* Reset Password Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="flex flex-col w-full">
-              <label
-                className={`mb-2 font-medium transition-colors duration-300
-                  ${isDark ? "text-[var(--text)]" : "text-[var(--text)]"}`}
-              >
-                New Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your new password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full border pl-4 pr-12 py-3 rounded-lg focus:outline-none transition-all duration-300
-                    ${
-                      isDark
-                        ? "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)] focus:border-transparent"
-                        : "bg-[var(--textbox)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-[var(--button)] focus:border-transparent"
-                    }`}
-                  required
-                />
-                <span className="absolute inset-y-0 right-3 flex items-center">
-                  <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => setShowPassword((s) => !s)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    className={`p-1 transition-colors duration-300 ${
-                      isDark
-                        ? "text-[var(--mid-dark)] hover:text-[var(--text)]"
-                        : "text-[var(--light-gray)] hover:text-[var(--text)]"
-                    }`}
-                  >
-                    {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-                  </button>
-                </span>
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full p-3 rounded-lg font-semibold transition-all duration-300 relative
-                bg-[var(--button)] text-white 
-                hover:bg-[var(--button)] hover:text-white 
-                hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] 
-                disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed disabled:shadow-none`}
-            >
-              {loading ? "Resetting..." : "Reset Password"}
-            </button>
-          </form>
-
-          {/* Back to Login */}
-          <div className="text-center mt-8">
-            <button
-              type="button"
-              className={`flex items-center justify-center mx-auto text-sm font-medium transition-all duration-300
-                ${isDark 
-                  ? "text-[var(--primary)] hover:text-[var(--primary)]" 
-                  : "text-[var(--primary)] hover:text-[var(--primary)]"
-                } hover:underline`}
-              onClick={() => navigate("/vendor/login")}
-            >
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
-              </svg>
-              Back to Login
-            </button>
-          </div>
-        </div>
+    <div className={`min-h-screen bg-[var(--bg)] relative overflow-hidden flex items-center justify-center py-4 px-4 sm:px-6 lg:px-8`}>
+      
+      {/* Animated Background */}
+      <div className="absolute inset-0 pointer-events-none">
+        {!isDark && (
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/20 via-transparent to-purple-50/10 animate-pulse-slow"></div>
+        )}
+        <div className="absolute top-10 left-5 w-48 h-48 sm:w-72 sm:h-72 bg-[var(--button)]/10 rounded-full blur-2xl sm:blur-3xl animate-float-slow"></div>
+        <div className="absolute bottom-10 right-5 w-52 h-52 sm:w-80 sm:h-80 bg-[var(--primary)]/10 rounded-full blur-2xl sm:blur-3xl animate-float-slow" style={{animationDelay: '2s'}}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 sm:w-96 sm:h-96 bg-[var(--success)]/5 rounded-full blur-2xl sm:blur-3xl animate-pulse-slow" style={{animationDelay: '4s'}}></div>
+        {!isDark && (
+          <div className="absolute inset-0 opacity-[0.02]" style={{
+            backgroundImage: `linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)`,
+            backgroundSize: '30px 30px',
+          }}></div>
+        )}
       </div>
 
-      {/* Right Section */}
-      <div
-        className={`hidden lg:flex w-1/2 flex-col justify-center items-center p-12 transition-colors duration-500
-          ${isDark ? "bg-[var(--mid-dark)] text-[var(--text)]" : "bg-[var(--textbox)] text-[var(--text)]"}`}
-      >
-        <div className="text-center max-w-lg">
+      {[...Array(4)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-1 h-1 bg-[var(--button)]/20 rounded-full animate-float"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animationDelay: `${i * 0.5}s`,
+            animationDuration: `${4 + Math.random() * 4}s`
+          }}
+        />
+      ))}
+
+      {/* Form Section */}
+      <div className="relative z-10 w-full max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-8">
+        
+        {/* Left Side - Info & Logo */}
+        <div className="w-full lg:w-2/5 flex flex-col items-center text-center space-y-5">
+          <h1 className="text-2xl lg:text-3xl font-bold text-[var(--text)]">Reset Password</h1>
           <img
             src={isDark ? "/LogoDark.png" : "/logo.png"}
             alt="Vendor Logo"
-            className="h-25 w-80 mb-8 mx-auto transition-all duration-500"
+            className="h-20 w-auto"
           />
-          <p className="text-xl mb-8 leading-relaxed">
-            Update your password securely and get back to managing your store on <b>Qwikko Vendor</b>.
+          <p className="text-sm text-[var(--light-gray)] max-w-xs">
+            Enter your new password to securely access your vendor account and continue managing your store.
           </p>
         </div>
+
+        {/* Right Side - Form */}
+        <div className="w-full lg:w-3/5 max-w-md relative group">
+          {/* Glow Effect */}
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-xl blur opacity-20 group-hover:opacity-30 transition-all duration-500"></div>
+          
+          <div className="relative bg-[var(--bg)]/95 backdrop-blur-lg border border-[var(--border)]/30 rounded-xl p-5 shadow-lg">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="p-2 rounded-lg text-center text-[var(--error)] bg-[var(--error)]/20 border border-[var(--error)]/30">
+                  {error}
+                </div>
+              )}
+              {message && (
+                <div className="p-2 rounded-lg text-center text-green-600 bg-green-100 border border-green-200">
+                  {message}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your new password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-[var(--bg)]/50 text-[var(--text)] border border-[var(--border)]/50 rounded-lg pl-7 pr-10 py-2 focus:border-[var(--button)] focus:ring-1 focus:ring-[var(--button)]/10 outline-none text-sm"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[var(--light-gray)] hover:text-[var(--text)]"
+                  >
+                    {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-2 rounded-lg font-bold text-white bg-gradient-to-r from-[var(--button)] to-[var(--primary)] hover:shadow-lg transition-all duration-300 relative"
+              >
+                <span className="relative z-10">
+                  {loading ? "Resetting..." : <><FaRocket className="inline mr-2" />Reset Password</>}
+                </span>
+              </button>
+
+              <div className="text-center mt-4">
+                <button
+                  type="button"
+                  onClick={() => navigate("/vendor/login")}
+                  className="text-sm text-[var(--primary)] hover:underline flex items-center justify-center gap-1"
+                >
+                  <FaArrowLeft /> Back to Login
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
       </div>
+
+      <style jsx>{`
+        @keyframes float {
+          0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}
+        }
+        @keyframes float-slow {
+          0%,100%{transform:translateY(0) translateX(0)}33%{transform:translateY(-15px) translateX(5px)}66%{transform:translateY(10px) translateX(-5px)}
+        }
+        @keyframes pulse-slow {
+          0%,100%{opacity:0.05;transform:scale(1)}50%{opacity:0.15;transform:scale(1.02)}
+        }
+        .animate-float{animation:float 3s ease-in-out infinite}
+        .animate-float-slow{animation:float-slow 8s ease-in-out infinite}
+        .animate-pulse-slow{animation:pulse-slow 6s ease-in-out infinite}
+      `}</style>
     </div>
   );
 }
