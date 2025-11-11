@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Footer from "../../customer/customer/components/layout/Footer";
+import Footer from "../Footer";
 
 /* ===== Helpers ===== */
 const getAuthHeaders = () => {
@@ -37,9 +37,6 @@ const normalizeRows = (rows, fromOrdersEndpoint) => {
   if (!Array.isArray(rows)) return [];
   return rows.map((r) => {
     if (fromOrdersEndpoint) {
-      // نموذجك الأخير من /vendor/orders:
-      // item_id, order_id, product_name, quantity, vendor_status, rejection_reason,
-      // order_status, ... إلخ
       return {
         order_item_id: r.item_id ?? r.order_item_id ?? r.id,
         order_id: r.order_id,
@@ -50,14 +47,12 @@ const normalizeRows = (rows, fromOrdersEndpoint) => {
         order_status: (r.order_status || r.status || "").toLowerCase() || null,
       };
     } else {
-      // /vendor/order-items (القديم)
       return {
         order_item_id: r.order_item_id ?? r.item_id ?? r.id,
         order_id: r.order_id,
         product_name: r.product_name,
         quantity: r.quantity,
         vendor_status: r.vendor_status || "pending",
-        // ممكن ما يرجّع السبب/الحالة من القديم
         rejection_reason: r.rejection_reason ?? null,
         order_status: (r.order_status || r.status || "").toLowerCase() || null,
       };
@@ -77,7 +72,7 @@ export default function OrderManagement() {
   const [items, setItems] = useState([]);
   const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(5);
+  const [visibleCount, setVisibleCount] = useState(6);
   const [isDarkMode, setIsDarkMode] = useState(
     localStorage.getItem("theme") === "dark"
   );
@@ -85,7 +80,7 @@ export default function OrderManagement() {
   // مودال سبب الرفض
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
-  const [pendingChange, setPendingChange] = useState(null); // { itemId, orderId }
+  const [pendingChange, setPendingChange] = useState(null);
 
   const allowedStatuses = ["pending", "accepted", "rejected"];
 
@@ -122,7 +117,6 @@ export default function OrderManagement() {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  // PATCH /vendor/orders/:orderId/items/:itemId
   const callUpdateItemStatus = async ({
     orderId,
     itemId,
@@ -154,7 +148,6 @@ export default function OrderManagement() {
   const handleStatusChange = async (item, newStatus) => {
     if (!allowedStatuses.includes(newStatus)) return;
 
-    // لو الطلب مكنسل ما نسمح بأي تغيير
     if ((item.order_status || "") === "cancelled") {
       alert("This order is cancelled. You can't change item status.");
       return;
@@ -171,7 +164,6 @@ export default function OrderManagement() {
     }
 
     try {
-      // عندك أكشنين فقط: accept/reject
       await callUpdateItemStatus({
         orderId: item.order_id,
         itemId: item.order_item_id,
@@ -218,6 +210,7 @@ export default function OrderManagement() {
   const textColor = isDarkMode ? "#ffffff" : "#242625";
   const borderColor = isDarkMode ? "#f9f9f9" : "#ccc";
   const inputBg = isDarkMode ? "#666666" : "#ffffff";
+  const cardBg = isDarkMode ? "#424242" : "#f8f9fa";
 
   // Badge بسيطة حسب حالة الطلب
   const OrderBadge = ({ status }) => {
@@ -252,59 +245,140 @@ export default function OrderManagement() {
     );
   };
 
-return (
-  <div
-    className="flex flex-col min-h-screen"
-    style={{
-      backgroundColor: isDarkMode ? "var(--bg-dark)" : "var(--bg)",
-      color: "var(--text)",
-    }}
-  >
-    {/* المحتوى الرئيسي */}
-    <main className="flex-grow">
-      <div className="max-w-screen-xl mx-4 sm:mx-8 lg:mx-12 mt-18 mb-18 px-4 sm:px-6 md:px-10 lg:px-12 py-6 md:py-10 space-y-10">
-        <h1 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-10 text-center sm:text-left" style={{ color: isDarkMode ? "#ffffff" : "#307A59" }}>
-          Order Management
-        </h1>
-
-        {/* أزرار الفلترة */}
-        <div className="mb-8 flex flex-wrap justify-center sm:justify-start gap-2 sm:gap-3">
-          {Object.keys(STATUS_LABELS).map((key) => (
-            <button
-              key={key}
-              onClick={() => {
-                setFilter(key);
-                setVisibleCount(5);
-                if (USE_ORDERS_ENDPOINT) {
-                  setItems((prev) =>
-                    key === ""
-                      ? prev
-                      : prev.filter((i) => i.vendor_status === key)
-                  );
-                  loadItems(key);
-                } else {
-                  loadItems(key);
-                }
-              }}
-             className={`px-3 sm:px-4 py-1 rounded-2xl border text-sm sm:text-base transition-all duration-300 ${
-  filter === key
-    ? "bg-[#307A59] text-white border-[#307A59] shadow-md"
-    : isDarkMode
-    ? "bg-[#575858] text-gray-200 border-gray-600 hover:bg-[#4f5452]"
-    : "bg-white text-gray-500 border-gray-300 hover:bg-gray-100"
-}`}
-
-            >
-              {STATUS_LABELS[key]}
-            </button>
-          ))}
+  // كارد للعنصر الواحد
+  const OrderCard = ({ item }) => {
+    const isCancelled = (item.order_status || "") === "cancelled";
+    
+    return (
+      <div 
+        className="rounded-2xl p-4 border shadow-sm transition-all duration-300 hover:shadow-md"
+        style={{
+          backgroundColor: cardBg,
+          borderColor: borderColor,
+          color: textColor,
+        }}
+      >
+        {/* الهيدر - معلومات الأساسية */}
+        <div className="flex justify-between items-start mb-3">
+          <div>
+            <h3 className="font-semibold text-lg" style={{ color: "#307A59" }}>
+              {item.product_name}
+            </h3>
+            <p className="text-sm opacity-80">Product</p>
+          </div>
+          <OrderBadge status={item.order_status} />
         </div>
 
-        
+        {/* معلومات الطلب */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div>
+            <p className="text-sm font-medium">Item ID</p>
+            <p className="text-base">{item.order_item_id}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium">Order ID</p>
+            <p className="text-base">{item.order_id}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium">Quantity</p>
+            <p className="text-base">{item.quantity}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium">Vendor Status</p>
+            <select
+              value={item.vendor_status || "pending"}
+              onChange={(e) => handleStatusChange(item, e.target.value)}
+              className="w-full p-1 rounded-md font-medium text-sm mt-1"
+              style={{
+                backgroundColor: inputBg,
+                color: textColor,
+                borderColor: borderColor,
+                opacity: isCancelled ? 0.6 : 1,
+                cursor: isCancelled ? "not-allowed" : "pointer",
+              }}
+              disabled={isCancelled}
+              title={
+                isCancelled
+                  ? "Order is cancelled. You can't change this item."
+                  : "Change vendor status"
+              }
+            >
+              {["pending", "accepted", "rejected"].map((status) => (
+                <option key={status} value={status}>
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-          {/* جدول الطلبات */}
+        {/* سبب الرفض */}
+        {item.vendor_status === "rejected" && (
+          <div className="mt-3 pt-3 border-t" style={{ borderColor: borderColor }}>
+            <p className="text-sm font-medium mb-1">Rejection Reason</p>
+            <p 
+              className="text-sm p-2 rounded-md"
+              style={{
+                backgroundColor: isDarkMode ? "#5a3a3a" : "#ffeaea",
+                color: isDarkMode ? "#ffdada" : "#a01818",
+              }}
+            >
+              {item.rejection_reason || "No reason provided"}
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div
+      className="flex flex-col min-h-screen"
+      style={{
+        backgroundColor: isDarkMode ? "var(--bg-dark)" : "var(--bg)",
+        color: "var(--text)",
+      }}
+    >
+      {/* المحتوى الرئيسي */}
+      <main className="flex-grow">
+        <div className="max-w-screen-xl mx-4 sm:mx-8 lg:mx-12 mt-18 mb-18 px-4 sm:px-6 md:px-10 lg:px-12 py-6 md:py-10 space-y-10">
+          <h1 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-10 text-center sm:text-left" style={{ color: "#307A59" }}>
+            Order Management
+          </h1>
+
+          {/* أزرار الفلترة */}
+          <div className="mb-8 flex flex-wrap justify-center sm:justify-start gap-2 sm:gap-3">
+            {Object.keys(STATUS_LABELS).map((key) => (
+              <button
+                key={key}
+                onClick={() => {
+                  setFilter(key);
+                  setVisibleCount(6);
+                  if (USE_ORDERS_ENDPOINT) {
+                    setItems((prev) =>
+                      key === ""
+                        ? prev
+                        : prev.filter((i) => i.vendor_status === key)
+                    );
+                    loadItems(key);
+                  } else {
+                    loadItems(key);
+                  }
+                }}
+                className={`px-3 sm:px-4 py-1 rounded-2xl border text-sm sm:text-base transition-all duration-300 ${
+                  filter === key
+                    ? "bg-[#307A59] text-white border-[#307A59] shadow-md"
+                    : "bg-white text-gray-500 border-gray-300 hover:bg-gray-100"
+                }`}
+              >
+                {STATUS_LABELS[key]}
+              </button>
+            ))}
+          </div>
+
+          {/* كاردز الطلبات */}
           <div
-            className="p-4 sm:p-6 border border-[var(--border)] rounded-2xl shadow overflow-x-auto"
+            className="p-4 sm:p-6 border border-[var(--border)] rounded-2xl shadow"
             style={{ backgroundColor: innerBg, color: textColor }}
           >
             {loading ? (
@@ -313,106 +387,29 @@ return (
               </p>
             ) : (
               <>
-                <table
-                  className="w-full border-collapse text-sm sm:text-base"
-                  style={{ color: textColor }}
-                >
-                  <thead>
-                    <tr style={{ borderBottom: `1px solid ${borderColor}` }}>
-                      <th className="p-2">Item ID</th>
-                      <th className="p-2">Order ID</th>
-                      <th className="p-2">Product</th>
-                      <th className="p-2">Quantity</th>
-                      <th className="p-2">Vendor Status</th>
-                      <th className="p-2">Order Status</th>
-                      <th className="p-2">Reject Reason</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visibleItems.map((item) => {
-                      const isCancelled = (item.order_status || "") === "cancelled";
-                      return (
-                        <tr
-                          key={item.order_item_id}
-                          className="border-b text-center hover:bg-gray-50  transition"
-                          style={{
-                            borderBottom: `1px solid ${borderColor}`,
-                            color: textColor,
-                            backgroundColor: "transparent",
-                          }}
-                        >
-                          <td className="p-2">{item.order_item_id}</td>
-                          <td className="p-2">{item.order_id}</td>
-                          <td className="p-2">{item.product_name}</td>
-                          <td className="p-2">{item.quantity}</td>
-                          <td className="p-2">
-                            <select
-                              value={item.vendor_status || "pending"}
-                              onChange={(e) =>
-                                handleStatusChange(item, e.target.value)
-                              }
-                              className="p-1 rounded-md font-medium"
-                              style={{
-                                backgroundColor: inputBg,
-                                color: textColor,
-                                borderColor: borderColor,
-                                opacity: isCancelled ? 0.6 : 1,
-                                cursor: isCancelled ? "not-allowed" : "pointer",
-                              }}
-                              disabled={isCancelled}
-                              title={
-                                isCancelled
-                                  ? "Order is cancelled. You can't change this item."
-                                  : "Change vendor status"
-                              }
-                            >
-                              {["pending", "accepted", "rejected"].map((status) => (
-                                <option key={status} value={status}>
-                                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="p-2">
-                            <OrderBadge status={item.order_status} />
-                          </td>
-                          <td className="p-2">
-                            {item.vendor_status === "rejected" ? (
-                              <span
-                                className="inline-block max-w-[220px] truncate"
-                                title={item.rejection_reason || "No reason"}
-                                style={{
-                                  color: isDarkMode ? "#ffdada" : "#a01818",
-                                }}
-                              >
-                                {item.rejection_reason || "—"}
-                              </span>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {items.length === 0 && (
-                      <tr>
-                        <td
-                          colSpan="7"
-                          className="p-4 text-center italic"
-                          style={{ color: textColor }}
-                        >
-                          No items found
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                {/* Grid responsive لثلاث أحجام شاشات */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  {visibleItems.map((item) => (
+                    <OrderCard key={item.order_item_id} item={item} />
+                  ))}
+                </div>
+
+                {items.length === 0 && (
+                  <div className="text-center py-8 italic" style={{ color: textColor }}>
+                    No items found
+                  </div>
+                )}
 
                 {visibleCount < items.length && (
-                  <div className="mt-4 flex justify-center">
+                  <div className="mt-6 flex justify-center">
                     <button
-                      onClick={() => setVisibleCount(items.length)}
-                      className="px-4 py-2 bg-gray-100 rounded-lg text-gray-700 hover:bg-gray-200 transition"
+                      onClick={() => setVisibleCount(prev => prev + 6)}
+                      className="px-6 py-2 rounded-lg transition-all duration-300"
+                      style={{
+                        backgroundColor: isDarkMode ? "#307A59" : "#307A59",
+                        color: "white",
+                        border: `1px solid #307A59`,
+                      }}
                     >
                       Show More
                     </button>

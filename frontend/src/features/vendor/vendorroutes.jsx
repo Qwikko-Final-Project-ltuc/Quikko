@@ -18,6 +18,11 @@ import ChatPage from "./chat/vendorChat";
 import CouponManagement from "./coupons/CouponsManagement";
 
 
+import ContactUs from "../customer/customer/pages/ContactUs";
+import AboutPage from "../genral/aboutPage/about";
+import PrivacyPolicy from "../genral/PrivacyPolicy";
+import TermsOfService from "../genral/TermsOfService";
+
 
 // صفحات جديدة
 import VendorForgotPassword from "./auth/VendorForgotPassword";
@@ -38,6 +43,9 @@ export default function VendorRoutes() {
         <Route path="/vendor/verify-email" element={<VerifyEmailPage />} />
         <Route path="forgot-password" element={<VendorForgotPassword />} />
         <Route path="reset-password" element={<VendorResetPassword />} />
+
+
+
 
         {/* الصفحات المحمية */}
         <Route
@@ -105,6 +113,11 @@ export default function VendorRoutes() {
             </ProtectedRoute>
           }
         />
+
+        <Route path="/vendor/contact" element={<ContactUs />} />
+        <Route path="/vendor/about" element={<AboutPage />} />
+        <Route path="/vendor/privacy" element={<PrivacyPolicy />} />
+        <Route path="/vendor/terms" element={<TermsOfService />} />
 
       </Route>
       
