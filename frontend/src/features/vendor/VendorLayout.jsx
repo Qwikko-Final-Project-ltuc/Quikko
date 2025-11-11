@@ -152,7 +152,7 @@ export default function VendorLayout() {
             >
               <FaBars className={`text-2xl ${isDarkMode ? "text-white" : "text-white"}`} />
             </button>
-            <Link to="/vendor">
+            <Link to="/vendor/dashboard">
             <img src={logoSrc} alt="Qwikko" className="h-8" />
             </Link>
           </div>
@@ -173,47 +173,60 @@ export default function VendorLayout() {
           <FiChevronDown className={isDarkMode ? "text-white" : "text-white"} />
         </button>
 
-        {dropdownOpen && (
-          <div
-            className={`absolute right-0 top-10 border rounded-lg shadow-lg w-48 z-50 ${
-              isDarkMode ? "bg-[#313131] border-gray-700" : "bg-white border-gray-200"
-            }`}
-          >
-            {/* ⚙️ Profile */}
-            <button
-              onClick={handleProfileClick}
-              className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              Profile
-            </button>
+  {dropdownOpen && (
+  <div
+    className={`absolute right-0 top-10 border rounded-lg shadow-lg w-48 z-50 ${
+      isDarkMode ? "bg-[#424242] border-gray-700" : "bg-white border-gray-200"
+    }`}
+  >
+    {/* ⚙️ Profile */}
+    <button
+      onClick={handleProfileClick}
+      className={`block w-full text-left px-4 py-2 text-sm ${
+        isDarkMode
+          ? "hover:bg-[#4f5452] text-white"
+          : "hover:bg-gray-100 text-black"
+      }`}
+    >
+      Profile
+    </button>
 
-            {/* 💬 Messages */}
-            <button
-              onClick={() => navigate("/vendor/chat")}
-              className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              Messages
-            </button>
+    {/* 💬 Messages */}
+    <button
+      onClick={() => navigate("/vendor/chat")}
+      className={`block w-full text-left px-4 py-2 text-sm ${
+        isDarkMode
+          ? "hover:bg-[#4f5452] text-white"
+          : "hover:bg-gray-100 text-black"
+      }`}
+    >
+      Messages
+    </button>
 
-            {/* 🌓 Theme Indicator */}
-            <div
-              onClick={() => setIsDarkMode((prev) => !prev)}
-              className={`flex items-center justify-between px-4 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800`}
-            >
-              <span>
-                {isDarkMode ? "Light Mode" : "Dark Mode"}
-              </span>
-            </div>
+    {/* 🌓 Theme Indicator */}
+    <div
+      onClick={() => setIsDarkMode((prev) => !prev)}
+      className={`flex items-center justify-between px-4 py-2 text-sm cursor-pointer ${
+        isDarkMode
+          ? "hover:bg-[#4f5452] text-white"
+          : "hover:bg-gray-100 text-black"
+      }`}
+    >
+      <span>{isDarkMode ? "Light Mode" : "Dark Mode"}</span>
+    </div>
 
-            {/* 🚪 Logout */}
-            <button
-              onClick={handleLogout}
-              className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              Logout
-            </button>
-          </div>
-        )}
+    {/* 🚪 Logout */}
+    <button
+      onClick={handleLogout}
+      className={`block w-full text-left px-4 py-2 text-sm text-red-600 ${
+        isDarkMode ? "hover:bg-[#4f5452]" : "hover:bg-gray-100"
+      }`}
+    >
+      Logout
+    </button>
+  </div>
+)}
+
       </>
     ) : (
       <button
@@ -350,52 +363,56 @@ export default function VendorLayout() {
         </header>
       )}
 
-      {/* Sidebar overlay */}
-      {shouldShowSidebar && isSidebarOpen && (
-        <div
-          ref={sidebarRef}
-          className={`fixed top-0 left-0 h-full w-60 flex flex-col z-40 transition-transform duration-300 ${isDarkMode ? "bg-[#313131]" : "bg-white"} shadow-xl`}
+      {/* Sidebar overlay */} 
+{shouldShowSidebar && isSidebarOpen && (
+  <div
+    ref={sidebarRef}
+    className={`fixed top-0 left-0 h-full w-60 flex flex-col z-40 transition-transform duration-300 ${
+      isDarkMode ? "bg-[#313131]" : "bg-white"
+    } shadow-xl`}
+  >
+    <div className="px-6 py-5 flex items-center">
+      <img src={logoSrc} alt="Vendor Logo" className="h-9" />
+    </div>
+
+    <nav className="flex-1 flex flex-col mt-4 space-y-1">
+      {[
+        { to: "/vendor/dashboard", icon: <FaBars />, label: "Dashboard" },
+        { to: "/vendor/products", icon: <FaBoxOpen />, label: "My Products" },
+        { to: "/vendor/orders", icon: <FaClipboardList />, label: "Orders" },
+        { to: "/vendor/coupons", icon: <FaTicketAlt />, label: "Coupons" },
+        { to: "/vendor/chat", icon: <FaRegCommentDots />, label: "Chats" },
+        { to: "/vendor/settings", icon: <FaCog />, label: "Settings" },
+      ].map((item) => (
+        <Link
+          key={item.to}
+          to={item.to}
+          className={`flex font-medium items-center px-6 py-3 rounded-lg transition-colors duration-200 ${
+            isDarkMode
+              ? "hover:bg-[#4f5452] text-white"
+              : "hover:bg-[#d0d5d2] text-black"
+          }`}
         >
-          <div className="px-6 py-5 flex items-center">
-            <img src={logoSrc} alt="Vendor Logo" className="h-9" />
-          </div>
+          <span className="mr-3">{item.icon}</span>
+          {item.label}
+        </Link>
+      ))}
+    </nav>
 
-          <nav className="flex-1 flex flex-col mt-4 space-y-1">
-            <Link to="/vendor/dashboard" className="flex font-medium items-center px-6 py-3 hover:bg-gray-100 dark:hover:bg-[#444] rounded-lg transition-colors duration-200">
-              <FaBars className="mr-3" /> Dashboard
-            </Link>
-
-            <Link to="/vendor/products" className="flex font-medium items-center px-6 py-3 hover:bg-gray-100 dark:hover:bg-[#444] rounded-lg transition-colors duration-200">
-              <FaBoxOpen className="mr-3" /> My Products
-            </Link>
-
-            <Link to="/vendor/orders" className="flex font-medium items-center px-6 py-3 hover:bg-gray-100 dark:hover:bg-[#444] rounded-lg transition-colors duration-200">
-              <FaClipboardList className="mr-3" /> Orders
-            </Link>
-
-            <Link to="/vendor/coupons" className="flex font-medium items-center px-6 py-3 hover:bg-gray-100 dark:hover:bg-[#444] rounded-lg transition-colors duration-200">
-              <FaTicketAlt className="mr-3" /> Coupons
-            </Link>
-
-            <Link to="/vendor/chat" className="flex font-medium items-center px-6 py-3 hover:bg-gray-100 dark:hover:bg-[#444] rounded-lg transition-colors duration-200">
-              <FaRegCommentDots className="mr-3" /> Chats
-            </Link>
-
-            <Link to="/vendor/settings" className="flex font-medium items-center px-6 py-3 hover:bg-gray-100 dark:hover:bg-[#444] rounded-lg transition-colors duration-200">
-              <FaCog className="mr-3" /> Settings
-            </Link>
-          </nav>
-
-          <div className="mt-auto mb-6 flex flex-col px-6 space-y-2">
-            <button
-              onClick={handleLogout}
-              className="flex items-center rounded-lg px-4 py-2 hover:bg-gray-100 dark:hover:bg-[#444] transition-colors"
-            >
-              <FaSignOutAlt className="mr-3" /> Logout
-            </button>
-          </div>
-        </div>
-      )}
+    <div className="mt-auto mb-6 flex flex-col px-6 space-y-2">
+      <button
+        onClick={handleLogout}
+        className={`flex items-center rounded-lg px-4 py-2 transition-colors duration-200 ${
+          isDarkMode
+            ? "hover:bg-[#4f5452] text-white"
+            : "hover:bg-[#4f5452] text-black"
+        }`}
+      >
+        <FaSignOutAlt className="mr-3" /> Logout
+      </button>
+    </div>
+  </div>
+)}
 
       {/* Main Content */}
       <main className="flex-1  transition-all duration-300">

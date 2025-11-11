@@ -9,7 +9,7 @@ import {
 import CouponForm from "./CouponForm";
 import CouponEdit from "./CouponEdit";
 import { Edit, X } from "lucide-react";
-import Footer from "../Footer";
+import Footer from "../../customer/customer/components/layout/Footer";
 
 export default function CouponsManagement() {
   const { isDarkMode } = useOutletContext();
@@ -77,7 +77,7 @@ export default function CouponsManagement() {
         <div className="max-w-screen-xl mx-auto mx-4 sm:mx-8 lg:mx-18 m-18 ">
           {/* العنوان والزر */}
           <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-4 mb-10 sm:mb-16 px-2 sm:px-4">
-            <h1 className="text-xl sm:text-2xl font-bold text-center sm:text-left" style={{ color: "#307A59" }}>
+            <h1 className="text-xl sm:text-2xl font-bold text-center sm:text-left" style={{ color: isDarkMode ? "#ffffff" : "#307A59" }}>
               Coupon Management
             </h1>
 

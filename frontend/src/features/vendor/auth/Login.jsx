@@ -39,7 +39,7 @@ export default function VendorLogin() {
         if (userRole === "vendor") {
           localStorage.setItem("token", data.token);
           localStorage.setItem("role", userRole);
-          setMessage("✅ Login successful!");
+         
           navigate("/vendor/dashboard");
         } else {
           setMessage("❌ Access denied. This login is for vendors only.");

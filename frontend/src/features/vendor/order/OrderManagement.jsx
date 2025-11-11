@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Footer from "../Footer";
+import Footer from "../../customer/customer/components/layout/Footer";
 
 /* ===== Helpers ===== */
 const getAuthHeaders = () => {
@@ -252,50 +252,55 @@ export default function OrderManagement() {
     );
   };
 
-  return (
-    <div
-      className="flex flex-col min-h-screen"
-      style={{
-        backgroundColor: isDarkMode ? "var(--bg-dark)" : "var(--bg)",
-        color: "var(--text)",
-      }}
-    >
-      {/* المحتوى الرئيسي */}
-      <main className="flex-grow">
-        <div className="max-w-screen-xl mx-4 sm:mx-8 lg:mx-12 mt-18 mb-18 px-4 sm:px-6 md:px-10 lg:px-12 py-6 md:py-10 space-y-10">
-          <h1 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-10 text-center sm:text-left" style={{ color: "#307A59" }}>
-            Order Management
-          </h1>
+return (
+  <div
+    className="flex flex-col min-h-screen"
+    style={{
+      backgroundColor: isDarkMode ? "var(--bg-dark)" : "var(--bg)",
+      color: "var(--text)",
+    }}
+  >
+    {/* المحتوى الرئيسي */}
+    <main className="flex-grow">
+      <div className="max-w-screen-xl mx-4 sm:mx-8 lg:mx-12 mt-18 mb-18 px-4 sm:px-6 md:px-10 lg:px-12 py-6 md:py-10 space-y-10">
+        <h1 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-10 text-center sm:text-left" style={{ color: isDarkMode ? "#ffffff" : "#307A59" }}>
+          Order Management
+        </h1>
 
-          {/* أزرار الفلترة */}
-          <div className="mb-8 flex flex-wrap justify-center sm:justify-start gap-2 sm:gap-3">
-            {Object.keys(STATUS_LABELS).map((key) => (
-              <button
-                key={key}
-                onClick={() => {
-                  setFilter(key);
-                  setVisibleCount(5);
-                  if (USE_ORDERS_ENDPOINT) {
-                    setItems((prev) =>
-                      key === ""
-                        ? prev
-                        : prev.filter((i) => i.vendor_status === key)
-                    );
-                    loadItems(key);
-                  } else {
-                    loadItems(key);
-                  }
-                }}
-                className={`px-3 sm:px-4 py-1 rounded-2xl border text-sm sm:text-base transition-all duration-300 ${
-                  filter === key
-                    ? "bg-[#307A59] text-white border-[#307A59] shadow-md"
-                    : "bg-white text-gray-500 border-gray-300 hover:bg-gray-100"
-                }`}
-              >
-                {STATUS_LABELS[key]}
-              </button>
-            ))}
-          </div>
+        {/* أزرار الفلترة */}
+        <div className="mb-8 flex flex-wrap justify-center sm:justify-start gap-2 sm:gap-3">
+          {Object.keys(STATUS_LABELS).map((key) => (
+            <button
+              key={key}
+              onClick={() => {
+                setFilter(key);
+                setVisibleCount(5);
+                if (USE_ORDERS_ENDPOINT) {
+                  setItems((prev) =>
+                    key === ""
+                      ? prev
+                      : prev.filter((i) => i.vendor_status === key)
+                  );
+                  loadItems(key);
+                } else {
+                  loadItems(key);
+                }
+              }}
+             className={`px-3 sm:px-4 py-1 rounded-2xl border text-sm sm:text-base transition-all duration-300 ${
+  filter === key
+    ? "bg-[#307A59] text-white border-[#307A59] shadow-md"
+    : isDarkMode
+    ? "bg-[#575858] text-gray-200 border-gray-600 hover:bg-[#4f5452]"
+    : "bg-white text-gray-500 border-gray-300 hover:bg-gray-100"
+}`}
+
+            >
+              {STATUS_LABELS[key]}
+            </button>
+          ))}
+        </div>
+
+        
 
           {/* جدول الطلبات */}
           <div

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { fetchVendorProfile, updateVendorProfile } from "../VendorAPI2";
-import Footer from "../Footer";
-
+import Footer from "../../customer/customer/components/layout/Footer";
 const VendorProfilePage = () => {
   const [profile, setProfile] = useState(null);
   const [editing, setEditing] = useState(false);
@@ -100,7 +99,7 @@ const VendorProfilePage = () => {
     >
       <main className="flex-grow">
         <div className="max-w-4xl mx-auto mt-18 mb-24">
-          <h1 className="text-2xl font-bold mb-8 text-center sm:text-left" style={{ color: "#307A59" }}>
+          <h1 className="text-2xl font-bold mb-8 text-center sm:text-left" style={{ color: isDarkMode ? "#ffffff" : "#307A59" }}>
             Vendor Profile
           </h1>
 

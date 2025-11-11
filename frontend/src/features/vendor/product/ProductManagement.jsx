@@ -11,7 +11,7 @@ import ProductForm from "./ProductForm";
 import ProductEdit from "./ProductEdit";
 import { Edit, Trash2, X } from "lucide-react"; // أيقونات
 import { FaExclamationTriangle } from "react-icons/fa";
-import Footer from "../Footer";
+import Footer from "../../customer/customer/components/layout/Footer";
 
 export default function ProductManagement() {
   const { isDarkMode } = useOutletContext();
@@ -95,7 +95,7 @@ export default function ProductManagement() {
         <div className="max-w-screen-xl mx-4 sm:mx-8 lg:mx-12 mt-18 mb-18 px-4 sm:px-6 md:px-10 lg:px-12 py-6 md:py-10 space-y-10">
           {/* Header */}
           <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-4 mb-10 sm:mb-16">
-            <h1 className="text-xl sm:text-2xl font-bold text-center sm:text-left "style={{ color: "#307A59" }}>Product Management</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-center sm:text-left " style={{ color: isDarkMode ? "#ffffff" : "#307A59" }}>Product Management</h1>
             {!showAddForm && !editingProduct && (
               <button
                 onClick={() => setShowAddForm(true)}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchOrders, fetchProducts } from "../VendorAPI2";
 import { DollarSign, ShoppingCart, Package, Bell } from "lucide-react";
-import Footer from "../Footer";
+import Footer from "../../customer/customer/components/layout/Footer";
 
 const Dashboard = () => {
   const [report, setReport] = useState(null);

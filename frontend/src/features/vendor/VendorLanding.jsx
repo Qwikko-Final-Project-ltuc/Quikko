@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { FaShoppingCart, FaUsers, FaChartLine, FaStore } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { getVendorLandingCMS } from "./VendorAPI2";
-import Footer from "./Footer";
+import Footer from "../customer/customer/components/layout/Footer";
 import { motion } from "framer-motion";
 
 export default function VendorLanding() {
@@ -83,7 +83,7 @@ export default function VendorLanding() {
           </div>
 
           {/* Content Section - New Style */}
-          <div className="lg:w-3/5 w-full p-8 md:p-12 lg:p-16 flex flex-col justify-center items-center h-[85vh] bg-[var(--bg)] relative z-10">
+          <div className="lg:w-3/5 w-full p-8 md:p-12 lg:p-16 flex flex-col justify-center items-center h-[85vh]  relative z-10">
             <div className="max-w-2xl w-full text-center lg:text-left">
               
               {/* Title */}

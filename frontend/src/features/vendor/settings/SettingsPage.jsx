@@ -3,7 +3,7 @@ import axios from "axios";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { FaUser, FaEdit, FaChevronRight, FaExclamationTriangle } from "react-icons/fa";
 import { fetchVendorProfile } from "../VendorAPI2";
-import Footer from "../Footer";
+import Footer from "../../customer/customer/components/layout/Footer";
 
 export default function SettingsPage() {
   const { isDarkMode, setIsDarkMode } = useOutletContext();
@@ -90,7 +90,7 @@ export default function SettingsPage() {
     >
       <main className="flex-grow">
         <div className="max-w-3xl mx-auto mt-16 mb-18 px-4 sm:px-6">
-          <h1 className="text-2xl font-bold mb-10 text-center sm:text-left" style={{ color: "#307A59" }}>
+          <h1 className="text-2xl font-bold mb-10 text-center sm:text-left" style={{ color: isDarkMode ? "#ffffff" : "#307A59" }}>
             Settings
           </h1>
 
