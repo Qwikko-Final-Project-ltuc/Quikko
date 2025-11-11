@@ -13,7 +13,7 @@ import {
   Pie,
   Cell,
   LineChart,
-  Line
+  Line,
 } from "recharts";
 import {
   FaClock,
@@ -45,39 +45,65 @@ export default function DeliveryDashboard() {
     })();
   }, [days]);
 
-  // بيانات Order Status - باستخدام لون البوتون للـ accepted
+  // لو لسه ما جهّز التقرير، ما نبني الداتا
+  const rawStatuses = report?.statuses || {};
+
+  // نبني الداتا من الباك بس بالأربع حالات اللي بدك إياهم
   const orderStatusData = [
-    { name: "requested", value: 2, color: "#94a3b8" },
-    { name: "out for delivery", value: 1, color: "#fb923c" },
-    { name: "needs decision", value: 1, color: "#ef4444" },
-    { name: "pending", value: 1, color: "#f59e0b" },
-    { name: "delivered", value: 10, color: "#10b981" },
-    { name: "processing", value: 3, color: "#3b82f6" },
-    { name: "accepted", value: 87, color: "var(--button)" }, // استخدام لون البوتون
-    { name: "cancelled", value: 0, color: "#6b7280" }
+    {
+      name: "accepted",
+      value: rawStatuses.accepted || 0,
+      color: "var(--button)",
+    },
+    {
+      name: "processing",
+      value: rawStatuses.processing || 0,
+      color: "#3b82f6",
+    },
+    {
+      name: "out_for_delivery",
+      value:
+        rawStatuses.out_for_delivery || rawStatuses["out for delivery"] || 0,
+      color: "#fb923c",
+    },
+    {
+      name: "delivered",
+      value: rawStatuses.delivered || 0,
+      color: "#10b981",
+    },
   ];
 
-  // بيانات Payment Status - باستخدام لون البوتون للـ paid
+  // اللي فوق أصلاً هما اللي بدك تعرضيهم، فبس شيل الصفار
+const filteredOrderStatusData = orderStatusData;
+
+
+  // بيانات Payment Status (لسه ثابتة زي ما عندك)
   const paymentStatusData = [
-    { name: "paid", value: 85, color: "var(--button)" }, // استخدام لون البوتون
+    { name: "paid", value: 85, color: "var(--button)" },
     { name: "pending", value: 10, color: "#f59e0b" },
-    { name: "unpaid", value: 5, color: "#ef4444" }
+    { name: "unpaid", value: 5, color: "#ef4444" },
   ];
 
-  const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+  const CustomPieLabel = ({
+    cx,
+    cy,
+    midAngle,
+    innerRadius,
+    outerRadius,
+    percent,
+  }) => {
     if (percent === 0) return null;
-    
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.7;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
     return (
-      <text 
-        x={x} 
-        y={y} 
-        fill="white" 
-        textAnchor={x > cx ? 'start' : 'end'} 
+      <text
+        x={x}
+        y={y}
+        fill="white"
+        textAnchor={x > cx ? "start" : "end"}
         dominantBaseline="central"
         fontSize={10}
         fontWeight="bold"
@@ -126,21 +152,15 @@ export default function DeliveryDashboard() {
       className="w-full min-h-screen pb-[calc(env(safe-area-inset-bottom,0px)+8px)]"
       style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}
     >
-      {/* WRAPPER */}
       <div
-        className="
-          max-w-7xl mx-auto 
-          px-4 sm:px-6 md:px-8 
-          py-5 sm:py-7 md:py-8 
-          rounded-none md:rounded-2xl
-        "
+        className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-5 sm:py-7 md:py-8 rounded-none md:rounded-2xl"
         style={{
           backgroundColor: "var(--bg)",
           color: "var(--text)",
           borderTop: "none",
         }}
       >
-        {/* ===== Hero ===== */}
+        {/* Hero */}
         <section className="mb-5 sm:mb-6 md:mb-8">
           <div className="text-center">
             <div className="rounded-2xl px-2 sm:px-6 py-6">
@@ -151,13 +171,14 @@ export default function DeliveryDashboard() {
                 </span>
               </h1>
               <p className="text-sm sm:text-base md:text-lg mt-2 sm:mt-3 opacity-90">
-                Fast, smart, and organized delivery operations—everything you need in one dashboard.
+                Fast, smart, and organized delivery operations—everything you
+                need in one dashboard.
               </p>
             </div>
           </div>
         </section>
 
-        {/* ===== Controls + Chart + KPIs ===== */}
+        {/* Controls + Chart + KPIs */}
         <section className="mb-8 sm:mb-10">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Chart Card */}
@@ -169,7 +190,6 @@ export default function DeliveryDashboard() {
                 border: "1px solid var(--border)",
               }}
             >
-              {/* Controls */}
               <div className="flex items-center justify-between gap-3 mb-3 sm:mb-4">
                 <select
                   value={days}
@@ -189,7 +209,6 @@ export default function DeliveryDashboard() {
                 </select>
               </div>
 
-              {/* Chart */}
               <div className="w-full h-[240px] sm:h-[300px] md:h-[360px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={ordersData} barCategoryGap="35%">
@@ -221,9 +240,8 @@ export default function DeliveryDashboard() {
               </div>
             </div>
 
-            {/* KPIs مع مخططات مصغرة */}
+            {/* KPIs */}
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-1 gap-4 sm:gap-6">
-              {/* KPI #1 مع مخطط دائري مصغر */}
               <div
                 className="p-4 sm:p-6 rounded-2xl shadow flex flex-col items-center justify-center relative"
                 style={{
@@ -235,7 +253,10 @@ export default function DeliveryDashboard() {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={[{name: 'completed', value: 75}, {name: 'remaining', value: 25}]}
+                        data={[
+                          { name: "completed", value: 75 },
+                          { name: "remaining", value: 25 },
+                        ]}
                         cx="50%"
                         cy="50%"
                         innerRadius={15}
@@ -243,7 +264,11 @@ export default function DeliveryDashboard() {
                         dataKey="value"
                       >
                         <Cell fill={isDarkMode ? "#ffffff" : "#307A59"} />
-                        <Cell fill="transparent" stroke={isDarkMode ? "#ffffff" : "#307A59"} strokeWidth={2} />
+                        <Cell
+                          fill="transparent"
+                          stroke={isDarkMode ? "#ffffff" : "#307A59"}
+                          strokeWidth={2}
+                        />
                       </Pie>
                     </PieChart>
                   </ResponsiveContainer>
@@ -258,7 +283,6 @@ export default function DeliveryDashboard() {
                 <p className="text-2xl sm:text-3xl font-bold">{totalOrders}</p>
               </div>
 
-              {/* KPI #2 مع مخطط خطي مصغر */}
               <div
                 className="p-4 sm:p-6 rounded-2xl shadow flex flex-col items-center justify-center relative"
                 style={{
@@ -268,14 +292,20 @@ export default function DeliveryDashboard() {
               >
                 <div className="absolute top-3 right-3 w-16 h-16">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={[
-                      {value: 10}, {value: 25}, {value: 15}, 
-                      {value: 30}, {value: 20}, {value: 40}
-                    ]}>
-                      <Line 
-                        type="monotone" 
-                        dataKey="value" 
-                        stroke={isDarkMode ? "#ffffff" : "#307A59"} 
+                    <LineChart
+                      data={[
+                        { value: 10 },
+                        { value: 25 },
+                        { value: 15 },
+                        { value: 30 },
+                        { value: 20 },
+                        { value: 40 },
+                      ]}
+                    >
+                      <Line
+                        type="monotone"
+                        dataKey="value"
+                        stroke={isDarkMode ? "#ffffff" : "#307A59"}
                         strokeWidth={2}
                         dot={false}
                       />
@@ -295,10 +325,9 @@ export default function DeliveryDashboard() {
           </div>
         </section>
 
-        {/* ===== Order Status & Payment Status جنباً إلى جنب ===== */}
+        {/* Order Status & Payment Status */}
         <section className="mb-8 sm:mb-10">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8">
-            
             {/* Order Status Distribution */}
             <div
               className="rounded-2xl p-4 sm:p-6 shadow-md"
@@ -309,17 +338,19 @@ export default function DeliveryDashboard() {
               }}
             >
               <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2">
-                <FaClock style={{ color: isDarkMode ? "#ffffff" : "#292e2c" }} />
+                <FaClock
+                  style={{ color: isDarkMode ? "#ffffff" : "#292e2c" }}
+                />
                 Order Status Distribution
               </h2>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
-                {/* المخطط الدائري */}
+                {/* pie */}
                 <div className="h-56 sm:h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={orderStatusData.filter(item => item.value > 0)}
+                        data={filteredOrderStatusData}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
@@ -328,8 +359,13 @@ export default function DeliveryDashboard() {
                         innerRadius={30}
                         dataKey="value"
                       >
-                        {orderStatusData.filter(item => item.value > 0).map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} stroke="var(--bg)" strokeWidth={2} />
+                        {filteredOrderStatusData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={entry.color}
+                            stroke="var(--bg)"
+                            strokeWidth={2}
+                          />
                         ))}
                       </Pie>
                       <Tooltip
@@ -344,35 +380,33 @@ export default function DeliveryDashboard() {
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                
-                {/* وسوم البيانات - مصغرة */}
+
+                {/* legend */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {orderStatusData.map((status, index) => (
-                    <div 
-                      key={index} 
+                  {filteredOrderStatusData.map((status, index) => (
+                    <div
+                      key={index}
                       className="flex items-center gap-2 p-2 rounded-lg text-xs"
-                      style={{ 
+                      style={{
                         backgroundColor: "var(--bg)",
                         border: "1px solid var(--border)",
                       }}
                     >
-                      <div 
-                        className="w-3 h-3 rounded-full flex-shrink-0" 
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0"
                         style={{ backgroundColor: status.color }}
                       />
                       <span className="capitalize font-medium truncate">
                         {status.name}
                       </span>
-                      <span className="font-bold ml-auto">
-                        {status.value}
-                      </span>
+                      <span className="font-bold ml-auto">{status.value}</span>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* Payment Status Overview */}
+            {/* Payment Status */}
             <div
               className="rounded-2xl p-4 sm:p-6 shadow-md"
               style={{
@@ -382,12 +416,13 @@ export default function DeliveryDashboard() {
               }}
             >
               <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2">
-                <FaDollarSign style={{ color: isDarkMode ? "#ffffff" : "#292e2c" }} />
+                <FaDollarSign
+                  style={{ color: isDarkMode ? "#ffffff" : "#292e2c" }}
+                />
                 Payment Status Overview
               </h2>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
-                {/* المخطط الدائري */}
                 <div className="h-56 sm:h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -402,7 +437,12 @@ export default function DeliveryDashboard() {
                         dataKey="value"
                       >
                         {paymentStatusData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} stroke="var(--bg)" strokeWidth={2} />
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={entry.color}
+                            stroke="var(--bg)"
+                            strokeWidth={2}
+                          />
                         ))}
                       </Pie>
                       <Tooltip
@@ -417,20 +457,19 @@ export default function DeliveryDashboard() {
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                
-                {/* وسوم البيانات - مصغرة */}
+
                 <div className="grid grid-cols-1 gap-2">
                   {paymentStatusData.map((payment, index) => (
-                    <div 
-                      key={index} 
+                    <div
+                      key={index}
                       className="flex items-center gap-3 p-3 rounded-lg"
-                      style={{ 
+                      style={{
                         backgroundColor: "var(--bg)",
                         border: "1px solid var(--border)",
                       }}
                     >
-                      <div 
-                        className="w-3 h-3 rounded-full flex-shrink-0" 
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0"
                         style={{ backgroundColor: payment.color }}
                       />
                       <span className="capitalize font-medium text-sm">
@@ -447,14 +486,13 @@ export default function DeliveryDashboard() {
           </div>
         </section>
 
-        {/* ===== Top Customers & Top Vendors جنباً إلى جنب ===== */}
+        {/* باقي الأقسام */}
         <section className="mb-8 sm:mb-10">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8">
-            
-            {/* Top Customers مع مخطط أعمدة بالطول */}
+            {/* Top Customers */}
             <div
               className="rounded-2xl p-4 sm:p-6 shadow-md"
-              style={{ 
+              style={{
                 backgroundColor: "var(--bg)",
                 border: "1px solid var(--border)",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
@@ -464,26 +502,31 @@ export default function DeliveryDashboard() {
                 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2"
                 style={{ color: "var(--text)" }}
               >
-                <FaUsers style={{ color: isDarkMode ? "#ffffff" : "#292e2c" }} />{" "}
+                <FaUsers
+                  style={{ color: isDarkMode ? "#ffffff" : "#292e2c" }}
+                />{" "}
                 Top Customers
               </h2>
 
               <div className="h-64 sm:h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart 
+                  <BarChart
                     data={report.top_customers?.slice(0, 5) || []}
                     layout="vertical"
                     margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                    <XAxis 
-                      type="number" 
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="var(--border)"
+                    />
+                    <XAxis
+                      type="number"
                       stroke="var(--light-gray)"
                       tick={{ fontSize: 12 }}
                     />
-                    <YAxis 
-                      type="category" 
-                      dataKey="customer_email" 
+                    <YAxis
+                      type="category"
+                      dataKey="customer_email"
                       stroke="var(--light-gray)"
                       tick={{ fontSize: 12 }}
                       width={90}
@@ -496,14 +539,16 @@ export default function DeliveryDashboard() {
                         borderRadius: 8,
                       }}
                       formatter={(value, name) => {
-                        if (name === "orders_count") return [`${value} orders`, 'Orders'];
-                        if (name === "total_amount") return [`$${value}`, 'Total Spent'];
+                        if (name === "orders_count")
+                          return [`${value} orders`, "Orders"];
+                        if (name === "total_amount")
+                          return [`$${value}`, "Total Spent"];
                         return [value, name];
                       }}
                     />
-                    <Bar 
-                      dataKey="orders_count" 
-                      fill="var(--button)" 
+                    <Bar
+                      dataKey="orders_count"
+                      fill="var(--button)"
                       radius={[0, 4, 4, 0]}
                     />
                   </BarChart>
@@ -514,7 +559,7 @@ export default function DeliveryDashboard() {
             {/* Top Vendors */}
             <div
               className="rounded-2xl p-4 sm:p-6 shadow-md"
-              style={{ 
+              style={{
                 backgroundColor: "var(--bg)",
                 border: "1px solid var(--border)",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
@@ -524,29 +569,31 @@ export default function DeliveryDashboard() {
                 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2"
                 style={{ color: "var(--text)" }}
               >
-                <FaStore style={{ color: isDarkMode ? "#ffffff" : "#292e2c" }} />{" "}
+                <FaStore
+                  style={{ color: isDarkMode ? "#ffffff" : "#292e2c" }}
+                />{" "}
                 Top Vendors
               </h2>
 
               <div className="h-64 sm:h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart 
+                  <BarChart
                     data={report.top_vendors?.slice(0, 5) || []}
                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                    <XAxis 
-                      dataKey="store_name" 
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="var(--border)"
+                    />
+                    <XAxis
+                      dataKey="store_name"
                       stroke="var(--light-gray)"
                       tick={{ fontSize: 12 }}
                       angle={-45}
                       textAnchor="end"
                       height={80}
                     />
-                    <YAxis 
-                      stroke="var(--light-gray)"
-                      tick={{ fontSize: 12 }}
-                    />
+                    <YAxis stroke="var(--light-gray)" tick={{ fontSize: 12 }} />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: "var(--bg)",
@@ -555,14 +602,15 @@ export default function DeliveryDashboard() {
                         borderRadius: 8,
                       }}
                       formatter={(value, name) => {
-                        if (name === "revenue") return [`$${value}`, 'Revenue'];
-                        if (name === "orders_count") return [`${value} orders`, 'Orders'];
+                        if (name === "revenue") return [`$${value}`, "Revenue"];
+                        if (name === "orders_count")
+                          return [`${value} orders`, "Orders"];
                         return [value, name];
                       }}
                     />
-                    <Bar 
-                      dataKey="revenue" 
-                      fill="var(--button)" 
+                    <Bar
+                      dataKey="revenue"
+                      fill="var(--button)"
                       radius={[4, 4, 0, 0]}
                     />
                   </BarChart>
