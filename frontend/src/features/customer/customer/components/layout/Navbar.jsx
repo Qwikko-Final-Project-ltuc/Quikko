@@ -654,7 +654,7 @@ const Navbar = () => {
                         }`}
                       >
                         {themeMode === "dark" ? (
-                          <FaInfoCircle className="mr-3 text-sm" /> 
+                          <FaSun className="mr-3 text-sm" /> 
                         ) : (
                           <FaCog className="mr-3 text-sm" /> 
                         )}
@@ -788,7 +788,7 @@ const Navbar = () => {
                         {themeMode === "dark" ? (
                           <FaInfoCircle className="mr-3 text-sm" /> 
                         ) : (
-                          <FaCog className="mr-3 text-sm" /> 
+                          <FaMoon className="mr-3 text-sm" />
                         )}
                         <span className="flex-1">
                           {themeMode === "dark" ? "Light Mode" : "Dark Mode"}
