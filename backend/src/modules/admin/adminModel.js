@@ -35,6 +35,7 @@ exports.getAllVendors = async () => {
       v.store_banner,
       v.status,
       v.commission_rate,
+      COALESCE(ROUND(AVG(sr.rating)::numeric, 1), 0) AS rating,
       v.contact_email,
       v.phone,
       COALESCE(
@@ -49,6 +50,7 @@ exports.getAllVendors = async () => {
       ) AS products
     FROM vendors v
     LEFT JOIN products p ON p.vendor_id = v.id
+    LEFT JOIN stars_review sr ON sr.vendor_id = v.id
     GROUP BY v.id
     ORDER BY v.created_at DESC;
   `;

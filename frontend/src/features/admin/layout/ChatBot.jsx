@@ -6,7 +6,7 @@ import ReactMarkdown from "react-markdown";
 
 const ChatBotAdmin = ({ userId }) => {
   const [messages, setMessages] = useState([
-    { sender: "bot", text: "How can I help you today?" },
+    { sender: "bot", text: "Welcome to Qwikko, How can I help you ?" },
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);

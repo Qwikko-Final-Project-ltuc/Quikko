@@ -89,7 +89,8 @@ export default function OrdersPage() {
           <div className="flex flex-wrap gap-2 sm:gap-3 text-xs sm:text-sm font-medium">
             {[
               "all",
-              "pending",
+              "requested",
+              "needs_decision",
               "accepted",
               "processing",
               "out_for_delivery",

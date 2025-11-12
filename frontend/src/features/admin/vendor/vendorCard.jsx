@@ -19,7 +19,7 @@ export default function VendorCard({ vendor }) {
     store_banner,
     store_name,
     status,
-    commission_rate,
+    rating,
     contact_email,
     phone,
     products,
@@ -111,7 +111,7 @@ export default function VendorCard({ vendor }) {
         </div>
         <div className="flex items-center gap-2">
           <MdStarRate className="text-yellow-400 w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-          <span>Rate: {commission_rate}%</span>
+          <span>Rate: {rating}%</span>
         </div>
         <div className="flex items-center gap-2">
           <MdEmail className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />

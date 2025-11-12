@@ -2,7 +2,7 @@ import { MdOutlinePendingActions } from "react-icons/md";
 import { FcApproval, FcProcess, FcShipped } from "react-icons/fc";
 import { FaTruckLoading, FaBoxes, FaTruck, FaUserTie } from "react-icons/fa";
 import { useState } from "react";
-import { LiaWindowCloseSolid } from "react-icons/lia";
+import { LiaUserClockSolid, LiaWindowCloseSolid } from "react-icons/lia";
 import { useSelector } from "react-redux";
 import { AiFillProduct } from "react-icons/ai";
 import { IoMdPerson } from "react-icons/io";
@@ -24,11 +24,18 @@ export default function OrdersCard({ order }) {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case "pending":
+      case "requested":
         return (
           <>
             <MdOutlinePendingActions className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-yellow-500" />
-            <span className="capitalize">Pending</span>
+            <span className="capitalize">Requested</span>
+          </>
+        );
+        case "needs_decision":
+        return (
+          <>
+            <LiaUserClockSolid className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-blue-500" />
+            <span className="capitalize">Needs Decision</span>
           </>
         );
       case "processing":
