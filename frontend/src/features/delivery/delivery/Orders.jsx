@@ -552,14 +552,11 @@ export default function OrdersList() {
                       onClick={() => openPayModal(o.id, isPaid)}
                       disabled={isPaid}
                       aria-disabled={isPaid}
-                      className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg border text-xs sm:text-sm font-semibold transition-all duration-200 shadow-sm flex-shrink-0
-                   ${
-                     isPaid
-                       ? isDarkMode
-                         ? "bg-[var(--button)]/60 text-white border-[var(--button)]/80 cursor-not-allowed"
-                         : "bg-[var(--success)] text-white border-[var(--success)] cursor-not-allowed"
-                       : "bg-transparent text-[var(--button)] border-[var(--button)] hover:bg-[var(--button)] hover:text-white hover:shadow-md active:scale-[0.97]"
-                   }`}
+                      className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg border text-xs sm:text-sm font-semibold transition-all duration-200 shadow-sm flex-shrink-0 ${
+                        isPaid
+                          ? "bg-[var(--success)] text-white border-[var(--success)] cursor-not-allowed"
+                          : "bg-[var(--button)] text-white border-[var(--button)] hover:shadow-md active:scale-[0.97]"
+                      }`}
                     >
                       {isPaid ? (
                         <>
@@ -628,7 +625,7 @@ export default function OrdersList() {
                       <strong>
                         {formatCurrency(
                           Number(
-                              o.total_amount ??
+                            o.total_amount ??
                               o._total_with_shipping ??
                               o.total_with_shipping ??
                               o.final_amount ??
