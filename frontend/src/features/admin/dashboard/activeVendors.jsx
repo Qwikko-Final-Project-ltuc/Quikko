@@ -18,6 +18,8 @@ export default function ActiveVendors() {
         const approvedVendors = (data.data || data).filter(
           (v) => v.status === "approved"
         );
+        console.log("vendor data:",data);
+        
         dispatch(setVendors(approvedVendors));
       } catch (error) {
         console.error("Failed to fetch vendors:", error);
@@ -97,7 +99,7 @@ export default function ActiveVendors() {
                         <p className="opacity-80 flex items-center gap-1">
                           <span className="hidden xs:inline">Rate:</span>
                           <span className="xs:hidden">⭐</span>
-                          {vendor.commission_rate}%
+                          {vendor.rating ?? 0}%
                         </p>
                         <p className="opacity-70 flex items-center gap-1">
                           <span className="hidden xs:inline">Orders:</span>

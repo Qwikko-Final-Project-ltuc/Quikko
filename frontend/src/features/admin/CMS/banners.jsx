@@ -4,6 +4,8 @@ import { allCMSForAdmin, editCMS, deleteCMS } from "./cmsSlice";
 import { FaPlus } from "react-icons/fa";
 import PagesForm from "../CMS/pages";
 import { LiaWindowCloseSolid } from "react-icons/lia";
+import { FaTrash } from "react-icons/fa";
+import { FiEdit } from "react-icons/fi";
 
 export default function BannersForm() {
   const dispatch = useDispatch();
@@ -21,6 +23,11 @@ export default function BannersForm() {
     status: "active",
   });
   const [activeFilter, setActiveFilter] = useState("all");
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    itemId: null,
+    itemTitle: "",
+  });
 
   useEffect(() => {
     dispatch(allCMSForAdmin());
@@ -46,12 +53,25 @@ export default function BannersForm() {
     setEditingId(null);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this CMS item?")) {
-      dispatch(deleteCMS(id)).then(() => {
+  const handleDelete = (id, title = "") => {
+    setDeleteModal({
+      isOpen: true,
+      itemId: id,
+      itemTitle: title,
+    });
+  };
+
+  const confirmDelete = () => {
+    if (deleteModal.itemId) {
+      dispatch(deleteCMS(deleteModal.itemId)).then(() => {
         dispatch(allCMSForAdmin());
+        setDeleteModal({ isOpen: false, itemId: null, itemTitle: "" });
       });
     }
+  };
+
+  const cancelDelete = () => {
+    setDeleteModal({ isOpen: false, itemId: null, itemTitle: "" });
   };
 
   if (loading) {
@@ -309,17 +329,54 @@ export default function BannersForm() {
                     <div className="flex space-x-2 pt-2">
                       <button
                         onClick={() => startEdit(cms)}
-                        className="flex-1 py-2 rounded-lg hover:opacity-90 bg-[var(--button)] text-white hover:bg-[#265e46] cursor-pointer text-sm sm:text-base"
+                        className="flex-1 py-2 rounded-lg hover:opacity-90 bg-[var(--button)] text-white hover:bg-[#265e46] cursor-pointer text-sm sm:text-base flex items-center justify-center gap-2"
                       >
+                        <FiEdit className="w-3 h-3 sm:w-4 sm:h-4" />
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(cms.id)}
-                        className="flex-1 py-2 rounded-lg hover:opacity-90 cursor-pointer bg-red-500 text-white hover:bg-red-600 cursor-pointer text-sm sm:text-base"
+                        onClick={() => handleDelete(cms.id, cms.title)}
+                        className="flex-1 py-2 rounded-lg hover:opacity-90 cursor-pointer bg-red-600 text-white hover:bg-red-700 cursor-pointer text-sm sm:text-base flex items-center justify-center gap-2"
                       >
+                        <FaTrash className="w-3 h-3 sm:w-4 sm:h-4" />
                         Delete
                       </button>
                     </div>
+
+                    {deleteModal.isOpen && (
+                      <div className="fixed inset-0 bg-black/5 flex items-center justify-center z-50 p-4">
+                        <div
+                          className={`rounded-lg shadow-lg w-full max-w-sm p-8 ${
+                            isDark ? "bg-[var(--bg)]" : "bg-[var(--bg)]"
+                          }`}
+                        >
+                          <p className="text-[var(--text)] text-center text-sm sm:text-base mb-4 sm:mb-6">
+                            Are you sure you want to delete this{" "}
+                            {deleteModal.itemTitle && (
+                              <span className="font-semibold">
+                                {" "}
+                                "{deleteModal.itemTitle}"
+                              </span>
+                            )}
+                            ?
+                          </p>
+                          <div className="flex gap-3">
+                            <button
+                              onClick={cancelDelete}
+                              className="flex-1 px-3 sm:px-4 py-2 border border-[var(--border)] rounded-lg text-[var(--text)] hover:bg-[var(--hover)] cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={confirmDelete}
+                              className="flex-1 px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 cursor-pointer"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

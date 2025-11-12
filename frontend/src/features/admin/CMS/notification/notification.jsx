@@ -110,6 +110,7 @@ export default function NotificationsForm() {
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
               disabled={!!form.userId}
+              required
               className={`w-full p-2 sm:p-3 rounded-lg border text-sm sm:text-base focus:outline-none focus:ring-2 transition-colors duration-300 ${
                 !!form.userId
                   ? "opacity-50 cursor-not-allowed"
@@ -217,24 +218,26 @@ export default function NotificationsForm() {
             <ul className="list-disc list-inside mt-1 space-y-1">
               <li>Set User ID for specific user, or Role for group</li>
               <li>Type helps categorize the notification</li>
-              <li>Message is required and will be sent immediately</li>
+              <li>Title, Role and Message are required and will be sent immediately</li>
             </ul>
           </div>
 
           <div className="flex justify-center pt-2">
             <button
               type="submit"
-              disabled={!form.message.trim()}
+              disabled={
+                !form.title.trim() && !form.message.trim() && !form.role
+              }
               className={`flex justify-center items-center w-full sm:w-64 py-2 sm:py-3 text-white rounded-lg transition-colors cursor-pointer text-sm sm:text-base font-medium ${
-                !form.message.trim()
+                !form.title.trim() || !form.message.trim() || !form.role
                   ? "bg-gray-400 cursor-not-allowed"
                   : isDark
                   ? "bg-[var(--button)] hover:bg-[#265e46]"
                   : "bg-[var(--button)] hover:bg-[#265e46]"
               }`}
             >
-              {!form.message.trim()
-                ? "Enter Message First"
+              {!form.title.trim() || !form.message.trim() || !form.role
+                ? "Fill Required Fields"
                 : "Send Notification"}
             </button>
           </div>
