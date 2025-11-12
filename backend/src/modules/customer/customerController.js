@@ -106,7 +106,9 @@ exports.postOrderFromCart = async function (req, res) {
       paymentMethod, 
       paymentData,
       coupon_code,          
-      use_loyalty_points    
+      use_loyalty_points ,  
+      total_amount, 
+      calculated_totals 
     } = req.body;
 
     const parsedCartId = Number(cart_id);
@@ -141,7 +143,9 @@ exports.postOrderFromCart = async function (req, res) {
 
       coupon_code: req.body.coupon_code || null,
       
-      use_loyalty_points: use_loyalty_points || 0
+      use_loyalty_points: use_loyalty_points || 0,
+      total_amount: total_amount, // ✅ ابعت القيمة
+      calculated_totals: calculated_totals
     });
 
     console.log("🔍 [CONTROLLER] Sent to model:", {

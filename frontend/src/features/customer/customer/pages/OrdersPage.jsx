@@ -459,7 +459,7 @@ const OrdersPage = () => {
                       <div className="flex flex-col items-center justify-center text-center">
                         <div className="text-xs font-semibold uppercase tracking-wider text-[var(--light-gray)] mb-1">Total</div>
                         <div className={`text-base font-bold ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}`}>
-                          ${parseFloat(order.total_with_shipping || order.total_amount).toFixed(2)}
+                          ${parseFloat(  order.total_amount|| order.total_with_shipping).toFixed(2)}
                         </div>
                       </div>
 
@@ -643,7 +643,7 @@ const OrdersPage = () => {
                     </h3>
 
                     {/* Items Container with Fixed Height and Custom Scroll */}
-                    <div className="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="space-y-3 h-48 overflow-y-auto pr-2 custom-scrollbar"> {/* هنا غيرنا من max-h-48 إلى h-48 */}
                       {order.items.map((item) => {
                         const imageUrl = productImages[item.product_id];
 
@@ -746,7 +746,7 @@ const OrdersPage = () => {
                     </div>
                   </div>
 
-                  {/* Action Buttons - نفس الحجم */}
+                  {/* Action Buttons - نفس الحجم والارتفاع */}
                   <div className="flex gap-2 pt-4 border-t border-[var(--border)]/50 mt-4">
                     <button
                       className="bg-[var(--button)] hover:bg-[#015c40] text-white font-semibold px-3 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow flex items-center gap-1 justify-center text-sm flex-1"
@@ -780,6 +780,8 @@ const OrdersPage = () => {
                       Reorder
                     </button>
                   </div>
+
+
 
                   {/* Payment Details with Custom Scrollbar */}
                   {order.payments && order.payments.length > 0 && (

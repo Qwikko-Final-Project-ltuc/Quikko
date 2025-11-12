@@ -40,7 +40,8 @@ const StorePage = () => {
   );
   const guestToken = localStorage.getItem("guest_token");
 
-  const currentProducts = selectedStore?.products || [];
+  const currentProducts = storeProducts || [];
+
   const totalProductPages = Math.ceil(storeProducts.length / productsPerPage);
 
   const handleProductPageChange = (pageNumber) => {

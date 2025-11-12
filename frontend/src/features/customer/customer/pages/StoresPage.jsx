@@ -16,18 +16,59 @@ const StoresPage = () => {
     dispatch(fetchStoresWithReviews());
   }, [dispatch]);
 
-  // Filter stores based on search query
+  // Debug effect to see the actual data structure
   useEffect(() => {
+    if (allStores && allStores.length > 0) {
+      console.log('🏪 Stores Data Sample:', allStores[0]);
+      console.log('📊 All Stores Count:', allStores.length);
+      console.log('🔍 Available Fields:', Object.keys(allStores[0]));
+    }
+  }, [allStores]);
+
+  // Fixed search function - handles all possible field names
+  useEffect(() => {
+    if (!allStores || allStores.length === 0) {
+      setFilteredStores([]);
+      return;
+    }
+
     if (searchQuery.trim() === "") {
       setFilteredStores(allStores);
     } else {
-      const filtered = allStores.filter(store =>
-        store.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        store.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        store.location?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      const query = searchQuery.toLowerCase().trim();
+      const filtered = allStores.filter(store => {
+        // Handle all possible field names for store name
+        const storeName = store.store_name || store.name || store.title || store.business_name || "";
+        
+        // Handle all possible field names for description
+        const description = store.description || store.desc || store.about || store.bio || "";
+        
+        // Handle all possible field names for location
+        const location = store.location || store.address || store.city || store.area || "";
+        
+        // Handle category if available
+        const category = store.category || store.type || store.business_type || "";
+
+        console.log('🔍 Searching in:', {
+          storeName,
+          description: description.substring(0, 50) + '...',
+          location,
+          category,
+          query
+        });
+
+        return (
+          storeName.toLowerCase().includes(query) ||
+          description.toLowerCase().includes(query) ||
+          location.toLowerCase().includes(query) ||
+          category.toLowerCase().includes(query)
+        );
+      });
+      
+      console.log('✅ Search Results:', filtered.length);
       setFilteredStores(filtered);
     }
+    
     // Reset to first page when search changes
     dispatch(setCurrentPage(1));
   }, [searchQuery, allStores, dispatch]);
@@ -51,7 +92,7 @@ const StoresPage = () => {
     setSearchQuery("");
   };
 
-  // Pagination logic - show only 5 pages max (same as products page)
+  // Pagination logic - show only 5 pages max
   const getVisiblePages = () => {
     const visiblePages = [];
     const totalVisible = 5;
@@ -76,38 +117,37 @@ const StoresPage = () => {
 
   const visiblePages = getVisiblePages();
 
-  // Loading State - Same as products page
+  // Loading State
   if (loading) {
     return (
-    <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-white'} relative overflow-hidden`}>
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-[var(--button)]/2 rounded-full blur-xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-56 h-56 bg-[var(--primary)]/2 rounded-full blur-xl animate-pulse" style={{animationDelay: '1.5s'}}></div>
-      </div>
-      <div className="relative z-10 flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="relative">
-            <div className="w-16 h-16 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-xl flex items-center justify-center mx-auto mb-4 animate-spin">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-              </svg>
+      <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-white'} relative overflow-hidden`}>
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-[var(--button)]/2 rounded-full blur-xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-56 h-56 bg-[var(--primary)]/2 rounded-full blur-xl animate-pulse" style={{animationDelay: '1.5s'}}></div>
+        </div>
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="relative">
+              <div className="w-16 h-16 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-xl flex items-center justify-center mx-auto mb-4 animate-spin">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
+              </div>
+              <div className="absolute inset-0 w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-xl blur-sm opacity-15 animate-ping"></div>
             </div>
-            <div className="absolute inset-0 w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-xl blur-sm opacity-15 animate-ping"></div>
+            <p className="text-[var(--text)] text-lg font-medium">
+              Loading Amazing Stores...
+            </p>
           </div>
-          <p className="text-[var(--text)] text-lg font-medium">
-            Loading Amazing Stores...
-          </p>
         </div>
       </div>
-    </div>
-  );
+    );
   }
 
-  // Error State - Same as products page
+  // Error State
   if (error) {
     return (
       <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-white'} flex items-center justify-center relative overflow-hidden`}>
-        {/* Animated Background */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/3 left-1/3 w-64 h-64 bg-[var(--error)]/5 rounded-full blur-3xl animate-pulse-slow"></div>
           <div className="absolute bottom-1/3 right-1/3 w-56 h-56 bg-[var(--button)]/5 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '1.5s'}}></div>
@@ -141,14 +181,14 @@ const StoresPage = () => {
       {/* Empty Div for Top Padding */}
       <div className="h-6"></div>
 
-      {/* Animated Background - Same as products page */}
+      {/* Animated Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-0 w-96 h-96 bg-[var(--button)]/5 rounded-full blur-3xl animate-float"></div>
         <div className="absolute bottom-0 right-0 w-80 h-80 bg-[var(--primary)]/5 rounded-full blur-3xl animate-float" style={{animationDelay: '2s'}}></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[var(--success)]/3 rounded-full blur-3xl animate-pulse-slow"></div>
       </div>
 
-      {/* Enhanced Header Section - Same as products page */}
+      {/* Enhanced Header Section */}
       <div className="relative overflow-hidden">
         <div className="pt-16 pb-6 relative">
           {/* Animated Floating Circles */}
@@ -179,7 +219,7 @@ const StoresPage = () => {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pb-16">
         {/* Enhanced Controls Section - With Search */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-12">
-          {/* Search Bar - Same style as products page controls */}
+          {/* Search Bar */}
           <div className="w-full lg:w-auto">
             <div className="relative group">
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
@@ -187,10 +227,10 @@ const StoresPage = () => {
               </div>
               <input
                 type="text"
-                placeholder="Search stores by name, description, or location..."
+                placeholder="Search stores by name, description, location, or category..."
                 value={searchQuery}
                 onChange={handleSearchChange}
-                className={`w-full lg:w-80 border-2 border-[var(--border)] text-[var(--text)] rounded-xl pl-12 pr-10 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--button)]/30 focus:border-[var(--button)] transition-all font-medium shadow-sm hover:shadow-md ${
+                className={`w-full lg:w-96 border-2 border-[var(--border)] text-[var(--text)] rounded-xl pl-12 pr-10 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--button)]/30 focus:border-[var(--button)] transition-all font-medium shadow-sm hover:shadow-md ${
                   themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-white'
                 }`}
               />
@@ -203,6 +243,15 @@ const StoresPage = () => {
                 </button>
               )}
             </div>
+            {/* Search feedback */}
+            {searchQuery && (
+              <div className={`text-xs mt-2 ${
+                themeMode === 'dark' ? 'text-[var(--light-gray)]' : 'text-gray-500'
+              }`}>
+                Searching in: Name, Description, Location, Category
+                {filteredStores.length > 0 && ` • Found ${filteredStores.length} stores`}
+              </div>
+            )}
           </div>
 
           {/* Results Count */}
@@ -216,14 +265,13 @@ const StoresPage = () => {
           </div>
         </div>
 
-        {/* Stores Grid - Same responsive layout as products page */}
+        {/* Stores Grid */}
         {currentStores.length === 0 ? (
           <div className={`text-center py-24 rounded-3xl border-2 border-[var(--border)] relative overflow-hidden group ${
             themeMode === 'dark' 
               ? 'bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] shadow-3xl' 
               : 'bg-gradient-to-br from-gray-50 to-gray-100 shadow-xl'
           }`}>
-            {/* Background Animation */}
             <div className="absolute inset-0 opacity-5">
               <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-[var(--button)] rounded-full animate-ping"></div>
               <div className="absolute bottom-1/4 right-1/4 w-24 h-24 bg-[var(--primary)] rounded-full animate-ping" style={{animationDelay: '1s'}}></div>
@@ -260,12 +308,12 @@ const StoresPage = () => {
           </div>
         ) : (
           <>
-            {/* Enhanced Stores Grid with same responsive layout as products */}
+            {/* Enhanced Stores Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5 md:gap-6 lg:gap-7 xl:gap-8 mb-16">
               {currentStores.map((store, index) => (
                 <div 
                   key={store.id}
-                  className="transform hover:-translate-y-2 transition-all duration-500"
+                  className="transform transition-all duration-300" 
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   <StoreCard store={store} />
@@ -273,7 +321,7 @@ const StoresPage = () => {
               ))}
             </div>
 
-            {/* Enhanced Pagination - Show only 5 pages max (same as products page) */}
+            {/* Enhanced Pagination */}
             {totalPages > 1 && (
               <div className="flex flex-col items-center space-y-8">
                 <div className="flex items-center space-x-2 sm:space-x-4">
@@ -292,7 +340,7 @@ const StoresPage = () => {
                     </svg>
                   </button>
 
-                  {/* Page Numbers - Show only 5 pages max */}
+                  {/* Page Numbers */}
                   <div className="flex items-center space-x-1 sm:space-x-2">
                     {visiblePages.map(page => (
                       <button
@@ -336,7 +384,7 @@ const StoresPage = () => {
       </div>
 
       <style jsx>{`
-        @keyframes gradient-x {
+        @keyframes gradient-x-slow {
           0%, 100% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
         }
@@ -358,24 +406,16 @@ const StoresPage = () => {
           0%, 100% { opacity: 0.1; transform: scale(1); }
           50% { opacity: 0.3; transform: scale(1.1); }
         }
-        @keyframes gradient-x-slow {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
+        .animate-gradient-x-slow { 
+          background-size: 200% 200%; 
+          animation: gradient-x-slow 8s ease infinite; 
         }
-        // .animate-gradient-x-slow { 
-        //   background-size: 200% 200%; 
-        //   animation: gradient-x-slow 8s ease infinite; 
-        // }
-        // .animate-gradient-x { 
-        //   background-size: 200% 200%; 
-        //   animation: gradient-x 3s ease infinite; 
-        // }
-        // .animate-float { 
-        //   animation: float 8s ease-in-out infinite; 
-        // }
-        // .animate-pulse-slow { 
-        //   animation: pulse-slow 4s ease-in-out infinite; 
-        // }
+        .animate-float { 
+          animation: float 8s ease-in-out infinite; 
+        }
+        .animate-pulse-slow { 
+          animation: pulse-slow 4s ease-in-out infinite; 
+        }
       `}</style>
     </div>
   );

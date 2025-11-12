@@ -201,6 +201,19 @@ const handleAddToCartWithAnimation = (e) => {
   }, 720);
 };
 
+  // في الـ ProductDetails component - بعد الدوال الأخرى
+const handleProductClick = (productId) => {
+  navigate(`/customer/product/${productId}`);
+};
+  
+// في الـ ProductDetails component - أضف هذا الـ useEffect
+useEffect(() => {
+  // Scroll to top when product ID changes
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}, [id]);
+
+
+
   const handleAddToCartForRecommended = async (productToAdd, quantity = 1) => {
     try {
       const success = await handleAddToCart(productToAdd, quantity);
@@ -749,18 +762,22 @@ const handleAddToCartWithAnimation = (e) => {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10">
               {recommendedProducts.length > 0
-                ? recommendedProducts.map((product) => (
-                    <div
-                      key={product.id || product.product_id}
-                      className="product-card-container hover:scale-105 transform transition-all duration-500 cursor-pointer"
-                    >
-                      <ProductCard
-                        product={product}
-                        onAddToCart={handleAddToCartForRecommended}
-                        isLoggedIn={!!token}
-                      />
-                    </div>
-                  ))
+                ? recommendedProducts.map((product) => {
+                    const productId = product.id || product.product_id;
+                    return (
+                      <div
+                        key={productId}
+                        className="product-card-container hover:scale-105 transform transition-all duration-500 cursor-pointer"
+                        onClick={() => handleProductClick(productId)}
+                      >
+                        <ProductCard
+                          product={product}
+                          onAddToCart={handleAddToCartForRecommended}
+                          isLoggedIn={!!token}
+                        />
+                      </div>
+                    );
+                  })
                 : Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)}
             </div>
             <div className="flex justify-center mt-16">

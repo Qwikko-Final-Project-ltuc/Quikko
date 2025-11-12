@@ -1,8 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import ReviewStatic from "../../review/ReviewStatic";
+import { useSelector } from "react-redux";
 
 const StoreCard = ({ store }) => {
+  const themeMode = useSelector((state) => state.customerTheme?.mode || 'light');
+  
   const handleImageError = (e) => {
     e.target.style.display = 'none';
   };
@@ -21,19 +24,26 @@ const StoreCard = ({ store }) => {
     );
   };
 
+  // تحديد طول ثابت للديسكربشن
+  const truncateDescription = (description, maxLength = 80) => {
+    if (!description) return "No description available";
+    if (description.length <= maxLength) return description;
+    return description.substring(0, maxLength) + "...";
+  };
+
   return (
     <Link 
       to={`/customer/stores/${store.id}`} 
-      className="group block bg-[var(--bg)] rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:transform hover:-translate-y-2"
+      className="group block bg-[var(--bg)] rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col"
     >
-      {/* Store Image */}
-      <div className="relative h-48 overflow-hidden">
+      {/* Store Image - ارتفاع ثابت */}
+      <div className="relative h-48 overflow-hidden flex-shrink-0">
         {store.store_logo ? (
           <>
             <img 
               src={store.store_logo} 
               alt={store.store_name} 
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+              className="w-full h-full object-cover transition-transform duration-300"
               onError={handleImageError}
             />
             {/* Fallback placeholder that shows if image fails to load */}
@@ -61,15 +71,15 @@ const StoreCard = ({ store }) => {
         )}
       </div>
 
-      {/* Store Content */}
-      <div className="p-5">
+      {/* Store Content - هذا الجزء بيكون طول مرن */}
+      <div className="flex-1 flex flex-col p-5">
         {/* Store Name and Rating */}
         <div className="flex justify-between items-start mb-3">
-          <h3 className="text-xl font-bold text-[var(--text)] line-clamp-1 flex-1 mr-2">
+          <h3 className="text-xl font-bold text-[var(--text)] line-clamp-2 leading-tight flex-1 mr-2 min-h-[3rem]">
             {store.store_name}
           </h3>
           {store.average_rating && (
-            <div className="flex items-center space-x-1 rtl:space-x-reverse px-2 py-1 rounded-lg min-w-12 text-[var(--text)]">
+            <div className="flex items-center space-x-1 rtl:space-x-reverse px-2 py-1 rounded-lg min-w-12 text-[var(--text)] flex-shrink-0">
               <svg className="w-4 h-4 text-[var(--warning)]" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
               </svg>
@@ -80,56 +90,59 @@ const StoreCard = ({ store }) => {
           )}
         </div>
 
-        {/* Store Description */}
-        <p className="text-[var(--light-gray)] text-sm mb-4 line-clamp-2 leading-relaxed">
-          {store.description?.slice(0, 80)}...
+        {/* Store Description - طول ثابت */}
+        <p className="text-[var(--light-gray)] text-sm mb-4 line-clamp-3 leading-relaxed min-h-[4.5rem]">
+          {truncateDescription(store.description, 100)}
         </p>
 
-        {/* Reviews and CTA Section */}
-        <div className="flex items-center justify-between">
-          {/* Reviews Section */}
-          <div className="flex items-center space-x-4 rtl:space-x-reverse">
-            <ReviewStatic 
-              averageRating={store.average_rating} 
-              totalReviews={store.total_reviews} 
-            />
-            
-            {/* Status Indicator */}
-            {store.is_open !== undefined && (
-              <div className={`flex items-center space-x-1 rtl:space-x-reverse ${
-                store.is_open ? 'text-[var(--success)]' : 'text-[var(--error)]'
-              }`}>
-                <div className={`w-2 h-2 rounded-full ${
-                  store.is_open ? 'bg-[var(--success)]' : 'bg-[var(--error)]'
-                }`}></div>
-                <span className="text-xs font-medium">
-                  {store.is_open ? 'مفتوح' : 'مغلق'}
-                </span>
-              </div>
-            )}
+        {/* Reviews and CTA Section - يثبت في الأسفل */}
+        <div className="mt-auto space-y-3">
+          {/* Reviews and Status */}
+          <div className="flex items-center justify-between">
+            {/* Reviews Section */}
+            <div className="flex items-center space-x-4 rtl:space-x-reverse">
+              <ReviewStatic 
+                averageRating={store.average_rating} 
+                totalReviews={store.total_reviews} 
+              />
+              
+              {/* Status Indicator */}
+              {store.is_open !== undefined && (
+                <div className={`flex items-center space-x-1 rtl:space-x-reverse ${
+                  store.is_open ? 'text-[var(--success)]' : 'text-[var(--error)]'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${
+                    store.is_open ? 'bg-[var(--success)]' : 'bg-[var(--error)]'
+                  }`}></div>
+                  <span className="text-xs font-medium">
+                    {store.is_open ? 'مفتوح' : 'مغلق'}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* CTA Button */}
+            <div className="bg-[var(--button)] text-white px-4 py-2 rounded-lg text-sm font-medium group-hover:bg-[var(--button)]/90 transition-colors duration-200 flex items-center space-x-1 rtl:space-x-reverse flex-shrink-0">
+              <span>Visit Store</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+              </svg>
+            </div>
           </div>
 
-          {/* CTA Button */}
-          <div className="bg-[var(--button)] text-white px-4 py-2 rounded-lg text-sm font-medium group-hover:bg-[var(--button)]/90 transition-colors duration-200 flex items-center space-x-1 rtl:space-x-reverse">
-            <span>Visit Store</span>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-            </svg>
-          </div>
+          {/* Location/Distance */}
+          {(store.distance || store.location) && (
+            <div className="flex items-center space-x-1 rtl:space-x-reverse text-[var(--light-gray)] pt-3 border-t border-[var(--border)]">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              <span className="text-xs truncate">
+                {store.distance ? `${store.distance} KM` : store.location}
+              </span>
+            </div>
+          )}
         </div>
-
-        {/* Location/Distance */}
-        {(store.distance || store.location) && (
-          <div className="flex items-center space-x-1 rtl:space-x-reverse text-[var(--light-gray)] mt-3 pt-3 border-t border-[var(--border)]">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
-            <span className="text-xs">
-              {store.distance ? `${store.distance} KM` : store.location}
-            </span>
-          </div>
-        )}
       </div>
 
       <style jsx>{`

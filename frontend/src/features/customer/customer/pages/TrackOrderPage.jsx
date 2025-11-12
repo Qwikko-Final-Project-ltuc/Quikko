@@ -26,73 +26,82 @@ const TrackOrderPage = () => {
     return `${hours}h ${remainingMinutes}m`;
   };
 
-// Simple and correct version
+
 const getTrackingSteps = (order) => {
   if (!order) return [];
 
+  // ترتيب السيبس الثابت والمطلوب
   const statusFlow = [
-    { status: "pending", label: "Order Received", icon: FileText },
+    { status: "requested", label: "Order Requested", icon: FileText },
     { status: "accepted", label: "Order Accepted", icon: CheckCircle },
-    { status: "processing", label: "Preparing", icon: ShoppingCart },
+    { status: "processing", label: "Preparing Order", icon: ShoppingCart },
     { status: "out for delivery", label: "On the Way", icon: Truck },
     { status: "delivered", label: "Delivered", icon: Package }
   ];
 
   let currentStatus = order?.status?.toLowerCase();
   
-  if (currentStatus === "requested" || currentStatus === "needs_decision") {
-    currentStatus = "pending";
+  // إذا كان ال status needs_decision نعتبره requested
+  if (currentStatus === "needs_decision") {
+    currentStatus = "requested";
   }
 
+  // نبحث عن index الحالة الحالية
   const currentIndex = statusFlow.findIndex(step => step.status === currentStatus);
 
   return statusFlow.map((step, index) => {
-    const isOrderReceived = step.status === "pending";
+    // الخطوات اللي قبل الحالية بتكون مكتملة
+    const completed = index < currentIndex;
     
-    // Always complete Order Received, and others based on position
-    const completed = isOrderReceived ? true : index <= currentIndex;
+    // الخطوة الحالية بتكون current
+    const current = index === currentIndex;
     
-    // For requested/pending status, show Order Accepted as In Progress
-    const shouldShowNextAsInProgress = currentIndex === 0 && index === 1;
+    // الخطوات اللي بعد الحالية بتكون قادمة
+    const upcoming = index > currentIndex;
     
-    const current = index === currentIndex || shouldShowNextAsInProgress;
-    const hasAnimation = current && !completed;
+    // الانيميشن يظهر فقط على الخطوة الحالية
+    const hasAnimation = current;
 
     return {
       ...step,
       completed,
       current,
-      upcoming: index === currentIndex + 1,
+      upcoming,
       hasAnimation
     };
   });
 };
 
-  useEffect(() => {
-    const fetchOrderData = async () => {
+useEffect(() => {
+  const fetchOrderData = async () => {
+    try {
+      // استخدم getOrderById بدل trackOrder عشان تجيب total_amount
+      const orderData = await customerAPI.getOrderById(orderId);
+      
+      console.log('📦 Full order data from getOrderById:', orderData);
+      
+      await dispatch(fetchOrderById(orderId));
+      
+      setOrder(orderData.data || orderData); // حسب شكل ال response
+
+      // إذا بدك الـ routePoints من trackOrder، اجيبها منفصلة
       try {
         const trackData = await customerAPI.trackOrder(orderId);
-        const orderData = trackData.data;
-        
-        console.log('📦 Full order data from trackOrder:', orderData);
-        
-        await dispatch(fetchOrderById(orderId));
-        
-        setOrder(orderData);
-
-        if (!orderData) return;
-
-        if (orderData.routePoints && orderData.routePoints.length > 0) {
-          setRoutePoints(orderData.routePoints);
+        if (trackData.data?.routePoints && trackData.data.routePoints.length > 0) {
+          setRoutePoints(trackData.data.routePoints);
         }
-      } catch (err) {
-        console.error('Error fetching order:', err);
-      } finally {
-        setLoading(false);
+      } catch (trackErr) {
+        console.log('No route points available yet');
       }
-    };
-    fetchOrderData();
-  }, [orderId, dispatch]);
+
+    } catch (err) {
+      console.error('Error fetching order:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchOrderData();
+}, [orderId, dispatch]);
 
   useEffect(() => {
     if (currentOrder && !loading) {
@@ -163,8 +172,8 @@ const getTrackingSteps = (order) => {
 
   const isOrderNotAccepted = order.status === 'requested' || order.status === 'pending';
 
-  const displayTotal = currentOrder.data?.total_with_shipping || currentOrder?.total_amount || 0;
-  const displayPaymentStatus = currentOrder.data?.payment_status || order.payment_status || "unpaid";
+  const displayTotal = order?.total_amount || order?.total_with_shipping || order?.final_amount || 0;
+  const displayPaymentStatus = currentOrder.data?.payment_status || order.payment_status ;
 
   return (
     <div className="min-h-screen bg-[var(--bg)] relative overflow-hidden">
@@ -283,7 +292,7 @@ const getTrackingSteps = (order) => {
               </div>
               <h3 className="text-white/80 text-sm font-medium mb-1 uppercase tracking-wider">ORDER STATUS</h3>
               <p className="text-white text-lg font-bold capitalize leading-tight">
-                {order.status}
+                {order.status} {/* هنا جيب الستاتس مباشرة من order */}
               </p>
             </div>
           </div>
@@ -308,7 +317,7 @@ const getTrackingSteps = (order) => {
                 {displayPaymentStatus}
               </p>
               <p className="text-white/70 text-base mt-2 font-semibold">
-                Total: ${parseFloat(displayTotal).toFixed(2)}
+                Total: ${parseFloat(order?.total_amount || 0).toFixed(2)}
               </p>
             </div>
           </div>

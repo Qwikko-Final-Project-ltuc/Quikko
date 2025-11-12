@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAllCarts, createNewCart, deleteCart, fetchCurrentUser } from "../cartSlice";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +9,13 @@ const CartListPage = () => {
 
   const { allCarts, status, error, user } = useSelector((state) => state.cart);
   const themeMode = useSelector((state) => state.customerTheme.mode);
+  
+  // State for delete confirmation modal
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    cartId: null,
+    cartInfo: null
+  });
 
   useEffect(() => {
     const loadData = async () => {
@@ -34,8 +41,26 @@ const CartListPage = () => {
   };
 
   const handleDeleteCart = async (cartId) => {
-    if (!window.confirm("Are you sure you want to delete this cart?")) return;
-    await dispatch(deleteCart(cartId));
+    if (deleteModal.cartId) {
+      await dispatch(deleteCart(deleteModal.cartId));
+      closeDeleteModal();
+    }
+  };
+
+  const openDeleteModal = (cartId, cartInfo) => {
+    setDeleteModal({
+      isOpen: true,
+      cartId,
+      cartInfo
+    });
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModal({
+      isOpen: false,
+      cartId: null,
+      cartInfo: null
+    });
   };
 
   const formatCartId = (id) => {
@@ -52,33 +77,33 @@ const CartListPage = () => {
     return String(id).slice(-8);
   };
 
-// Loading State - أخف شادو فقط
-if (status === "loading") {
-  return (
-    <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-white'} relative overflow-hidden`}>
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-[var(--button)]/2 rounded-full blur-xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-56 h-56 bg-[var(--primary)]/2 rounded-full blur-xl animate-pulse" style={{animationDelay: '1.5s'}}></div>
-      </div>
-      
-      <div className="relative z-10 flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="relative">
-            <div className="w-16 h-16 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-xl flex items-center justify-center mx-auto mb-4 animate-spin">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-              </svg>
+  // Loading State - أخف شادو فقط
+  if (status === "loading") {
+    return (
+      <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-white'} relative overflow-hidden`}>
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-[var(--button)]/2 rounded-full blur-xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-56 h-56 bg-[var(--primary)]/2 rounded-full blur-xl animate-pulse" style={{animationDelay: '1.5s'}}></div>
+        </div>
+        
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="relative">
+              <div className="w-16 h-16 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-xl flex items-center justify-center mx-auto mb-4 animate-spin">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
+              </div>
+              <div className="absolute inset-0 w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-xl blur-sm opacity-15 animate-ping"></div>
             </div>
-            <div className="absolute inset-0 w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-xl blur-sm opacity-15 animate-ping"></div>
+            <p className="text-[var(--text)] text-lg font-medium">
+              Loading Carts...
+            </p>
           </div>
-          <p className="text-[var(--text)] text-lg font-medium">
-            Loading Carts...
-          </p>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   // Error State - Updated to match theme
   if (error) {
@@ -117,6 +142,71 @@ if (status === "loading") {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-gray-50'}`}>
+      {/* Delete Confirmation Modal */}
+      {deleteModal.isOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
+          <div className={`p-6 rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 ${
+            themeMode === 'dark' ? 'bg-[var(--div)]' : 'bg-white'
+          }`}>
+            {/* Modal Header */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className={`p-2 rounded-xl ${
+                themeMode === 'dark' ? 'bg-[var(--error)]/20' : 'bg-red-100'
+              }`}>
+                <svg className={`w-6 h-6 ${themeMode === 'dark' ? 'text-[var(--error)]' : 'text-red-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <h3 className={`text-xl font-bold ${themeMode === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                Delete Cart
+              </h3>
+            </div>
+
+            {/* Modal Body */}
+            <div className="mb-6">
+              <p className={`mb-3 ${themeMode === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                Are you sure you want to delete this cart? This action cannot be undone.
+              </p>
+              {deleteModal.cartInfo && (
+                <div className={`p-3 rounded-xl ${
+                  themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-gray-100'
+                }`}>
+                  <p className={`text-sm font-medium ${themeMode === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                    Cart #{formatCartId(deleteModal.cartInfo.id)}
+                  </p>
+                  <p className={`text-xs ${themeMode === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {deleteModal.cartInfo.items?.length || 0} products • {deleteModal.cartInfo.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0} items
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={closeDeleteModal}
+                className={`px-6 py-2 rounded-xl font-semibold border-2 transition-all duration-300 ${
+                  themeMode === 'dark' 
+                    ? 'border-[var(--border)] text-[var(--text)] hover:bg-[var(--hover)]' 
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteCart}
+                className="bg-[var(--error)] text-white px-6 py-2 rounded-xl hover:bg-red-700 transition-all duration-300 font-semibold flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="h-6"></div>
       {/* Header Section */}
       <div className={`w-full pt-8 pb-12 ${themeMode === 'dark' ? 'bg[var(--bg)]' : 'bg[var(--bg)]'}`}>
@@ -285,7 +375,7 @@ if (status === "loading") {
                           
                           {/* Delete Button */}
                           <button
-                            onClick={() => handleDeleteCart(cart.id)}
+                            onClick={() => openDeleteModal(cart.id, cart)}
                             className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl transition-all duration-300 flex items-center justify-center ${
                               themeMode === 'dark' 
                                 ? 'bg-[var(--error)]/20 text-[var(--error)] hover:bg-[var(--error)] hover:text-white' 

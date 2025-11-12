@@ -258,6 +258,7 @@ router.get("/most-popular", async (req, res) => {
       FROM products p
       LEFT JOIN order_items oi ON p.id = oi.product_id
       LEFT JOIN product_images pi ON p.id = pi.product_id
+      WHERE p.is_deleted = false
       GROUP BY p.id
       HAVING COALESCE(SUM(oi.quantity), 0) > 0
       ORDER BY total_sold DESC
@@ -284,6 +285,7 @@ router.get("/newest", async (req, res) => {
           ) AS images
       FROM products p
       LEFT JOIN product_images pi ON p.id = pi.product_id
+      WHERE p.is_deleted = false
       GROUP BY p.id
       ORDER BY p.created_at DESC
       LIMIT 10;

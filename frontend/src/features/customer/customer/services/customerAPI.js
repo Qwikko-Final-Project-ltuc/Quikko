@@ -159,7 +159,9 @@ checkout: async (data) => {
       paymentMethod: data.paymentMethod,
       paymentData: data.paymentData || {},
       coupon_code: data.coupon_code || null,
-      use_loyalty_points: data.use_loyalty_points || 0
+      use_loyalty_points: data.use_loyalty_points || 0,
+      total_amount: data.total_amount, // ✅ تأكد إنه موجود
+      calculated_totals: data.calculated_totals 
     };
 
     console.log("🛒 [API] Final checkout payload:", checkoutPayload);

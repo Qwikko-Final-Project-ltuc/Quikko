@@ -38,6 +38,7 @@ const Navbar = () => {
   const sidebarRef = useRef(null);
   const profileDropdownRef = useRef(null);
   const searchDropdownRef = useRef(null);
+  const searchInputRef = useRef(null);
 
   const { data: profile, loading } = useSelector((state) => state.profile);
   const products = useSelector((state) => state.products.items || []);
@@ -180,13 +181,27 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSearchSelect = (productName) => {
-    setSearchTerm(productName);
+  // دالة البحث الرئيسية
+  const handleSearch = (searchQuery = searchTerm) => {
+    if (!searchQuery.trim()) return;
+    
+    setSearchTerm(searchQuery);
     setResults([]);
     setSearchOpen(false);
     setShowMobileSearch(false);
-    dispatch(setSearchQuery(productName));
+    dispatch(setSearchQuery(searchQuery));
     navigate("/customer/products");
+  };
+
+  // دالة للتعامل مع زر Enter
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const handleSearchSelect = (productName) => {
+    handleSearch(productName);
   };
 
   const handleCityChange = (e) => {
@@ -481,6 +496,7 @@ const Navbar = () => {
             className="flex-1 flex items-center mr-4 lg:mr-8 relative"
           >
             <input
+              ref={searchInputRef}
               type="text"
               placeholder="Search products..."
               className="w-full border border-[var(--border)] rounded-lg px-4 py-2 bg-[var(--textbox)] text-[var(--mid-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--hover)]"
@@ -489,10 +505,11 @@ const Navbar = () => {
                 setSearchTerm(e.target.value);
                 setSearchOpen(true);
               }}
+              onKeyPress={handleKeyPress}
             />
             <button
               className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[var(--mid-dark)] hover:text-[var(--hover)] transition-colors duration-200"
-              onClick={() => handleSearchSelect(searchTerm)}
+              onClick={() => handleSearch()}
             >
               <FaSearch size={16} />
             </button>
@@ -656,7 +673,7 @@ const Navbar = () => {
                         {themeMode === "dark" ? (
                           <FaSun className="mr-3 text-sm" /> 
                         ) : (
-                          <FaCog className="mr-3 text-sm" /> 
+                          <FaMoon className="mr-3 text-sm" /> 
                         )}
                         <span className="flex-1 text-sm">
                           {themeMode === "dark" ? "Light Mode" : "Dark Mode"}
@@ -786,7 +803,7 @@ const Navbar = () => {
                         }`}
                       >
                         {themeMode === "dark" ? (
-                          <FaInfoCircle className="mr-3 text-sm" /> 
+                          <FaSun className="mr-3 text-sm" /> 
                         ) : (
                           <FaMoon className="mr-3 text-sm" />
                         )}
@@ -1003,6 +1020,7 @@ const Navbar = () => {
             className="flex items-center relative"
           >
             <input
+              ref={searchInputRef}
               type="text"
               placeholder="Search products..."
               className="w-full border border-[var(--border)] rounded-lg px-4 py-2 bg-[var(--textbox)] text-[var(--mid-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--hover)]"
@@ -1011,10 +1029,11 @@ const Navbar = () => {
                 setSearchTerm(e.target.value);
                 setSearchOpen(true);
               }}
+              onKeyPress={handleKeyPress}
             />
             <button
               className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[var(--mid-dark)] hover:text-[var(--hover)] transition-colors duration-200"
-              onClick={() => handleSearchSelect(searchTerm)}
+              onClick={() => handleSearch()}
             >
               <FaSearch size={16} />
             </button>

@@ -5,6 +5,23 @@ import CartItem from "../components/CartItem";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 
+// Toast Notification Component
+const Toast = ({ message, type = "success", onClose }) => {
+  const bgColor = type === "success" ? "bg-green-500" : "bg-red-500";
+  
+  return (
+    <div className={`fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3 animate-in slide-in-from-right duration-300`}>
+      <span>{message}</span>
+      <button 
+        onClick={onClose}
+        className="text-white hover:text-gray-200 text-lg font-bold"
+      >
+        ×
+      </button>
+    </div>
+  );
+};
+
 const CartDetailPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -17,6 +34,14 @@ const CartDetailPage = () => {
   const [modalMsg, setModalMsg] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [redirectToLogin, setRedirectToLogin] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: "", type: "success" });
+    }, 4000);
+  };
 
   const showModal = (msg, shouldRedirect = false) => {
     setModalMsg(msg);
@@ -30,9 +55,11 @@ const CartDetailPage = () => {
       navigate("/customer/login");
     }
   };
+  
   const storedUser = JSON.parse(localStorage.getItem("user"));
   const [appliedCoupons, setAppliedCoupons] = useState({});
   const [totalDiscount, setTotalDiscount] = useState(0);
+  const [applyingCoupon, setApplyingCoupon] = useState(null); // Track which coupon is being applied
 
   // Fetch cart from server
   useEffect(() => {
@@ -49,6 +76,7 @@ const CartDetailPage = () => {
         if (!acc[vendor]) {
           acc[vendor] = {
             items: [],
+            vendor_id: item.vendor_id // Store vendor_id for coupon handling
           };
         }
         acc[vendor].items.push(item);
@@ -99,12 +127,19 @@ const CartDetailPage = () => {
       });
     } catch (err) {
       console.error("Checkout failed", err);
+      showToast("Checkout failed. Please try again.", "error");
     }
   };
 
   const handleApplyCoupon = async (couponCode, couponVendorId) => {
     if (!currentCart?.id) {
-      alert("Cart not loaded yet");
+      showToast("Cart not loaded yet", "error");
+      return;
+    }
+
+    // Check if coupon already applied for this vendor
+    if (appliedCoupons[couponVendorId]) {
+      showToast("Coupon already applied for this vendor", "error");
       return;
     }
 
@@ -113,7 +148,7 @@ const CartDetailPage = () => {
     );
 
     if (itemsFromVendor.length === 0) {
-      alert("No items from this vendor found in the cart.");
+      showToast("No items from this vendor found in the cart.", "error");
       return;
     }
 
@@ -125,6 +160,8 @@ const CartDetailPage = () => {
       vendor_id: item.vendor_id,
       coupons: item.coupons || [],
     }));
+
+    setApplyingCoupon(couponVendorId);
 
     try {
       const res = await fetch(`http://localhost:3000/api/coupons/validate`, {
@@ -156,23 +193,45 @@ const CartDetailPage = () => {
           (prevTotal) => prevTotal + Number(data.discount_amount)
         );
 
-        alert(
-          `Coupon "${couponCode}" applied! Discount: $${data.discount_amount}`
-        );
+        showToast(`Coupon "${couponCode}" applied! Discount: $${data.discount_amount}`, "success");
       } else {
-        alert(data.message || "Invalid coupon");
+        showToast(data.message || "Invalid coupon", "error");
       }
     } catch (err) {
       console.error("Failed to apply coupon", err);
+      showToast("Failed to apply coupon. Please try again.", "error");
+    } finally {
+      setApplyingCoupon(null);
+    }
+  };
+
+  const handleRemoveCoupon = (vendorId) => {
+    const couponToRemove = appliedCoupons[vendorId];
+    if (couponToRemove) {
+      setAppliedCoupons(prev => {
+        const newAppliedCoupons = { ...prev };
+        delete newAppliedCoupons[vendorId];
+        return newAppliedCoupons;
+      });
+      
+      setTotalDiscount(prevTotal => prevTotal - couponToRemove.discount);
+      showToast(`Coupon "${couponToRemove.code}" removed`, "success");
     }
   };
 
   const discountedTotal = total - totalDiscount;
-  console.log("Total discount from all coupons:", totalDiscount);
-  console.log("Final total:", discountedTotal);
 
   return (
     <div className={`min-h-screen ${themeMode === 'dark' ? 'bg-[var(--bg)]' : 'bg-white'} transition-colors duration-300`}>
+      {/* Toast Notification */}
+      {toast.show && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast({ show: false, message: "", type: "success" })}
+        />
+      )}
+
       {/* Modal */}
       {modalVisible && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
@@ -342,57 +401,58 @@ const CartDetailPage = () => {
           /* Enhanced Cart Content */
           <div className="space-y-4 sm:space-y-6">
             {/* Vendors Sections */}
-            {Object.entries(groupedItems).map(([vendor, vendorData]) => (
-              <div
-                key={vendor}
-                className={`rounded-2xl p-6 shadow-lg border-2 transition-all duration-300 ${
-                  themeMode === "dark"
-                    ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)] hover:border-[var(--button)]/50"
-                    : "bg-[var(--textbox)] border-gray-200 hover:border-[var(--button)]/30 hover:shadow-xl"
-                }`}
-              >
-                {/* Vendor Header */}
-                <div className="flex items-center gap-4 mb-6 pb-4 border-b border-[var(--border)]">
-                  <div
-                    className={`p-3 rounded-xl ${
-                      themeMode === "dark"
-                        ? "bg-[var(--button)]/10 text-[var(--text)]"
-                        : "bg-[var(--button)]/5 text-[var(--button)]"
-                    }`}
-                  >
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                      />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h2
-                      className={`text-xl font-bold ${
-                        themeMode === "dark" ? "text-white" : "text-gray-900"
+            {Object.entries(groupedItems).map(([vendor, vendorData]) => {
+              const isCouponApplied = appliedCoupons[vendorData.vendor_id];
+              const isApplying = applyingCoupon === vendorData.vendor_id;
+              
+              return (
+                <div
+                  key={vendor}
+                  className={`rounded-2xl p-6 shadow-lg border-2 transition-all duration-300 ${
+                    themeMode === "dark"
+                      ? "bg-gradient-to-br from-[var(--div)] to-[var(--mid-dark)] border-[var(--border)] hover:border-[var(--button)]/50"
+                      : "bg-[var(--textbox)] border-gray-200 hover:border-[var(--button)]/30 hover:shadow-xl"
+                  }`}
+                >
+                  {/* Vendor Header */}
+                  <div className="flex items-center gap-4 mb-6 pb-4 border-b border-[var(--border)]">
+                    <div
+                      className={`p-3 rounded-xl ${
+                        themeMode === "dark"
+                          ? "bg-[var(--button)]/10 text-[var(--text)]"
+                          : "bg-[var(--button)]/5 text-[var(--button)]"
                       }`}
                     >
-                      {vendor}
-                    </h2>
+                      <svg
+                        className="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                        />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h2
+                        className={`text-xl font-bold ${
+                          themeMode === "dark" ? "text-white" : "text-gray-900"
+                        }`}
+                      >
+                        {vendor}
+                      </h2>
 
-                    {vendorData.items[0]?.coupons?.length > 0 && (
-                      <div className="mt-2 space-y-2">
-                        {vendorData.items[0].coupons.map((coupon, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between bg-[var(--button)]/10 px-3 py-2 rounded-xl text-sm"
-                          >
+                      {/* Applied Coupon Display */}
+                      {isCouponApplied && (
+                        <div className="mt-2 mb-3">
+                          <div className="flex items-center justify-between bg-green-500/10 px-3 py-2 rounded-xl text-sm border border-green-500/20">
                             <div className="flex items-center gap-2">
                               <svg
-                                className="w-4 h-4 text-[var(--button)]"
+                                className="w-4 h-4 text-green-500"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -401,56 +461,99 @@ const CartDetailPage = () => {
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
                                   strokeWidth={2}
-                                  d="M9 14l2-2 4 4m0 0l4-4m-4 4V3"
+                                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                                 />
                               </svg>
-                              <span className="font-semibold text-[var(--text)]">
-                                Coupon available:
-                                <span className={`${themeMode === "dark" ? "text-white" : "text-[var(--button)]"}`}>
-                                  {coupon.code} ({coupon.discount_value}%)
-                                </span>
+                              <span className="font-semibold text-green-600 dark:text-green-400">
+                                Coupon applied: {isCouponApplied.code} (${isCouponApplied.discount.toFixed(2)} off)
                               </span>
                             </div>
                             <button
-                              onClick={() =>
-                                handleApplyCoupon(
-                                  coupon.code,
-                                  vendorData.items[0].vendor_id
-                                )
-                              }
-                              className="bg-[var(--button)] text-white px-4 py-2 rounded-lg hover:bg-[#015c40] transition-all duration-300 text-xs font-semibold"
+                              onClick={() => handleRemoveCoupon(vendorData.vendor_id)}
+                              className="text-red-500 hover:text-red-700 text-sm font-semibold transition-colors duration-200"
+                              disabled={isApplying}
                             >
-                              Apply
+                              Remove
                             </button>
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        </div>
+                      )}
 
-                    <p
-                      className={`text-sm ${
-                        themeMode === "dark" ? "text-gray-400" : "text-gray-600"
-                      }`}
-                    >
-                      {vendorData.items.length} product
-                      {vendorData.items.length !== 1 ? "s" : ""} •{" "}
-                      {vendorData.items.reduce(
-                        (sum, item) => sum + (item.quantity || 0),
-                        0
-                      )}{" "}
-                      items
-                    </p>
+                      {/* Available Coupons */}
+                      {!isCouponApplied && vendorData.items[0]?.coupons?.length > 0 && (
+                        <div className="mt-2 space-y-2">
+                          {vendorData.items[0].coupons.map((coupon, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center justify-between bg-[var(--button)]/10 px-3 py-2 rounded-xl text-sm"
+                            >
+                              <div className="flex items-center gap-2">
+                                <svg
+                                  className="w-4 h-4 text-[var(--button)]"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 14l2-2 4 4m0 0l4-4m-4 4V3"
+                                  />
+                                </svg>
+                                <span className="font-semibold text-[var(--text)]">
+                                  Coupon available:
+                                  <span className={`${themeMode === "dark" ? "text-white" : "text-[var(--button)]"}`}>
+                                    {coupon.code} ({coupon.discount_value}%)
+                                  </span>
+                                </span>
+                              </div>
+                              <button
+                                onClick={() =>
+                                  handleApplyCoupon(
+                                    coupon.code,
+                                    vendorData.vendor_id
+                                  )
+                                }
+                                disabled={isApplying || isCouponApplied}
+                                className={`px-4 py-2 rounded-lg transition-all duration-300 text-xs font-semibold ${
+                                  isApplying || isCouponApplied
+                                    ? "bg-gray-400 cursor-not-allowed text-gray-200"
+                                    : "bg-[var(--button)] text-white hover:bg-[#015c40]"
+                                }`}
+                              >
+                                {isApplying ? "Applying..." : "Apply"}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <p
+                        className={`text-sm ${
+                          themeMode === "dark" ? "text-gray-400" : "text-gray-600"
+                        }`}
+                      >
+                        {vendorData.items.length} product
+                        {vendorData.items.length !== 1 ? "s" : ""} •{" "}
+                        {vendorData.items.reduce(
+                          (sum, item) => sum + (item.quantity || 0),
+                          0
+                        )}{" "}
+                        items
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Items List */}
+                  <div className="space-y-3 sm:space-y-4 text-[var(--text)]">
+                    {vendorData.items.map((item) => (
+                      <CartItem key={item.id} item={item} />
+                    ))}
                   </div>
                 </div>
-
-                {/* Items List */}
-                <div className="space-y-3 sm:space-y-4 text-[var(--text)]">
-                  {vendorData.items.map((item) => (
-                    <CartItem key={item.id} item={item} />
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Enhanced Checkout Section */}
             <div

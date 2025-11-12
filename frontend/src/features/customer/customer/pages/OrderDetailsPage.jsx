@@ -103,7 +103,7 @@ const OrderDetailsPage = () => {
   const [paymentMethod, setPaymentMethod] = useState("cod");
 
   // States for pricing breakdown
-  const [deliveryFee, setDeliveryFee] = useState(null);
+  const [deliveryFee, setDeliveryFee] = useState(0);
   const [subtotal, setSubtotal] = useState(0);
   const [totalWithShipping, setTotalWithShipping] = useState(0);
   const [finalTotal, setFinalTotal] = useState(0);
@@ -199,65 +199,61 @@ const OrderDetailsPage = () => {
     fetchLoyaltyPoints();
   }, []);
 
- useEffect(() => {
-  if (cartFromState) {
-    dispatch(setCurrentCart(cartFromState));
-  } else if (orderId) {
-    dispatch(fetchCart(orderId));
-  }
-
-  const isReorder = location.state?.reorder;
-  
-  if (isReorder) {
-    console.log("🔄 Reorder flow - resetting coupon data");
-    setAppliedCoupon({
-      discount_amount: 0,
-      code: null,
-    });
-    localStorage.removeItem("appliedCoupon");
-    return; // توقف هنا علشان ما تشتغلش على الـ coupon
-  }
-
-  // ✅ فقط للـ orders العادية (ليست reorder)
-  if (appliedCouponFromState && appliedCouponFromState !== null) {
-    console.log("🎫 Regular order with coupon:", appliedCouponFromState);
-    
-    let totalDiscount = 0;
-
-    // تحقق آمن من الـ coupon data
-    if (typeof appliedCouponFromState === "object") {
-      // استخدم optional chaining علشان تتجنب الأخطاء
-      Object.values(appliedCouponFromState).forEach((c) => {
-        if (c && typeof c === 'object') {
-          totalDiscount += Number(c?.discount || 0);
-        }
-      });
-    } else {
-      totalDiscount = Number(appliedCouponFromState?.discount_amount || 0);
+  useEffect(() => {
+    if (cartFromState) {
+      dispatch(setCurrentCart(cartFromState));
+    } else if (orderId) {
+      dispatch(fetchCart(orderId));
     }
 
-    setAppliedCoupon({
-      discount_amount: totalDiscount,
-      code: null,
-    });
+    const isReorder = location.state?.reorder;
+    
+    if (isReorder) {
+      console.log("🔄 Reorder flow - resetting coupon data");
+      setAppliedCoupon({
+        discount_amount: 0,
+        code: null,
+      });
+      localStorage.removeItem("appliedCoupon");
+      return;
+    }
 
-    localStorage.setItem(
-      "appliedCoupon",
-      JSON.stringify({
+    if (appliedCouponFromState && appliedCouponFromState !== null) {
+      console.log("🎫 Regular order with coupon:", appliedCouponFromState);
+      
+      let totalDiscount = 0;
+
+      if (typeof appliedCouponFromState === "object") {
+        Object.values(appliedCouponFromState).forEach((c) => {
+          if (c && typeof c === 'object') {
+            totalDiscount += Number(c?.discount || 0);
+          }
+        });
+      } else {
+        totalDiscount = Number(appliedCouponFromState?.discount_amount || 0);
+      }
+
+      setAppliedCoupon({
         discount_amount: totalDiscount,
         code: null,
-      })
-    );
-  } else {
-    // حالة افتراضية
-    setAppliedCoupon({
-      discount_amount: 0,
-      code: null,
-    });
-  }
-}, [cartFromState, appliedCouponFromState, orderId, dispatch, location.state]);
+      });
 
-  // Calculate pricing breakdown
+      localStorage.setItem(
+        "appliedCoupon",
+        JSON.stringify({
+          discount_amount: totalDiscount,
+          code: null,
+        })
+      );
+    } else {
+      setAppliedCoupon({
+        discount_amount: 0,
+        code: null,
+      });
+    }
+  }, [cartFromState, appliedCouponFromState, orderId, dispatch, location.state]);
+
+  // ✅ حساب الـ Subtotal فقط
   useEffect(() => {
     const cartSubtotal =
       currentCart?.items?.reduce(
@@ -266,27 +262,16 @@ const OrderDetailsPage = () => {
       ) || 0;
 
     setSubtotal(cartSubtotal);
-    setDeliveryFee(null);
-    setTotalWithShipping(cartSubtotal);
-  }, [currentCart, address]);
+  }, [currentCart]);
 
-  // Update delivery fee after successful order
-  useEffect(() => {
-    if (orderSuccess?.order?.delivery_fee) {
-      setDeliveryFee(orderSuccess.order.delivery_fee);
-      setTotalWithShipping(subtotal + orderSuccess.order.delivery_fee);
-    }
-  }, [orderSuccess, subtotal]);
-
-  // حساب الخصم بناءً على النقاط المستخدمة
+  // ✅ حساب خصم النقاط
   const calculatePointsDiscount = (points) => {
-    // كل 100 نقطة = 10% خصم، بحد أقصى 50%
     const discountPercent = Math.min(Math.floor(points / 100) * 10, 50);
     const discount = (subtotal * discountPercent) / 100;
     return { discountPercent, discount };
   };
 
-  // تحديث الخصم عند تغيير النقاط المستخدمة
+  // ✅ تحديث خصم النقاط
   useEffect(() => {
     if (usePointsChecked && userPointsToUse > 0) {
       const { discount } = calculatePointsDiscount(userPointsToUse);
@@ -297,22 +282,54 @@ const OrderDetailsPage = () => {
     }
   }, [userPointsToUse, usePointsChecked, subtotal]);
 
-  // Calculate final total after discounts
+  // ✅ حساب كل شيء في useEffect واحد - التسلسل الصحيح
   useEffect(() => {
-    let totalAfterDiscount = totalWithShipping || 0;
+    console.log("🔄 Calculating final total...", {
+      subtotal,
+      deliveryFee,
+      couponDiscount: appliedCoupon?.discount_amount,
+      pointsDiscount,
+      usePointsChecked
+    });
 
-    if (appliedCoupon?.discount_amount) {
-      totalAfterDiscount -= Number(appliedCoupon.discount_amount);
+    // الخطوة 1: حساب الـ Total With Shipping
+    const calculatedTotalWithShipping = subtotal + (deliveryFee || 0);
+
+    // الخطوة 2: تطبيق خصم الكوبون
+    let totalAfterCoupon = calculatedTotalWithShipping;
+    if (appliedCoupon?.discount_amount && appliedCoupon.discount_amount > 0) {
+      totalAfterCoupon -= Number(appliedCoupon.discount_amount);
     }
 
+    // الخطوة 3: تطبيق خصم النقاط
+    let finalTotalValue = totalAfterCoupon;
     if (usePointsChecked && pointsDiscount > 0) {
-      totalAfterDiscount -= pointsDiscount;
+      finalTotalValue -= pointsDiscount;
     }
 
-    if (totalAfterDiscount < 0) totalAfterDiscount = 0;
+    // الخطوة 4: التأكد من أن القيمة موجبة
+    if (finalTotalValue < 0) finalTotalValue = 0;
 
-    setFinalTotal(totalAfterDiscount);
-  }, [totalWithShipping, appliedCoupon, usePointsChecked, pointsDiscount]);
+    setTotalWithShipping(calculatedTotalWithShipping);
+    setFinalTotal(finalTotalValue);
+
+    console.log("✅ Final calculation:", {
+      subtotal,
+      deliveryFee,
+      totalWithShipping: calculatedTotalWithShipping,
+      couponDiscount: appliedCoupon?.discount_amount,
+      pointsDiscount,
+      finalTotal: finalTotalValue
+    });
+
+  }, [subtotal, deliveryFee, appliedCoupon, pointsDiscount, usePointsChecked]);
+
+  // ✅ تحديث delivery fee بعد الطلب الناجح
+  useEffect(() => {
+    if (orderSuccess?.order?.delivery_fee) {
+      setDeliveryFee(orderSuccess.order.delivery_fee);
+    }
+  }, [orderSuccess]);
 
   const fullAddress = {
     address_line1: address.address_line1,
@@ -323,43 +340,45 @@ const OrderDetailsPage = () => {
     country: address.country,
   };
 
-  const handleCalculateDelivery = async () => {
-    if (!address.address_line1 || !address.city) {
-      setDeliveryFee(null);
-      setTotalWithShipping(subtotal);
-      return;
-    }
+const handleCalculateDelivery = async () => {
+  if (!address.address_line1 || !address.city) {
+    showToast("Please enter address and city first", "warning");
+    setDeliveryFee(0);
+    return;
+  }
 
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(
-        "http://localhost:3000/api/customers/calculate-delivery-preview",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            cart_id: currentCart?.id,
-            address: fullAddress,
-          }),
-        }
-      );
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch(
+      "http://localhost:3000/api/customers/calculate-delivery-preview",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          cart_id: currentCart?.id,
+          address: fullAddress,
+        }),
+      }
+    );
 
-      if (!res.ok) throw new Error("Failed to calculate delivery fee");
+    if (!res.ok) throw new Error("Failed to calculate delivery fee");
 
-      const data = await res.json();
-      const fee = data.order?.delivery_fee || 0;
+    const data = await res.json();
+    const fee = data.order?.delivery_fee || 0;
 
-      setDeliveryFee(fee);
-      setTotalWithShipping(subtotal + fee);
-    } catch (err) {
-      console.error("Error calculating delivery:", err);
-      setDeliveryFee(0);
-      setTotalWithShipping(subtotal);
-    }
-  };
+    // ✅ حول الـ deliveryFee لـ number
+    setDeliveryFee(Number(fee)); // 🔥 هون التعديل
+    showToast(`Delivery fee calculated: $${fee.toFixed(2)}`, "success");
+    
+  } catch (err) {
+    console.error("Error calculating delivery:", err);
+    setDeliveryFee(0);
+    showToast("Using default delivery fee", "info");
+  }
+};
 
   const detectBrand = (num) => {
     if (!num) return "";
@@ -454,15 +473,13 @@ const OrderDetailsPage = () => {
     const newUsePointsChecked = !usePointsChecked;
     
     if (newUsePointsChecked) {
-      // عند تفعيل استخدام النقاط
       if (loyaltyPoints === 0) {
         setPointsError("You don't have any loyalty points to use.");
         showToast("You don't have any loyalty points to use.", "warning");
         return;
       }
       
-      // تعيين القيمة الافتراضية للنقاط المستخدمة
-      const defaultPoints = Math.min(loyaltyPoints, 100); // استخدام 100 نقطة كقيمة افتراضية
+      const defaultPoints = Math.min(loyaltyPoints, 100);
       setUserPointsToUse(defaultPoints);
       setUsePointsChecked(true);
       setPointsError("");
@@ -470,7 +487,6 @@ const OrderDetailsPage = () => {
       console.log("✅ Points usage enabled:", { defaultPoints, loyaltyPoints });
       showToast("Loyalty points enabled!", "success");
     } else {
-      // عند إلغاء استخدام النقاط
       setUsePointsChecked(false);
       setUserPointsToUse(0);
       setPointsError("");
@@ -498,168 +514,186 @@ const OrderDetailsPage = () => {
     }
   };
 
-  const handleCheckoutClick = async () => {
-    // التحقق من العنوان
-    if (!address.address_line1 || !address.city) {
-      showToast("Address Line 1 and City are required!", "error");
+const handleCheckoutClick = async () => {
+  // التحقق من العنوان
+  if (!address.address_line1 || !address.city) {
+    showToast("Address Line 1 and City are required!", "error");
+    return;
+  }
+
+  // التحقق من النقاط المستخدمة
+  if (usePointsChecked) {
+    if (userPointsToUse > loyaltyPoints) {
+      showToast(`Cannot use more points than available. You have ${loyaltyPoints} points.`, "error");
       return;
     }
+    
+    if (userPointsToUse <= 0) {
+      showToast("Please enter a valid number of points to use.", "error");
+      return;
+    }
+  }
 
-    // التحقق من النقاط المستخدمة
-    if (usePointsChecked) {
-      if (userPointsToUse > loyaltyPoints) {
-        showToast(`Cannot use more points than available. You have ${loyaltyPoints} points.`, "error");
-        return;
-      }
-      
-      if (userPointsToUse <= 0) {
-        showToast("Please enter a valid number of points to use.", "error");
+  setCheckoutLoading(true);
+  setCheckoutError(null);
+
+  try {
+    const paymentData =
+      paymentMethod === "card"
+        ? {
+            transactionId: `card_SANDBOX_${Date.now()}`,
+            card_last4: card.number.slice(-4),
+            card_brand: detectBrand(card.number),
+            expiry_month: parseInt(card.expiryMonth, 10),
+            expiry_year: parseInt(card.expiryYear, 10),
+          }
+        : {};
+
+    const loyaltyPointsToUse = usePointsChecked ? Number(userPointsToUse) : 0;
+
+    if (paymentMethod === "card") {
+      const vErr = validateCardFields();
+      if (vErr) {
+        setCardError(vErr);
+        setCheckoutLoading(false);
         return;
       }
     }
 
-    setCheckoutLoading(true);
-    setCheckoutError(null);
+    // إعداد العناصر للسيرفر
+    const itemsForServer = currentCart.items.map((item) => ({
+      product_id: Number(item.product_id || item.id),
+      quantity: Number(item.quantity),
+      price: Number(item.price),
+      vendor_id: Number(item.vendor_id || (item.vendor && item.vendor.id) || 0),
+    }));
 
-    try {
-      const paymentData =
-        paymentMethod === "card"
-          ? {
-              transactionId: `card_SANDBOX_${Date.now()}`,
-              card_last4: card.number.slice(-4),
-              card_brand: detectBrand(card.number),
-              expiry_month: parseInt(card.expiryMonth, 10),
-              expiry_year: parseInt(card.expiryYear, 10),
-            }
-          : {};
-
-      // ✅ إعداد بيانات نقاط الولاء للخلفية
-      const loyaltyPointsToUse = usePointsChecked ? Number(userPointsToUse) : 0;
-
-      if (paymentMethod === "card") {
-        const vErr = validateCardFields();
-        if (vErr) {
-          setCardError(vErr);
-          setCheckoutLoading(false);
-          return;
-        }
+    // ✅ إضافة الـ final_total إلى الـ payload
+    const checkoutPayload = {
+      cart_id: currentCart.id,
+      address: fullAddress,
+      paymentMethod: paymentMethod === "card" ? "credit_card" : paymentMethod,
+      paymentData,
+      coupon_code: appliedCouponFromState?.code || null,
+      use_loyalty_points: loyaltyPointsToUse,
+      cartItems: itemsForServer,
+      // ✅ إضافة الـ finalTotal كـ total_amount
+      total_amount: parseFloat(finalTotal.toFixed(2)),
+      // ✅ أو يمكنك إرسال كل القيم للتحقق
+      calculated_totals: {
+        subtotal: parseFloat(subtotal.toFixed(2)),
+        delivery_fee: parseFloat(deliveryFee.toFixed(2)),
+        coupon_discount: parseFloat(appliedCoupon?.discount_amount || 0).toFixed(2),
+        points_discount: parseFloat(pointsDiscount.toFixed(2)),
+        final_total: parseFloat(finalTotal.toFixed(2))
       }
+    };
+    
+    console.log("🛒 Checkout payload with final total:", checkoutPayload);
+    
+    const newOrder = await customerAPI.checkout(checkoutPayload);
+    
+    console.log("✅ Order created with total_amount:", newOrder.order?.total_amount);
+    
+    await dispatch(deleteCart(currentCart.id)).unwrap();
+    dispatch(fetchOrders());
 
-      // إعداد العناصر للسيرفر
-      const itemsForServer = currentCart.items.map((item) => ({
-        product_id: Number(item.product_id || item.id),
-        quantity: Number(item.quantity),
-        price: Number(item.price),
-        vendor_id: Number(item.vendor_id || (item.vendor && item.vendor.id) || 0),
-      }));
+    const methodLabel =
+      paymentMethod === "cod"
+        ? "Cash on Delivery"
+        : paymentMethod === "card"
+        ? "Credit Card"
+        : "PayPal";
 
-      // لا ترسل deliveryFee محسوبة مسبقاً - دع الباك إند يحسبها
-      const checkoutPayload = {
-        cart_id: currentCart.id,
-        address: fullAddress,
-        paymentMethod: paymentMethod === "card" ? "credit_card" : paymentMethod,
-        paymentData,
-        coupon_code: appliedCouponFromState?.code || null,
-        use_loyalty_points: loyaltyPointsToUse,
-        cartItems: itemsForServer,
-      };
-      
-      const newOrder = await customerAPI.checkout(checkoutPayload);
-      
-      console.log("✅ Order created:", newOrder);
-      console.log("🎯 Order discount from points:", newOrder.order?.discount_amount);
-      
-      await dispatch(deleteCart(currentCart.id)).unwrap();
-      dispatch(fetchOrders());
+    setOrderSuccess({
+      method: methodLabel,
+      transactionId: checkoutPayload.paymentData?.transactionId,
+      order: newOrder.order,
+    });
 
-      const methodLabel =
-        paymentMethod === "cod"
-          ? "Cash on Delivery"
-          : paymentMethod === "card"
-          ? "Credit Card"
-          : "PayPal";
-
-      setOrderSuccess({
-        method: methodLabel,
-        transactionId: checkoutPayload.paymentData?.transactionId,
-        order: newOrder.order,
-      });
-
-      if (newOrder.order?.delivery_fee) {
-        setDeliveryFee(newOrder.order.delivery_fee);
-      }
-      
-      showToast("Order placed successfully!", "success");
-      setTimeout(() => {
-        navigate("/customer/orders");
-      }, 1500);
-
-    } catch (err) {
-      console.error("❌ Checkout failed:", err);
-      const errorMessage = err.response?.data?.error || err.message;
-      setCheckoutError(errorMessage);
-      showToast(errorMessage, "error");
-    } finally {
-      setCheckoutLoading(false);
+    if (newOrder.order?.delivery_fee) {
+      setDeliveryFee(newOrder.order.delivery_fee);
     }
-  };
+    
+    showToast("Order placed successfully!", "success");
+    setTimeout(() => {
+      navigate("/customer/orders");
+    }, 1500);
+
+  } catch (err) {
+    console.error("❌ Checkout failed:", err);
+    const errorMessage = err.response?.data?.error || err.message;
+    setCheckoutError(errorMessage);
+    showToast(errorMessage, "error");
+  } finally {
+    setCheckoutLoading(false);
+  }
+};
 
   useEffect(() => {
-    if (paymentMethod === "paypal" && window.paypal && currentCart) {
-      window.paypal
-        .Buttons({
-          createOrder: (data, actions) =>
-            actions.order.create({
-              purchase_units: [{ amount: { value: finalTotal.toFixed(2) } }],
-            }),
-          onApprove: async (data, actions) => {
-            const details = await actions.order.capture();
-            try {
-              setCheckoutLoading(true);
-              setCheckoutError(null);
-              const transactionId =
-                details.id ||
-                details.purchase_units?.[0]?.payments?.captures?.[0]?.id ||
-                null;
-              
-              const loyaltyPointsToUse = usePointsChecked ? Number(userPointsToUse) : 0;
-              
-              const newOrder = await customerAPI.checkout({
-                cart_id: currentCart.id,
-                address: fullAddress,
-                paymentMethod: "paypal",
-                paymentData: { transactionId },
-                coupon_code: appliedCoupon?.code || null,
-                use_loyalty_points: loyaltyPointsToUse,
-              });
-
-              await dispatch(deleteCart(currentCart.id)).unwrap();
-              dispatch(fetchOrders());
-              setOrderSuccess({ method: "PayPal", transactionId, order: newOrder.order });
-              
-              if (newOrder.order?.delivery_fee) {
-                setDeliveryFee(newOrder.order.delivery_fee);
+  if (paymentMethod === "paypal" && window.paypal && currentCart) {
+    window.paypal
+      .Buttons({
+        createOrder: (data, actions) =>
+          actions.order.create({
+            purchase_units: [{ amount: { value: finalTotal.toFixed(2) } }],
+          }),
+        onApprove: async (data, actions) => {
+          const details = await actions.order.capture();
+          try {
+            setCheckoutLoading(true);
+            setCheckoutError(null);
+            const transactionId =
+              details.id ||
+              details.purchase_units?.[0]?.payments?.captures?.[0]?.id ||
+              null;
+            
+            const loyaltyPointsToUse = usePointsChecked ? Number(userPointsToUse) : 0;
+            
+            // ✅ إضافة الـ finalTotal هنا أيضاً
+            const newOrder = await customerAPI.checkout({
+              cart_id: currentCart.id,
+              address: fullAddress,
+              paymentMethod: "paypal",
+              paymentData: { transactionId },
+              coupon_code: appliedCoupon?.code || null,
+              use_loyalty_points: loyaltyPointsToUse,
+              total_amount: parseFloat(finalTotal.toFixed(2)),
+              calculated_totals: {
+                subtotal: parseFloat(subtotal.toFixed(2)),
+                delivery_fee: parseFloat(deliveryFee.toFixed(2)),
+                coupon_discount: parseFloat(appliedCoupon?.discount_amount || 0).toFixed(2),
+                points_discount: parseFloat(pointsDiscount.toFixed(2)),
+                final_total: parseFloat(finalTotal.toFixed(2))
               }
-              
-              showToast("Order placed successfully with PayPal!", "success");
-              setTimeout(() => {
-                navigate("/customer/orders");
-              }, 1500);
+            });
 
-            } catch (err) {
-              console.error("Checkout failed:", err);
-              const errorMessage = err.response?.data?.error || err.message;
-              setCheckoutError(errorMessage);
-              showToast(errorMessage, "error");
-            } finally {
-              setCheckoutLoading(false);
+            await dispatch(deleteCart(currentCart.id)).unwrap();
+            dispatch(fetchOrders());
+            setOrderSuccess({ method: "PayPal", transactionId, order: newOrder.order });
+            
+            if (newOrder.order?.delivery_fee) {
+              setDeliveryFee(newOrder.order.delivery_fee);
             }
-          },
-        })
-        .render("#paypal-button-container");
-    }
-  }, [paymentMethod, finalTotal, currentCart, dispatch, usePointsChecked, userPointsToUse, appliedCoupon, fullAddress, navigate]);
+            
+            showToast("Order placed successfully with PayPal!", "success");
+            setTimeout(() => {
+              navigate("/customer/orders");
+            }, 1500);
 
+          } catch (err) {
+            console.error("Checkout failed:", err);
+            const errorMessage = err.response?.data?.error || err.message;
+            setCheckoutError(errorMessage);
+            showToast(errorMessage, "error");
+          } finally {
+            setCheckoutLoading(false);
+          }
+        },
+      })
+      .render("#paypal-button-container");
+  }
+}, [paymentMethod, finalTotal, currentCart, dispatch, usePointsChecked, userPointsToUse, appliedCoupon, fullAddress, navigate]);
   // CSS classes based on theme
   const containerClass = themeMode === 'dark' 
     ? 'bg-[var(--bg)] text-[var(--text)]' 
@@ -951,14 +985,10 @@ const OrderDetailsPage = () => {
                           </button>
                         </div>
                       </div>
-                      
                     </div>
-                    
-                    
                   </div>
                 </div>
                 <div className="h-4 md:h-6 lg:h-8 xl:h-8"></div>
-
               </div>
 
               {/* Right Column - Order Summary & Payment */}
@@ -985,9 +1015,9 @@ const OrderDetailsPage = () => {
                         Delivery Fee
                       </span>
                       <span className="font-semibold text-[var(--text)] text-sm">
-                        {deliveryFee === null ? (
-                          <span className="text-yellow-600 dark:text-yellow-400 text-xs animate-pulse">
-                            Calculating...
+                        {deliveryFee === 0 ? (
+                          <span className="text-yellow-600 dark:text-yellow-400 text-xs">
+                            Click Calculate
                           </span>
                         ) : (
                           `$${deliveryFee.toFixed(2)}`
@@ -1177,104 +1207,106 @@ const OrderDetailsPage = () => {
                     </div>
 
                     {paymentMethod === "card" && (
-                      <div className={`space-y-3 ${cardClass} rounded-xl p-4 border-2 animate-fade-in backdrop-blur-sm mt-3`}>
-                        <div>
-                          <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Card Number</label>
-                          <input
-                            placeholder="1234 5678 9012 3456"
-                            value={card.number}
-                            onChange={(e) => setCard({ ...card, number: e.target.value })}
-                            className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Expiry Month</label>
-                            <input
-                              placeholder="MM"
-                              value={card.expiryMonth}
-                              onChange={(e) => setCard({ ...card, expiryMonth: e.target.value })}
-                              className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Expiry Year</label>
-                            <input
-                              placeholder="YYYY"
-                              value={card.expiryYear}
-                              onChange={(e) => setCard({ ...card, expiryYear: e.target.value })}
-                              className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
-                            />
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">CVC</label>
-                            <input
-                              placeholder="123"
-                              value={card.cvc}
-                              onChange={(e) => setCard({ ...card, cvc: e.target.value })}
-                              className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Cardholder Name</label>
-                            <input
-                              placeholder="John Doe"
-                              value={card.name}
-                              onChange={(e) => setCard({ ...card, name: e.target.value })}
-                              className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
-                            />
-                          </div>
-                        </div>
-                        {cardError && (
-                          <p className={`p-2.5 ${errorClass} rounded-xl font-medium tracking-tight text-xs backdrop-blur-sm`}>
-                            {cardError}
-                          </p>
-                        )}
-                      </div>
-                    )}
+  <div className={`space-y-3 ${cardClass} rounded-xl p-4 border-2 animate-fade-in backdrop-blur-sm mt-3`}>
+    <div>
+      <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Card Number</label>
+      <input
+        placeholder="1234 5678 9012 3456"
+        value={card.number}
+        onChange={(e) => setCard({ ...card, number: e.target.value })}
+        className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
+      />
+    </div>
+    <div className="grid grid-cols-2 gap-3">
+      <div>
+        <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Expiry Month</label>
+        <input
+          placeholder="MM"
+          value={card.expiryMonth}
+          onChange={(e) => setCard({ ...card, expiryMonth: e.target.value })}
+          className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Expiry Year</label>
+        <input
+          placeholder="YYYY"
+          value={card.expiryYear}
+          onChange={(e) => setCard({ ...card, expiryYear: e.target.value })}
+          className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
+        />
+      </div>
+    </div>
+    <div className="grid grid-cols-2 gap-3">
+      <div>
+        <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">CVC</label>
+        <input
+          placeholder="123"
+          value={card.cvc}
+          onChange={(e) => setCard({ ...card, cvc: e.target.value })}
+          className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold mb-2 text-[var(--text)] tracking-tight">Cardholder Name</label>
+        <input
+          placeholder="John Doe"
+          value={card.name}
+          onChange={(e) => setCard({ ...card, name: e.target.value })}
+          className={`w-full p-2.5 rounded-xl border-2 ${inputClass} focus:shadow-lg backdrop-blur-sm text-sm`}
+        />
+      </div>
+    </div>
+    {cardError && (
+      <p className={`p-2.5 ${errorClass} rounded-xl font-medium tracking-tight text-xs backdrop-blur-sm`}>
+        {cardError}
+      </p>
+    )}
+  </div>
+)}
 
-                    {paymentMethod === "paypal" && (
-                      <div className={`${cardClass} rounded-xl p-4 border-2 animate-fade-in backdrop-blur-sm mt-3`}>
-                        <div id="paypal-button-container" className="min-h-[40px]"></div>
-                      </div>
-                    )}
+{paymentMethod === "paypal" && (
+  <div className={`${cardClass} rounded-xl p-4 border-2 animate-fade-in backdrop-blur-sm mt-3`}>
+    <div id="paypal-button-container" className="min-h-[40px]"></div>
+  </div>
+)}
+
+{/* ✅ زر الـ Complete Order - هذا الجزء كان ناقص */}
+<div className="mt-6">
+  <button
+    onClick={handleCheckoutClick}
+    disabled={checkoutLoading || currentCart?.items?.length === 0}
+    className={`w-full ${buttonClass} py-4 rounded-2xl font-bold text-base flex items-center justify-center transition-all duration-300 backdrop-blur-sm ${
+      checkoutLoading || currentCart?.items?.length === 0
+        ? 'opacity-50 cursor-not-allowed hover:scale-100'
+        : 'hover:shadow-xl'
+    }`}
+  >
+    {checkoutLoading ? (
+      <>
+        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+        Processing Your Order...
+      </>
+    ) : (
+      <>
+        <FiCreditCard className="mr-2 text-lg" />
+        Complete Order - ${finalTotal.toFixed(2)}
+      </>
+    )}
+  </button>
+
+  {checkoutError && (
+    <div className={`mt-4 p-3 border-2 ${errorClass} rounded-xl animate-fade-in backdrop-blur-sm`}>
+      <p className="font-medium tracking-tight text-sm">{checkoutError}</p>
+    </div>
+  )}
+
+  <p className="text-xs text-center mt-4 text-[var(--light-gray)] flex items-center justify-center bg-[var(--bg)] p-3 rounded-xl backdrop-blur-sm">
+    <FiShield className={`mr-3 ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}`} />
+    Your payment information is secure and encrypted
+  </p>
+</div>
                   </div>
-
-                  {/* Checkout Button */}
-                  <button
-                    onClick={handleCheckoutClick}
-                    disabled={checkoutLoading || currentCart?.items?.length === 0}
-                    className={`w-full ${buttonClass} py-4 rounded-2xl font-bold text-base flex items-center justify-center transition-all duration-300 backdrop-blur-sm ${
-                      checkoutLoading || currentCart?.items?.length === 0
-                        ? 'opacity-50 cursor-not-allowed hover:scale-100'
-                        : 'hover:shadow-xl'
-                    }`}
-                  >
-                    {checkoutLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Processing Your Order...
-                      </>
-                    ) : (
-                      <>
-                        <FiCreditCard className="mr-2 text-lg" />
-                        Complete Order - ${finalTotal.toFixed(2)}
-                      </>
-                    )}
-                  </button>
-
-                  {checkoutError && (
-                    <div className={`mt-4 p-3 border-2 ${errorClass} rounded-xl animate-fade-in backdrop-blur-sm`}>
-                      <p className="font-medium tracking-tight text-sm">{checkoutError}</p>
-                    </div>
-                  )}
-
-                  <p className="text-xs text-center mt-4 text-[var(--light-gray)] flex items-center justify-center bg-[var(--bg)] p-3 rounded-xl backdrop-blur-sm">
-                    <FiShield className={`mr-3 ${themeMode === 'dark' ? 'text-[var(--text)]' : 'text-[var(--button)]'}`} />
-                    Your payment information is secure and encrypted
-                  </p>
                 </div>
               </div>
             </div>
