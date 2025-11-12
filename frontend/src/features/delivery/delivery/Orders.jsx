@@ -25,7 +25,15 @@ const STATUS_LABELS = {
   delivered: "Delivered",
 };
 
-/* ================= Shipping Helpers (مطابقة للتراكنق) ================= */
+// ✅ توحيد شكل الحالة
+function normalizeStatus(status) {
+  return String(status || "")
+    .toLowerCase()
+    .replace(/-/g, "_")
+    .replace(/\s+/g, "_");
+}
+
+/* ================= Shipping Helpers ================= */
 
 function extractShippingFromEstimate(estimate, order) {
   if (!estimate && !order) return 0;
@@ -138,9 +146,9 @@ export default function OrdersList() {
     setPayOrderId(null);
   };
 
-  // 🎯 شارة الحالة (ألوان محسّنة)
+  // شارة الحالة
   const statusBadgeStyle = (status) => {
-    const s = String(status || "").toLowerCase();
+    const s = normalizeStatus(status);
 
     const base = {
       borderRadius: "0.75rem",
@@ -161,7 +169,6 @@ export default function OrdersList() {
           background: "linear-gradient(135deg, #3b82f6, #2563eb)",
           border: "1px solid #2563eb",
         };
-
       case "processing":
         return {
           ...base,
@@ -169,21 +176,18 @@ export default function OrdersList() {
           border: "1px solid #eab308",
           color: "#1e1e1e",
         };
-
       case "out_for_delivery":
         return {
           ...base,
           background: "linear-gradient(135deg, #fb923c, #f97316)",
           border: "1px solid #ea580c",
         };
-
       case "delivered":
         return {
           ...base,
           background: "linear-gradient(135deg, #10b981, #34d399)",
           border: "1px solid #059669",
         };
-
       default:
         return {
           ...base,
@@ -231,7 +235,7 @@ export default function OrdersList() {
     };
   }, []);
 
-  // تحميل أولي + إثراء بالشحن
+  // تحميل أولي
   useEffect(() => {
     const loadInitialOrders = async () => {
       setLoading(true);
@@ -239,8 +243,6 @@ export default function OrdersList() {
 
       try {
         const resp = await fetchCompanyOrders(1, PAGE_SIZE);
-        console.log("📦 Orders response:", resp);
-
         const fetched = resp.orders || [];
 
         if (fetched.length === 0) {
@@ -251,11 +253,17 @@ export default function OrdersList() {
         }
 
         const enriched = await enrichOrdersWithShipping(fetched);
-        setOrders(enriched);
+
+        // ✅ طبعنا الحالة
+        const normalized = enriched.map((o) => ({
+          ...o,
+          order_status: normalizeStatus(o.order_status),
+        }));
+
+        setOrders(normalized);
         setPage(1);
         setHasMore(resp.pagination?.hasNext || false);
       } catch (err) {
-        console.error("❌ Error loading orders:", err);
         setMessage("❌ " + (err?.message || "Failed to load orders"));
         setOrders([]);
       } finally {
@@ -268,11 +276,14 @@ export default function OrdersList() {
 
   // فلترة
   useEffect(() => {
-    if (filter === "all") setFilteredOrders(orders);
-    else setFilteredOrders(orders.filter((o) => o.order_status === filter));
+    if (filter === "all") {
+      setFilteredOrders(orders);
+    } else {
+      setFilteredOrders(orders.filter((o) => o.order_status === filter));
+    }
   }, [filter, orders]);
 
-  // Load More (مع الإثراء)
+  // Load More
   const loadMore = async () => {
     if (!hasMore || loadingMore) return;
 
@@ -288,11 +299,15 @@ export default function OrdersList() {
       }
 
       const enriched = await enrichOrdersWithShipping(fetched);
-      setOrders((prev) => appendUniqueById(prev, enriched));
+      const normalizedNew = enriched.map((o) => ({
+        ...o,
+        order_status: normalizeStatus(o.order_status),
+      }));
+
+      setOrders((prev) => appendUniqueById(prev, normalizedNew));
       setHasMore(resp.pagination?.hasNext || false);
       setPage(nextPage);
     } catch (err) {
-      console.error("❌ Error loading more orders:", err);
       setMessage("❌ " + err.message);
     } finally {
       setLoadingMore(false);
@@ -301,7 +316,7 @@ export default function OrdersList() {
 
   const openStatusModal = (orderId, status) => {
     setCurrentOrderId(orderId);
-    setCurrentStatus(status);
+    setCurrentStatus(normalizeStatus(status));
     setShowModal(true);
   };
 
@@ -315,7 +330,9 @@ export default function OrdersList() {
       await updateOrderStatus(currentOrderId, newStatus);
       setOrders((prev) =>
         prev.map((o) =>
-          o.id === currentOrderId ? { ...o, order_status: newStatus } : o
+          o.id === currentOrderId
+            ? { ...o, order_status: normalizeStatus(newStatus) }
+            : o
         )
       );
       setShowModal(false);
@@ -475,9 +492,9 @@ export default function OrdersList() {
         className="w-full mx-auto p-4 sm:p-6 rounded-2xl"
         style={{ background: isDarkMode ? "#313131" : "#f5f6f5" }}
       >
-        {/* الفلاتر - موبايل: قابلة للطي، ديسكتوب: ثابتة */}
+        {/* الفلاتر */}
         <div className="mb-6">
-          {/* زر التبديل للموبايل */}
+          {/* للموبايل */}
           <div className="md:hidden mb-3">
             <button
               onClick={() => setShowFilters(!showFilters)}
@@ -489,7 +506,6 @@ export default function OrdersList() {
             </button>
           </div>
 
-          {/* قائمة الفلاتر */}
           <div className={`${showFilters ? "block" : "hidden"} md:block`}>
             <div className="flex flex-wrap gap-2 sm:gap-3 justify-start">
               {Object.keys(STATUS_LABELS).map((key) => {
@@ -512,7 +528,7 @@ export default function OrdersList() {
           </div>
         </div>
 
-        {/* الشبكة - موبايل: عمود واحد، تابلت: عمودين، ديسكتوب: 3 أعمدة */}
+        {/* الشبكة */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredOrders.map((o) => {
             const isPaid = String(o.payment_status).toLowerCase() === "paid";
@@ -527,7 +543,7 @@ export default function OrdersList() {
                 }}
               >
                 <div className="space-y-2 sm:space-y-3">
-                  {/* ===== عنوان + زر Mark as Paid ===== */}
+                  {/* العنوان + Mark Paid */}
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="text-base sm:text-lg md:text-xl font-bold flex-1 break-words">
                       Order #{o.id}
@@ -536,12 +552,11 @@ export default function OrdersList() {
                       onClick={() => openPayModal(o.id, isPaid)}
                       disabled={isPaid}
                       aria-disabled={isPaid}
-                      className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg border text-xs sm:text-sm font-semibold transition-all duration-200 shadow-sm flex-shrink-0
-    ${
-      isPaid
-        ? "bg-[var(--button)]/60 text-white border-[var(--button)]/80 cursor-not-allowed"
-        : "bg-transparent text-[var(--button)] border-[var(--button)] hover:bg-[var(--button)] hover:text-white hover:shadow-md active:scale-[0.97]"
-    }`}
+                      className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg border text-xs sm:text-sm font-semibold transition-all duration-200 shadow-sm flex-shrink-0 ${
+                        isPaid
+                          ? "bg-[var(--success)] text-white border-[var(--success)] cursor-not-allowed"
+                          : "bg-[var(--button)] text-white border-[var(--button)] hover:shadow-md active:scale-[0.97]"
+                      }`}
                     >
                       {isPaid ? (
                         <>
@@ -571,13 +586,11 @@ export default function OrdersList() {
                             stroke="currentColor"
                             strokeWidth={2}
                           >
-                            {/* الدائرة */}
                             <path
                               strokeLinecap="round"
                               strokeLinejoin="round"
                               d="M12 3a9 9 0 100 18 9 9 0 000-18z"
                             />
-                            {/* علامة الدولار */}
                             <path
                               strokeLinecap="round"
                               strokeLinejoin="round"
@@ -612,9 +625,11 @@ export default function OrdersList() {
                       <strong>
                         {formatCurrency(
                           Number(
-                            o._total_with_shipping ??
-                              Number(o.total_amount || 0) +
-                                Number(o._shipping_fee || 0)
+                            o.total_amount ??
+                              o._total_with_shipping ??
+                              o.total_with_shipping ??
+                              o.final_amount ??
+                              0
                           )
                         )}
                       </strong>
@@ -667,7 +682,7 @@ export default function OrdersList() {
                   </div>
                 </div>
 
-                {/* ===== الأزرار السفلية ===== */}
+                {/* الأزرار السفلية */}
                 <div className="mt-4 flex gap-2 flex-nowrap">
                   {(STATUS_FLOW[o.order_status] || []).length > 0 && (
                     <button
@@ -703,9 +718,7 @@ export default function OrdersList() {
               className={`${btnBase} px-6 py-2 text-sm sm:text-base w-full sm:w-auto`}
               style={{
                 ...btnSolid,
-                backgroundColor: loadingMore
-                  ? "var(--button)"
-                  : "var(--button)",
+                backgroundColor: "var(--button)",
                 cursor: loadingMore ? "not-allowed" : "pointer",
                 maxWidth: "200px",
               }}

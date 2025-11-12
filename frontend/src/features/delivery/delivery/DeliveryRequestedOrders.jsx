@@ -71,10 +71,9 @@ const DeliveryRequestedOrders = () => {
     try {
       const data = await getRequestedOrders();
       setOrders(data);
-      showToast(`✅ Loaded ${data.length} orders successfully!`, "success");
     } catch (error) {
       console.error("❌ Error loading orders:", error);
-      showToast("❌ Failed to load orders. Please try again.", "error");
+      showToast(" Failed to load orders. Please try again.", "error");
     } finally {
       setLoading(false);
     }
@@ -284,7 +283,7 @@ const DeliveryRequestedOrders = () => {
                     "
                     title="Final Amount"
                   >
-                    Total: ${order.final_amount}
+                    Total: ${order.total_amount}
                   </span>
                 </div>
               </div>

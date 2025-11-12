@@ -242,6 +242,9 @@ if (loading) {
     0
   );
 
+  const orderTotalFromApi = Number(order?.total_amount || 0);
+
+
   const goChatWithVendor = (vendor) => {
     // نحاول نحصل على اليوزر آي دي للفندور من الداتا
     const vendorUserId =
@@ -853,20 +856,11 @@ if (loading) {
               </div>
 
               {/* Totals row */}
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div>
-                  <div className="text-sm opacity-70">Products Total</div>
-                  <div className="text-2xl font-bold mt-1">
-                    {formatCurrency(productsTotal)}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-sm opacity-70">
-                    Order Total (with Shipping)
-                  </div>
+              <div className="mt-4 flex justify-center">
+                <div className="text-center">
+                  <div className="text-sm opacity-70">Order Total</div>
                   <div className="text-2xl font-bold mt-1 text-[var(--primary)]">
-                    {formatCurrency(totalWithShipping)}
+                    {formatCurrency(orderTotalFromApi)}
                   </div>
                 </div>
               </div>

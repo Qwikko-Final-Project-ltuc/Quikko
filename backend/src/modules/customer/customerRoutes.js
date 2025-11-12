@@ -581,21 +581,24 @@ router.get("/delivery/accepted-orders", protect, async (req, res) => {
 
     const deliveryCompanyId = companyResult.rows[0].id;
 
-    // 2) نعدّ الطلبات
+    // 2) نعدّ الطلبات (مع delivered)
     const countResult = await pool.query(
-      `SELECT COUNT(DISTINCT o.id) as total_count
-       FROM orders o
-       WHERE o.delivery_company_id = $1 
-         AND o.status IN ('accepted', 'processing', 'out_for_delivery')`,
+      `
+      SELECT COUNT(DISTINCT o.id) AS total_count
+      FROM orders o
+      WHERE o.delivery_company_id = $1
+        AND o.status IN ('accepted', 'processing', 'out_for_delivery', 'delivered')
+      `,
       [deliveryCompanyId]
     );
 
     const totalItems = parseInt(countResult.rows[0].total_count);
     const totalPages = Math.ceil(totalItems / limit);
 
-    // 3) نجيب الطلبات نفسها
+    // 3) نجيب الطلبات نفسها (كمان مع delivered)
     const orders = await pool.query(
-      `SELECT 
+      `
+      SELECT 
         o.id,
         o.status AS order_status,
         o.payment_status,               
@@ -616,10 +619,11 @@ router.get("/delivery/accepted-orders", protect, async (req, res) => {
       JOIN users u ON o.customer_id = u.id
       LEFT JOIN order_items oi ON o.id = oi.order_id
       WHERE o.delivery_company_id = $1 
-        AND o.status IN ('accepted', 'processing', 'out_for_delivery')
+        AND o.status IN ('accepted', 'processing', 'out_for_delivery', 'delivered')
       GROUP BY o.id, a.id, u.id
-      ORDER BY o.created_at DESC  -- 👈 هون بس غيرنا لترتيب حسب التاريخ تنازلي
-      LIMIT $2 OFFSET $3`,
+      ORDER BY o.created_at DESC
+      LIMIT $2 OFFSET $3
+      `,
       [deliveryCompanyId, limit, offset]
     );
 
@@ -630,11 +634,11 @@ router.get("/delivery/accepted-orders", protect, async (req, res) => {
       data: orders.rows,
       pagination: {
         currentPage: page,
-        totalPages: totalPages,
-        totalItems: totalItems,
+        totalPages,
+        totalItems,
         hasNext: page < totalPages,
         hasPrev: page > 1,
-        limit: limit,
+        limit,
       },
     });
   } catch (error) {
@@ -645,6 +649,8 @@ router.get("/delivery/accepted-orders", protect, async (req, res) => {
     });
   }
 });
+
+
 router.patch('/:orderId/status',  async (req, res) => {
   try {
     const { orderId } = req.params;

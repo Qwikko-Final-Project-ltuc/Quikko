@@ -125,6 +125,7 @@ exports.getOrderWithCompany = async function (orderId) {
         o.payment_status,
         o.shipping_address,
         o.delivery_company_id,
+        o.total_amount,
         o.created_at,
         u.id AS customer_user_id,
         u.name AS customer_name,

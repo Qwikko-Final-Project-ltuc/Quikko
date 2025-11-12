@@ -215,7 +215,6 @@ export default function SettingsPage() {
                   </div>
                   {/* Glow Effect */}
                   <div className="absolute inset-0 bg-gradient-to-r from-[var(--button)] to-[var(--primary)] rounded-full blur-xl opacity-0 group-hover/avatar:opacity-30 transition-opacity duration-300"></div>
-                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-4 border-[var(--bg)] z-20"></div>
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold bg-gradient-to-r from-[var(--text)] to-[var(--button)] bg-clip-text text-transparent mb-2">
@@ -231,9 +230,6 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-4">
                     <span className="text-xs bg-[var(--button)]/10 text-[var(--button)] px-3 py-1 rounded-full font-medium">
                       Delivery Partner
-                    </span>
-                    <span className="text-xs text-[var(--light-gray)]">
-                      Member since 2024
                     </span>
                   </div>
                 </div>
