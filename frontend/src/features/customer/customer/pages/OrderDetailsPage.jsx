@@ -680,7 +680,7 @@ const handleCheckoutClick = async () => {
             setTimeout(() => {
               navigate("/customer/orders");
             }, 1500);
-
+            
           } catch (err) {
             console.error("Checkout failed:", err);
             const errorMessage = err.response?.data?.error || err.message;

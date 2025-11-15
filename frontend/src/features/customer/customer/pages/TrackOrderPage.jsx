@@ -35,11 +35,13 @@ const getTrackingSteps = (order) => {
     { status: "requested", label: "Order Requested", icon: FileText },
     { status: "accepted", label: "Order Accepted", icon: CheckCircle },
     { status: "processing", label: "Preparing Order", icon: ShoppingCart },
-    { status: "out for delivery", label: "On the Way", icon: Truck },
+    { status: "out_for_delivery", label: "On the Way", icon: Truck },
     { status: "delivered", label: "Delivered", icon: Package }
   ];
 
-  let currentStatus = order?.status?.toLowerCase();
+  let currentStatus = order.status.toLowerCase();
+  console.log("x",currentStatus);
+
   
   // إذا كان ال status needs_decision نعتبره requested
   if (currentStatus === "needs_decision") {
@@ -51,13 +53,13 @@ const getTrackingSteps = (order) => {
 
   return statusFlow.map((step, index) => {
     // الخطوات اللي قبل الحالية بتكون مكتملة
-    const completed = index < currentIndex;
+    const completed = index <= currentIndex;
     
-    // الخطوة الحالية بتكون current
-    const current = index === currentIndex;
+    // الخطوة الحالية بتكون current (الخطوة الي بعد الكومبليتد)
+    const current = index === currentIndex + 1;
     
     // الخطوات اللي بعد الحالية بتكون قادمة
-    const upcoming = index > currentIndex;
+    const upcoming = index > currentIndex + 1;
     
     // الانيميشن يظهر فقط على الخطوة الحالية
     const hasAnimation = current;

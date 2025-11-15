@@ -1857,15 +1857,29 @@ exports.getCustomerOrders = async (customer_id) => {
 
 exports.getVendorProducts = async (vendorId) => {
   const query = `
-    SELECT *
-    FROM products
-    WHERE vendor_id = $1
-    AND (is_deleted = false)
-    ORDER BY created_at DESC
+    SELECT 
+      p.*,
+      COALESCE(
+        JSON_AGG(
+          JSON_BUILD_OBJECT(
+            'id', pi.id,
+            'image_url', pi.image_url
+          )
+        ) FILTER (WHERE pi.id IS NOT NULL),
+        '[]'
+      ) as images
+    FROM products p
+    LEFT JOIN product_images pi ON p.id = pi.product_id
+    WHERE p.vendor_id = $1
+    AND (p.is_deleted = false)
+    GROUP BY p.id
+    ORDER BY p.created_at DESC
   `;
   const { rows } = await pool.query(query, [vendorId]);
   return rows;
 };
+
+
 
 exports.Order = {
   updatePaymentStatus: async (id, payment_status) => {

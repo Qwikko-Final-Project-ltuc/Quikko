@@ -1,4 +1,3 @@
-// StorePage.jsx
 import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -25,7 +24,8 @@ const StorePage = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const themeMode = useSelector((state) => state.customerTheme.mode);
-
+    const userId = useSelector((state) => state.cart.user?.id);
+    const initialCartId = location.state?.cartId;
   const {
     selectedStore,
     storeProducts,
@@ -73,48 +73,68 @@ const StorePage = () => {
   }, [dispatch, id]);
 
   const handleAddToCart = async (product, quantity = 1) => {
-    try {
-      let cart = currentCart;
-      const userId = user?.id;
-      const token = tempCartId || guestToken;
+  try {
+    let cart = currentCart;
+    const guestToken = tempCartId || localStorage.getItem("guest_token");
 
-      if (!cart) {
-        cart = await customerAPI.getOrCreateCart(null, userId, token);
-        dispatch(setCurrentCart(cart));
-      }
+    console.log('🛒 Starting add to cart process...');
+    console.log('📦 Product:', product.name);
+    console.log('🛍️ Current Cart:', cart);
+    console.log('👤 User ID:', userId);
+    console.log('🎫 Guest Token:', guestToken);
 
-      if (!cart?.id) {
-        console.error("No cart ID found!");
-        return;
-      }
-
-      await customerAPI.addItem({
-        cartId: cart.id,
-        product,
-        quantity,
-        variant: product.variant || {},
-      });
-
-      dispatch(fetchCart(cart.id));
-
-      const event = new CustomEvent("showToast", {
-        detail: {
-          message: "Added to cart successfully!",
-          type: "success",
-        },
-      });
-      window.dispatchEvent(event);
-    } catch (err) {
-      console.error("Failed to add item:", err);
-      const event = new CustomEvent("showToast", {
-        detail: {
-          message: err.response?.data?.message || err.message,
-          type: "error",
-        },
-      });
-      window.dispatchEvent(event);
+    // إذا ما في cart، أنشئ واحد جديد
+    if (!cart?.id) {
+      console.log('🆕 No cart found, creating new cart...');
+      cart = await customerAPI.getOrCreateCart(null, userId, guestToken);
+      console.log('✅ New cart created:', cart);
+      dispatch(setCurrentCart(cart));
     }
-  };
+
+    console.log('➕ Adding item to cart:', cart.id);
+
+    // أضف المنتج للـ cart
+    await customerAPI.addItem({
+      cartId: cart.id,
+      product,
+      quantity,
+      variant: product.variant || {},
+    });
+
+    console.log('✅ Item added successfully, fetching updated cart...');
+
+    // جلب الـ cart المحدث
+    await dispatch(fetchCart(cart.id));
+
+    // log interaction إذا user مسجل دخول
+    if (token && userId) {
+      await customerAPI.logInteraction(userId, product.id, "add_to_cart");
+    }
+
+    // عرض رسالة النجاح
+    const event = new CustomEvent("showToast", {
+      detail: {
+        message: `${product.name} added to cart successfully!`,
+        type: "success",
+      },
+    });
+    window.dispatchEvent(event);
+
+    console.log('🎉 Add to cart process completed successfully');
+
+  } catch (err) {
+    console.error('❌ Failed to add item:', err);
+    
+    // عرض رسالة الخطأ
+    const event = new CustomEvent("showToast", {
+      detail: {
+        message: err.response?.data?.message || err.message || "Failed to add item to cart",
+        type: "error",
+      },
+    });
+    window.dispatchEvent(event);
+  }
+};
 
   const handleChatWithVendor = () => {
     if (!selectedStore?.user_id) return;
@@ -459,26 +479,28 @@ const StorePage = () => {
           ) : (
             <>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 mb-12">
-                {currentProducts.map((product) => (
-                  <div
-                    key={product.product_id}
-                    className={`group relative rounded-3xl ${
-                      themeMode === "dark" ? "bg-[var(--mid-dark)]" : "bg-white"
-                    } shadow-2xl border ${
-                      themeMode === "dark" ? "border-[var(--border)]" : "border-gray-200"
-                    } hover:shadow-3xl transition-all duration-300 overflow-hidden hover:border-[var(--button)]/50 transform hover:-translate-y-2`}
-                  >
-                    <ProductCard
-                      product={{
-                        ...product,
-                        id: product.product_id,
-                        images: Array.isArray(product.images) ? product.images : [],
-                      }}
-                      onAddToCart={handleAddToCart}
-                      compact={true}
-                    />
-                  </div>
-                ))}
+               {currentProducts.map((product, index) => {
+              const productData = {
+                ...product,
+                id: product.id || product.product_id,
+                image_url: product.images?.[0]?.image_url || null,
+                images: product.images || [],
+              };
+
+  return (
+    <div 
+      key={productData.id}
+      className="transform hover:-translate-y-2 transition-all duration-500"
+      style={{ animationDelay: `${index * 100}ms` }}
+    >
+      <ProductCard
+        product={productData}
+        onAddToCart={handleAddToCart}
+        compact={true}
+      />
+    </div>
+  );
+})}
               </div>
 
               {/* Enhanced Pagination */}

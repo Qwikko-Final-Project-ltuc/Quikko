@@ -48,10 +48,21 @@ useEffect(() => {
 
 
   const images = Array.isArray(product.images)
-    ? product.images
-    : typeof product.images === "string"
-    ? JSON.parse(product.images)
-    : [];
+  ? product.images.map(img => {
+      // إذا كانت الصورة string مباشرة
+      if (typeof img === 'string') return img;
+      // إذا كانت object فيها image_url
+      if (img.image_url) return img.image_url;
+      // إذا كانت object فيها url
+      if (img.url) return img.url;
+      // إذا كانت object فيها src
+      if (img.src) return img.src;
+      // إذا كانت object فيها أي property أخرى
+      return Object.values(img)[0] || img;
+    })
+  : typeof product.images === "string"
+  ? JSON.parse(product.images)
+  : [];
 
   const MAX_DOTS = 5;
   const totalImages = images.length;
