@@ -1,6 +1,6 @@
 import axios from "axios";
-
-const API_URL = "http://localhost:3000/api"; // عدلي حسب الباك إند
+https://qwikko.onrender.com
+const API_URL = "https://qwikko.onrender.com/api"; // عدلي حسب الباك إند
 
 const couponsAPI = axios.create({
   baseURL: API_URL,
