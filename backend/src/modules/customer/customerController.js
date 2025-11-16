@@ -796,11 +796,11 @@ const { sendEmail } = require("../../utils/sendEmail");
 
 exports.sendContactMessage = async (req, res) => {
   const { name, email, subject, message } = req.body;
-
+ 
   if (!name || !email || !subject || !message) {
     return res.status(400).json({ message: "All fields are required." });
   }
-
+ 
   try {
     await sendEmail({
       to: process.env.CONTACT_EMAIL,
@@ -811,7 +811,7 @@ exports.sendContactMessage = async (req, res) => {
         <p><strong>Message:</strong><br/> ${message}</p>
       `,
     });
-
+ 
     res.status(200).json({ message: "Message sent successfully!" });
   } catch (err) {
     console.error("Contact email error:", err);
