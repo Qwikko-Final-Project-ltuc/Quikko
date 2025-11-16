@@ -13,7 +13,7 @@ const { handleVendorIntent } = require("./intents/vendorIntents");
 const { handleAdminIntent } = require("./intents/adminIntents");
 
 // ===== CMS base
-const API_BASE = process.env.INTERNAL_API_BASE_URL || "http://localhost:3000";
+const API_BASE = process.env.INTERNAL_API_BASE_URL || "https://qwikko.onrender.com";
 // اسم الموقع بدك إياه ستاتيك = Qwikko
 const BRAND_NAME = "Qwikko";
 

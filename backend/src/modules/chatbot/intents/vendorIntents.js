@@ -4,7 +4,7 @@ exports.handleVendorIntent = async (intent, message, token, userId) => {
   try {
     switch (intent) {
       case "orders": {
-        const res = await axios.get("http://localhost:3000/api/vendor/orders", {
+        const res = await axios.get("https://qwikko.onrender.com/api/vendor/orders", {
           headers: { Authorization: `Bearer ${token || ""}` },
         });
         const rows = res.data.data || [];
@@ -42,7 +42,7 @@ exports.handleVendorIntent = async (intent, message, token, userId) => {
 
       case "products": {
         const res = await axios.get(
-          "http://localhost:3000/api/vendor/products",
+          "https://qwikko.onrender.com/api/vendor/products",
           {
             headers: { Authorization: `Bearer ${token || ""}` },
           }
@@ -74,7 +74,7 @@ exports.handleVendorIntent = async (intent, message, token, userId) => {
 
       case "report": {
         const res = await axios.get(
-          `http://localhost:3000/api/vendor/reports/${userId}`,
+          `https://qwikko.onrender.com/api/vendor/reports/${userId}`,
           {
             headers: { Authorization: `Bearer ${token || ""}` },
           }
@@ -111,7 +111,7 @@ exports.handleVendorIntent = async (intent, message, token, userId) => {
           return "Please specify the new status ('accepted' or 'rejected') ✅❌";
 
         const res = await axios.put(
-          `http://localhost:3000/api/vendor/order-items/${itemId}/status`,
+          `/api/vendor/order-items/${itemId}/status`,
           { status },
           {
             headers: { Authorization: `Bearer ${token || ""}` },

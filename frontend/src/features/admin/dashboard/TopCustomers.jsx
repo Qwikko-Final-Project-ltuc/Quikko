@@ -11,7 +11,7 @@ export default function TopCustomers() {
     const fetchTopCustomers = async () => {
       try {
         const response = await fetch(
-          "http://localhost:3000/api/awareness/top-customers"
+          "https://qwikko.onrender.com/api/awareness/top-customers"
         );
         const data = await response.json();
         setCustomers(data);

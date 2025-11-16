@@ -1,7 +1,7 @@
 export async function GetAllCategory() {
   const token = localStorage.getItem("token");
 
-  const response = await fetch("http://localhost:3000/api/categories", {
+  const response = await fetch("https://qwikko.onrender.com/api/categories", {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -21,7 +21,7 @@ export async function GetAllCategory() {
 export async function AddCategory(categoryData) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch("http://localhost:3000/api/categories", {
+  const response = await fetch("https://qwikko.onrender.com/api/categories", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -42,7 +42,7 @@ export async function AddCategory(categoryData) {
 export async function EditCategory(id, categoryData) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`http://localhost:3000/api/categories/${id}`, {
+  const response = await fetch(`https://qwikko.onrender.com/api/categories/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -63,7 +63,7 @@ export async function EditCategory(id, categoryData) {
 export async function DeleteCategory(id) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`http://localhost:3000/api/categories/${id}`, {
+  const response = await fetch(`https://qwikko.onrender.com/api/categories/${id}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",

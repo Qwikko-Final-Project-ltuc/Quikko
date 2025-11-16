@@ -12,7 +12,7 @@ import { useSelector } from "react-redux";
 const API_BASE =
   (typeof import.meta !== "undefined" &&
     import.meta.env?.VITE_API_BASE?.replace(/\/+$/, "")) ||
-  "http://localhost:3000/api/delivery";
+  "https://qwikko.onrender.com/api/delivery";
 
 async function deleteCoverageCity(token, city) {
   const url = `${API_BASE}/coverage`;

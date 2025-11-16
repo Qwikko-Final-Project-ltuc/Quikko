@@ -11,7 +11,7 @@ export default function TopCategories() {
     const fetchTopCategories = async () => {
       try {
         const response = await fetch(
-          "http://localhost:3000/api/awareness/top-categories"
+          "https://qwikko.onrender.com/api/awareness/top-categories"
         );
         const data = await response.json();
         setCategories(data);

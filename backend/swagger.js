@@ -29,7 +29,7 @@ const options = {
       version: "1.0.0",
       description: "API documentation for Qwikko platform, including customer, vendor, delivery, and admin endpoints.",
     },
-    servers: [{ url: "http://localhost:3000" }],
+    servers: [{ url: "https://qwikko.onrender.com" }],
     components: {
       securitySchemes: {
         customerAuth: {

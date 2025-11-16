@@ -22,7 +22,7 @@ const VerifyEmailPage = () => {
     if (oobCode) {
       setStatus("verifying");
       axios
-        .post("http://localhost:3000/api/auth/verify-email", { oobCode })
+        .post("https://qwikko.onrender.com/api/auth/verify-email", { oobCode })
         .then(() => setStatus("success"))
         .catch(() => setStatus("error"));
     }

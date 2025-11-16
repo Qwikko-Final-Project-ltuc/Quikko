@@ -17,7 +17,7 @@ const ChatBotAdmin = ({ userId }) => {
   const isDark = mode === "dark";
 
   useEffect(() => {
-    socketRef.current = io("http://localhost:3000");
+    socketRef.current = io("https://qwikko.onrender.com");
     const token = localStorage.getItem("token");
     socketRef.current.emit("saveToken", { userId, token });
 

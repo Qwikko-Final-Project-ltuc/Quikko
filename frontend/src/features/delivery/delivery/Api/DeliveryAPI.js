@@ -1,7 +1,7 @@
 //delivery profile
 //all endpoints in profile:
 export const fetchDeliveryProfile = async (token) => {
-  const res = await fetch("http://localhost:3000/api/delivery/profile", {
+  const res = await fetch("https://qwikko.onrender.com/api/delivery/profile", {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -12,7 +12,7 @@ export const fetchDeliveryProfile = async (token) => {
 };
 
 export const fetchCoverageAreas = async (token) => {
-  const res = await fetch("http://localhost:3000/api/delivery/coverage", {
+  const res = await fetch("https://qwikko.onrender.com/api/delivery/coverage", {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -40,7 +40,7 @@ export const fetchCoverageAreas = async (token) => {
 
 
 export async function addCoverage(token, areas) {
-  const res = await fetch("http://localhost:3000/api/delivery/coverage", {
+  const res = await fetch("https://qwikko.onrender.com/api/delivery/coverage", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -66,7 +66,7 @@ export async function addCoverage(token, areas) {
 
 //all endpoints in edit profile:
 export const updateDeliveryProfile = async (token, payload) => {
-  const res = await fetch("http://localhost:3000/api/delivery/profile", {
+  const res = await fetch("https://qwikko.onrender.com/api/delivery/profile", {
     method: "PATCH", // ✅ بدّلنا PUT لـ PATCH
     headers: {
       "Content-Type": "application/json",
@@ -82,7 +82,7 @@ export const updateDeliveryProfile = async (token, payload) => {
 
 export async function updateCoverage(token, companyId, data) {
   const res = await fetch(
-    `http://localhost:3000/api/delivery/coverage/${companyId}`,
+    `https://qwikko.onrender.com/api/delivery/coverage/${companyId}`,
     {
       method: "PUT",
       headers: {
@@ -105,7 +105,7 @@ export async function updateCoverage(token, companyId, data) {
 
 export const fetchCompanyOrders = async (page = 1, limit = 20) => {
   const token = localStorage.getItem("token");
-  const url = `http://localhost:3000/api/customers/delivery/accepted-orders?page=${page}&limit=${limit}`;
+  const url = `https://qwikko.onrender.com/api/customers/delivery/accepted-orders?page=${page}&limit=${limit}`;
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
@@ -140,7 +140,7 @@ export const fetchCompanyOrders = async (page = 1, limit = 20) => {
 export const updateOrderStatus = async (orderId, status) => {
   const token = localStorage.getItem("token");
   const res = await fetch(
-    `http://localhost:3000/api/delivery/orders/${orderId}`,
+    `https://qwikko.onrender.com/api/delivery/orders/${orderId}`,
     {
       method: "PUT",
       headers: {
@@ -169,7 +169,7 @@ export const updateOrderPaymentStatus = async (orderId, paymentStatus) => {
   const token = localStorage.getItem("token");
 
   const response = await fetch(
-    `http://localhost:3000/api/delivery/${orderId}/paymentstatus`,
+    `https://qwikko.onrender.com/api/delivery/${orderId}/paymentstatus`,
     {
       method: "PUT",
       headers: {
@@ -194,7 +194,7 @@ export async function getTrackingOrder(orderId) {
   try {
     const token = localStorage.getItem("token");
     const res = await fetch(
-      `http://localhost:3000/api/delivery/tracking/${orderId}`,
+      `https://qwikko.onrender.com/api/delivery/tracking/${orderId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -217,7 +217,7 @@ export async function fetchDeliveryReport(days) {
   const token = localStorage.getItem("token");
   if (!token) throw new Error("No auth token found");
 
-  const url = `http://localhost:3000/api/delivery/reports?days=${days}`;
+  const url = `https://qwikko.onrender.com/api/delivery/reports?days=${days}`;
 
   const res = await fetch(url, {
     headers: {
@@ -242,7 +242,7 @@ export const getDeliveryEstimate = async ({
 }) => {
   const token = localStorage.getItem("token");
 
-  const res = await fetch("http://localhost:3000/api/delivery/estimate", {
+  const res = await fetch("https://qwikko.onrender.com/api/delivery/estimate", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

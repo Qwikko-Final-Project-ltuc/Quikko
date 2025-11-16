@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:3000/api/notifications"; // غيّر الرابط حسب السيرفر
+const API_URL = "https://qwikko.onrender.com/api/notifications"; // غيّر الرابط حسب السيرفر
 
 const notificationAPI = {
   // 📬 جلب جميع الإشعارات

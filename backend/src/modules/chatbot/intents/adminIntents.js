@@ -5,7 +5,7 @@ exports.handleAdminIntent = async (intent, message, token) => {
   try {
     switch (intent) {
       case "orders": {
-        const res = await axios.get("http://localhost:3000/api/admin/orders", {
+        const res = await axios.get("https://qwikko.onrender.com/api/admin/orders", {
           headers: { Authorization: `Bearer ${token || ""}` },
         });
         const orders = res.data.data || [];
@@ -22,7 +22,7 @@ exports.handleAdminIntent = async (intent, message, token) => {
 
       case "pending_vendors": {
         const res = await axios.get(
-          "http://localhost:3000/api/admin/vendors/pending",
+          "https://qwikko.onrender.com/api/admin/vendors/pending",
           { headers: { Authorization: `Bearer ${token || ""}` } }
         );
         const pending = res.data.data || [];
@@ -37,7 +37,7 @@ exports.handleAdminIntent = async (intent, message, token) => {
 
       case "delivery_companies": {
         const res = await axios.get(
-          "http://localhost:3000/api/admin/delivery-companies",
+          "https://qwikko.onrender.com/api/admin/delivery-companies",
           { headers: { Authorization: `Bearer ${token || ""}` } }
         );
         const companies = res.data.data || [];
@@ -48,7 +48,7 @@ exports.handleAdminIntent = async (intent, message, token) => {
       }
       case "pending_deliveries": {
         const res = await axios.get(
-          "http://localhost:3000/api/admin/deliveries/pending",
+          "https://qwikko.onrender.com/api/admin/deliveries/pending",
           { headers: { Authorization: `Bearer ${token || ""}` } }
         );
         const pending = res.data.data || [];
@@ -64,7 +64,7 @@ exports.handleAdminIntent = async (intent, message, token) => {
           .join("\n");
       }
       case "vendors": {
-        const res = await axios.get("http://localhost:3000/api/admin/vendors", {
+        const res = await axios.get("https://qwikko.onrender.com/api/admin/vendors", {
           headers: { Authorization: `Bearer ${token || ""}` },
         });
         const vendors = res.data.data || [];

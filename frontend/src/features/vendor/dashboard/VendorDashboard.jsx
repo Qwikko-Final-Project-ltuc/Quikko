@@ -17,7 +17,7 @@ const Dashboard = () => {
 
   const fetchReport = async () => {
     try {
-      const res = await fetch("http://localhost:3000/api/vendor/reports", {
+      const res = await fetch("https://qwikko.onrender.com/api/vendor/reports", {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,

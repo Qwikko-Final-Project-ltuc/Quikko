@@ -22,7 +22,7 @@ export default function UploadImages({ uploadedImages = [], onUploadComplete }) 
 
     try {
       const res = await axios.post(
-        "http://localhost:3000/api/products/upload",
+        "https://qwikko.onrender.com/api/products/upload",
         formData,
         { headers: getAuthHeaders(), withCredentials: true }
       );

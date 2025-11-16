@@ -35,7 +35,7 @@ export default function Navbar({ isSidebarOpen, toggleSidebar, user }) {
 
   const [unreadChatCount, setUnreadChatCount] = useState(0);
 
-  const CHAT_API_BASE = "http://localhost:3000";
+  const CHAT_API_BASE = "https://qwikko.onrender.com";
 
   const fetchUnreadChatCount = async () => {
     try {
@@ -295,7 +295,7 @@ w-[50vw] sm:w-56
                 if (!showNotifications) {
                   try {
                     const res = await fetch(
-                      "http://localhost:3000/api/notifications",
+                      "https://qwikko.onrender.com/api/notifications",
                       {
                         headers: { Authorization: `Bearer ${token}` },
                       }
@@ -411,7 +411,7 @@ w-[50vw] sm:w-56
                                 if (isUnread) {
                                   try {
                                     const res = await fetch(
-                                      "http://localhost:3000/api/notifications/mark-read",
+                                      "https://qwikko.onrender.com/api/notifications/mark-read",
                                       {
                                         method: "POST",
                                         headers: {

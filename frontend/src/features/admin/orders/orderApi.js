@@ -1,7 +1,7 @@
 export async function Orders() {
   const token = localStorage.getItem("token");
 
-  const response = await fetch("http://localhost:3000/api/admin/orders", {
+  const response = await fetch("https://qwikko.onrender.com/api/admin/orders", {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
