@@ -1,6 +1,6 @@
 const admin = require("firebase-admin");
-const serviceAccount = require("../../serviceAccountKey.json");
-
+// const serviceAccount = require("../../serviceAccountKey.json");
+const serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
 /**
  * @module FirebaseConfig
  * @desc Initializes Firebase Admin SDK and provides helper functions for Firestore.
