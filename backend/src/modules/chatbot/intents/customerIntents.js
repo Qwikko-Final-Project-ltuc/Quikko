@@ -4,7 +4,7 @@ const axios = require("axios");
 exports.handleCustomerIntent = async (intent, message, token) => {
   const headers = { Authorization: `Bearer ${token || ""}` };
 
-  const frontendUrl = process.env.FRONTEND_URL || "https://qwikko.vercel.app";
+  const frontendUrl = process.env.FRONTEND_URL || "https://qwikkofront.onrender.com";
 
   try {
     switch (intent) {
