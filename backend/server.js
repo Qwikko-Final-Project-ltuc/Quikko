@@ -44,6 +44,15 @@ app.use(
 );
 
 
+app.options("*", cors({
+  origin: ["http://localhost:5173", "https://qwikko.vercel.app"],
+  methods: ["GET","POST","PUT","DELETE","PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization", "Guest-Token"],
+  credentials: true,
+}));
+
+
+
 
 // Middleware to parse incoming JSON requests
 app.use(express.json());

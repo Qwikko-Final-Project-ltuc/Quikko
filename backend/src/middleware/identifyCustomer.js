@@ -1,4 +1,5 @@
 module.exports = async (req, res, next) => {
+  if (req.method === 'OPTIONS') return next();
   try {
     if (req.customerId) {
       req.isGuest = false;

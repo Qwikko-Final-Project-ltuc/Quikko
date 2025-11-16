@@ -1,6 +1,7 @@
 const { v4: uuidv4 } = require('uuid');
 
 module.exports = (req, res, next) => {
+  if (req.method === 'OPTIONS') return next();
   if (req.customerId) return next();
 
   let token = req.cookies?.guest_token || req.headers['guest-token'];
@@ -10,7 +11,7 @@ module.exports = (req, res, next) => {
     res.cookie('guest_token', token, {
       httpOnly: false,
       maxAge: 1000 * 60 * 60 * 24 * 30,
-      sameSite: 'lax',
+      sameSite: 'none',
       secure: false,
       path: '/',
     });
