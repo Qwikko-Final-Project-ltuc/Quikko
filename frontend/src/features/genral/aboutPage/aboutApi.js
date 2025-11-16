@@ -1,7 +1,7 @@
 export async function GetAllCMS(type = "user", title) {
   if (!title) throw new Error("Title is required");
 
-  const response = await fetch(`http://localhost:3000/api/cms?type=${type}&title=${encodeURIComponent(title)}`, {
+  const response = await fetch(`https://qwikko.onrender.com/api/cms?type=${type}&title=${encodeURIComponent(title)}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",

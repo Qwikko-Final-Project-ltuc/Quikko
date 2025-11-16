@@ -65,7 +65,7 @@ const OrdersPage = () => {
     setDecisionLoading(true);
     try {
       const res = await fetch(
-        `http://localhost:3000/api/customers/orders/${orderId}/decision`,
+        `https://qwikko.onrender.com/api/customers/orders/${orderId}/decision`,
         {
           method: "PATCH",
           headers: getAuthHeaders(),
@@ -94,7 +94,7 @@ const OrdersPage = () => {
       
       const imagePromises = productIds.map(async (productId) => {
         try {
-          const response = await fetch(`http://localhost:3000/api/products/${productId}`);
+          const response = await fetch(`https://qwikko.onrender.com/api/products/${productId}`);
           
           if (response.ok) {
             const productData = await response.json();

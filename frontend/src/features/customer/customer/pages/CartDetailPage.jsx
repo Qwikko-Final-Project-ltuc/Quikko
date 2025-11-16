@@ -164,7 +164,7 @@ const CartDetailPage = () => {
     setApplyingCoupon(couponVendorId);
 
     try {
-      const res = await fetch(`http://localhost:3000/api/coupons/validate`, {
+      const res = await fetch(`https://qwikko.onrender.com/api/coupons/validate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -20,7 +20,7 @@ const ContactUs = () => {
     }
 
     try {
-      await axios.post("http://localhost:3000/api/customers/contactUs", form);
+      await axios.post("https://qwikko.onrender.com/api/customers/contactUs", form);
       setStatus({ success: true, message: "Message sent successfully! 🎉" });
       setForm({ name: "", email: "", subject: "", message: "" });
     } catch (error) {

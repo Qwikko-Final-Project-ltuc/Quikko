@@ -60,7 +60,7 @@ const LandingPage = () => {
     const fetchCMS = async () => {
       try {
         const res = await fetch(
-          "http://localhost:3000/api/cms?type=customer&title=Landing%20Page"
+          "https://qwikko.onrender.com/api/cms?type=customer&title=Landing%20Page"
         );
 
         const text = await res.text();

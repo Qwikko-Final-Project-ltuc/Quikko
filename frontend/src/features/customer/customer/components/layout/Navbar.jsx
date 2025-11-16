@@ -139,7 +139,7 @@ const Navbar = () => {
     const fetchUnreadCount = async () => {
       try {
         const res = await fetch(
-          "http://localhost:3000/api/notifications/unread-count",
+          "https://qwikko.onrender.com/api/notifications/unread-count",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -252,7 +252,7 @@ const Navbar = () => {
   }, []);
 
   const api = axios.create({
-    baseURL: "http://localhost:3000/api",
+    baseURL: "https://qwikko.onrender.com/api",
     headers: {
       "Content-Type": "application/json",
     },
@@ -296,7 +296,7 @@ const Navbar = () => {
   const fetchNotifications = async () => {
     try {
       const res = await fetch(
-        "http://localhost:3000/api/notifications",
+        "https://qwikko.onrender.com/api/notifications",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -888,7 +888,7 @@ const Navbar = () => {
                               if (unreadIds.length === 0) return;
                               try {
                                 const res = await fetch(
-                                  "http://localhost:3000/api/notifications/mark-read",
+                                  "https://qwikko.onrender.com/api/notifications/mark-read",
                                   {
                                     method: "POST",
                                     headers: {

@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = 'https://qwikko.onrender.com/api';
 
 // Async thunk for fetching unread messages count
 export const fetchUnreadMessagesCount = createAsyncThunk(

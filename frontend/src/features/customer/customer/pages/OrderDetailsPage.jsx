@@ -125,7 +125,7 @@ const OrderDetailsPage = () => {
       throw new Error("User ID not found. Please login again.");
     }
     const preparedUserId = Number(userId);
-    const res = await fetch("http://localhost:3000/api/coupons/validate", {
+    const res = await fetch("https://qwikko.onrender.com/api/coupons/validate", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -184,7 +184,7 @@ const OrderDetailsPage = () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
-        const res = await fetch("http://localhost:3000/api/customers/loyalty", {
+        const res = await fetch("https://qwikko.onrender.com/api/customers/loyalty", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -350,7 +350,7 @@ const handleCalculateDelivery = async () => {
   try {
     const token = localStorage.getItem("token");
     const res = await fetch(
-      "http://localhost:3000/api/customers/calculate-delivery-preview",
+      "https://qwikko.onrender.com/api/customers/calculate-delivery-preview",
       {
         method: "POST",
         headers: {

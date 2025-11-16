@@ -1,5 +1,4 @@
 import axios from "axios";
-https://qwikko.onrender.com
 const API_URL = "https://qwikko.onrender.com/api"; // عدلي حسب الباك إند
 
 const couponsAPI = axios.create({

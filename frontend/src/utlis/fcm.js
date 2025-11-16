@@ -19,7 +19,7 @@ export const requestAndSaveToken = async (userToken) => {
     });
 
     if (fcmToken) {
-      await fetch("http://localhost:3000/api/notifications/save-fcm-token", {
+      await fetch("https://qwikko.onrender.com/api/notifications/save-fcm-token", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

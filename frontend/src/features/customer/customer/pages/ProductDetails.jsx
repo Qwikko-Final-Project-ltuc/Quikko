@@ -232,7 +232,7 @@ useEffect(() => {
 
     const fetchProduct = async () => {
       try {
-        const res = await axios.get(`http://localhost:3000/api/products/${id}`);
+        const res = await axios.get(`https://qwikko.onrender.com/api/products/${id}`);
         setProduct(res.data);
 
         if (user?.id && !hasLoggedView) {
@@ -250,7 +250,7 @@ useEffect(() => {
 
     const fetchReviews = async () => {
       try {
-        const res = await axios.get(`http://localhost:3000/api/products/review/${id}`);
+        const res = await axios.get(`https://qwikko.onrender.com/api/products/review/${id}`);
         console.log("✅ Reviews API response:", res.data);
 
         // نقرأ المصفوفة والبيانات الأخرى بشكل صحيح
@@ -294,7 +294,7 @@ useEffect(() => {
       }
       
       if (!token || !recs || recs.length === 0) {
-        const res = await fetch("http://localhost:3000/api/customers/top-rated");
+        const res = await fetch("https://qwikko.onrender.com/api/customers/top-rated");
         if (res.ok) {
           const data = await res.json();
           recs = Array.isArray(data) ? data : [];
@@ -412,7 +412,7 @@ useEffect(() => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        "http://localhost:3000/api/products/review",
+        "https://qwikko.onrender.com/api/products/review",
         {
           product_id: id,
           rating,
@@ -429,7 +429,7 @@ useEffect(() => {
       setHasUserReviewed(true);
 
       // Refresh reviews
-      const res = await axios.get(`http://localhost:3000/api/products/review/${id}`);
+      const res = await axios.get(`https://qwikko.onrender.com/api/products/review/${id}`);
       setReviews(res.data.reviews || []);
       setAverageRating(res.data.average_rating);
       setReviewsCount(res.data.reviews_count);

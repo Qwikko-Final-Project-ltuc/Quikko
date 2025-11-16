@@ -32,7 +32,7 @@ useEffect(() => {
       const productId = product.id || product.product_id;
       if (!productId) return;
 
-      const response = await fetch(`http://localhost:3000/api/products/review/average/${productId}`);
+      const response = await fetch(`https://qwikko.onrender.com/api/products/review/average/${productId}`);
       if (!response.ok) throw new Error("Failed to fetch average rating");
 
       const data = await response.json();

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const BASE_URL = "http://localhost:3000";
+export const BASE_URL = "https://qwikko.onrender.com";
 export const SOCKET_URL = BASE_URL;
 
 const api = axios.create({

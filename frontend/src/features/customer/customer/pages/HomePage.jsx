@@ -96,8 +96,8 @@ const HomePage = () => {
     const fetchProducts = async () => {
       try {
         const [resPopular, resNewest] = await Promise.all([
-          fetch("http://localhost:3000/api/customers/most-popular"),
-          fetch("http://localhost:3000/api/customers/newest"),
+          fetch("https://qwikko.onrender.com/api/customers/most-popular"),
+          fetch("https://qwikko.onrender.com/api/customers/newest"),
         ]);
         
         if (!resPopular.ok || !resNewest.ok) {
@@ -144,7 +144,7 @@ const HomePage = () => {
         recs = await customerAPI.getRecommendations({ excludeIds: Array.from(displayedIds.current) });
       }
       if (!token || !recs || recs.length === 0) {
-        const res = await fetch("http://localhost:3000/api/customers/top-rated");
+        const res = await fetch("https://qwikko.onrender.com/api/customers/top-rated");
         if (res.ok) {
           const data = await res.json();
           recs = Array.isArray(data) ? data : [];

@@ -61,7 +61,7 @@ const handleDeleteAccount = async () => {
   try {
     const token = localStorage.getItem("token");
 
-    const res = await fetch("http://localhost:3000/api/customers/profile", {
+    const res = await fetch("https://qwikko.onrender.com/api/customers/profile", {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",

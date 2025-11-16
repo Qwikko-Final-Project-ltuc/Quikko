@@ -50,7 +50,7 @@ const ProfilePage = () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
-        const res = await fetch("http://localhost:3000/api/customers/loyalty", {
+        const res = await fetch("https://qwikko.onrender.com/api/customers/loyalty", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
