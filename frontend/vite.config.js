@@ -15,7 +15,6 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: '/index.html',
-      external: ['@heroicons/react/24/outline'],
     },
   },
 })
