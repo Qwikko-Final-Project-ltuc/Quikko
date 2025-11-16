@@ -4,7 +4,7 @@ export const registerServiceWorker = async () => {
   try {
     if ('serviceWorker' in navigator) {
       const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-      // console.log('Service Worker registered:', registration);
+      console.log('Service Worker registered:', registration);
       return registration;
     }
   } catch (err) {
@@ -27,7 +27,7 @@ export const requestAndSaveToken = async (userToken) => {
         },
         body: JSON.stringify({ fcmToken }),
       });
-      // console.log("FCM Token saved:", fcmToken);
+      console.log("FCM Token saved:", fcmToken);
     }
   } catch (err) {
     console.error("Error getting FCM token:", err);
