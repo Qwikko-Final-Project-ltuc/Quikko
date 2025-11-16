@@ -59,7 +59,7 @@ export default function ProductForm({ initialData, categories, onSubmit }) {
     const token = localStorage.getItem("token");
     try {
       const res = await axios.post(
-        "http://localhost:3000/api/products/upload",
+        "https://qwikko.onrender.com/api/products/upload",
         formDataImages,
         {
           headers: {

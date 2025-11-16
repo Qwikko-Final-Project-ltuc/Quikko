@@ -49,7 +49,7 @@
             console.log('FCM Token:', token);
 
             // 5️⃣ إرسال التوكن للسيرفر
-            fetch("http://localhost:3000/api/users/1/fcm-token", {
+            fetch("https://qwikko.onrender.com/api/users/1/fcm-token", {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ fcmToken: token }),

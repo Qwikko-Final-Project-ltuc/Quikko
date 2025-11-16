@@ -37,7 +37,7 @@ exports.uploadProductImages = (req, res) => {
 
     // الرابط الكامل بدل المسار النسبي
      const imagePaths = req.files.map(
-      (file) => `http://localhost:3000/uploads/products/${file.filename}`
+      (file) => `https://qwikko.onrender.com/uploads/products/${file.filename}`
     );
 
     res.json({ imageUrls: imagePaths });

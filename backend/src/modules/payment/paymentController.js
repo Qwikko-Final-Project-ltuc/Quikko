@@ -68,7 +68,7 @@ exports.executePayment = async (req, res) => {
     const { paymentId, PayerID } = req.query;
     const amount = 1.00; // Hardcoded for now, can be dynamic
     const payment = await paymentService.executePayment(paymentId, PayerID, amount);
-    res.redirect(`http://localhost:5173/orders`);
+    res.redirect(`https://qwikko.vercel.app/orders`);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

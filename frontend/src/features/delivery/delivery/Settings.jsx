@@ -63,7 +63,7 @@ export default function SettingsPage() {
     try {
       setDeleting(true);
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/customers/profile", {
+      const res = await fetch("https://qwikko.onrender.com/api/customers/profile", {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

@@ -16,7 +16,7 @@ const ChatBot = ({ userId }) => {
   const isDarkMode = useSelector((state) => state.deliveryTheme.darkMode);
 
   useEffect(() => {
-    socketRef.current = io("http://localhost:3000");
+    socketRef.current = io("https://qwikko.onrender.com");
     const token = localStorage.getItem("token");
     socketRef.current.emit("saveToken", { userId, token });
 

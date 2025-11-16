@@ -22,7 +22,7 @@ export default function VendorResetPassword() {
     setMessage("");
 
     try {
-      await axios.post("http://localhost:3000/api/auth/reset-password", {
+      await axios.post("https://qwikko.onrender.com/api/auth/reset-password", {
         email,
         newPassword: password,
       });

@@ -4,14 +4,14 @@ const axios = require("axios");
 exports.handleCustomerIntent = async (intent, message, token) => {
   const headers = { Authorization: `Bearer ${token || ""}` };
 
-  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+  const frontendUrl = process.env.FRONTEND_URL || "https://qwikko.vercel.app";
 
   try {
     switch (intent) {
       // ---------------- ORDERS ----------------
       case "orders": {
         const res = await axios.get(
-          "http://localhost:3000/api/customers/orders",
+          "https://qwikko.onrender.com/api/customers/orders",
           { headers }
         );
         const orders = res.data || [];
@@ -44,7 +44,7 @@ exports.handleCustomerIntent = async (intent, message, token) => {
         if (!orderId) return "Please provide the order number.";
 
         const res = await axios.get(
-          `http://localhost:3000/api/customers/orders/${orderId}`,
+          `https://qwikko.onrender.com/api/customers/orders/${orderId}`,
           { headers }
         );
 
@@ -122,7 +122,7 @@ exports.handleCustomerIntent = async (intent, message, token) => {
         if (!orderId) return "Please provide the order number.";
 
         const res = await axios.get(
-          `http://localhost:3000/api/customers/orders/${orderId}/track`,
+          `https://qwikko.onrender.com/api/customers/orders/${orderId}/track`,
           { headers }
         );
 
@@ -138,7 +138,7 @@ exports.handleCustomerIntent = async (intent, message, token) => {
       // ---------------- WISHLIST ----------------
       case "wishlist": {
         const res = await axios.get(
-          "http://localhost:3000/api/customers/wishlist",
+          "https://qwikko.onrender.com/api/customers/wishlist",
           { headers }
         );
         const list = res.data || [];
@@ -149,7 +149,7 @@ exports.handleCustomerIntent = async (intent, message, token) => {
       // ---------------- CART ----------------
       case "cart": {
         const res = await axios.get(
-          "http://localhost:3000/api/customers/cart",
+          "https://qwikko.onrender.com/api/customers/cart",
           { headers }
         );
         const carts = res.data || [];
@@ -169,7 +169,7 @@ exports.handleCustomerIntent = async (intent, message, token) => {
         if (!cartId) return `Please provide the cart ID.`;
 
         const res = await axios.get(
-          `http://localhost:3000/api/customers/cart/${cartId}`,
+          `https://qwikko.onrender.com/api/customers/cart/${cartId}`,
           { headers }
         );
 
@@ -191,7 +191,7 @@ exports.handleCustomerIntent = async (intent, message, token) => {
       // ---------------- CATEGORIES ----------------
       case "category": {
         try {
-          const res = await axios.get(`http://localhost:3000/api/categories`, {
+          const res = await axios.get(`https://qwikko.onrender.com/api/categories`, {
             headers,
           });
 
@@ -220,7 +220,7 @@ exports.handleCustomerIntent = async (intent, message, token) => {
 
       // ---------------- VENDORS ----------------
       case "vendors": {
-        const res = await axios.get("http://localhost:3000/api/vendor/stores", {
+        const res = await axios.get("https://qwikko.onrender.com/api/vendor/stores", {
           headers,
         });
         const vendors = res.data.data || [];

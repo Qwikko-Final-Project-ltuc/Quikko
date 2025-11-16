@@ -1,7 +1,7 @@
 export async function Vendor() {
   const token = localStorage.getItem("token");
 
-  const response = await fetch("http://localhost:3000/api/admin/vendors", {
+  const response = await fetch("https://qwikko.onrender.com/api/admin/vendors", {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -21,7 +21,7 @@ export async function Vendor() {
 export async function ApproveVendors(vendorId) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`http://localhost:3000/api/admin/vendors/${vendorId}/approve`, {
+  const response = await fetch(`https://qwikko.onrender.com/api/admin/vendors/${vendorId}/approve`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -41,7 +41,7 @@ export async function ApproveVendors(vendorId) {
 export async function RejectVendors(vendorId) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`http://localhost:3000/api/admin/vendors/${vendorId}/reject`, {
+  const response = await fetch(`https://qwikko.onrender.com/api/admin/vendors/${vendorId}/reject`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",

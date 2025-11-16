@@ -1,7 +1,7 @@
 export async function DeliveryCompanies() {
   const token = localStorage.getItem("token");
 
-  const response = await fetch("http://localhost:3000/api/admin/delivery-companies", {
+  const response = await fetch("https://qwikko.onrender.com/api/admin/delivery-companies", {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -21,7 +21,7 @@ export async function DeliveryCompanies() {
 export async function ApproveDeliveryCompanies(deliveryId) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`http://localhost:3000/api/admin/deliveries/${deliveryId}/approve`, {
+  const response = await fetch(`https://qwikko.onrender.com/api/admin/deliveries/${deliveryId}/approve`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -41,7 +41,7 @@ export async function ApproveDeliveryCompanies(deliveryId) {
 export async function RejectDeliveryCompanies(deliveryId) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`http://localhost:3000/api/admin/deliveries/${deliveryId}/reject`, {
+  const response = await fetch(`https://qwikko.onrender.com/api/admin/deliveries/${deliveryId}/reject`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",

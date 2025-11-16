@@ -10,7 +10,7 @@ const getAuthHeaders = () => {
 // 🔹 جلب محتوى الـ CMS للـ Vendor Landing Page
 export const getVendorLandingCMS = async () => {
   const res = await fetch(
-    `http://localhost:3000/api/cms?type=vendor&title=Landing Page`,
+    `https://qwikko.onrender.com/api/cms?type=vendor&title=Landing Page`,
     { headers: getAuthHeaders() }
   );
 
@@ -21,7 +21,7 @@ export const getVendorLandingCMS = async () => {
 };
 // 🔹 جلب جميع المنتجات
 export const fetchProducts = async () => {
-  const res = await fetch("http://localhost:3000/api/vendor/products", {
+  const res = await fetch("https://qwikko.onrender.com/api/vendor/products", {
     headers: getAuthHeaders(),
   });
   const json = await res.json();
@@ -31,7 +31,7 @@ export const fetchProducts = async () => {
 
 // 🔹 إضافة منتج جديد
 export const addProduct = async (product) => {
-  const res = await fetch("http://localhost:3000/api/products", {
+  const res = await fetch("https://qwikko.onrender.com/api/products", {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(product),
@@ -43,7 +43,7 @@ export const addProduct = async (product) => {
 
 // 🔹 تعديل منتج موجود
 export const updateProduct = async (id, product) => {
-  const res = await fetch(`http://localhost:3000/api/products/${id}`, {
+  const res = await fetch(`https://qwikko.onrender.com/api/products/${id}`, {
     method: "PUT",
     headers: getAuthHeaders(),
     body: JSON.stringify(product),
@@ -55,7 +55,7 @@ export const updateProduct = async (id, product) => {
 
 // 🔹 حذف منتج
 export const deleteProduct = async (id) => {
-  const res = await fetch(`http://localhost:3000/api/products/${id}`, {
+  const res = await fetch(`https://qwikko.onrender.com/api/products/${id}`, {
     method: "DELETE",
     headers: getAuthHeaders(),
   });
@@ -64,7 +64,7 @@ export const deleteProduct = async (id) => {
 
 // 🔹 جلب كل الفئات
 export const fetchCategories = async () => {
-  const res = await fetch("http://localhost:3000/api/categories", {
+  const res = await fetch("https://qwikko.onrender.com/api/categories", {
     headers: getAuthHeaders(),
   });
   const json = await res.json();
@@ -74,7 +74,7 @@ export const fetchCategories = async () => {
 
 // 🔹 تسجيل Vendor جديد
 export const registerVendorAPI = async (vendorData) => {
-  const res = await fetch("http://localhost:3000/api/auth/register/vendor", {
+  const res = await fetch("https://qwikko.onrender.com/api/auth/register/vendor", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(vendorData),
@@ -92,7 +92,7 @@ export const registerVendorAPI = async (vendorData) => {
 // 🔹 جلب كل الأوردرات العامة (بدون فلترة على vendor)
 export const fetchOrders = async (status = "") => {
   const query = status ? `?status=${status}` : "";
-  const res = await fetch(`http://localhost:3000/api/vendor/orders${query}`, { // لاحظ تغيير المسار ليكون عام
+  const res = await fetch(`https://qwikko.onrender.com/api/vendor/orders${query}`, { // لاحظ تغيير المسار ليكون عام
     headers: getAuthHeaders(),
   });
   const json = await res.json();
@@ -103,7 +103,7 @@ export const fetchOrders = async (status = "") => {
 // 🔹 جلب كل منتجات الأوردر الخاصة بالـ vendor فقط
 export const fetchOrderItems = async (status = "") => {
   const query = status ? `?status=${status}` : "";
-  const res = await fetch(`http://localhost:3000/api/vendor/order-items${query}`, {
+  const res = await fetch(`https://qwikko.onrender.com/api/vendor/order-items${query}`, {
     headers: getAuthHeaders(),
   });
   const json = await res.json();
@@ -113,7 +113,7 @@ export const fetchOrderItems = async (status = "") => {
 
 // 🔹 تحديث حالة المنتج في order_item
 export const updateOrderItemStatus = async (id, status) => {
-  const res = await fetch(`http://localhost:3000/api/vendor/order-items/${id}/status`, {
+  const res = await fetch(`https://qwikko.onrender.com/api/vendor/order-items/${id}/status`, {
     method: "PUT",
     headers: getAuthHeaders(),
     body: JSON.stringify({ status }),
@@ -126,7 +126,7 @@ export const updateOrderItemStatus = async (id, status) => {
 
 // 🔹 جلب تقرير البائع (Vendor Report)
 export const fetchVendorReport = async () => {
-  const res = await fetch("http://localhost:3000/api/vendor/reports", {
+  const res = await fetch("https://qwikko.onrender.com/api/vendor/reports", {
     headers: getAuthHeaders(),
   });
   const json = await res.json();
@@ -140,7 +140,7 @@ export const fetchVendorReport = async () => {
 // جلب المحادثات
 export const fetchConversations = async () => {
   try {
-    const res = await fetch("http://localhost:3000/api/chat/conversations", {
+    const res = await fetch("https://qwikko.onrender.com/api/chat/conversations", {
       headers: {
         "Content-Type": "application/json",
         ...getAuthHeaders(),
@@ -162,7 +162,7 @@ export const fetchMessages = async (otherUserId) => {
   if (!currentUserId || !otherUserId) return [];
 
   try {
-    const res = await fetch(`http://localhost:3000/api/chat?user1=${currentUserId}&user2=${otherUserId}`, {
+    const res = await fetch(`https://qwikko.onrender.com/api/chat?user1=${currentUserId}&user2=${otherUserId}`, {
       headers: {
         "Content-Type": "application/json",
         ...getAuthHeaders(),
@@ -196,7 +196,7 @@ export const sendMessage = async (receiverId, message) => {
   console.log("Headers:", { "Content-Type": "application/json", ...getAuthHeaders() });
 
   try {
-    const res = await fetch("http://localhost:3000/api/chat", {
+    const res = await fetch("https://qwikko.onrender.com/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       body: JSON.stringify(body),
@@ -221,7 +221,7 @@ export const sendMessage = async (receiverId, message) => {
 // 🔹 جلب بيانات البروفايل للـ Vendor
 export const fetchVendorProfile = async () => {
   try {
-    const res = await fetch("http://localhost:3000/api/vendor/profile", {
+    const res = await fetch("https://qwikko.onrender.com/api/vendor/profile", {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -239,7 +239,7 @@ export const fetchVendorProfile = async () => {
 // 🔹 تحديث بيانات البروفايل
 export const updateVendorProfile = async (profileData) => {
   try {
-    const res = await fetch("http://localhost:3000/api/vendor/profile", {
+    const res = await fetch("https://qwikko.onrender.com/api/vendor/profile", {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -259,7 +259,7 @@ export const updateVendorProfile = async (profileData) => {
 // 🔹 جلب الإشعارات
 export const fetchNotifications = async () => {
   try {
-    const res = await fetch("http://localhost:3000/api/notifications", {
+    const res = await fetch("https://qwikko.onrender.com/api/notifications", {
       headers: getAuthHeaders(),
     });
 
@@ -275,7 +275,7 @@ export const fetchNotifications = async () => {
 // 🔹 جلب عدد الإشعارات غير المقروءة
 export const fetchUnreadCount = async () => {
   try {
-    const res = await fetch("http://localhost:3000/api/notifications/unread-count", {
+    const res = await fetch("https://qwikko.onrender.com/api/notifications/unread-count", {
       headers: getAuthHeaders(),
     });
     const json = await res.json();
@@ -289,7 +289,7 @@ export const fetchUnreadCount = async () => {
 // 🔹 تعيين الإشعارات كمقروءة
 export const markNotificationsRead = async (ids) => {
   const token = getAuthHeaders().Authorization.split(" ")[1]; // افتراض استخدام التوكن
-  const res = await fetch("http://localhost:3000/api/notifications/mark-read", {
+  const res = await fetch("https://qwikko.onrender.com/api/notifications/mark-read", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -303,7 +303,7 @@ export const markNotificationsRead = async (ids) => {
 
 // 🔹 جلب جميع الكوبونات
 export const fetchCoupons = async () => {
-  const res = await fetch("http://localhost:3000/api/coupons", { headers: getAuthHeaders() });
+  const res = await fetch("https://qwikko.onrender.com/api/coupons", { headers: getAuthHeaders() });
   if (!res.ok) throw new Error("Failed to fetch coupons");
   const json = await res.json();
   console.log("🔹 API Response (coupons):", json);
@@ -312,7 +312,7 @@ export const fetchCoupons = async () => {
 
 // 🔹 إضافة كوبون جديد
 export const addCoupon = async (coupon) => {
-  const res = await fetch("http://localhost:3000/api/coupons/create", { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(coupon) });
+  const res = await fetch("https://qwikko.onrender.com/api/coupons/create", { method: "POST", headers: getAuthHeaders(), body: JSON.stringify(coupon) });
   const json = await res.json();
   console.log("🔹 Coupon Added Response:", json);
   return json;
@@ -320,7 +320,7 @@ export const addCoupon = async (coupon) => {
 
 // 🔹 تعديل كوبون موجود
 export const updateCoupon = async (id, coupon) => {
-  const res = await fetch(`http://localhost:3000/api/coupons/${id}`, { method: "PUT", headers: getAuthHeaders(), body: JSON.stringify(coupon) });
+  const res = await fetch(`https://qwikko.onrender.com/api/coupons/${id}`, { method: "PUT", headers: getAuthHeaders(), body: JSON.stringify(coupon) });
   const json = await res.json();
   console.log("🔹 Coupon Updated Response:", json);
   return json || [];
@@ -328,7 +328,7 @@ export const updateCoupon = async (id, coupon) => {
 
 // 🔹 تفعيل / تعطيل الكوبون
 export const toggleCouponStatus = async (id, is_active) => {
-  const res = await fetch(`http://localhost:3000/api/coupons/${id}/status`, {
+  const res = await fetch(`https://qwikko.onrender.com/api/coupons/${id}/status`, {
     method: "PATCH",
     headers: getAuthHeaders(),
     body: JSON.stringify({ is_active }),
@@ -341,7 +341,7 @@ export const toggleCouponStatus = async (id, is_active) => {
 // ========== جديد: تجيب من /api/vendor/orders وتعيدها بصيغة items للواجهة ==========
 export const fetchOrderItemsWithCompany = async (status = "") => {
   const query = status ? `?status=${encodeURIComponent(status)}` : "";
-  const res = await fetch(`http://localhost:3000/api/vendor/orders${query}`, {
+  const res = await fetch(`https://qwikko.onrender.com/api/vendor/orders${query}`, {
     headers: getAuthHeaders(),
   });
 
@@ -389,7 +389,7 @@ export const fetchOrderItemsWithCompany = async (status = "") => {
 // (اختياري) دالة ترجع الـ raw من نفس الاندبوينت لو حابة تستخدميها لاحقًا
 export const fetchVendorOrdersRaw = async (status = "") => {
   const query = status ? `?status=${encodeURIComponent(status)}` : "";
-  const res = await fetch(`http://localhost:3000/api/vendor/orders${query}`, {
+  const res = await fetch(`https://qwikko.onrender.com/api/vendor/orders${query}`, {
     headers: getAuthHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch vendor orders");

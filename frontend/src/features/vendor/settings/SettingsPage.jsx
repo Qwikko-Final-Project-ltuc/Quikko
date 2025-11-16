@@ -46,7 +46,7 @@ export default function SettingsPage() {
   const handleDeleteAccount = async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete("http://localhost:3000/api/customers/profile", {
+      await axios.delete("https://qwikko.onrender.com/api/customers/profile", {
         headers: { Authorization: `Bearer ${token}` },
       });
       showToast("Account deleted successfully.", "success");

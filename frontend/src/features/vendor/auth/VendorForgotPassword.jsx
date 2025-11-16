@@ -21,7 +21,7 @@ export default function VendorForgotPassword() {
     setError("");
 
     try {
-      const res = await axios.post("http://localhost:3000/api/auth/forgot-password", { email });
+      const res = await axios.post("https://qwikko.onrender.com/api/auth/forgot-password", { email });
       setMessage(res.data.message || "Check your email for the reset link!");
     } catch (err) {
       setError(err.response?.data?.error || "Something went wrong. Please try again.");

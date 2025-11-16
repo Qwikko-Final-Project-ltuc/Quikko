@@ -26,8 +26,8 @@ exports.createPayment = async (amount) => {
     intent: "sale",
     payer: { payment_method: "paypal" },
     redirect_urls: {
-      return_url: "http://localhost:3000/api/payment/success",
-      cancel_url: "http://localhost:3000/api/payment/cancel",
+      return_url: "https://qwikko.onrender.com/api/payment/success",
+      cancel_url: "https://qwikko.onrender.com/api/payment/cancel",
     },
     transactions: [
       {

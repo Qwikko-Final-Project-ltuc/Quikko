@@ -1,7 +1,7 @@
 export async function GetAllCMSForAdmin() {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`http://localhost:3000/api/cms/admin`, {
+  const response = await fetch(`https://qwikko.onrender.com/api/cms/admin`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -22,7 +22,7 @@ export async function GetAllCMSForAdmin() {
 export async function AddCMS(cmsData) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch("http://localhost:3000/api/cms", {
+  const response = await fetch("https://qwikko.onrender.com/api/cms", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -43,7 +43,7 @@ export async function AddCMS(cmsData) {
 export async function EditCMS(id, cmsData) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`http://localhost:3000/api/cms/${id}`, {
+  const response = await fetch(`https://qwikko.onrender.com/api/cms/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -64,7 +64,7 @@ export async function EditCMS(id, cmsData) {
 export async function DeleteCMS(id) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`http://localhost:3000/api/cms/${id}`, {
+  const response = await fetch(`https://qwikko.onrender.com/api/cms/${id}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",

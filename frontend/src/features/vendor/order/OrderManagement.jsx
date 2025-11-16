@@ -17,7 +17,7 @@ const USE_ORDERS_ENDPOINT = true;
 const fetchOrderItems_endpoint = async (status = "") => {
   const query = status ? `?status=${encodeURIComponent(status)}` : "";
   const res = await fetch(
-    `http://localhost:3000/api/vendor/order-items${query}`,
+    `https://qwikko.onrender.com/api/vendor/order-items${query}`,
     { headers: getAuthHeaders() }
   );
   const json = await res.json();
@@ -25,7 +25,7 @@ const fetchOrderItems_endpoint = async (status = "") => {
 };
 
 const fetchOrders_endpoint = async () => {
-  const res = await fetch(`http://localhost:3000/api/vendor/orders`, {
+  const res = await fetch(`https://qwikko.onrender.com/api/vendor/orders`, {
     headers: getAuthHeaders(),
   });
   const json = await res.json();
@@ -123,7 +123,7 @@ export default function OrderManagement() {
     action,
     reason = null,
   }) => {
-    const url = `http://localhost:3000/api/vendor/orders/${orderId}/items/${itemId}`;
+    const url = `https://qwikko.onrender.com/api/vendor/orders/${orderId}/items/${itemId}`;
     const res = await fetch(url, {
       method: "PATCH",
       headers: getAuthHeaders(),

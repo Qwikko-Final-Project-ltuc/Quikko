@@ -7,7 +7,7 @@ exports.handleDeliveryIntent = async (intent, message, token) => {
       case "list_orders": {
         // ✅ نفس الراوت اللي جربته على Postman
         const res = await axios.get(
-          "http://localhost:3000/api/customers/delivery/accepted-orders",
+          "https://qwikko.onrender.com/api/customers/delivery/accepted-orders",
           {
             headers: { Authorization: `Bearer ${token || ""}` },
           }
@@ -95,7 +95,7 @@ exports.handleDeliveryIntent = async (intent, message, token) => {
 
       case "list_requested_orders": {
         const res = await axios.get(
-          "http://localhost:3000/api/customers/delivery/requested-orders",
+          "https://qwikko.onrender.com/api/customers/delivery/requested-orders",
           {
             headers: { Authorization: `Bearer ${token || ""}` },
           }
@@ -160,7 +160,7 @@ exports.handleDeliveryIntent = async (intent, message, token) => {
         const orderId = message.match(/\d+/)?.[0];
         if (!orderId) return "Please provide the order number.";
         const res = await axios.get(
-          `http://localhost:3000/api/delivery/tracking/${orderId}`,
+          `https://qwikko.onrender.com/api/delivery/tracking/${orderId}`,
           { headers: { Authorization: `Bearer ${token || ""}` } }
         );
         const order = res.data;
@@ -179,7 +179,7 @@ exports.handleDeliveryIntent = async (intent, message, token) => {
 
       case "coverage": {
         const res = await axios.get(
-          "http://localhost:3000/api/delivery/coverage",
+          "https://qwikko.onrender.com/api/delivery/coverage",
           {
             headers: { Authorization: `Bearer ${token || ""}` },
           }
@@ -207,7 +207,7 @@ exports.handleDeliveryIntent = async (intent, message, token) => {
         if (matchDays) days = parseInt(matchDays[1]);
 
         const res = await axios.get(
-          `http://localhost:3000/api/delivery/reports?days=${days}`,
+          `https://qwikko.onrender.com/api/delivery/reports?days=${days}`,
           { headers: { Authorization: `Bearer ${token || ""}` } }
         );
 
@@ -273,7 +273,7 @@ exports.handleDeliveryIntent = async (intent, message, token) => {
 
         // 🔥 نرسل الطلب إلى الـ API
         const res = await axios.put(
-          `http://localhost:3000/api/delivery/orders/${orderId}`,
+          `https://qwikko.onrender.com/api/delivery/orders/${orderId}`,
           { status: newStatus },
           { headers: { Authorization: `Bearer ${token || ""}` } }
         );
