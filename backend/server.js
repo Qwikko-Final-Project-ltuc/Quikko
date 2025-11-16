@@ -33,7 +33,7 @@ const OpenAI = require("openai");
 // ===============================
 // Uncomment and configure if frontend runs on a different origin
 const cors = require('cors');
-const allowedOrigins = ["http://localhost:5173", "https://qwikko.vercel.app"];
+const allowedOrigins = ["http://localhost:5173", "https://qwikkofront.onrender.com"];
 
 app.use(cors({
   origin: function(origin, callback){
@@ -196,7 +196,7 @@ const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 const io = require("socket.io")(server, {
   cors: {
-    origin: ["http://localhost:5173", "https://qwikko.vercel.app"],
+    origin: ["http://localhost:5173", "https://qwikkofront.onrender.com"],
     methods: ["GET", "POST"],
     credentials: true,
   },

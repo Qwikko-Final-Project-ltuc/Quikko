@@ -78,7 +78,7 @@ exports.register = async (data, role) => {
   }
 
   // 4️⃣ توليد رابط التحقق حسب الدور
-  const redirectUrl = `https://qwikko.vercel.app/${role}/login`;
+  const redirectUrl = `https://qwikkofront.onrender.com/${role}/login`;
   const verificationLink = await admin.auth().generateEmailVerificationLink(firebaseUser.email, { url: redirectUrl });
 
   // 5️⃣ إرسال الإيميل
@@ -180,7 +180,7 @@ const { sendResetEmail } = require('../../utils/sendEmail');
 
 exports.forgotPassword = async (email) => {
   const link = await admin.auth().generatePasswordResetLink(email, {
-    url: `https://qwikko.vercel.app/customer/password-updated?email=${encodeURIComponent(email)}`,
+    url: `https://qwikkofront.onrender.com/customer/password-updated?email=${encodeURIComponent(email)}`,
   });
 
   await sendResetEmail(email, link);
