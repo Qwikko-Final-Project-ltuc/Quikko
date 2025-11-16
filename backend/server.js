@@ -181,8 +181,9 @@ const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 const io = require("socket.io")(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", "https://qwikko.vercel.app"],
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
   console.log("✅ Socket.io server initialized");
