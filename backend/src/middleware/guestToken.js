@@ -12,7 +12,7 @@ module.exports = (req, res, next) => {
       httpOnly: false,
       maxAge: 1000 * 60 * 60 * 24 * 30,
       sameSite: 'none',
-      secure: false,
+      secure: true,
       path: '/',
     });
     // console.log("New guest token created:", token);

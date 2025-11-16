@@ -33,19 +33,25 @@ const OpenAI = require("openai");
 // ===============================
 // Uncomment and configure if frontend runs on a different origin
 const cors = require('cors');
-app.use(
-  cors({
-    origin: ["http://localhost:5173", "https://quikko.vercel.app"],
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization", "Guest-Token"],
-    exposedHeaders: ["Guest-Token"],
-  })
-);
+const allowedOrigins = ["http://localhost:5173", "https://qwikko.vercel.app"];
+
+app.use(cors({
+  origin: function(origin, callback){
+    if(!origin) return callback(null, true); // requests مثل curl/postman
+    if(allowedOrigins.indexOf(origin) === -1){
+      return callback(new Error("Not allowed by CORS"), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Guest-Token"],
+  exposedHeaders: ["Guest-Token"],
+}));
 
 
 // app.options("/*", cors({
-//   origin: ["http://localhost:5173", "https://qwikko.vercel.app"],
+//   origin: ["http://localhost:5173", "http://qwikko.vercel.app"],
 //   methods: ["GET","POST","PUT","DELETE","PATCH"],
 //   allowedHeaders: ["Content-Type", "Authorization", "Guest-Token"],
 //   credentials: true,
@@ -82,19 +88,19 @@ const path = require("path");
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 
-app.get("/set-cookie", (req, res) => {
-  res.cookie("Cookie_1", "value", {
-    httpOnly: true, 
-    maxAge: 1000 * 60 * 60 * 24, 
-    path: "/",
-  });
-  res.send("Cookie is set!");
-});
+// app.get("/set-cookie", (req, res) => {
+//   res.cookie("Cookie_1", "value", {
+//     httpOnly: true, 
+//     maxAge: 1000 * 60 * 60 * 24, 
+//     path: "/",
+//   });
+//   res.send("Cookie is set!");
+// });
 
-app.get("/get-cookie", (req, res) => {
-  console.log("Cookies:", req.cookies); 
-  res.json(req.cookies);
-});
+// app.get("/get-cookie", (req, res) => {
+//   console.log("Cookies:", req.cookies); 
+//   res.json(req.cookies);
+// });
 // ===============================
 // Swagger API Documentation Setup
 // ===============================
