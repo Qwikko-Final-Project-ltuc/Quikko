@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:3000/api/reviews"; 
+const API_URL = "https://qwikko.onrender.com/api/reviews"; 
 
 const api = axios.create({
   baseURL: API_URL,

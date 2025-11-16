@@ -35,7 +35,7 @@ const OpenAI = require("openai");
 const cors = require('cors');
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", "https://quikko.vercel.app"],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization", "Guest-Token"],

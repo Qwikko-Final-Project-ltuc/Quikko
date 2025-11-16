@@ -106,7 +106,7 @@ const App = () => {
 
       try {
         const res = await fetch(
-          "http://localhost:3000/api/customers/get-guest-token",
+          "https://qwikko.onrender.com/api/customers/get-guest-token",
           {
             credentials: "include",
           }
@@ -142,7 +142,7 @@ const App = () => {
 
         // ارسال التوكن للباك
         const res = await fetch(
-          "http://localhost:3000/api/notifications/save-fcm-token",
+          "https://qwikko.onrender.com/api/notifications/save-fcm-token",
           {
             method: "POST",
             headers: {

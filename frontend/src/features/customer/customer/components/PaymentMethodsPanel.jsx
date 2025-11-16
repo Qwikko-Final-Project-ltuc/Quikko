@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchPayments, deletePayment } from "../paymentSlice";
-import { ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 const PaymentMethodsPanel = () => {
   const dispatch = useDispatch();
@@ -169,7 +168,6 @@ const PaymentMethodsPanel = () => {
             <div className="flex items-center justify-between p-6 border-b border-[var(--border)]">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-red-100 rounded-lg">
-                  <ExclamationTriangleIcon className="w-6 h-6 text-red-600" />
                 </div>
                 <h3 className="text-lg font-bold text-[var(--text)]">Delete Transaction</h3>
               </div>
@@ -177,7 +175,6 @@ const PaymentMethodsPanel = () => {
                 onClick={handleDeleteCancel}
                 className="p-2 hover:bg-[var(--hover)] rounded-lg transition-colors"
               >
-                <XMarkIcon className="w-5 h-5 text-[var(--text)]" />
               </button>
             </div>
 

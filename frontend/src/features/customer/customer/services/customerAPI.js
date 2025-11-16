@@ -1,9 +1,9 @@
 import axios from "axios";
 import qs from "qs";
 
-const API_URL = "http://localhost:3000/api/customers";
-const PAYMENT_URL = "http://localhost:3000/api/payment";
-const INTERACTION_URL = "http://localhost:3000/api/interactions";
+const API_URL = "https://qwikko.onrender.com/api/customers";
+const PAYMENT_URL = "https://qwikko.onrender.com/api/payment";
+const INTERACTION_URL = "https://qwikko.onrender.com/api/interactions";
 
 
 const attachToken = (config) => {
@@ -22,7 +22,7 @@ const paymentAPI = axios.create({
 });
 
 //Chat API setup 
-const CHAT_URL = "http://localhost:3000/api/chat";
+const CHAT_URL = "https://qwikko.onrender.com/api/chat";
 const chatAPI = axios.create({ baseURL: CHAT_URL, withCredentials: true });
 chatAPI.interceptors.request.use(attachToken);
 
@@ -128,13 +128,13 @@ const customerAPI = {
 
 
   getCategories: async () =>{
-    const res = (await axios.get("http://localhost:3000/api/categories")).data;
+    const res = (await axios.get("https://qwikko.onrender.com/api/categories")).data;
     return res.data;
   },
 
   // Stores
   getStores: async () => {
-    const res = await api.get("http://localhost:3000/api/vendor/stores");
+    const res = await api.get("https://qwikko.onrender.com/api/vendor/stores");
     return res.data.data.filter(store => store.status === "approved"); 
   },
   getStoreById: async (id) => {
@@ -277,7 +277,7 @@ checkout: async (data) => {
       const params = {
         excludeIds: JSON.stringify(excludeIds),
       };
-      const res = await api.get(`http://localhost:3000/api/recommendations`, { params });
+      const res = await api.get(`https://qwikko.onrender.com/api/recommendations`, { params });
       return res.data;
     } catch (err) {
       console.error("Failed to fetch recommendations:", err);

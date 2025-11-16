@@ -20,7 +20,7 @@ const ForgotPassword = () => {
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
-      const res = await axios.post("http://localhost:3000/api/auth/forgot-password", { email: data.email });
+      const res = await axios.post("https://qwikko.onrender.com/api/auth/forgot-password", { email: data.email });
       
       localStorage.setItem("resetEmail", data.email);
 

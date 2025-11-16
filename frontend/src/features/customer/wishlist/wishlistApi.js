@@ -1,7 +1,7 @@
 export async function GetWishlist( ) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch("http://localhost:3000/api/customers/wishlist", {
+  const response = await fetch("https://qwikko.onrender.com/api/customers/wishlist", {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -22,7 +22,7 @@ export async function GetWishlist( ) {
 export async function AddWishlist(productId) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch("http://localhost:3000/api/customers/wishlist", {
+  const response = await fetch("https://qwikko.onrender.com/api/customers/wishlist", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -44,7 +44,7 @@ export async function AddWishlist(productId) {
 export async function RemoveWishlist(wishlistId) {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(`http://localhost:3000/api/customers/wishlist/${wishlistId}`, {
+  const response = await fetch(`https://qwikko.onrender.com/api/customers/wishlist/${wishlistId}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
