@@ -33,21 +33,26 @@ const OpenAI = require("openai");
 // ===============================
 // Uncomment and configure if frontend runs on a different origin
 const cors = require('cors');
-const allowedOrigins = ["http://localhost:5173", "https://qwikkofront.onrender.com"];
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://qwikkofront.onrender.com",
+  "https://qwikko.onrender.com"   // VERY IMPORTANT: Your backend origin itself
+];
 
 app.use(cors({
-  origin: function(origin, callback){
-    if(!origin) return callback(null, true); // requests مثل curl/postman
-    if(allowedOrigins.indexOf(origin) === -1){
-      return callback(new Error("Not allowed by CORS"), false);
-    }
-    return callback(null, true);
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // Allow server-to-server / curl
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("CORS blocked: " + origin));
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Guest-Token"],
-  exposedHeaders: ["Guest-Token"],
+  exposedHeaders: ["Guest-Token"]
 }));
+
+app.options("*", cors());
+
 
 
 // app.options("/*", cors({
