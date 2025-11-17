@@ -51,7 +51,7 @@ app.use(cors({
   exposedHeaders: ["Guest-Token"]
 }));
 
-app.options("*", cors());
+// app.options("*", cors());
 
 
 
